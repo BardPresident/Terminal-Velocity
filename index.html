@@ -44,11 +44,22 @@ button:hover,button:focus-visible{background:rgba(255,255,255,.09);border-color:
 #stat{border-top:1px dashed var(--dim);margin-top:8px;padding-top:8px;font-size:15px}
 .legend{font-size:14px;margin-bottom:6px}
 @media(prefers-reduced-motion:reduce){*{transition:none!important}}
+html,body{overflow-x:hidden}
+@media(min-width:861px) and (min-height:520px){
+html,body{height:100%;overflow:hidden}
+#app{height:100vh;display:flex;flex-direction:column;padding:10px 12px}
+#hd{flex:0 0 auto;margin-bottom:10px}
+#main{flex:1 1 0;min-height:0;grid-template-rows:minmax(0,1fr)}
+#main>.box{margin-bottom:0;display:flex;flex-direction:column;min-height:0}
+.lbox #menu{flex:1 1 0;min-height:0;overflow-y:auto;padding-right:6px}
+.lbox #io,.lbox #stat,.lbox .foot{flex:0 0 auto}
+#log{min-height:0}
+}
 </style></head><body>
 <div id="fx"></div><div id="bn" class="bn"></div><div id="app">
 <div class="box" id="hd"></div>
 <div id="main">
- <div class="box"><div class="ttl" id="ltitle">[ CONSOLE ]</div>
+ <div class="box lbox"><div class="ttl" id="ltitle">[ CONSOLE ]</div>
   <div id="menu"></div>
   <textarea id="io" spellcheck="false" placeholder="Paste a save code here, then choose Import Save Code."></textarea>
   <div id="stat"></div>
@@ -398,7 +409,7 @@ function build(sec){
    ['Sync Bell to Owrbit: Publish a Scroll 🔔','pub',/Public Scroll/,'Binds flat-files into a Public Scroll for passive Agape.'],
    ['Welcome MRU: Found the University Node 🎓','hydra',/MRU Node/,'Founds the MRU node so students can enroll.'],
    ['Invoke Sage: Consult the Chancellor 📜','council',/Consult Sage/,'Deepens Sage attunement (flat-file efficiency).'],
-   ['Step Down onto the CC0 Rug 🪨','strat',/Flatten/,'The Hinata Trap: flatten into a Rug layer (asks first).']].forEach(([l,s,re,g],i)=>a.push({free:1,l,c:'same cost as the normal action',g:g+' Runs the real game action; blocked messages explain what is missing.',f:via(s,re)}));
+   ['Step Down onto the CC0 Rug 🪨','strat',/Flatten/,'The Hinata Trap: flatten into a Rug layer (asks first).']].forEach(([l,s,re,g],i)=>a.push({free:1,l,g:g+' (same cost as the normal action)',f:via(s,re)}));
   const tg=(k,l,g)=>a.push({free:1,l:l+': '+(BC[k]?'ON':'OFF'),g,f(){BC[k]=BC[k]?0:1;savePrefs();if(k==='snd'){BC.snd?(ac(),humSet(),sndBell()):humSet()}if(k==='ban'&&BC.ban){banner('BROADCAST MODE ONLINE')}}});
   tg('ban','Broadcast banners [B]','A large glowing banner names every action for people watching on camera.');
   tg('snd','Sound (Web Audio, no files)','Key clicks, a soft CRT hum and a 50 BPM sync bell. Browsers need a click first.');
