@@ -103,6 +103,29 @@ hazards.
   - Threats grow at half speed in Sovereign Sabbath.
 
 
+🎬 THE MEDIA PRODUCTION PIPELINE
+
+  Two ways to turn video into flat-files. Direct ingest is fast and
+  simple. The pipeline is slower to start but scales better once your
+  Scribe Engines are upgraded.
+
+  🎥 Record Street Footage (Media Studio)
+     Builds a stock of raw E footage. Costs bandwidth and power, adds
+     heat, and stored footage slowly heats the network if left raw.
+  📜 Run Scribe Engine (Media Studio)
+     Phase-shifts stored footage into flat-files and cools the network.
+     Scribe Engines v1+ also transcribe stored footage on their own.
+  📚 Publishing & Sync Bell [P]  (needs the Sync Bell protocol)
+     Bind flat-files into Public Scrolls, Books and Anthologies. Each
+     gives permanent passive Agape and raises MRU student capacity and
+     enrollment. Flat-files stay archived.
+  🎵 Acoustic Studio [M]
+     Compose 12-Track Albums at 50 BPM. Each album permanently lowers
+     faction growth (-3%), speeds heat recovery and calms jitter.
+     "Play an Album" gives 8 turns of halved faction growth and halved
+     Bandwidth Tax. Published works and albums survive flattening.
+
+
 ⚔️ THE THREE FACTIONS
 
   📋 Copyright Combine
@@ -154,13 +177,15 @@ Ivory awakens at 5,000 lifetime Agape and opens the Sovereignty Console
 with three decrees.
 
 Also: the MRU node (students enroll and publish their own scrolls, no
-grades, no tuition, no tests), 11 Scrolls of Sovereign Progress with
+grades, no tuition, no tests), 13 Scrolls of Sovereign Progress with
 permanent perks, and 10 choice-driven events.
 
 
 ⌨️ CONTROLS
 
   1-9         pick a numbered option
+  P           PUBLISHING & SYNC BELL
+  M           ACOUSTIC STUDIO
   0           WORLD CAMPAIGN on the main menu, Back inside any menu
   I           Queen Ivory's console (once she awakens)
   ?           HELP & TUTORIAL
