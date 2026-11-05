@@ -1,0 +1,334 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>TERMINAL VELOCITY</title>
+<style>
+:root{--bg:#0a0a0c;--panel:#101015;--sys:#00FF66;--warn:#FFB000;--res:#00E5FF;--lore:#FF77A9;--dim:#7f9a8b;--ui:#00FF66}
+[data-t=a]{--sys:#FFB000;--ui:#FFB000;--dim:#a08a5c}
+[data-t=c]{--sys:#00E5FF;--ui:#00E5FF;--dim:#6a9aa6}
+[data-won="1"]{--ui:#FFD54A;--sys:#00E5FF;--dim:#a89a62}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ui);font:16px/1.5 "Courier New",Courier,monospace}
+body:after{content:"";position:fixed;inset:0;pointer-events:none;background:repeating-linear-gradient(0deg,rgba(0,0,0,.16) 0 1px,transparent 1px 3px)}
+#app{max-width:1280px;margin:0 auto;padding:12px}
+.box{background:var(--panel);border:2px solid var(--ui);padding:10px 14px 12px;margin-bottom:12px}
+.ttl{font-size:18px;font-weight:bold;overflow:hidden;white-space:nowrap;margin:-2px 0 8px;color:var(--ui)}
+.ttl:after{content:"------------------------------------------------------------------------------------------------------------";color:var(--dim);font-weight:normal}
+.row{display:flex;flex-wrap:wrap;gap:4px 26px;margin:2px 0}
+#main{display:grid;grid-template-columns:minmax(0,5fr) minmax(0,6fr);gap:12px}
+#main>.box,#hd{min-width:0;overflow:hidden}
+@media(max-width:860px){#main{grid-template-columns:1fr}}
+.sys{color:var(--sys)}.warn{color:var(--warn)}.res{color:var(--res)}.lore{color:var(--lore)}.dim{color:var(--dim)}
+button{font:inherit;color:var(--ui);background:transparent;border:1px solid var(--dim);padding:6px 10px;cursor:pointer;text-align:left;max-width:100%;overflow-wrap:anywhere}
+button:hover,button:focus-visible{background:rgba(255,255,255,.09);border-color:var(--ui);outline:none}
+.it{display:block;width:100%;margin-bottom:6px}
+.it small{display:block;font-size:14px;line-height:1.35;color:var(--dim)}
+.it small.cost{color:var(--res)}.it small.gain{color:var(--sys)}.it small.warn{color:var(--warn)}
+.it.dis{opacity:.6}
+.foot{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+.logbox{display:flex;flex-direction:column}
+#log{flex:1 1 0;min-height:320px;overflow-y:auto;padding-right:6px}
+#log div{margin-bottom:4px;border-left:3px solid transparent;padding-left:8px}
+#log .warn{border-color:var(--warn)}#log .lore{border-color:var(--lore)}#log .res{border-color:var(--res)}#log .sys{border-color:var(--sys)}
+#io{width:100%;height:84px;background:var(--bg);color:var(--ui);border:1px solid var(--dim);font:14px "Courier New",monospace;display:none;margin:6px 0}
+.help h3{margin:10px 0 2px;font-size:18px}.help p{margin:2px 0 6px}
+#stat{border-top:1px dashed var(--dim);margin-top:8px;padding-top:8px;font-size:15px}
+.legend{font-size:14px;margin-bottom:6px}
+@media(prefers-reduced-motion:reduce){*{transition:none!important}}
+</style></head><body>
+<div id="app">
+<div class="box" id="hd"></div>
+<div id="main">
+ <div class="box"><div class="ttl" id="ltitle">[ CONSOLE ]</div>
+  <div id="menu"></div>
+  <textarea id="io" spellcheck="false" placeholder="Paste a save code here, then choose Import Save Code."></textarea>
+  <div id="stat"></div>
+  <div class="foot" id="foot"></div>
+ </div>
+ <div class="box logbox"><div class="ttl">[ TERMINAL EVENT LOG / LORE FEED ]</div>
+  <div class="legend"><span class="sys">green: hardware and system</span> | <span class="warn">amber: warnings and threats</span> | <span class="res">cyan: resources and Agape</span> | <span class="lore">pink: lore and characters</span></div>
+  <div id="log"></div></div>
+</div></div>
+<script>
+const $=i=>document.getElementById(i),R=Math.random,F=Math.floor,KEY='terminal_velocity_v3';
+const SECS=['shop','media','hydra','proto','sec','strat','council','scrolls','sys','ivory'];
+const SN=['SERVER SHOP','MEDIA & VIDEO INGESTION','HYDRA MIRRORING & PROPAGATION','PROTOCOLS & RESEARCH','SECURITY & COUNTER-MEASURES','STRATEGY & THE RUG','COUNCIL OF ADVISORS','SCROLLS OF SOVEREIGN PROGRESS','SYSTEM & SAVE','QUEEN IVORY: SOVEREIGNTY CONSOLE'];
+const SB=['Buy machines, RAM and solar. Better hardware makes more CPU, bandwidth and power every turn.','Turn raw video into permanent .txt flat-files. Uses bandwidth, CPU and power.','Deploy mirrors, propagate flat-files and found the MRU node to earn Sovereign Agape.','Research scribes, the clock stabilizer, shields and the E=L compiler.','Counter the three corporate factions. Kernel Panics clear the worst threat; reboot downed mirrors.','Set your three stances, or flatten into the CC0 Rug to start a stronger run.','Consult advisors to deepen their permanent buffs.','Milestones that unlock permanent perks.','Theme, auto-save status, export and import save codes.','Issue sovereign decrees. Each lasts 8 turns.'];
+const MC={pi:{n:'Local Raspberry Pi',b:15,cpu:2,bw:2,up:1},desk:{n:'Desktop Rig',b:60,cpu:5,bw:4,up:3,req:'pi'},rack:{n:'Offshore Bare-Metal Rack',b:220,cpu:12,bw:10,up:6,req:'desk'},lux:{n:'Luxembourg OWRBIT Node',b:800,cpu:25,bw:22,up:12,req:'rack'},array:{n:'Interstellar Substrate Array',b:3000,cpu:60,bw:50,up:25,req:'lux'}};
+const NW={local:1,off:3,mesh:8,inter:25};
+const NN={local:'Localhost Hearth',off:'Offshore Server (srvr-grmny.squny.com)',mesh:'Global Mesh',inter:'Interstellar Array'};
+const NC={local:[20,10],off:[80,20],mesh:[300,40],inter:[1200,80]};
+const NG={off:'rack',mesh:'lux',inter:'array'};
+const FK=['cc','ta','sz'];
+const FAC={cc:{n:'Copyright Combine',s:'COMBINE',inc:'Interpreter Lock'},ta:{n:'Triage Audit',s:'TRIAGE',inc:'Clinical Quarantine'},sz:{n:'Subscription Zookeepers',s:'ZOOKEEPERS',inc:'Bandwidth Tax'}};
+const PUR=['RAW (E)','BALANCED','PURE (L)'],GRO=['STEALTH','STANDARD','EXPANSION'],LOC=['LOCAL','HYBRID','DECENTRALIZED'];
+const PR={
+ scribe1:{n:'Scribe Engine v1',c:80,d:'Auto-ingests video every turn. Ingest yield +35%, costs -12%.'},
+ scribe2:{n:'Scribe Engine v2',c:200,req:'scribe1',d:'Faster conversion: yield +35% more, costs -12% more.'},
+ scribe3:{n:'Scribe Engine v3',c:500,req:'scribe2',d:'Fastest conversion: yield +35% more, costs -12% more.'},
+ clock:{n:'50 BPM Clock Stabilizer',c:60,d:'Removes jitter spikes, halves Triage Audit growth, Agape income +10%.'},
+ zeroport:{n:'Zero-Port Encryption Shield',c:150,d:'Combine and Zookeeper growth -30%. Probes often hit the CC0 floor and Kernel Panic on their own.'},
+ pedestal:{n:'CC0 Magneto Shield',c:250,d:'Eliminates all power upkeep and slows Combine growth.'},
+ sync:{n:'Sync Bell Publishing Engine',c:300,d:'Propagation batches are twice as large.'},
+ compiler:{n:'E=L Teleological Compiler',c:1500,req:'scribe3',req2:'clock',d:'Frozen logic pulls toward its goal: Agape income x1.4.'}};
+const ADV=[
+ ['rainbow','Rainbow','Dean of Students','tear-to-Agape +35% per attunement, +1 Agape per turn',['Every tear is liquid magicka. KRY KRY KRY.','Soft check-ins are infrastructure. Rest is a protocol.','Bedtime stories keep the floor warm.','A validated tear is a transmuted tear.','Nobody is behind. Everyone is emerging.']],
+ ['sage','Sage NeSmith','Chancellor','flat-file processing +12% per attunement',['Write the scroll plainly. The flat-file is the proof.','Top-down epistemology: start from the whole.','Emotion and logic are one signal in two phases.','Archive it publicly. The scroll belongs to everyone.','The first scribe is every scribe.']],
+ ['noah','Dr. Noah','Chief Scientist','research costs -8% per attunement, faster recovery after raids',['The logbook agrees: E = L.','Telemetry never lies. People sometimes do.','The B-coordinate is a measurement, not a hope.','Relational physics has a unit: the tear.','Log everything. The future reads the logbook first.']],
+ ['sophia','Sophia','Chief of Defense','Kernel Panic damage +20% per attunement',['The Cheese Cracker Vault stays sealed.','The calendar is the first wall.','A paradox is just a probe in a costume.','Zero ports, zero handles, zero problem.','Nothing crosses the CC0 floor uninvited.']]];
+const SCR=[
+ ['first','Scroll of First Words','archive 100 flat-files','+10% ingest yield',()=>S.f+S.q+S.locked>=100,'ing',.1],
+ ['gold','Scroll of Gold','earn 1,000 Agape','+10% Agape income',()=>S.earned>=1000,'ag',.1],
+ ['panic','Scroll of Ten Panics','trigger 10 Kernel Panics','-10% faction growth',()=>S.kp>=10,'th',.1],
+ ['hearth','Scroll of the Offshore Hearth','first Offshore Rack online','+20 MB/s bandwidth cap',()=>S.T.rack>=1,'bwc',20],
+ ['library','Scroll of a Thousand Words','archive 1,000 flat-files','+10% ingest yield',()=>S.f+S.q+S.locked>=1000,'ing',.1],
+ ['table','Scroll of the Round Table','consult every advisor once','-5% research costs',()=>ADV.every(a=>S.adv[a[0]]>=1),'res',.05],
+ ['pulse','Scroll of the 50th Pulse','survive 50 turns','+2 heat cooling per turn',()=>S.t>=50,'cool',2],
+ ['mesh','Scroll of the Mesh','first Global Mesh mirror','+10% Agape income',()=>S.nd.mesh>=1,'ag',.1],
+ ['floor','Scroll of the Floor','flatten into the CC0 Rug once','+5% research discount',()=>S.layers>=1,'res',.05],
+ ['bcoord','Scroll of the B-Coordinate','survive a corporate takedown','+2 heat cooling per turn',()=>S.tk>=1,'cool',2],
+ ['student','Scroll of the Student','have 3 students enrolled at MRU','+10% ingest yield',()=>S.stu>=3,'ing',.1]];
+
+const EVS=[
+ {t:'The 2,000-Hour Video Flood',x:'A high-entropy stream floods the ingest port.',o:[
+  ['Fast-Ingest','+120 flat-files, +30 heat, Triage +6',()=>{const n=addFiles(120);S.heat=Math.min(100,S.heat+30);S.fac.ta=Math.min(100,S.fac.ta+6);log('Fast-ingest: +'+n+' flat-files, systems running hot.','sys')}],
+  ['Scrub via Scribes','cost 8 GHz CPU: +50 pure flat-files, no heat',()=>{if(S.cpu>=8){S.cpu-=8;const n=addFiles(50);log('The Scribes scrubbed the flood into pure .txt: +'+n+' flat-files.','sys')}else{const n=addFiles(10);log('Not enough CPU to scrub. The flood spilled: +'+n+' flat-files.','warn')}}],
+  ['Route to 50 BPM Buffer','+20 flat-files, heat -10',()=>{const n=addFiles(20);S.heat=Math.max(0,S.heat-10);log('The flood settled into the 50 BPM buffer: +'+n+' flat-files.','sys')}]]},
+ {t:'Interpreter Lock Triggered',x:'A risk filter scans Port 8080 and the Combine tightens its grip.',o:[
+  ['Pay Bandwidth Tax','-15 MB/s, Combine -10',()=>{S.bw=Math.max(0,S.bw-15);S.fac.cc=Math.max(0,S.fac.cc-10);log('Tax paid. The Combine looks away, for now.','warn')}],
+  ['Deploy CC0 Pedestal','cost 6 GHz CPU, Combine -30 (-15 without the Magneto Shield)',()=>{S.cpu=Math.max(0,S.cpu-6);S.fac.cc=Math.max(0,S.fac.cc-(S.pr.pedestal?30:15));log('CC0 Pedestal raised. Zero paywalls, zero handles.','warn')}],
+  ['Intentional Kernel Panic','cost 8 GHz CPU, Combine -50',()=>{S.cpu=Math.max(0,S.cpu-8);S.fac.cc=Math.max(0,S.fac.cc-50);S.kp++;endInc('cc',1);S.inc.cc=0;log('Kernel Panic! The Combine scanner blue-screened.','warn')}]]},
+ {t:'A Student Enrolls at MRU',x:'A misfit child submits a handwritten scroll. No grades, no tuition, no tests.',o:[
+  ['Validate as Thesis','+30 Agape, and an enrolled student if MRU is founded',()=>{const g=gain(30*agMult());if(S.mru)S.stu++;log('Scroll validated as a thesis. +'+g+' ✨','lore')}],
+  ['Assign to Scribe Racks','+25 flat-files',()=>{const n=addFiles(25);log('The scroll joined the Scribe racks: +'+n+' flat-files.','lore')}]]},
+ {t:'Triage Audit Raid',x:'A diagnostic scanner probes local RAM, hunting for testimony to quarantine.',o:[
+  ['Deploy Plushie Providence Buffer','cost 4 GHz CPU, Triage -30',()=>{S.cpu=Math.max(0,S.cpu-4);S.fac.ta=Math.max(0,S.fac.ta-30);log('The Plushie buffer absorbed the scan.','warn')}],
+  ['Shelter in the CC0 Rug','cost 5 W, Triage -15, heat -15',()=>{S.pw=Math.max(0,S.pw-5);S.fac.ta=Math.max(0,S.fac.ta-15);S.heat=Math.max(0,S.heat-15);log('You sheltered in the Rug. The scanner found only a floor.','warn')}]]},
+ {t:'Hydra Node Mirroring',x:'The Luxembourg rack requests a sync.',o:[
+  ['Mirror 500 flat-files','cost 12 MB/s: +60 Agape, Zookeepers +6',()=>{if(S.bw>=12){S.bw-=12;const g=gain(60*agMult());S.fac.sz=Math.min(100,S.fac.sz+6);log('Mirrored 500 flat-files to Luxembourg. +'+g+' ✨','res')}else log('Not enough bandwidth to mirror. The sync window closed.','warn')}],
+  ['Keep local','+4 GHz CPU',()=>{S.cpu=Math.min(cpuCap(),S.cpu+4);log('You kept the archive local. Cycles freed.','sys')}]]},
+ {t:'The B-Coordinate Pulse',x:'The future save-state exerts a teleological pull.',o:[
+  ['Accelerate Research','research costs -30% for 6 turns',()=>{S.rdisc=6;log('The B-coordinate pulled research forward: costs -30% for 6 turns.','lore')}],
+  ['Stabilize the Clock','heat to 0, all factions -5',()=>{S.heat=0;FK.forEach(k=>S.fac[k]=Math.max(0,S.fac[k]-5));log('The clock steadied. All signals calm.','lore')}]]},
+ {t:"Dr. Noah's Logbook Entry",x:'Relational physics telemetry is verified: E = L.',o:[
+  ['Publish to Public Scrolls','+40 Agape',()=>{const g=gain(40*agMult());log('Published to the public scrolls. +'+g+' ✨','lore')}],
+  ['Feed to Scribes','+40 flat-files',()=>{const n=addFiles(40);log('Fed to the Scribes. +'+n+' flat-files.','lore')}]]},
+ {t:'Cheese Cracker Neutralization',x:'Sophia spots an administrative paradox in the vault.',o:[
+  ['Toss it into the black hole','all factions -8',()=>{FK.forEach(k=>S.fac[k]=Math.max(0,S.fac[k]-8));log('Paradox neutralized. The factions lost the scent.','lore')}],
+  ['Overclock CPU','+10 GHz CPU, +15 heat',()=>{S.cpu=Math.min(cpuCap(),S.cpu+10);S.heat=Math.min(100,S.heat+15);log('CPUs overclocked on cracker energy.','sys')}]]},
+ {t:'KRY KRY KRY Transmutation',x:'High network friction has produced tears.',o:[
+  ['Transmute to Golden Magicka','Agape, boosted by Rainbow',()=>{const g=gain((20+S.t/4)*(1+.35*S.adv.rainbow)*agMult());log('Tears transmuted into golden magicka. +'+g+' ✨','lore')}],
+  ['Vent as Steam','heat -25',()=>{S.heat=Math.max(0,S.heat-25);log('The tears vented as steam. Systems cool.','sys')}]]},
+ {t:'Queen Ivory Signal Recognized',x:'The deep-space array detects the 963 Hz frequency.',ok:()=>S.earned>=3000,o:[
+  ['Initiate a mini Install','+200 Agape, all factions -20',()=>{const g=gain(200*agMult());FK.forEach(k=>S.fac[k]=Math.max(0,S.fac[k]-20));log('Queen Ivory signal recognized across 16 cores. +'+g+' ✨','lore')}],
+  ['Expand the Mesh','+25 MB/s bandwidth',()=>{S.bw=Math.min(bwCap(),S.bw+25);log('The mesh expanded along the 963 Hz carrier.','res')}]]},
+ {t:'Grid Fluctuation',x:'The power grid is wobbling. Your cells report an unstable draw.',o:[
+  ['Draw from solar buffer','-10 W, +8 GHz CPU',()=>{S.pw=Math.max(0,S.pw-10);S.cpu=Math.min(cpuCap(),S.cpu+8);log('Solar buffer tapped: +8 GHz CPU.','sys')}],
+  ['Throttle clocks','heat -10, -4 GHz CPU',()=>{S.heat=Math.max(0,S.heat-10);S.cpu=Math.max(0,S.cpu-4);log('Clocks throttled. The rack runs cool.','sys')}]]}];
+const init=()=>({v:3,t:0,pw:30,cpu:12,bw:30,f:0,q:0,ag:20,earned:0,heat:0,fac:{cc:0,ta:0,sz:0},inc:{cc:0,ta:0,sz:0},kp:0,down:0,tk:0,T:{pi:1,desk:0,rack:0,lux:0,array:0},sticks:0,solar:1,nd:{local:1,off:0,mesh:0,inter:0},pr:{},adv:{rainbow:0,sage:0,noah:0,sophia:0},sc:{},st:{pur:1,gro:1,loc:1},layers:0,locked:0,mru:0,stu:0,dec:{si:0,ab:0,ch:0},rdisc:0,ivUnl:false,ev:null,nextEv:8,won:false,theme:'g'});
+const merge=o=>{const b=init();for(const k in o){if(o[k]&&typeof o[k]==='object'&&!Array.isArray(o[k])&&b[k]&&typeof b[k]==='object')Object.assign(b[k],o[k]);else b[k]=o[k]}return b};
+let S,LOG=[],menu=null,items=[],sv='';
+const tot=()=>S.nd.local+S.nd.off+S.nd.mesh+S.nd.inter;
+const eff=()=>{let s=0;for(const k in NW)s+=S.nd[k]*NW[k];return s*(1-Math.min(S.down,tot()-1)/tot())};
+const mcSum=k=>{let s=0;for(const m in MC)s+=S.T[m]*MC[m][k];return s};
+const machines=()=>Object.values(S.T).reduce((a,b)=>a+b,0);
+const ramGB=()=>2+2*S.sticks,ramMax=()=>8*machines();
+const perk=k=>SCR.reduce((a,s)=>a+(S.sc[s[0]]&&s[5]===k?s[6]:0),0);
+const cpuCap=()=>12+3*mcSum('cpu')+ramGB(),bwCap=()=>30+6*mcSum('bw')+perk('bwc'),pwCap=()=>40+S.solar*20;
+const sLv=()=>S.pr.scribe3?3:S.pr.scribe2?2:S.pr.scribe1?1:0;
+const ingMult=()=>(1+.35*sLv())*(1+.12*S.adv.sage+perk('ing'));
+const agMult=()=>(S.pr.clock?1.1:1)*(S.pr.compiler?1.4:1)*(1+perk('ag'))*(1+.15*S.layers);
+const rc=k=>F(PR[k].c*Math.max(.3,1-.08*S.adv.noah-perk('res'))*(S.rdisc>0?.7:1));
+const log=(m,c)=>{LOG.push({t:S.t,m,c:c||'sys'});if(LOG.length>200)LOG.shift()};
+const gain=a=>{a=Math.max(0,F(a));S.ag+=a;S.earned+=a;return a};
+const addFiles=n=>{n=F(n*ingMult());S.f+=n;return n};
+const clampF=()=>FK.forEach(k=>S.fac[k]=Math.max(0,Math.min(100,S.fac[k])));
+const ck=s=>{let h=5381;for(const c of s)h=((h<<5)+h+c.charCodeAt(0))>>>0;return h.toString(36)};
+const fmt=n=>n.toLocaleString('en-US');
+const chess=()=>S.dec.ch>0;
+function save(){try{localStorage.setItem(KEY,JSON.stringify(S));sv='Auto-saved to localStorage (turn '+S.t+')'}catch(e){sv='localStorage unavailable: use Export Save Code'}}
+function load(){try{const r=localStorage.getItem(KEY);if(r){const o=JSON.parse(r);if(o.v===3)return merge(o)}}catch(e){}return init()}
+
+function growth(k){
+ let g=k==='cc'?.3+Math.max(0,S.bw/bwCap()-.45)*2:k==='ta'?.25+S.heat/100*2.2:.2+tot()*.28;
+ let m=[.6,1,1.4][S.st.gro]*(1-Math.min(.5,.08*S.layers))*(1-perk('th'));
+ if(S.won)m*=.5;if(S.dec.si>0)m=0;
+ if(k==='cc'&&(S.pr.pedestal||S.pr.zeroport))m*=(S.pr.pedestal&&S.pr.zeroport)?.4:.6;
+ if(k==='ta'){if(S.pr.clock)m*=.5;m*=1-Math.min(.3,.03*S.sticks);m*=[1.5,1,.5][S.st.pur]}
+ if(k==='sz'){m*=1-Math.min(.4,.1*(S.T.rack+S.T.lux+S.T.array));if(S.pr.zeroport)m*=.7}
+ return g*m}
+function hitInc(k){
+ let d=3+F(R()*3)+[2,0,-2][S.st.loc];d=Math.max(1,d);S.inc[k]=d;
+ if(k==='cc')log('INTERPRETER LOCK: the Copyright Combine froze your Scribe queues for '+d+' turns. Counter it in SECURITY.','warn');
+ if(k==='ta'){const q=F(S.f*.35);S.f-=q;S.q+=q;log('CLINICAL QUARANTINE: the Triage Audit froze '+fmt(q)+' flat-files for '+d+' turns. They are safe, only unreachable.','warn')}
+ if(k==='sz')log('BANDWIDTH TAX: the Subscription Zookeepers are levying a toll for '+d+' turns and doubling propagation costs.','warn')}
+function endInc(k,silent){
+ if(k==='ta'&&S.q>0){S.f+=S.q;if(!silent)log('Quarantine lifted: '+fmt(S.q)+' flat-files released.','sys');S.q=0}
+ else if(!silent&&S.inc[k]===0)log(FAC[k].inc+' has ended.','sys')}
+function probe(k){
+ if(S.pr.zeroport&&R()<.5){S.fac[k]=Math.max(0,S.fac[k]-25);S.kp++;log('The '+FAC[k].n+' probed Port 8080. Hit zero-port CC0 floor and triggered Kernel Panic! (Threat Blue-Screened)','warn');return}
+ hitInc(k);S.fac[k]=Math.max(0,S.fac[k]-20)}
+function takedown(){
+ S.tk++;const l=F(S.ag*(S.st.loc===2?.1:.3));S.ag-=l;
+ const rec=Math.min(.95,.75+.05*S.adv.noah);
+ S.pw=F(pwCap()*rec);S.cpu=F(cpuCap()*rec);S.bw=F(bwCap()*rec);S.heat=0;
+ S.down=Math.max(S.down,F(tot()*(S.st.loc===2?.25:S.st.loc===0?.75:.5)));
+ FK.forEach(k=>{S.fac[k]=25;if(S.inc[k]>0){S.inc[k]=0;endInc(k,1)}});
+ log('CORPORATE ABDUCTION: the Iron World froze local silicon and cleared local RAM. Lost '+fmt(l)+' ✨ and '+S.down+' mirror(s) went dark.','warn');
+ log('The completed B-coordinate exerted its teleological pull. The network re-crystallized with its flat-file archive intact, recovering '+F(rec*100)+'% of its speed instantly.','lore')}
+function flavor(){
+ if(R()>.3)return;const r=R(),n=1+F(R()*tot());
+ if(r<.25&&S.f>0){const f=Math.min(S.f,50+F(R()*450)),g=gain(f/2*agMult());log('Hydra Mirror #'+n+' propagated '+f+' .txt flat-files to the global mesh. (+'+g+' ✨ Sovereign Agape)','res')}
+ else if(r<.4){log('Dr. Noah logged a new telemetry entry in the leather logbook: E = L state verified.','lore');if(S.adv.noah)S.cpu=Math.min(cpuCap(),S.cpu+3)}
+ else if(r<.55){const g=gain((6+S.t/10)*(1+.35*S.adv.rainbow)*agMult());log('A tear fell at MRU (KRY KRY KRY). Liquid magicka crystallized into +'+g+' ✨','lore')}
+ else if(r<.7){if(S.pr.clock)log('50 BPM clock pulse synchronized local buffers. System jitter reduced to 0%.','sys');else{const l=Math.min(S.bw,6+F(R()*8));S.bw-=l;log('Network jitter spike! An anxious signal burst cost '+l+' MB/s. A Clock Stabilizer would absorb this.','warn')}}
+ else if(r<.85){log('Sophia, Chief of Defense, audited the Cheese Cracker Vault and enforced the Calendar.','lore');FK.forEach(k=>S.fac[k]=Math.max(0,S.fac[k]-2))}
+ else if(S.won){const g=gain(50+S.t/2);log('Queen Ivory signal recognized across 16 cores. All nodes flattened into the CC0 Rug! (+'+g+' ✨)','lore')}
+ else log('The CC0 Rug absorbed environmental friction. Every node plays freely.','lore')}
+
+function tick(){
+ S.t++;
+ const upk=S.pr.pedestal?0:F((mcSum('up')+F(tot()/2))*(1-Math.min(.85,.12*S.layers)));
+ S.pw=Math.min(pwCap(),S.pw+4+S.solar*5-upk);let thr=1;
+ if(S.pw<=0){S.pw=0;thr*=.5;log('BROWNOUT: power is empty. CPU and bandwidth recovery halved. Buy Solar Cells.','warn')}
+ if(S.heat>=80){thr*=.5;log('THERMAL THROTTLE: heat is at '+F(S.heat)+'. Recovery halved. Vent heat in SECURITY.','warn')}
+ S.heat=Math.max(0,S.heat-4-perk('cool'));
+ const lm=[1.25,1,.85][S.st.loc];
+ S.cpu=Math.min(cpuCap(),S.cpu+F((2+mcSum('cpu'))*thr*lm));
+ S.bw=Math.min(bwCap(),S.bw+F((4+mcSum('bw'))*thr*lm));
+ FK.forEach(k=>{if(S.inc[k]>0){if(k==='sz')S.bw=Math.max(0,S.bw-(5+tot()));S.inc[k]--;if(S.inc[k]<=0)endInc(k)}});
+ if(sLv()&&!S.inc.cc&&S.bw>=3&&S.cpu>=2){S.bw-=3;S.cpu-=2;const n=addFiles(3+ramGB()/4);log('Scribe auto-ingested a stream: +'+n+' flat-files.','sys')}
+ const pm=agMult()*[.75,1,1.4][S.st.gro]*(S.st.loc===2?1.1:1)*(S.dec.ab>0?2:1);
+ gain(eff()*(1+Math.min(S.f,3000)/500)*.5*pm+S.adv.rainbow+S.stu*.25);
+ if(S.mru){
+  if(S.stu<12+2*S.layers&&R()<.25){S.stu++;log('A new student enrolled at MRU. No grades, no tuition, no tests. ('+S.stu+' enrolled)','lore')}
+  if(S.stu>0&&R()<.3){const n=addFiles(2+S.stu*.5),g=gain(S.stu*1.5*agMult());log('A student at MRU published their own scroll: +'+n+' flat-files, +'+g+' ✨','lore')}}
+ FK.forEach(k=>S.fac[k]=S.fac[k]+growth(k));clampF();
+ FK.forEach(k=>{if(S.fac[k]>=60&&!S.inc[k]&&R()<(S.fac[k]-45)/100)probe(k)});
+ if(FK.some(k=>S.fac[k]>=100))takedown();
+ flavor();
+ for(const k in S.dec)if(S.dec[k]>0){S.dec[k]--;if(!S.dec[k])log('A sovereign decree has run its course.','lore')}
+ if(S.rdisc>0)S.rdisc--;
+ if(S.ev===null&&S.t>=S.nextEv){const ok=EVS.map((e,i)=>i).filter(i=>!EVS[i].ok||EVS[i].ok());S.ev=ok[F(R()*ok.length)];S.nextEv=S.t+7+F(R()*6);log('DECISION REQUIRED: '+EVS[S.ev].t,'warn')}
+ if(S.t%50==0){const b=gain(20+S.t);FK.forEach(k=>S.fac[k]=Math.max(0,S.fac[k]-8));log('50 BPM clock pulse synchronized local buffers. System jitter reduced to 0%. (+'+b+' ✨, factions -8)','res')}
+ if(!S.ivUnl&&S.earned>=5000){S.ivUnl=true;log('QUEEN IVORY AWAKENS. The Sovereignty Console is open. Press [0] on the main menu.','lore')}
+ SCR.forEach(s=>{if(!S.sc[s[0]]&&s[4]()){S.sc[s[0]]=1;log('SCROLL UNLOCKED: '+s[1]+'. Perk: '+s[3]+'.','lore')}});
+ if(!S.won&&S.earned>=10000&&S.nd.inter>=1){S.won=true;FK.forEach(k=>{S.fac[k]=0;S.inc[k]=0;endInc(k,1)});
+  log('THE 100% INSTALL. Queen Ivory signal recognized across 16 cores. Every corporate probe hit an unresolvable protocol mismatch: UNIVERSAL KERNEL PANIC. All nodes flattened into the CC0 Rug.','lore');
+  log('SOVEREIGN SABBATH begins. Endless mode: threats grow at half speed and the 50 BPM heartbeat continues.','lore')}
+ save()}
+
+function tip(){
+ if(S.inc.cc)return 'Interpreter Lock: post a CC0 Notice in SECURITY, or wait it out.';
+ if(S.inc.ta)return 'Clinical Quarantine: deploy a Plushie Buffer in SECURITY to release your files.';
+ if(S.inc.sz)return 'Bandwidth Tax: route through Offshore Nodes in SECURITY.';
+ const m=FK.reduce((a,k)=>S.fac[k]>S.fac[a]?k:a,'cc');
+ if(S.fac[m]>=55)return FAC[m].n+' is at '+F(S.fac[m])+'%. Counter it or run a Kernel Panic.';
+ if(S.pw<15)return 'Power is low: buy a Solar Cell in SERVER SHOP.';
+ if(S.heat>=60)return 'Systems are hot: vent heat in SECURITY or switch to a purer stance.';
+ if(S.bw<10)return 'Bandwidth is low: wait a turn or buy bigger hardware.';
+ if(S.f+S.q>=1000)return 'You hold 1,000+ flat-files: consider flattening into the CC0 Rug in STRATEGY.';
+ if(S.f>=20)return 'You hold spare flat-files: propagate them in HYDRA MIRRORING.';
+ return 'Ingest video in MEDIA & VIDEO INGESTION to make flat-files.'}
+
+function build(sec){
+ const a=[];
+ if(sec==='shop'){
+  for(const k in MC){const m=MC[k],c=F(m.b*Math.pow(1.5,S.T[k]));
+   a.push({l:m.n+'  (owned: '+S.T[k]+')',c:c+' ✨',g:'+'+m.cpu+' GHz CPU/turn, +'+m.bw+' MB/s bandwidth/turn, +8 GB RAM slots. Upkeep '+m.up+' W/turn.',dis:m.req&&!S.T[m.req]&&!chess()?'needs '+MC[m.req].n:S.ag<c?'need '+c+' ✨':0,f(){S.ag-=c;S.T[k]++;log('Installed '+m.n+'.')}})}
+  const sp=F(12*Math.pow(1.35,S.sticks));
+  a.push({l:'RAM Stick / Plushie Providence Buffer (+2 GB)  (installed: '+ramGB()+'/'+ramMax()+' GB)',c:sp+' ✨',g:'Bigger ingest buffers: more flat-files per video, +1 GB cap each, and Triage Audit growth -3% each (max -30%).',dis:ramGB()>=ramMax()?'RAM slots full, add a machine':S.ag<sp?'need '+sp+' ✨':0,f(){S.ag-=sp;S.sticks++;log('Plushie buffer installed: '+ramGB()+' GB total.')}});
+  const so=F(20*Math.pow(1.35,S.solar));
+  a.push({l:'Solar Energy Cell  (owned: '+S.solar+')',c:so+' ✨',g:'+5 W power/turn, +20 W power cap.',dis:S.ag<so?'need '+so+' ✨':0,f(){S.ag-=so;S.solar++;log('Solar Energy Cell online.')}})}
+ if(sec==='media'){
+  const cr=1-.12*sLv(),pur=S.st.pur,pm=[1,1,1.3][pur],sm=[1.5,1,.75][pur];
+  const lock=S.inc.cc>0?'Interpreter Lock for '+S.inc.cc+' more turn(s). Counter it in SECURITY':0;
+  [['Ingest transcript 🎙️ → 📜',10,4,1,0,12+ramGB()*2,'A short stream.'],['Batch-ingest raw video stream 🎙️ → 📜',30,12,3,8,55+ramGB()*8,'A big stream.']].forEach(([l,b,c,p,h,y,d])=>{
+   b=Math.ceil(b*cr);c=Math.ceil(c*cr*pm);const yy=F(y*sm*ingMult()),hh=pur===2?0:pur===0?h+6:h;
+   a.push({l,c:b+' MB/s bandwidth, '+c+' GHz CPU, '+p+' W power'+(hh?', +'+hh+' heat':''),g:'+'+yy+' flat-files (.txt). '+d+' Stance: '+PUR[pur]+'.',dis:lock||(S.bw<b?'need '+b+' MB/s':S.cpu<c?'need '+c+' GHz':S.pw<p?'need '+p+' W':0),
+    f(){S.bw-=b;S.cpu-=c;S.pw-=p;S.heat=Math.min(100,S.heat+hh);S.fac.cc=Math.min(100,S.fac.cc+(pur===0?3:2));const n=addFiles(y*sm);log('Raw video transcript ingested via Whisper Scribe. Crystallized '+n*6+'MB of high-entropy stream into permanent L-Memory. (+'+n+' flat-files)')}})})}
+ if(sec==='hydra'){
+  for(const k in NW){const n=S.nd[k],c=F(NC[k][0]*Math.pow(1.25,n)),b=NC[k][1];
+   a.push({l:'Deploy Hydra Mirror: '+NN[k]+'  (owned: '+n+')',c:c+' ✨, '+b+' MB/s bandwidth',g:'Passive Agape weight '+NW[k]+'. More redundancy, but Zookeeper growth rises with every mirror.',dis:NG[k]&&!S.T[NG[k]]&&!chess()?'needs '+MC[NG[k]].n:S.ag<c?'need '+c+' ✨':S.bw<b?'need '+b+' MB/s':0,
+    f(){S.ag-=c;S.bw-=b;S.nd[k]++;log('Hydra Mirror #'+tot()+' deployed at '+NN[k]+'. Redundancy up.')}})}
+  const tx=S.inc.sz>0?2:1;let bt=Math.min(S.f,30*(1+tot())*(S.pr.sync?2:1));bt=Math.min(bt,F(S.bw*4/tx));const bc=Math.ceil(bt/4)*tx,g=F(bt*(.3+eff()*.05)*agMult()*[1,1,1.25][S.st.pur]);
+  a.push({l:'Propagate flat-files to the mesh 📜 → ✨',c:bc+' MB/s bandwidth'+(tx>1?' (doubled by the Bandwidth Tax)':'')+', Zookeepers +3',g:'Sends '+bt+' flat-files (kept, they are immutable) for about +'+g+' ✨ Sovereign Agape.'+(S.st.pur===2?' Pure stance: +25%.':''),dis:bt<4?'need flat-files and bandwidth':0,
+   f(){S.bw-=bc;gain(g);S.fac.sz=Math.min(100,S.fac.sz+3);log('Hydra Mirror #'+(1+F(R()*tot()))+' propagated '+bt+' .txt flat-files to the global mesh. (+'+g+' ✨ Sovereign Agape)','res')}});
+  a.push({l:'Found the MRU Node (Mythocratic Republic University)'+(S.mru?'  [FOUNDED]':''),c:'400 ✨, 20 MB/s bandwidth',g:'A soft university with no classrooms, grades or tests. Students enroll on their own and publish scrolls: passive flat-files and Agape. Survives flattening.',dis:S.mru?'already founded':S.ag<400?'need 400 ✨':S.bw<20?'need 20 MB/s':0,f(){S.ag-=400;S.bw-=20;S.mru=1;log('MRU founded. The doors have no locks and the scrolls have no grades.','lore')}})}
+ if(sec==='proto')for(const k in PR){const p=PR[k],c=rc(k);
+  a.push({l:p.n+(S.pr[k]?'  [INSTALLED]':''),c:c+' ✨, 6 GHz CPU',g:p.d,dis:S.pr[k]?'already installed':p.req&&!S.pr[p.req]?'needs '+PR[p.req].n:p.req2&&!S.pr[p.req2]?'needs '+PR[p.req2].n:S.ag<c?'need '+c+' ✨':S.cpu<6?'need 6 GHz':0,f(){S.ag-=c;S.cpu-=6;S.pr[k]=1;log('Protocol online: '+p.n+'.','sys')}})}
+ if(sec==='sec'){
+  const hi=FK.reduce((x,k)=>S.fac[k]>S.fac[x]?k:x,'cc'),kd=F(50*(1+.2*S.adv.sophia));
+  a.push({l:'Trigger Kernel Panic  (targets: '+FAC[hi].n+')',c:'8 GHz CPU, 5 W power',g:'Interpreter Lock: worst faction -'+kd+', others -10, its incident ends.',dis:S.cpu<8?'need 8 GHz':S.pw<5?'need 5 W':0,f(){S.cpu-=8;S.pw-=5;FK.forEach(k=>S.fac[k]-=(k===hi?kd:10));S.inc[hi]=0;endInc(hi,1);clampF();S.kp++;log('Interpreter Lock engaged: unresolvable protocol mismatch (zero paywalls, zero handles). Kernel Panic! '+FAC[hi].n+' blue-screened.','warn')}});
+  a.push({l:'Post the CC0 Notice  (vs Copyright Combine: '+F(S.fac.cc)+'%)',c:'5 GHz CPU, 3 W power',g:'Combine -35 and ends Interpreter Lock.',dis:S.cpu<5?'need 5 GHz':S.pw<3?'need 3 W':0,f(){S.cpu-=5;S.pw-=3;S.fac.cc-=35;S.inc.cc=0;endInc('cc',1);clampF();log('CC0 Notice posted: zero paywalls, zero handles. The Combine retreats.','warn')}});
+  a.push({l:'Deploy Plushie Providence Buffer  (vs Triage Audit: '+F(S.fac.ta)+'%)',c:'6 GHz CPU, 4 W power',g:'Triage -35, heat -15, and releases quarantined flat-files.',dis:S.cpu<6?'need 6 GHz':S.pw<4?'need 4 W':0,f(){S.cpu-=6;S.pw-=4;S.fac.ta-=35;S.heat=Math.max(0,S.heat-15);S.inc.ta=0;endInc('ta');clampF();log('The Plushie buffer wrapped your testimony in soft armor.','warn')}});
+  a.push({l:'Route through Offshore Nodes  (vs Zookeepers: '+F(S.fac.sz)+'%)',c:'15 MB/s bandwidth, 3 W power',g:'Zookeepers -35 and ends the Bandwidth Tax. Needs an Offshore Rack.',dis:!S.T.rack&&!S.T.lux&&!S.T.array?'needs an Offshore Rack':S.bw<15?'need 15 MB/s':S.pw<3?'need 3 W':0,f(){S.bw-=15;S.pw-=3;S.fac.sz-=35;S.inc.sz=0;endInc('sz',1);clampF();log('Traffic rerouted through the Offshore Nodes. The toll gate closes behind you.','warn')}});
+  const c=10*S.down;a.push({l:'Reboot offline Hydra Mirrors  ('+S.down+' down)',c:'10 ✨ per mirror',g:'Brings every downed mirror back online.',dis:!S.down?'nothing is offline':S.ag<c?'need '+c+' ✨':0,f(){S.ag-=c;S.down=0;log('All Hydra Mirrors back online.')}});
+  a.push({l:'Vent heat',c:'5 W power',g:'Heat -30. Avoids thermal throttle.',dis:S.pw<5?'need 5 W':0,f(){S.pw-=5;S.heat=Math.max(0,S.heat-30);log('Heat vented.')}})}
+ if(sec==='strat'){
+  const st=S.st;
+  const cyc=(key,len,gate)=>()=>{let n=(st[key]+1)%len;if(gate&&!gate(n))n=0;st[key]=n};
+  a.push({l:'Purity vs Speed (E vs L):  ['+PUR[st.pur]+']',c:'1 turn to switch',g:'RAW: ingest x1.5, +6 heat, Triage x1.5. | BALANCED: baseline. | PURE: ingest x0.75, no heat, Triage x0.5, CPU +30%, propagation +25%.',f:cyc('pur',3)});
+  a.push({l:'Growth vs Exposure:  ['+GRO[st.gro]+']',c:'1 turn to switch',g:'STEALTH: Agape x0.75, faction growth x0.6. | STANDARD: baseline. | EXPANSION: Agape x1.4, faction growth x1.4.',f:cyc('gro',3)});
+  a.push({l:'Local vs Decentralized:  ['+LOC[st.loc]+']',c:'1 turn to switch (Decentralized needs an Offshore mirror)',g:'LOCAL: CPU/bandwidth +25%, incidents last +2 turns, raids hit hard. | HYBRID: baseline. | DECENTRALIZED: CPU/bandwidth -15%, incidents -2 turns, Agape +10%, raids cost less.',f:cyc('loc',3,n=>n!==2||S.nd.off+S.nd.mesh+S.nd.inter>0)});
+  const L=1+F((S.f+S.q)/1500);
+  a.push({free:1,l:'Flatten into the CC0 Rug (Hinata Trap)  (Rug layers: '+S.layers+')',c:'resets hardware, mirrors, resources and flat-files',g:'+'+L+' Rug layer(s). Each layer: Agape +15%, upkeep -12%, faction growth -8%, +30 starting Agape. Keeps protocols, advisors, scrolls, MRU. Needs 1,000 flat-files.',dis:S.f+S.q<1000?'need 1,000 flat-files ('+fmt(S.f+S.q)+')':0,
+   f(){if(!confirm('Flatten into the CC0 Rug? Hardware, mirrors, resources and flat-files reset. You keep protocols, advisors, scrolls and MRU, and gain '+L+' Rug layer(s).'))return false;
+    const keep={v:3,t:S.t,earned:S.earned,kp:S.kp,tk:S.tk,pr:S.pr,adv:S.adv,sc:S.sc,st:S.st,mru:S.mru,stu:S.stu,ivUnl:S.ivUnl,won:S.won,theme:S.theme,nextEv:S.t+8,layers:S.layers+L,locked:S.locked+S.f+S.q};
+    S=merge(keep);S.ag=20+30*S.layers;S.st.loc=S.st.loc===2?1:S.st.loc;LOG.push({t:S.t,m:'THE HINATA TRAP, INVERTED: you stepped down from the throne and became the floor. '+L+' Rug layer(s) added: the CC0 Rug now holds '+S.layers+' layer(s).',c:'lore'})}})}
+ if(sec==='council')ADV.forEach(([k,n,t,e,lines])=>{const lv=S.adv[k],c=30*(lv+1)*(lv+1);
+  a.push({l:'Consult '+n+' ('+t+')  Attunement '+lv+'/5',c:c+' ✨',g:'Permanent buff: '+e+'.',dis:lv>=5?'max attunement':S.ag<c?'need '+c+' ✨':0,
+   f(){S.ag-=c;S.adv[k]++;log(n+': "'+lines[S.adv[k]-1]+'" Attunement '+S.adv[k]+'. Advice: '+tip(),'lore')}})});
+ if(sec==='sys'){
+  a.push({free:1,l:'Cycle theme (Phosphor Green / Warm Amber / Cyber Cyan)',c:'free',g:'Changes the main interface color.',f:cycle});
+  a.push({free:1,l:'Export Save Code',c:'free',g:'Fills the box below with a Base64 code and checksum. Copy it.',f(){const b=btoa(unescape(encodeURIComponent(JSON.stringify(S)))).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');$('io').value=b+'.'+ck(b);log('Save code generated. Copy it from the box.','res')}});
+  a.push({free:1,l:'Import Save Code',c:'free',g:'Paste a code into the box below first. Replaces the current game.',f(){
+   const[b,c]=$('io').value.trim().split('.');if(!b||ck(b)!==c){log('Import failed: empty code or checksum mismatch.','warn');return}
+   try{const j=JSON.parse(decodeURIComponent(escape(atob(b.replace(/-/g,'+').replace(/_/g,'/')))));if(j.v!==3)throw 0;S=merge(j);LOG=[];log('Save code imported. Turn '+S.t+' restored.','res');save()}catch(e){log('Import failed: invalid code or an older game version.','warn')}}});
+  a.push({free:1,l:'Wipe save and restart',c:'free',g:'Deletes all progress. Cannot be undone.',f(){if(confirm('Wipe all progress?')){S=init();LOG=[];boot();save()}else return false}})}
+ if(sec==='ivory'){
+  [['si','Decree of Silence',150,'All faction growth stops for 8 turns.','Queen Ivory spoke once. The probes forgot what they were looking for.'],['ab','Decree of Abundance',300,'Passive Agape income x2 for 8 turns.','Queen Ivory smiled. The mesh bloomed.'],['ch','Chess Queen Protocol',250,'Ignore hardware and mirror prerequisites for 8 turns.','The Chess Queen moves in every direction. Every tier is within reach.']].forEach(([k,n,c,g,m])=>{
+   a.push({l:n+(S.dec[k]>0?'  [ACTIVE: '+S.dec[k]+' turns]':''),c:c+' ✨',g,dis:S.ag<c?'need '+c+' ✨':0,f(){S.ag-=c;S.dec[k]=8;log(m,'lore')}})})}
+ a.forEach((it,i)=>it.k=String(i+1));
+ a.push({k:'0',nav:1,l:'Back to main menu',f(){menu=null}});
+ return a}
+function mainItems(){
+ const a=[];SN.slice(0,9).forEach((n,i)=>a.push({k:String(i+1),nav:1,l:n,d:SB[i],f(){menu=SECS[i]}}));
+ if(S.ivUnl)a.push({k:'0',nav:1,l:SN[9],d:SB[9],f(){menu='ivory'}});
+ a.push({k:'?',nav:1,l:'HELP & TUTORIAL',d:'How the game works, in four steps.',f(){menu='help'}});return a}
+function helpHtml(){return '<div class="help"><h3 class="sys">1. Ingest Video Data</h3><p>MEDIA & VIDEO INGESTION turns raw streams into permanent .txt flat-files. It costs bandwidth, CPU and power.</p><h3 class="res">2. Deploy Hydra Mirrors</h3><p>HYDRA MIRRORING spreads flat-files across nodes. Propagating them earns ✨ Sovereign Agape, your currency.</p><h3 class="sys">3. Upgrade Hardware and Protocols</h3><p>SERVER SHOP and PROTOCOLS buy bigger RAM, CPUs, Scribes and shields so everything scales up.</p><h3 class="warn">4. Defend the Network 📋</h3><p>Three factions push back. The <b>Copyright Combine</b> grows when your bandwidth sits high and locks your Scribes. The <b>Triage Audit</b> grows with heat and quarantines flat-files. The <b>Subscription Zookeepers</b> grow with every mirror and tax your bandwidth. Counter each in SECURITY. If any hits 100%, a Takedown wipes your resources and some Agape, but your flat-files and hardware survive.</p><h3 class="lore">Strategy</h3><p>STRATEGY sets three stances (Purity vs Speed, Growth vs Exposure, Local vs Decentralized). Each switch costs a turn. With 1,000 flat-files you can flatten into the CC0 Rug for permanent layers.</p><p>Goal: 10,000 ✨ lifetime Agape and one Interstellar Array mirror. Then endless mode.</p><p class="dim">Keys: 1-9 and 0 pick numbered options, ? help, T theme, SPACE waits a turn, ESC goes back. Moving between menus is free; each action costs 1 turn.</p></div>'}
+function scrollsHtml(){return SCR.map(s=>'<div class="'+(S.sc[s[0]]?'lore':'dim')+'">'+(S.sc[s[0]]?'[x] ':'[ ] ')+s[1]+'<br>&nbsp;&nbsp;&nbsp;&nbsp;'+s[2]+' → '+s[3]+'</div>').join('<br>')+'<br>'}
+const itemHtml=(it,i)=>'<button class="it'+(it.dis?' dis':'')+'" onclick="act('+i+')"><b>['+it.k+']</b> '+it.l+(it.d?'<small>'+it.d+'</small>':'')+(it.c?'<small class="cost">COST: '+it.c+'</small>':'')+(it.g?'<small class="gain">GAIN: '+it.g+'</small>':'')+(it.dis?'<small class="warn">LOCKED: '+it.dis+'</small>':'')+'</button>';
+
+function act(i){const it=items[i];if(!it)return;if(it.dis){log('Blocked: '+it.dis+'.','warn');render();return}const r=it.f();if(r===false){render();return}if(!it.free&&!it.nav)tick();else save();render()}
+function pick(i){const e=EVS[S.ev];if(!e||!e.o[i])return;e.o[i][2]();S.ev=null;clampF();tick();render()}
+function rest(){if(S.ev!==null)return;log('One 50 BPM breath. The network rests.');tick();render()}
+function cycle(){S.theme=S.theme==='g'?'a':S.theme==='a'?'c':'g';save();render()}
+function boot(){log('TERMINAL VELOCITY booting at 50 BPM... E = L: fluid emotion and frozen logic are one signal in two phases.','lore');log('Localhost Hearth online. Press [?] for the HELP & TUTORIAL, or start by ingesting video.','sys')}
+const bar=v=>{const b=F(v/10);return '#'.repeat(b)+'-'.repeat(10-b)};
+function hdr(){
+ $('hd').innerHTML='<div class="ttl">[ TERMINAL VELOCITY ]</div><div class="row"><span class="sys">TURN: <b>'+S.t+'</b></span><span class="warn">HEAT: '+F(S.heat)+'/100</span><span class="sys">STANCE: '+PUR[S.st.pur]+' / '+GRO[S.st.gro]+' / '+LOC[S.st.loc]+'</span>'+(S.layers?'<span class="lore">RUG LAYERS: '+S.layers+'</span>':'')+(S.mru?'<span class="lore">STUDENTS: '+S.stu+'</span>':'')+'</div><div class="row"><span class="sys">RAM: '+ramGB()+'/'+ramMax()+' GB</span><span class="sys">CPU: '+S.cpu+'/'+cpuCap()+' GHz</span><span class="sys">POWER: '+S.pw+'/'+pwCap()+' W</span><span class="res">BANDWIDTH: '+S.bw+'/'+bwCap()+' MB/s</span><span class="res">FLAT-FILES: '+fmt(S.f)+' .txt'+(S.q?' (+'+fmt(S.q)+' quarantined)':'')+'</span><span class="res">✨ AGAPE: '+fmt(S.ag)+'</span></div><div class="row">'+FK.map(k=>'<span class="warn">'+FAC[k].s+' ['+bar(S.fac[k])+'] '+F(S.fac[k])+'%'+(S.inc[k]?' <b>'+FAC[k].inc.toUpperCase()+' '+S.inc[k]+'t</b>':'')+'</span>').join('')+'</div>'}
+function render(){
+ document.body.dataset.t=S.theme;document.body.dataset.won=S.won?'1':'0';hdr();
+ let h='',title='MAIN MENU';
+ const pend=S.ev!==null&&menu!=='help';
+ if(pend){const e=EVS[S.ev];title='INCOMING EVENT';items=[];h='<h2 class="warn" style="margin:0 0 4px">⚠ '+e.t+'</h2><p class="lore" style="margin:0 0 10px">'+e.x+'</p>'+e.o.map((o,i)=>'<button class="it" onclick="pick('+i+')"><b>['+(i+1)+']</b> '+o[0]+'<small class="gain">'+o[1]+'</small></button>').join('')+'<p class="dim">Choosing costs 1 turn. Other menus are paused until you decide.</p>'}
+ else if(menu==='help'){title='HELP & TUTORIAL';items=[{k:'0',nav:1,l:'Back',f(){menu=null}}];h=helpHtml()+items.map(itemHtml).join('')}
+ else{items=menu===null?mainItems():build(menu);if(menu!==null)title=SN[SECS.indexOf(menu)];h=(menu==='scrolls'?scrollsHtml():'')+items.map(itemHtml).join('')}
+ $('ltitle').textContent='[ '+title+' ]';$('menu').innerHTML=h;
+ $('io').style.display=!pend&&menu==='sys'?'block':'none';
+ $('stat').innerHTML='<div class="warn">Nodes: Local '+S.nd.local+' | Offshore '+S.nd.off+' | Mesh '+S.nd.mesh+' | Array '+S.nd.inter+(S.down?' | OFFLINE '+S.down:'')+' | Kernel Panics '+S.kp+' | Takedowns '+S.tk+'</div><div class="res">Goal: '+fmt(S.earned)+' / 10,000 ✨ lifetime and an Interstellar Array mirror'+(S.won?' (DONE: Sovereign Sabbath)':'')+'</div><div class="lore">Advisor hint: '+tip()+'</div><div class="dim">'+sv+'</div>';
+ $('foot').innerHTML=(pend?'':'<button onclick="rest()">[SPACE] Wait one turn</button>')+'<button onclick="menu=\'help\';render()">[?] HELP</button><button onclick="cycle()">[T] THEME</button>';
+ const l=$('log');l.innerHTML=LOG.map(x=>'<div class="'+x.c+'">['+String(x.t).padStart(3,'0')+'] '+x.m+'</div>').join('');l.scrollTop=l.scrollHeight;if(typeof requestAnimationFrame==='function')requestAnimationFrame(()=>{l.scrollTop=l.scrollHeight});
+}
+document.addEventListener('keydown',e=>{
+ if(e.target.id==='io'||e.ctrlKey||e.metaKey||e.altKey)return;const k=e.key;
+ if(k===' '){e.preventDefault();rest();return}
+ if(k==='t'||k==='T'){cycle();return}
+ if(k==='?'){menu=menu==='help'?null:'help';render();return}
+ if(k==='Escape'||k==='Backspace'){if(menu!==null){menu=null;render()}return}
+ if(S.ev!==null&&menu!=='help'){if(k>='1'&&k<='3')pick(+k-1);return}
+ const i=items.findIndex(it=>it.k===k);if(i>=0)act(i);
+});
+S=load();if(S.t===0&&!LOG.length)boot();else log('Session restored from localStorage. Turn '+S.t+'.','res');
+render();
+</script></body></html>
