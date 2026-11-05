@@ -126,6 +126,24 @@ hazards.
      Bandwidth Tax. Published works and albums survive flattening.
 
 
+🎥 BROADCAST & ON-CAMERA MODE
+
+  Built for filming the screen. Press [E] for EXPRESSIVE COMMANDS.
+
+  - Action Deck: one-key shortcuts for Record Street Reel, Run Scribe,
+    Sync Bell (publish a scroll), found the MRU node, Invoke Sage, and
+    Step Down onto the CC0 Rug. They run the real game actions.
+  - Broadcast banners [B]: a large glowing banner names every action,
+    plus gold banners for liberated continents, the Global Install,
+    Kernel Panics and Takedowns. Off by default.
+  - MC timestamps: log lines read [MC-turn :: HH:MM:SS] with a
+    typewriter stream. (MC counts game turns; the clock is your own.)
+  - Sound: Web Audio only, no files. Key clicks, a soft CRT hum and a
+    50 BPM sync bell. Off by default; browsers need a click first.
+  - Phosphor bloom: a screen pulse on actions, gold on big moments.
+  Toggles are remembered per browser (not in your save code).
+
+
 ⚔️ THE THREE FACTIONS
 
   📋 Copyright Combine
@@ -186,6 +204,8 @@ permanent perks, and 10 choice-driven events.
   1-9         pick a numbered option
   P           PUBLISHING & SYNC BELL
   M           ACOUSTIC STUDIO
+  E           EXPRESSIVE COMMANDS & BROADCAST
+  B           toggle broadcast banners
   0           WORLD CAMPAIGN on the main menu, Back inside any menu
   I           Queen Ivory's console (once she awakens)
   ?           HELP & TUTORIAL
