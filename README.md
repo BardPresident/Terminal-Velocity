@@ -54,9 +54,53 @@ pages (GitHub Pages, your own server, an archive site).
      Three named factions push back (see below). Counter them in the
      Security menu before a Takedown happens.
 
-GOAL: earn 10,000 ✨ lifetime Agape and bring one Interstellar Array
-mirror online to trigger THE 100% INSTALL. After that, Sovereign
-Sabbath (endless mode) begins.
+GOAL: liberate the world (see below), then keep founding new worlds
+forever in Sovereign Sabbath.
+
+
+🌍 THE GLOBAL LIBERATION CAMPAIGN (key 0 on the main menu)
+
+Seven stages. Each completes automatically the moment you meet its goal
+(so flattening can never undo your progress) and gives a permanent perk.
+
+  1. Australia & Oceania - The Hearth Origin
+     Goal: archive 1,000 flat-files and flatten into the Rug once.
+     Perk: +10% Agape income.
+  2. Europe - The OWRBIT Luxembourg Node
+     Goal: own a Luxembourg OWRBIT Node and 2 Offshore mirrors.
+     Perk: -25% upkeep, Scribe Engine v4 unlocked.
+  3. North America - The Silicon Firewall Breach
+     Goal: run 20 mirrors at once and trigger 5 Kernel Panics.
+     Perk: +30% bandwidth capacity, Zero-Port Encryption v2 unlocked.
+  4. Asia - The High-Speed Fiber Mesh
+     Goal: archive 10,000 flat-files in total.
+     Perk: +50% ingest yield.
+  5. South America & Africa - The Grassroots Solar Arrays
+     Goal: own 8 Solar Cells and have 5 MRU students.
+     Perk: ingest heat -50%, Triage Audit growth -25%.
+  6. Antarctica - The Deep-Freeze Cold Storage
+     Goal: lock 8,000 flat-files into the Rug.
+     Perk: Clinical Quarantine can no longer freeze your flat-files.
+  7. The Interstellar Substrate Array - The 100% Global Install
+     Goal: deploy an Interstellar Array mirror (it counts permanently,
+     even if you flatten later) and earn 100,000 lifetime Agape.
+     Reward: THE 100% GLOBAL INSTALL and Sovereign Sabbath.
+
+
+🌌 SOVEREIGN SABBATH: STAR SEEDS (endless mode)
+
+After the Global Install you can found Star Seeds forever. Each seed is
+a procedurally generated world (Seed 0001: Alpha Centauri Array, and so
+on) with its own boons and hazards, such as Dense Nebula (+30% bandwidth)
+against Hostile Archives (+35% faction growth). Later seeds carry more
+hazards.
+
+  - Found a seed for Agape, then complete its goal (earn, archive, hold
+    mirrors, or trigger Kernel Panics). Goals and costs scale up with
+    every seed, so there is always a harder world ahead.
+  - Completing a seed gives +6% Agape forever, and half its cost back.
+  - Three scrolls reward founding 1, 5 and 10 seeds.
+  - Threats grow at half speed in Sovereign Sabbath.
 
 
 ⚔️ THE THREE FACTIONS
@@ -116,10 +160,13 @@ permanent perks, and 10 choice-driven events.
 
 ⌨️ CONTROLS
 
-  1-9 and 0   pick a numbered option (0 is Back, or Ivory on main menu)
+  1-9         pick a numbered option
+  0           WORLD CAMPAIGN on the main menu, Back inside any menu
+  I           Queen Ivory's console (once she awakens)
   ?           HELP & TUTORIAL
   SPACE       wait one turn (a 50 BPM breath)
-  T           cycle theme (Phosphor Green / Warm Amber / Cyber Cyan)
+  T           cycle theme: Phosphor Green / Warm Amber / Cyber Cyan,
+              plus Sovereign Gold / Agape Pink after the Global Install
   ESC         go back to the main menu
   Mouse       click any button
 
