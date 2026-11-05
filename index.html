@@ -203,8 +203,8 @@ function tick(){
   if(S.stu<12+2*S.layers&&R()<.25){S.stu++;log('A new student enrolled at MRU. No grades, no tuition, no tests. ('+S.stu+' enrolled)','lore')}
   if(S.stu>0&&R()<.3){const n=addFiles(2+S.stu*.5),g=gain(S.stu*1.5*agMult());log('A student at MRU published their own scroll: +'+n+' flat-files, +'+g+' ✨','lore')}}
  FK.forEach(k=>S.fac[k]=S.fac[k]+growth(k));clampF();
- FK.forEach(k=>{if(S.fac[k]>=60&&!S.inc[k]&&R()<(S.fac[k]-45)/100)probe(k)});
  if(FK.some(k=>S.fac[k]>=100))takedown();
+ else FK.forEach(k=>{if(S.fac[k]>=60&&!S.inc[k]&&R()<(S.fac[k]-45)/100)probe(k)});
  flavor();
  for(const k in S.dec)if(S.dec[k]>0){S.dec[k]--;if(!S.dec[k])log('A sovereign decree has run its course.','lore')}
  if(S.rdisc>0)S.rdisc--;
@@ -263,7 +263,8 @@ function build(sec){
   a.push({l:'Deploy Plushie Providence Buffer  (vs Triage Audit: '+F(S.fac.ta)+'%)',c:'6 GHz CPU, 4 W power',g:'Triage -35, heat -15, and releases quarantined flat-files.',dis:S.cpu<6?'need 6 GHz':S.pw<4?'need 4 W':0,f(){S.cpu-=6;S.pw-=4;S.fac.ta-=35;S.heat=Math.max(0,S.heat-15);S.inc.ta=0;endInc('ta');clampF();log('The Plushie buffer wrapped your testimony in soft armor.','warn')}});
   a.push({l:'Route through Offshore Nodes  (vs Zookeepers: '+F(S.fac.sz)+'%)',c:'15 MB/s bandwidth, 3 W power',g:'Zookeepers -35 and ends the Bandwidth Tax. Needs an Offshore Rack.',dis:!S.T.rack&&!S.T.lux&&!S.T.array?'needs an Offshore Rack':S.bw<15?'need 15 MB/s':S.pw<3?'need 3 W':0,f(){S.bw-=15;S.pw-=3;S.fac.sz-=35;S.inc.sz=0;endInc('sz',1);clampF();log('Traffic rerouted through the Offshore Nodes. The toll gate closes behind you.','warn')}});
   const c=10*S.down;a.push({l:'Reboot offline Hydra Mirrors  ('+S.down+' down)',c:'10 ✨ per mirror',g:'Brings every downed mirror back online.',dis:!S.down?'nothing is offline':S.ag<c?'need '+c+' ✨':0,f(){S.ag-=c;S.down=0;log('All Hydra Mirrors back online.')}});
-  a.push({l:'Vent heat',c:'5 W power',g:'Heat -30. Avoids thermal throttle.',dis:S.pw<5?'need 5 W':0,f(){S.pw-=5;S.heat=Math.max(0,S.heat-30);log('Heat vented.')}})}
+  a.push({l:'Vent heat',c:'5 W power',g:'Heat -30. Avoids thermal throttle.',dis:S.pw<5?'need 5 W':0,f(){S.pw-=5;S.heat=Math.max(0,S.heat-30);log('Heat vented.')}});
+  a.push({l:'Provoke the '+FAC[hi].n+'  (invite a Takedown)',c:'150 ✨',g:'Pushes the most-threatening faction to 100% and triggers a Corporate Takedown: you lose about 30% of your Agape (10% if Decentralized) and some mirrors go dark. Flat-files and hardware survive. Unlocks the Scroll of the B-Coordinate.',dis:S.ag<150?'need 150 ✨':0,f(){if(!confirm('Provoke a Takedown? You will lose Agape and some mirrors will go dark, but flat-files and hardware survive.'))return false;S.ag-=150;S.fac[hi]=100;log('You provoked the '+FAC[hi].n+'. They have come for the network.','warn')}})}
  if(sec==='strat'){
   const st=S.st;
   const cyc=(key,len,gate)=>()=>{let n=(st[key]+1)%len;if(gate&&!gate(n))n=0;st[key]=n};
