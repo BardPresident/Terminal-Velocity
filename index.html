@@ -652,6 +652,7 @@ const DOCS={
  wc:["wc [-lwc] [FILE...]","Count lines, words and characters of files or piped input.","free",["ls /flat-files | wc -l","wc -w /flat-files/Books/014-ivory.txt"],"grep cat"],
  grep:["grep [-ivcnrl] PATTERN [FILE...]","Search text for a regular expression. -i ignore case, -v invert, -c count, -n line numbers, -l file names only, -r recurse into folders. Real text files are fetched live (at most 60 per folder). Video, audio and images are matched by file name only.","free",["grep -i bard flat-files/Books/001-ivory-heart.txt","grep -r Lecture flat-files/01*","ls /flat-files | grep 2015"],"cat ls wc"],
  cd:["cd [DIR]","Change directory. Paths may be absolute, relative, or start with ~ (your home). cd alone goes home. The prompt shows where you are.","free",["cd /flat-files","cd ..","cd ~"],"pwd ls"],
+ find:["find [PATH] [-name PATTERN] [-type f|d]","Search for files and folders by name, like Linux find. Case-insensitive, * and ? wildcards. Shows full paths, so you can see where a file lives. Locked or deleted files do not appear.","free",["find / -name \"*Static*\"","find /flat-files -type d","find . -name \"*.wav\" | wc -l"],"ls cd mission"],
  pwd:["pwd","Print the current directory.","free",["pwd"],"cd"],
  du:["du [-sh] [PATH...]","Total size of a file or folder. Only files you have unlocked are counted.","free",["du -sh /flat-files","du -sh /flat-files/Books"],"df ls"],
  df:["df","Archive size, how much is unlocked locally, files sealed in the Rug, and mirror count.","free",["df"],"du status"],
@@ -717,7 +718,7 @@ function cSuggest(n){const c=Object.keys(CMDS).filter(k=>cLev(n,k)<=2||(n.length
 function cHelpCmd(n){const d=DOCS[n]||DOCS[{cls:"clear",top:"status",sleep:"wait",sh:"run",bash:"run",logout:"exit"}[n]];
  if(!d)return TOPICS[n]||("help: no manual entry for '"+n+"'."+cSuggest(n)+"\nTry: help topics");
  return n.toUpperCase()+"\n  USAGE     "+d[0]+"\n  COST      "+d[2]+"\n\n  "+d[1]+"\n\n  EXAMPLES\n"+d[3].map(e=>"    "+e).join("\n")+(d[4]?"\n\n  SEE ALSO  "+d[4]:"")}
-const HELPTXT="TERMINAL VELOCITY CONSOLE\nPress / to type, Esc to leave. Tab completes, Up/Down recalls history.\n\nNEW HERE?  help quickstart      Your archive: ls flat-files      Your mission: mission\n\nSTANDARD COMMANDS (free)\n  ls [-lahsSr1]  list      -s sizes, -h human, -S by size, -r reverse, -l long, -a hidden\n  cat  head  tail  wc  grep  cd  pwd  du  df  echo  clear  history  which\n  whoami  hostname  id  uname  date  uptime  fortune\n\nGAME VIEWS (free)\n  status  campaign  mission\n  clear  echo  whoami  hostname  id  uname  date  uptime  fortune  which  backup  menu  theme  banner  sound\n\nACTIONS (1 turn each)\n  ingest  record  scribe          make flat-files\n  sync  mirror  found            mirror files, deploy nodes, found MRU\n  buy  research                  hardware and protocols\n  counter  panic  vent           security\n  stance  consult  decree  seed  strategy, advisors, Ivory, Star Seeds\n  publish  compose  play         media\n  rm  wait  choose  flatten      delete, rest, answer events, prestige\n\nHELP\n  help COMMAND   details and examples      COMMAND --help   same\n  help topics    quickstart, paths, pipes, missions, manifest, turns, scripts, deletion, keys, fun\n  Run any action with no argument to list its options and costs.\n";
+const HELPTXT="TERMINAL VELOCITY CONSOLE\nPress / to type, Esc to leave. Tab completes, Up/Down recalls history.\n\nNEW HERE?  help quickstart      Your archive: ls flat-files      Your mission: mission\n\nSTANDARD COMMANDS (free)\n  find [PATH] [-name PAT] [-type f|d]  locate a file by name\n  ls [-lahsSr1]  list      -s sizes, -h human, -S by size, -r reverse, -l long, -a hidden\n  cat  head  tail  wc  grep  cd  pwd  du  df  echo  clear  history  which\n  whoami  hostname  id  uname  date  uptime  fortune\n\nGAME VIEWS (free)\n  status  campaign  mission\n  clear  echo  whoami  hostname  id  uname  date  uptime  fortune  which  backup  menu  theme  banner  sound\n\nACTIONS (1 turn each)\n  ingest  record  scribe          make flat-files\n  sync  mirror  found            mirror files, deploy nodes, found MRU\n  buy  research                  hardware and protocols\n  counter  panic  vent           security\n  stance  consult  decree  seed  strategy, advisors, Ivory, Star Seeds\n  publish  compose  play         media\n  rm  wait  choose  flatten      delete, rest, answer events, prestige\n\nHELP\n  help COMMAND   details and examples      COMMAND --help   same\n  help topics    quickstart, paths, pipes, missions, manifest, turns, scripts, deletion, keys, fun\n  Run any action with no argument to list its options and costs.\n";
 
 /* --- sync + archive missions --- */
 const SYNF={"--local":"local","--offshore":"off","--owrbit":"off","--mesh":"mesh","--array":"inter","--inter":"inter"},SYNFLAG={local:"--local",off:"--offshore",mesh:"--mesh",inter:"--array"},NODEK=["local","off","mesh","inter"];
@@ -744,7 +745,7 @@ function msnAssign(){
  if(isDir){tgt=cd[F(r()*cd.length)];const fs=msnFiles(tgt);reward=F((200+80*d+fs.reduce((a,f)=>a+mbOf(f),0)*.05)*Math.sqrt(NW[k])*agMult())}
  else{tgt=cf[F(r()*cf.length)];reward=F((80+30*d+mbOf(tgt)*.1)*Math.sqrt(NW[k])*agMult())}
  S.msn.cur={t:isDir?"dir":"file",key:tgt.key,k,reward};
- log("NEW MISSION #"+(d+1)+": mirror "+(isDir?"the production "+tgt.n+" ("+msnFiles(tgt).length+" files)":"the file "+tgt.n)+" to "+NN[k]+". Reward about "+fmt(reward)+" ✨. Type: mission","lore")}
+ log("NEW MISSION #"+(d+1)+": mirror "+(isDir?"the production "+tgt.n+" ("+msnFiles(tgt).length+" files)":"the file "+tgt.n)+" (at "+cPath(["flat-files"].concat(tgt.key.split("/").filter(Boolean)))+") to "+NN[k]+". Reward about "+fmt(reward)+" ✨. Type: mission","lore")}
 function msnTick(){const m=S.msn&&S.msn.cur;
  if(m){const p=msnProg(m);
   if(!p||S.nd[m.k]<=0){S.msn.cur=null;log("Mission retargeted: the archive or your nodes changed.","sys")}
@@ -753,8 +754,8 @@ function msnTick(){const m=S.msn&&S.msn.cur;
 function msnLine(){const m=S.msn.cur;if(!m)return "Archive mission: none right now";const p=msnProg(m);return p?"Mission #"+(S.msn.done+1)+": mirror "+p.nd.n+" to "+NN[m.k]+" ("+p.done+"/"+p.fs.length+")":"Archive mission: pending"}
 function cMission(){const m=S.msn.cur;if(!m)return "No archive mission right now (you need unlocked files and at least one node). Completed: "+S.msn.done;
  const p=msnProg(m);if(!p)return "Mission target is not in the manifest any more. It will be retargeted.";
- const mb=p.fs.reduce((a,f)=>a+mbOf(f),0);const path=cPath(["flat-files"].concat(m.key.split("/").filter(Boolean)));
- return "MISSION #"+(S.msn.done+1)+"   ("+S.msn.done+" completed)\n  "+(m.t==="dir"?"Mirror the whole production":"Mirror the file")+"  "+p.nd.n+"\n  to "+NN[m.k]+"   ("+p.fs.length+" file(s), "+cHuman(mb*1048576)+")\n  progress  "+p.done+"/"+p.fs.length+" files\n  reward    about "+fmt(m.reward)+" ✨\n  do it     sync "+path+" "+SYNFLAG[m.k]+"\n            or the Sync mission target button in HYDRA MIRRORING, or: sync mission"+(S.nd[m.k]>0?"":"\n  needs the node first: mirror")}
+ const mb=p.fs.reduce((a,f)=>a+mbOf(f),0);const path=cPath(["flat-files"].concat(m.key.split("/").filter(Boolean)));const par=path.slice(0,path.lastIndexOf("/"))||"/";
+ return "MISSION #"+(S.msn.done+1)+"   ("+S.msn.done+" completed)\n  "+(m.t==="dir"?"Mirror the whole production":"Mirror the file")+"  "+p.nd.n+"\n  to "+NN[m.k]+"   ("+p.fs.length+" file(s), "+cHuman(mb*1048576)+")\n  location  "+path+(m.t==="dir"?"/":"")+"\n  look      "+(m.t==="dir"?"ls "+path:"ls "+par)+"\n  progress  "+p.done+"/"+p.fs.length+" files\n  reward    about "+fmt(m.reward)+" ✨\n  do it     sync "+path+" "+SYNFLAG[m.k]+"\n            or the Sync mission target button in HYDRA MIRRORING, or: sync mission"+(S.nd[m.k]>0?"":"\n  needs the node first: mirror")}
 function cSyncPath(paths,k){
  if(S.ev!==null&&S.ev!==undefined)return cEvent();
  if(!(S.nd[k]>0))return "sync: you have no "+NN[k]+" yet. Deploy one: mirror "+MIRK[k];
@@ -788,6 +789,14 @@ function cLs(args,stdin,piped){let L=0,A=0,H=0,SZ=0,SS_=0,RV=0;const paths=[];
   else if(k.length){const names=k.map(x=>x.n+(x.t==="d"?"/":""));const w=Math.max(...names.map(n=>n.length))+2;const cols=Math.max(1,F(66/w));
    for(let i=0;i<names.length;i+=cols)out.push(names.slice(i,i+cols).map(n=>n.padEnd(w)).join("").trimEnd())}});
  return out.join("\n")}
+function cFind(a){let start=".",pat=null,ty=null,i=0;if(a[0]&&a[0][0]!=="-"){start=a[0];i=1}
+ for(;i<a.length;i++){if((a[i]==="-name"||a[i]==="-iname")&&a[i+1]!=null){pat=a[++i]}else if(a[i]==="-type"&&a[i+1]){ty=a[++i]}else return "find: unknown option '"+a[i]+"'  (usage: find [PATH] [-name PATTERN] [-type f|d])"}
+ const root=vres(start);if(!root)return "find: '"+start+"': No such file or directory";
+ const rx=pat==null?null:new RegExp("^"+pat.replace(/[.+^${}()|[\]\\]/g,"\\$&").replace(/\*/g,".*").replace(/\?/g,".")+"$","i");
+ const base=cPath(cNorm(start)),out=[];
+ (function w(d,path){if(out.length>=200)return;const ok=(!rx||rx.test(d.n))&&(!ty||(ty==="d")===(d.t==="d"));if(ok&&(path!==base||!rx))out.push(path+(d.t==="d"&&path!=="/"?"/":""));if(d.t==="d")for(const k of d.kids().slice().sort((x,y)=>x.n.localeCompare(y.n)))if(k.n[0]!=="."||(pat&&pat[0]==="."))w(k,(path==="/"?"":path)+"/"+k.n)})(root,base);
+ if(!out.length)return "find: nothing matches"+(pat?" '"+pat+"'":"")+" under "+base+"  (locked files stay hidden until you archive more)";
+ return out.join("\n")+(out.length>=200?"\n... first 200 shown; narrow with -name":"")}
 async function cCat(args,stdin){if(!args.length)return stdin==null?"cat: missing file operand":stdin;const out=[];
  for(const f of cExpand(args)){const d=vres(f);if(!d){out.push("cat: "+f+": No such file or directory");continue}
   if(d.t==="d"){out.push("cat: "+f+": Is a directory");continue}
@@ -858,7 +867,7 @@ const MENUS=["shop","media","hydra","proto","sec","strat","council","scrolls","s
 const CMDS={
  help(a){if(!a[0])return HELPTXT;if(a[0]==="topics")return "TOPICS\n  "+Object.keys(TOPICS).join("   ")+"\nTry: help quickstart";return cHelpCmd(a[0])},mission:cMission,
  ls:cLs,cat:cCat,head:(a,s)=>cHeadTail("head",a,s),tail:(a,s)=>cHeadTail("tail",a,s),wc:cWc,grep:cGrep,rm:cRm,
- pwd:()=>cPath(cNorm(".")),
+ pwd:()=>cPath(cNorm(".")),find:cFind,
  cd(a){const p=a[0]||"~";const d=vres(p);if(!d)return "cd: "+p+": No such file or directory";if(d.t!=="d")return "cd: "+p+": Not a directory";CON.cwd=cPath(cNorm(p));return ""},
  clear(){LOG.length=0;return ""},cls(){LOG.length=0;return ""},
  echo:a=>a.join(" "),whoami:()=>cUser(),hostname:()=>cHost(),id:()=>"uid=1000("+cUser()+") gid=0(cc0) groups=0(cc0)",
