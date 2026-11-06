@@ -166,7 +166,7 @@ hazards.
     buy / research / mirror   grow the network (no argument lists options)
 
   COMMAND REFERENCE
-    FREE   ls [-lahsSr1] cat head tail wc grep [-ivcnrl] cd pwd du df
+    FREE   find [PATH] [-name PAT] [-type f|d]  ls [-lahsSr1] cat head tail wc grep [-ivcnrl] cd pwd du df
            status (top) campaign mission history clear echo whoami
            hostname id uname date uptime fortune which help man backup
            menu theme banner sound
