@@ -198,8 +198,8 @@ hazards.
   M Mesh, A Array.
 
   THE MANIFEST
-  When the page can reach manifest.json (same site, or
-  files.kkk.education), your real archive mounts at /flat-files. The
+  When the page can reach manifest.json (republicka.life/files/manifest.json first,
+  then files/manifest.json or manifest.json beside the game), your real archive mounts at /flat-files. The
   first folder is open from turn 0, and every 4 flat-files you archive
   unlock the next real file in order. cat, head, tail, wc and grep read
   real .txt files live. Videos, audio and images are binary. If the
