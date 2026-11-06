@@ -144,6 +144,78 @@ hazards.
   Toggles are remembered per browser (not in your save code).
 
 
+💻 THE CONSOLE (a simulated Linux shell)
+
+  Press / (or tap the prompt under the log) and type. Esc leaves the
+  prompt. Tab completes commands and paths. Up/Down recalls history.
+  Everything is simulated inside the page: nothing can touch your real
+  files. Type help for the manual, help COMMAND for details and
+  examples (every command also answers --help), and help topics for the
+  guides: quickstart, paths, pipes, missions, manifest, turns, scripts,
+  deletion, keys, fun.
+
+  Turns: looking around is free, anything that changes the game costs
+  one turn (a 50 BPM breath), exactly like the buttons.
+
+  QUICKSTART
+    ls flat-files             your archive (also /flat-files)
+    mission                   your current archive mission
+    sync <path> --local       mirror a file or a whole folder
+    record   then   scribe    make flat-files (or: ingest)
+    status                    power, heat and the three factions
+    buy / research / mirror   grow the network (no argument lists options)
+
+  COMMAND REFERENCE
+    FREE   ls [-lahsSr1] cat head tail wc grep [-ivcnrl] cd pwd du df
+           status (top) campaign mission history clear echo whoami
+           hostname id uname date uptime fortune which help man backup
+           menu theme banner sound
+    1 TURN ingest [--batch]  record  scribe
+           sync [PATH] [--local|--offshore|--mesh|--array]
+           sync mission    sync --restore
+           mirror <local|offshore|mesh|array>   found mru
+           buy <pi|desk|rack|lux|array|ram|solar>   research <id>
+           counter <panic|notice|buffer|route|reboot|vent|provoke>
+           stance <pur|gro|loc>   consult <rainbow|sage|noah|sophia>
+           publish [scroll|book|anthology]   compose   play
+           decree <n>   seed <found|abandon>   rm [-rf] PATH
+           wait   choose <1|2|3>   flatten --yes
+    SCRIPTS ./scripts/NAME.sh or run NAME.sh (one per action)
+    PIPES   cmd | grep | head | tail | wc
+
+  PATHS  /home/guest (with flat-files/), /flat-files, /books, /music,
+         /system (live logs), /scripts, /rug (sealed, read-only),
+         /mirrors (what each node holds), /etc.
+
+  ARCHIVE MISSIONS
+  There is always one mission, generated from your real file names:
+  mirror one file, then a whole production folder, alternating and
+  getting bigger. Run: mission. Sync with sync PATH --node, the button
+  in HYDRA MIRRORING, or sync mission. Cost is 1 MB/s of bandwidth per
+  30 MB of file, so a big folder takes several turns. Missions pay
+  Agape and unlock the Scroll of the First Sync and the Scroll of the
+  Archivist. Mirrored files show a tag in ls -l: L Local, O Offshore,
+  M Mesh, A Array.
+
+  THE MANIFEST
+  When the page can reach manifest.json (same site, or
+  files.kkk.education), your real archive mounts at /flat-files. The
+  first folder is open from turn 0, and every 4 flat-files you archive
+  unlock the next real file in order. cat, head, tail, wc and grep read
+  real .txt files live. Videos, audio and images are binary. If the
+  manifest cannot be reached, the game generates a procedural archive
+  of folders and files, so every command still works.
+
+  DELETION
+  rm deletes a file from your LOCAL node only (simulated). It costs a
+  turn and 4 flat-files per file. sync --restore pulls deleted files
+  back if you own a Hydra Mirror; otherwise the archive re-crystallizes
+  from the manifest after 100 turns. rm -rf / answers: the floor holds.
+
+  The prompt changes as you progress: guest@hearth, owrbit, firewall,
+  fiber, solar, coldstore, array, then sovereign@republicka.
+
+
 ⚔️ THE THREE FACTIONS
 
   📋 Copyright Combine
@@ -195,7 +267,7 @@ Ivory awakens at 5,000 lifetime Agape and opens the Sovereignty Console
 with three decrees.
 
 Also: the MRU node (students enroll and publish their own scrolls, no
-grades, no tuition, no tests), 13 Scrolls of Sovereign Progress with
+grades, no tuition, no tests), 15 Scrolls of Sovereign Progress with
 permanent perks, and 10 choice-driven events.
 
 
@@ -204,6 +276,7 @@ permanent perks, and 10 choice-driven events.
   1-9         pick a numbered option
   P           PUBLISHING & SYNC BELL
   M           ACOUSTIC STUDIO
+  /           focus the console prompt
   E           EXPRESSIVE COMMANDS & BROADCAST
   B           toggle broadcast banners
   0           WORLD CAMPAIGN on the main menu, Back inside any menu
