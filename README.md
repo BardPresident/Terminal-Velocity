@@ -87,6 +87,28 @@ Seven stages. Each completes automatically the moment you meet its goal
      Reward: THE 100% GLOBAL INSTALL and Sovereign Sabbath.
 
 
+🏗 INFRASTRUCTURE: THE ENDLESS LADDER  (menu D, console: build)
+
+Once you own an Interstellar Substrate Array and an Interstellar mirror,
+INFRASTRUCTURE opens. It is a ladder of facilities that never ends:
+Orbital Relay Station, Lunar Vault, Dyson Swarm Lattice, Planetary Hearth
+Core ... The B-Coordinate Engine, then procedurally named tiers beyond.
+
+  - Each facility adds Agape weight, plus CPU and bandwidth regen.
+  - Prices climb 22% per unit. At 10, 25, 50 and 100 units (then every
+    doubling) the output of that tier doubles.
+  - Tier N+1 unlocks when you own 5 of tier N. Unlocks survive flattening;
+    the facilities themselves do not.
+  - Bulk build: bulk 10 / 100 / max. One bulk purchase costs one turn.
+  - Bigger empires draw more attention. Faction growth rises with the log
+    of your weight, counters cost more, and a counter you use repeatedly
+    ADAPTS (up to about 70% weaker, wearing off over a few turns). Rotate
+    your tools, post notices, route offshore, and use Kernel Panic.
+  - Fortify (fortify cc|ta|sz) is permanent defense: 8% slower growth per
+    level, costing about 1.9x more each level.
+  - New events: Substation Brownout, Meteor Shower, Combine license offer,
+    Auditor inspection.
+
 🌌 SOVEREIGN SABBATH: STAR SEEDS (endless mode)
 
 After the Global Install you can found Star Seeds forever. Each seed is
@@ -96,11 +118,14 @@ against Hostile Archives (+35% faction growth). Later seeds carry more
 hazards.
 
   - Found a seed for Agape, then complete its goal (earn, archive, hold
-    mirrors, or trigger Kernel Panics). Goals and costs scale up with
-    every seed, so there is always a harder world ahead.
-  - Completing a seed gives +6% Agape forever, and half its cost back.
+    mirrors, trigger Kernel Panics, hold facilities, or unlock an
+    infrastructure tier). Goals and costs scale up steeply with every
+    seed, so there is always a harder world ahead.
+  - Completing a seed gives a permanent Agape bonus (it slowly
+    diminishes: about x1.05 for the first seed), and half its cost back.
   - Three scrolls reward founding 1, 5 and 10 seeds.
-  - Threats grow at half speed in Sovereign Sabbath.
+  - Threats grow slower in Sovereign Sabbath, but the discount fades as
+    you found more seeds.
 
 
 🎬 THE MEDIA PRODUCTION PIPELINE
@@ -171,6 +196,7 @@ hazards.
            hostname id uname date uptime fortune which help man backup
            menu theme banner sound
     1 TURN ingest [--batch]  record  scribe
+           build [TIER] [x10|max]  fortify <cc|ta|sz>  (free: bulk)
            sync [PATH] [--local|--offshore|--mesh|--array]
            sync mission    sync --restore
            mirror <local|offshore|mesh|array>   found mru
@@ -251,7 +277,8 @@ a phase transition, never a permadeath wipe.
 
 With 1,000 flat-files you can step down from the throne and become the
 floor. Hardware, mirrors, resources and flat-files reset. Each Rug layer
-permanently adds Agape income, lowers upkeep and slows faction growth.
+permanently adds Agape income (with diminishing returns), lowers
+upkeep and slows faction growth.
 Protocols, advisors, scrolls and the MRU node carry over.
 
 
