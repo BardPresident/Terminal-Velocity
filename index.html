@@ -796,7 +796,7 @@ function syncCore(fs,k){const set=synSet(k);const todo=fs.filter(f=>!set.has(cHa
  for(const f of todo){const c=syncCost(f);if(c>budget)break;budget-=c;bw+=c;n++;arr.push(cHash(f.key));ag+=Math.sqrt(Math.max(1,mbOf(f)))*NW[k]*.25}
  ag=F(ag*agMult());if(n){S.bw-=bw;gain(ag);S.fac.sz=Math.min(100,S.fac.sz+2)}
  return {n,left:todo.length-n,bw,ag,total:fs.length,already:fs.length-todo.length,first:todo[0]}}
-const syncMsg=(r,k)=>"Synced "+r.n+" of "+r.total+" file(s) to "+NN[k]+": -"+r.bw+" MB/s, +"+fmt(r.ag)+" ✨."+(r.left?" "+r.left+" remain: run it again next turn.":"");
+const syncMsg=(r,k)=>"Synced "+r.n+" file(s) to "+NN[k]+" using "+r.bw+" MB/s of bandwidth, +"+fmt(r.ag)+" ✨. Folder progress "+(r.already+r.n)+"/"+r.total+"."+(r.left?" "+r.left+" left. Bandwidth is the limit (large files cost more) and it recovers each turn: run it again next turn, or build more bandwidth.":" Done.");
 function msnFiles(node){const o=[];(function w(n){if(n.d)n.k.forEach(w);else if(!n.hid)o.push(n)})(node);return o}
 function msnProg(m){const nd=MF.byKey[m.key];if(!nd)return null;const fs=msnFiles(nd);const s=synSet(m.k);return {nd,fs,done:fs.filter(f=>s.has(cHash(f.key))).length}}
 function msnAssign(){
