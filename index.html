@@ -302,7 +302,7 @@ function tick(){
  S.bw=Math.min(bwCap(),S.bw+F((4+mcSum('bw'))*thr*lm*fx('bw')));
  FK.forEach(k=>{if(S.inc[k]>0){if(k==='sz')S.bw=Math.max(0,S.bw-F((5+tot())*(1-Math.min(.5,.05*S.albums))*(S.play>0?.5:1)));S.inc[k]--;if(S.inc[k]<=0)endInc(k)}});
  if(sLv()&&!S.inc.cc&&S.bw>=3&&S.cpu>=2){S.bw-=3;S.cpu-=2;const n=addFiles(3+ramGB()/4);log('Scribe auto-ingested a stream: +'+n+' flat-files.','sys')}
- if(sLv()&&!S.inc.cc&&S.raw>0&&S.cpu>=2&&S.bw>=2){const a=Math.min(S.raw,60*sLv());S.raw-=a;S.cpu-=2;S.bw-=2;const n=addFiles(a);S.heat=Math.max(0,S.heat-3);if(R()<.4)log('Scribe Engine v'+sLv()+' transcribed '+a+' hours of stored footage in the background: +'+fmt(n)+' flat-files.','sys')}
+ if(S.rec)S.rec=0;else if(sLv()&&!S.inc.cc&&S.raw>0&&S.cpu>=2&&S.bw>=2){const a=Math.min(S.raw,60*sLv());S.raw-=a;S.cpu-=2;S.bw-=2;const n=addFiles(a);S.heat=Math.max(0,S.heat-3);if(R()<.4)log('Scribe Engine v'+sLv()+' transcribed '+a+' hours of stored footage in the background: +'+fmt(n)+' flat-files.','sys')}
  const pm=agMult()*[.75,1,1.4][S.st.gro]*(S.st.loc===2?1.1:1)*(S.dec.ab>0?2:1);
  gain(eff()*(1+Math.min(S.f,3000)/500)*.5*pm+S.adv.rainbow+S.stu*.25);
  if(S.pub.s+S.pub.b+S.pub.a)gain((S.pub.s*3+S.pub.b*40+S.pub.a*500)*agMult());
@@ -355,7 +355,7 @@ function build(sec){
   const cap=150+150*sLv(),rcap=400+40*ramGB(),rg=150+15*ramGB();
   const rh=F((pur===2?0:pur===0?14:8)*(S.stage>=5?.5:1));
   a.push({l:'Record Street Footage 🎥 (raw E)  (stock: '+fmt(S.raw)+'/'+fmt(rcap)+' hrs)',c:'4 MB/s bandwidth, 1 W power'+(rh?', +'+rh+' heat':''),g:'+'+rg+' hours of raw, high-entropy footage. It does nothing until a Scribe turns it into flat-files, and unscribed footage heats the network every turn.',dis:S.raw>=rcap?'footage storage full: run a Scribe':S.bw<4?'need 4 MB/s':S.pw<1?'need 1 W':0,
-   f(){S.bw-=4;S.pw-=1;S.heat=Math.min(100,S.heat+rh);const n=Math.min(rg,rcap-S.raw);S.raw+=n;log('Street footage recorded: +'+n+' hours of raw E. Scribe it before it heats the network.','sys')}});
+   f(){S.bw-=4;S.pw-=1;S.heat=Math.min(100,S.heat+rh);const n=Math.min(rg,rcap-S.raw);S.raw+=n;S.rec=1;log('Street footage recorded: +'+n+' hours of raw E (stock '+fmt(S.raw)+'). '+(sLv()?'Your Scribe Engine v'+sLv()+' will transcribe up to '+60*sLv()+' hours of stock per turn on its own.':'Scribe it before it heats the network.'),'sys')}});
   const sa=Math.min(S.raw,cap),sb=Math.max(1,Math.ceil(3*cr)),sc=Math.ceil(6*cr*pm),sf=F(sa*sm*ingMult());
   a.push({l:'Run Scribe Engine 📜 (E → L phase shift)',c:sb+' MB/s bandwidth, '+sc+' GHz CPU, 1 W power',g:'Transcribes up to '+cap+' hours of footage (you have '+fmt(S.raw)+') into about +'+fmt(sf)+' permanent flat-files, and cools the network by 12 heat. Better Scribe Engines raise the cap and the yield.',dis:lock||(S.raw<1?'no raw footage: record some first':S.bw<sb?'need '+sb+' MB/s':S.cpu<sc?'need '+sc+' GHz':S.pw<1?'need 1 W':0),
    f(){S.raw-=sa;S.bw-=sb;S.cpu-=sc;S.pw-=1;S.heat=Math.max(0,S.heat-12);const n=addFiles(sa*sm);log('The Scribe Engine transcribed '+fmt(sa)+' hours of raw footage into permanent .txt: E crystallized into L. (+'+fmt(n)+' flat-files)')}})}
