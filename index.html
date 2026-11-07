@@ -1010,7 +1010,7 @@ function cMission(a){const M=S.msn,B=M.board||[];a=a||[];
  if(!B.length)o+="\n  No contracts right now. "+(!MF.ready?"The archive manifest is still loading.":mfU()<=mfR()?"You have no live files yet: record footage and run the Scribe.":"New ones appear each turn. Build a mirror node or unlock more files to widen the pool.")+"\n";
  for(const c of B){const p=ctProg(c)||{done:0,need:1};o+="\n #"+c.id+(S.msn.pin===c.id?"*":" ")+" ["+CT[c.t].n.toUpperCase().padEnd(7)+"] "+ctText(c)+"\n       "+p.done+"/"+p.need+"   +"+fmt(c.reward)+" ✨  +"+c.rep+" ★"+(c.dl?"   deadline turn "+c.dl+" ("+Math.max(0,c.dl-S.t)+" left)":"")+"\n       "+ctHow(c)+"\n"}
  return o+"\nmission N tracks one · do N works on it · abandon N drops it (resets streak) · rank shows perks"}
-function cDo(a){if(!a[0])return "usage: do N   (N is a contract number from: board)";const c=(S.msn.board||[]).find(x=>x.id===+a[0]);if(!c)return "do: no contract #"+a[0]+". Run: board";return cFire("hydra","do "+c.id)}
+function cContractDo(a){if(!a[0])return "usage: do N   (N is a contract number from: board)";const c=(S.msn.board||[]).find(x=>x.id===+a[0]);if(!c)return "do: no contract #"+a[0]+". Run: board";return cFire("hydra","do "+c.id)}
 function cAbandon(a){const B=S.msn.board||[],c=B.find(x=>x.id===+a[0]);if(!c)return "usage: abandon N  (see: board)";S.msn.board=B.filter(x=>x!==c);S.msn.streak=0;S.msn.cd[c.key]=S.t+30;return "Contract #"+c.id+" abandoned. Streak reset."}
 function cRank(){const i=rankOf(),nxt=i<RANKS.length-1?rankAt(i+1):0;let o="STANDING  ★ "+RANKS[i]+"  (rank "+i+"/"+(RANKS.length-1)+")\n  reputation   "+fmt(S.rep||0)+(nxt?"   next "+RANKS[i+1]+" at "+fmt(nxt)+" ("+fmt(nxt-S.rep)+" to go)":"   (max)")+"\n  perks        "+slotsOf()+" board slots, Agape +"+(1.2*i).toFixed(1)+"%\n  contracts    "+S.msn.done+" done  ("+Object.keys(CT).map(t=>CT[t].n+" "+((S.msn.by||{})[t]||0)).join(", ")+")\n  streak       "+(S.msn.streak||0)+" now, "+(S.msn.best||0)+" best (+5% rep per streak, max +50%)\n  unlocks      "+Object.keys(CT).map(t=>CT[t].n+(CT[t].r>i?" (rank "+CT[t].r+")":" ✓")).join(", ")+"\n\nLADDER\n";
  RANKS.forEach((n,j)=>{o+="  "+(j===i?"▶":" ")+String(j).padStart(2)+"  "+n.padEnd(22)+fmt(rankAt(j))+"\n"});return o}
@@ -1131,7 +1131,7 @@ function cRestore(){const ks=Object.keys(S.del||{});if(!ks.length)return "sync: 
 const JOKE=(m)=>()=>m;
 const MENUS=["shop","media","hydra","proto","sec","strat","council","scrolls","sys","ivory","camp","pub","music","deck"];
 const CMDS={
- help(a){if(!a[0])return HELPTXT;if(a[0]==="topics")return "TOPICS\n  "+Object.keys(TOPICS).join("   ")+"\nTry: help quickstart";return cHelpCmd(a[0])},mission:cMission,board:cMission,missions:cMission,do:cDo,verify:cVerify,repair:cRepair,rank:cRank,standing:cRank,abandon:cAbandon,
+ help(a){if(!a[0])return HELPTXT;if(a[0]==="topics")return "TOPICS\n  "+Object.keys(TOPICS).join("   ")+"\nTry: help quickstart";return cHelpCmd(a[0])},mission:cMission,board:cMission,missions:cMission,do:cContractDo,verify:cVerify,repair:cRepair,rank:cRank,standing:cRank,abandon:cAbandon,
  ls:cLs,cat:cCat,head:(a,s)=>cHeadTail("head",a,s),tail:(a,s)=>cHeadTail("tail",a,s),wc:cWc,grep:cGrep,rm:cRm,
  pwd:()=>cPath(cNorm(".")),find:cFind,
  cd(a){const p=a[0]||"~";const d=vres(p);if(!d)return "cd: "+p+": No such file or directory";if(d.t!=="d")return "cd: "+p+": Not a directory";CON.cwd=cPath(cNorm(p));return ""},
