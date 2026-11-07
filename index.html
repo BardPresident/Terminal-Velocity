@@ -1504,14 +1504,14 @@ let startSel=0;
 function startList(q){const l=$("#sl");l.innerHTML="";q=(q||"").toLowerCase().trim();const cats={};for(const id in OS.apps){const a=OS.apps[id];if(a.hidden)continue;if(q&&!(a.name+" "+a.cat+" "+(a.kw||"")).toLowerCase().includes(q))continue;(cats[a.cat]=cats[a.cat]||[]).push(a)}
  const order=["Games","System","Accessories","Media","Tools"];let n=0;for(const c of Object.keys(cats).sort((a,b)=>order.indexOf(a)-order.indexOf(b))){l.append(h("h6",{},c));for(const a of cats[c].sort((x,y)=>x.name.localeCompare(y.name))){l.append(h("div",{class:"si"+(n++===startSel?" sel":""),"data-app":a.id,onclick:()=>{startToggle(false);OS.open(a.id)}},ic(a.icon),a.name,h("small",{},a.desc||"")))}}
  if(!n)l.append(h("div",{class:"pad dim"},"No app matches."))}
-function startToggle(on){const s=$("#start");on=on==null?!s.classList.contains("on"):on;s.classList.toggle("on",on);$("#sbtn").classList.toggle("on",on);if(on){startSel=0;$("#sq").value="";startList("");setTimeout(()=>$("#sq").focus(),0)}}
+function startToggle(on){const s=$("#start");on=on==null?!s.classList.contains("on"):on;s.classList.toggle("on",on);$("#sbtn").classList.toggle("on",on);if(on){startSel=0;$("#sq").value="";startList("");if(!matchMedia("(pointer:coarse)").matches)setTimeout(()=>$("#sq").focus(),0)}else $("#sq").blur()}
 function buildStart(){$("#sbtn").append(ic("logo"),h("span",{},"TV·OS"));$("#sbtn").onclick=e=>{e.stopPropagation();startToggle()};
  $("#sq").addEventListener("input",e=>{startSel=0;startList(e.target.value)});$("#sq").addEventListener("keydown",e=>{const items=$$(".si",$("#sl"));if(e.key==="ArrowDown"){startSel=Math.min(items.length-1,startSel+1);startList($("#sq").value)}else if(e.key==="ArrowUp"){startSel=Math.max(0,startSel-1);startList($("#sq").value)}else if(e.key==="Enter"){const it=items[startSel];if(it){startToggle(false);OS.open(it.dataset.app)}}else if(e.key==="Escape")startToggle(false)});
  const f=$("#sf");f.append(h("span",{},"Terminal Velocity OS "+OS.ver),h("span",{style:"display:flex;gap:6px"},h("button",{class:"btn sm",onclick:()=>{startToggle(false);cycleTheme(1)}},"Theme"),h("button",{class:"btn sm",onclick:async()=>{startToggle(false);if(await dlgConfirm("Reboot Terminal Velocity OS? Unsaved notes are kept as drafts.","Reboot","Reboot"))location.reload()}},ic("power"),"Reboot")));
  addEventListener("pointerdown",e=>{if(!e.target.closest("#start")&&!e.target.closest("#sbtn"))startToggle(false)})}
 /* ---- spotlight ---- */
 let spSel=0,spRes=[];
-function spot(on){const s=$("#spot");s.classList.toggle("on",on);if(on){$("#spi").value="";spRender("");setTimeout(()=>$("#spi").focus(),0)}}
+function spot(on){const s=$("#spot");s.classList.toggle("on",on);if(on){$("#spi").value="";spRender("");if(!matchMedia("(pointer:coarse)").matches)setTimeout(()=>$("#spi").focus(),0)}else $("#spi").blur()}
 function spRender(q){q=q.trim();const r=$("#spr");r.innerHTML="";spRes=[];const ql=q.toLowerCase();
  for(const id in OS.apps){const a=OS.apps[id];if(a.hidden)continue;if(!ql||(a.name+" "+(a.kw||"")).toLowerCase().includes(ql))spRes.push({t:a.name,s:"app · "+a.cat,i:a.icon,f:()=>OS.open(id)})}
  if(ql.length>=2){let c=0;V.walk(V.root,(n,d)=>{if(c>40||!n.parent)return;if(n.name.toLowerCase().includes(ql)){c++;spRes.push({t:n.name,s:V.path(n.parent),i:V.icon(n),f:()=>OS.openNode(n)})}})}
