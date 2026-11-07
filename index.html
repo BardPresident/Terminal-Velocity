@@ -81,7 +81,7 @@ html,body{height:100%;overflow:hidden}
 const $=i=>document.getElementById(i),R=Math.random,F=Math.floor,KEY='terminal_velocity_v3';
 const SECS=['shop','media','hydra','proto','sec','strat','council','scrolls','sys','ivory','camp','pub','music','deck','infra'];
 const SN=['SERVER SHOP','MEDIA STUDIO & VIDEO INGESTION','HYDRA MIRRORING & PROPAGATION','PROTOCOLS & RESEARCH','SECURITY & COUNTER-MEASURES','STRATEGY & THE RUG','COUNCIL OF ADVISORS','SCROLLS OF SOVEREIGN PROGRESS','SYSTEM & SAVE','QUEEN IVORY: SOVEREIGNTY CONSOLE','WORLD CAMPAIGN & STAR SEEDS','PUBLISHING & SYNC BELL','ACOUSTIC STUDIO','EXPRESSIVE COMMANDS & BROADCAST','INFRASTRUCTURE: DATA HALLS & BEYOND'];
-const SB=['Buy machines, RAM and solar. Better hardware makes more CPU, bandwidth and power every turn.','Record raw street footage and scribe it into flat-files, or ingest directly. Uses bandwidth, CPU and power.','Deploy mirrors, propagate flat-files and found the MRU node to earn Sovereign Agape.','Research scribes, the clock stabilizer, shields and the E=L compiler.','Counter the three corporate factions. Kernel Panics clear the worst threat; reboot downed mirrors.','Set your three stances, or flatten into the CC0 Rug to start a stronger run.','Consult advisors to deepen their permanent buffs.','Milestones that unlock permanent perks.','Theme, auto-save status, export and import save codes.','Issue sovereign decrees. Each lasts 8 turns.','Liberate the world, continent by continent. After that, found Star Seeds forever.','Bind flat-files into Scrolls, Books and Anthologies for permanent income and students. Needs the Sync Bell.','Compose 12-track albums at 50 BPM and play them to calm the factions and cool the network.','On-camera console: one-key shortcuts for your real creation steps, plus broadcast banners, sound and screen effects.','Endless tiers of facilities: each one multiplies your Agape weight, CPU and bandwidth. Build more forever.'];
+const SB=['Buy machines, RAM and solar. Better hardware makes more CPU, bandwidth and power every turn.','Record raw street footage and scribe it into flat-files, or ingest directly. Filming angers the factions and heats the network.','Deploy mirrors, propagate flat-files and found the MRU node to earn Sovereign Agape.','Research scribes, the clock stabilizer, shields and the E=L compiler.','Counter the three corporate factions. Kernel Panics clear the worst threat; reboot downed mirrors.','Set your three stances, or flatten into the CC0 Rug to start a stronger run.','Consult advisors to deepen their permanent buffs.','Milestones that unlock permanent perks.','Theme, auto-save status, export and import save codes.','Issue sovereign decrees. Each lasts 8 turns.','Liberate the world, continent by continent. After that, found Star Seeds forever.','Bind flat-files into Scrolls, Books and Anthologies for permanent income and students. Needs the Sync Bell.','Compose 12-track albums at 50 BPM and play them to calm the factions and cool the network.','On-camera console: one-key shortcuts for your real creation steps, plus broadcast banners, sound and screen effects.','Endless tiers of facilities: each one multiplies your Agape weight, CPU and bandwidth. Build more forever.'];
 const MC={pi:{n:'Local Raspberry Pi',b:15,cpu:2,bw:2,up:1},desk:{n:'Desktop Rig',b:60,cpu:5,bw:4,up:3,req:'pi'},rack:{n:'Offshore Bare-Metal Rack',b:220,cpu:12,bw:10,up:6,req:'desk'},lux:{n:'Luxembourg OWRBIT Node',b:800,cpu:25,bw:22,up:12,req:'rack'},array:{n:'Interstellar Substrate Array',b:3000,cpu:60,bw:50,up:25,req:'lux'}};
 const NW={local:1,off:3,mesh:8,inter:25};
 const NN={local:'Localhost Hearth',off:'Offshore Server (srvr-grmny.squny.com)',mesh:'Global Mesh',inter:'Interstellar Array'};
@@ -296,7 +296,7 @@ function save(){try{localStorage.setItem(KEY,JSON.stringify(S));sv='Auto-saved t
 function load(){try{const r=localStorage.getItem(KEY);if(r){const o=JSON.parse(r);if(o.v===3)return merge(o)}}catch(e){}return init()}
 
 function growth(k){
- let g=k==='cc'?.3+Math.max(0,S.bw/bwCap()-.45)*2:k==='ta'?.25+S.heat/100*2.2:.2+.28*Math.pow(tot()+2*infN(),.8);
+ let g=(k==='cc'?.3+Math.max(0,S.bw/bwCap()-.45)*2:k==='ta'?.25+S.heat/100*2.2:.2+.28*Math.pow(tot()+2*infN(),.8))+S.raw/150*(k==='cc'?.5:k==='ta'?.6:.25);
  let red=(1-Math.min(.5,.08*S.layers))*(1-perk('th'))*(1-Math.min(.3,.03*S.albums));
  if(S.play>0)red*=.5;if(S.won)red*=Math.min(.9,.5+.02*S.seeds);
  if(k!=='ta'&&S.pr.zeroport2)red*=.7;if(k==='ta'&&S.stage>=5)red*=.75;
@@ -343,8 +343,8 @@ function tick(){
  S.pw=Math.min(pwCap(),S.pw+F((4+S.solar*5)*fx('pw'))-upk);let thr=1;
  if(S.pw<=0){S.pw=0;thr*=.5;log('BROWNOUT: power is empty. CPU and bandwidth recovery halved. Buy Solar Cells.','warn')}
  if(S.heat>=80){thr*=.5;log('THERMAL THROTTLE: heat is at '+F(S.heat)+'. Recovery halved. Vent heat in SECURITY.','warn')}
- S.heat=Math.max(0,S.heat-4-perk('cool')-Math.min(4,.5*S.albums)-(S.play>0?2:0));
- S.heat=Math.min(100,S.heat+S.raw/250*(S.stage>=5?.5:1));
+ S.heat=Math.max(0,S.heat-2.5-perk('cool')-Math.min(4,.5*S.albums)-(S.play>0?2:0));
+ S.heat=Math.min(100,S.heat+(S.raw/100+infN()*.03)*(S.stage>=5?.6:1));
  const lm=[1.25,1,.85][S.st.loc];
  S.cpu=Math.min(cpuCap(),S.cpu+F((2+mcSum('cpu'))*thr*lm*fx('cpu')));
  S.bw=Math.min(bwCap(),S.bw+F((4+mcSum('bw'))*thr*lm*fx('bw')));
@@ -380,6 +380,7 @@ function tip(){
  const m=FK.reduce((a,k)=>S.fac[k]>S.fac[a]?k:a,'cc');
  if(S.fac[m]>=55)return FAC[m].n+' is at '+F(S.fac[m])+'%. Counter it or run a Kernel Panic.';
  if(S.infTop>=0&&S.ag>=infBulk(S.infTop).one&&menu!=='infra')return 'You can afford a new facility: INFRASTRUCTURE [D] (or: build '+(S.infTop+1)+').';
+ if(S.raw>=150)return 'Unscribed footage is feeding all three factions: run a Scribe in MEDIA.';
  if(S.pw<15)return 'Power is low: buy a Solar Cell in SERVER SHOP.';
  if(S.heat>=60)return 'Systems are hot: vent heat in SECURITY or switch to a purer stance.';
  if(S.bw<10)return 'Bandwidth is low: wait a turn or buy bigger hardware.';
@@ -404,9 +405,9 @@ function build(sec){
    a.push({l,c:b+' MB/s bandwidth, '+c+' GHz CPU, '+p+' W power'+(hh?', +'+hh+' heat':''),g:'+'+yy+' flat-files (.txt). '+d+' Stance: '+PUR[pur]+'.',dis:lock||(S.bw<b?'need '+b+' MB/s':S.cpu<c?'need '+c+' GHz':S.pw<p?'need '+p+' W':0),
     f(){S.bw-=b;S.cpu-=c;S.pw-=p;S.heat=Math.min(100,S.heat+hh);S.fac.cc=Math.min(100,S.fac.cc+(pur===0?3:2));const n=addFiles(y*sm);log('Raw video transcript ingested via Whisper Scribe. Crystallized '+n*6+'MB of high-entropy stream into permanent L-Memory. (+'+n+' flat-files)')}})});
   const cap=150+150*sLv(),rcap=400+40*ramGB(),rg=150+15*ramGB();
-  const rh=F((pur===2?0:pur===0?14:8)*(S.stage>=5?.5:1));
-  a.push({l:'Record Street Footage 🎥 (raw E)  (stock: '+fmt(S.raw)+'/'+fmt(rcap)+' hrs)',c:'4 MB/s bandwidth, 1 W power'+(rh?', +'+rh+' heat':''),g:'+'+rg+' hours of raw, high-entropy footage. It does nothing until a Scribe turns it into flat-files, and unscribed footage heats the network every turn.',dis:S.raw>=rcap?'footage storage full: run a Scribe':S.bw<4?'need 4 MB/s':S.pw<1?'need 1 W':0,
-   f(){S.bw-=4;S.pw-=1;S.heat=Math.min(100,S.heat+rh);const n=Math.min(rg,rcap-S.raw);S.raw+=n;S.rec=1;log('Street footage recorded: +'+n+' hours of raw E (stock '+fmt(S.raw)+'). '+(sLv()?'Your Scribe Engine v'+sLv()+' will transcribe up to '+60*sLv()+' hours of stock per turn on its own.':'Scribe it before it heats the network.'),'sys')}});
+  const rh=F((pur===2?4:pur===0?18:11)*(S.stage>=5?.6:1)*(1+.2*attn())),fe=[1.6,1,.6][pur]*(1+.25*attn());
+  a.push({l:'Record Street Footage 🎥 (raw E)  (stock: '+fmt(S.raw)+'/'+fmt(rcap)+' hrs)',c:'4 MB/s bandwidth, 1 W power, +'+rh+' heat',g:'+'+rg+' hours of raw, high-entropy footage. FILMING ENRAGES THE FACTIONS: Combine +'+F(5*fe)+', Triage +'+F(4*fe)+', Zookeepers +'+F(2*fe)+' every time, and unscribed footage keeps heating the network and feeding their anger until a Scribe turns it into flat-files.',dis:S.raw>=rcap?'footage storage full: run a Scribe':S.bw<4?'need 4 MB/s':S.pw<1?'need 1 W':0,
+   f(){S.bw-=4;S.pw-=1;S.heat=Math.min(100,S.heat+rh);S.fac.cc=Math.min(100,S.fac.cc+5*fe);S.fac.ta=Math.min(100,S.fac.ta+4*fe);S.fac.sz=Math.min(100,S.fac.sz+2*fe);const n=Math.min(rg,rcap-S.raw);S.raw+=n;S.rec=1;log('Street footage recorded: +'+n+' hours of raw E (stock '+fmt(S.raw)+'). The Combine, the Triage Audit and the Zookeepers all saw the camera. '+(sLv()?'Your Scribe Engine v'+sLv()+' will transcribe up to '+60*sLv()+' hours of stock per turn on its own.':'Scribe it before it heats the network.'),'sys')}});
   const sa=Math.min(S.raw,cap),sb=Math.max(1,Math.ceil(3*cr)),sc=Math.ceil(6*cr*pm),sf=F(sa*sm*ingMult());
   a.push({l:'Run Scribe Engine 📜 (E → L phase shift)',c:sb+' MB/s bandwidth, '+sc+' GHz CPU, 1 W power',g:'Transcribes up to '+cap+' hours of footage (you have '+fmt(S.raw)+') into about +'+fmt(sf)+' permanent flat-files, and cools the network by 12 heat. Better Scribe Engines raise the cap and the yield.',dis:lock||(S.raw<1?'no raw footage: record some first':S.bw<sb?'need '+sb+' MB/s':S.cpu<sc?'need '+sc+' GHz':S.pw<1?'need 1 W':0),
    f(){S.raw-=sa;S.bw-=sb;S.cpu-=sc;S.pw-=1;S.heat=Math.max(0,S.heat-12);const n=addFiles(sa*sm);log('The Scribe Engine transcribed '+fmt(sa)+' hours of raw footage into permanent .txt: E crystallized into L. (+'+fmt(n)+' flat-files)')}})}
@@ -737,7 +738,7 @@ const DOCS={
  help:["help [COMMAND | TOPIC]","Show this manual. help alone lists everything. help COMMAND shows one command in detail, and every command also answers COMMAND --help. help topics lists the guides.","free",["help","help sync","help missions","scribe --help"],"man"],
  man:["man [COMMAND | TOPIC]","Same as help.","free",["man rm"],"help"],
  ingest:["ingest [--batch]","Direct ingest of a video stream into flat-files (E to L). --batch is the big stream. Costs bandwidth, CPU and power; adds heat and Copyright Combine pressure.","1 turn",["ingest","ingest --batch"],"record scribe"],
- record:["record","Record street footage into the raw E stock. Raw footage adds heat until it is scribed.","1 turn",["record"],"scribe"],
+ record:["record","Record street footage into the raw E stock. FILMING ENRAGES THE FACTIONS: every recording raises Combine, Triage and Zookeepers at once (more in RAW stance, less in PURE, more as your empire grows), adds heat, and unscribed footage keeps heating the network and feeding their anger every turn until you scribe it. Counter them in SECURITY, and scribe soon.","1 turn",["record"],"scribe"],
  scribe:["scribe","Run the Scribe Engine: raw footage becomes flat-files and the network cools. Better Scribe protocols convert more per hour.","1 turn",["scribe"],"record research"],
  sync:["sync [PATH] [--local|--offshore|--mesh|--array]  |  sync --restore  |  sync mission","With no PATH: propagate flat-files across the Hydra mesh for Agape. With a PATH (a file, or a whole folder): mirror it to that node (default --local). Cost is 1 MB/s per 30 MB of file; a folder that is too big for one turn syncs as many files as your bandwidth allows, so run it again next turn. Each new file earns a little Agape; the node needs to exist first. sync mission syncs your current mission target. sync --restore pulls deleted files back from a mirror.","1 turn",["sync","sync /flat-files/Books/001-ivory-heart.txt --local","sync flat-files/01-The-Meaning-of-Life-2012 --offshore","sync mission","sync --restore"],"mission mirror rm"],
  mirror:["mirror <local|offshore|mesh|array>","Deploy a Hydra Mirror node. Each node type needs the hardware before it. Run mirror alone to see costs.","1 turn",["mirror","mirror offshore"],"sync"],
