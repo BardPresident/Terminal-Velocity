@@ -398,7 +398,8 @@ HOW TO RUN IT
   Press any key during boot to skip the delays.
 
 THE APPS (26) - every one has a desktop icon
-  Terminal Velocity   the game, in its own window, starts at boot
+  Terminal Velocity   the game, starts at boot minimised in the taskbar (desktop first;
+                      Settings > Boot changes this)
   Terminal            real shell: ls -lahs, cd, cat, grep, find, tree, mkdir,
                       cp, mv, rm, head, tail, wc, sort, pipes |, redirects >
                       >>, globs *, Tab complete, history. Type "help".
