@@ -9,9 +9,10 @@
 
 📟 WHAT IS IT?
 
-Terminal Velocity is a turn-based terminal strategy RPG that runs
-entirely in your browser. It is a single file (index.html) with no
-dependencies, no build step, no server and no tracking.
+Terminal Velocity OS is a complete desktop that runs entirely in your
+browser, in ONE file (terminal-velocity-os.html) with no dependencies,
+no build step, no server and no tracking. It boots straight into its first
+app, the game Terminal Velocity: a turn-based terminal strategy RPG.
 
 You run a tiny network at a calm 50 BPM. You turn raw video into
 permanent .txt flat-files, spread them across Hydra Mirror nodes to earn
@@ -25,9 +26,9 @@ and the Mythocratic Republic University.
 
 🚀 QUICK START
 
-  1. Download index.html (or terminal-velocity.html).
+  1. Download terminal-velocity-os.html (rename it index.html if you like).
   2. Double-click it. It opens in any modern browser.
-  3. Press [?] for the in-game HELP & TUTORIAL.
+  3. In the game, press [?] for the in-game HELP & TUTORIAL.
 
 That is all. To host it, upload the file anywhere that serves static
 pages (GitHub Pages, your own server, an archive site).
@@ -218,15 +219,25 @@ hazards.
          /system (live logs), /scripts, /rug (sealed, read-only),
          /mirrors (what each node holds), /etc.
 
-  ARCHIVE MISSIONS
-  There is always one mission, generated from your real file names:
-  mirror one file, then a whole production folder, alternating and
-  getting bigger. Run: mission. Sync with sync PATH --node, the button
-  in HYDRA MIRRORING, or sync mission. Cost is 1 MB/s of bandwidth per
-  30 MB of file, so a big folder takes several turns. Missions pay
-  Agape and unlock the Scroll of the First Sync and the Scroll of the
-  Archivist. Mirrored files show a tag in ls -l: L Local, O Offshore,
-  M Mesh, A Array.
+  CONTRACTS AND STANDING (reputation)
+  The BOARD holds several contracts at once, generated from your real file
+  names. Run: board  (or mission). Free syncing always works too: contracts
+  are extras, never a gate.
+    Mirror   sync a file or a production to a node (sync PATH --node, or: do N)
+    Review   cat or head N files in a folder
+    Verify   audit a folder:  verify PATH   (5 files per MB/s, 1 turn)
+    Repair   fix bit-rotted files:  repair PATH   (ls -l flags [degraded]
+             and [CORRUPT]; files rot slowly over time)
+    Restore  pull back files deleted by raids:  sync --restore
+  Contracts pay Agape and Standing. Standing has 20 ranks (Volunteer up to
+  Sovereign Archivist) with slow, growing costs. Each rank adds Agape +1.2%,
+  and every 3 ranks add a board slot (2 up to 7). Verify unlocks at rank 1,
+  Repair at 2, Restore at 3. Streaks give +5% rep each (max +50%) and break
+  if a deadline lapses or you abandon a contract. Deadline contracts pay
+  more. Commands: board, mission N (track), do N, abandon N, rank.
+  Mirrored files show a tag in ls -l: L Local, O Offshore, M Mesh, A Array.
+  Only 70% of the archive can ever be sealed in the Rug, so files always
+  stay in circulation.
 
   THE MANIFEST
   When the page can reach manifest.json (republicka.life/files/manifest.json first,
@@ -360,6 +371,96 @@ Browsing menus is free. Actions, event choices and waiting cost 1 turn.
 =====================================================================
   E = L  |  50 BPM  |  The floor holds.  ☕🌸
 =====================================================================
+
+
+
+=====================================================================
+TERMINAL VELOCITY OS   (terminal-velocity-os.html)
+=====================================================================
+You asked for a game. It is now an operating system that contains the game.
+Sorry. Not sorry.
+
+WHAT IT IS
+One HTML file (~300 KB). No images, no libraries, no install, no server needed.
+It boots with a long, chatty log (it tells you everything it is doing, with
+real checks, not fake ones), then launches Terminal Velocity in a window.
+CC0, like everything else you make. Copy it, host it, put it on a USB stick.
+
+THE FILES
+  terminal-velocity-os.html  the OS, with the game embedded inside it
+  README.txt                 this
+  (There is one version now. The game is the OS's first app.)
+
+HOW TO RUN IT
+  Open terminal-velocity-os.html in a browser, or upload it to
+  republicka.life next to the game. Hard-refresh after uploading.
+  Add ?nogame to the address to boot without auto-starting the game.
+  Press any key during boot to skip the delays.
+
+THE APPS (22)
+  Terminal Velocity   the game, in its own window, starts at boot
+  Terminal            real shell: ls -lahs, cd, cat, grep, find, tree, mkdir,
+                      cp, mv, rm, head, tail, wc, sort, pipes |, redirects >
+                      >>, globs *, Tab complete, history. Type "help".
+                      Also: open, edit, play, view, theme, wallpaper, neofetch
+  Files               file manager. Whole archive at /archive (read-only),
+                      your files at /home/user, plus /tmp and /system
+  Notepad             tabs, find/replace, Markdown preview, autosave drafts.
+                      REAL EXPORT: Download, Save to computer (file picker),
+                      Export all as ZIP, Tabs ZIP
+  Media Player        audio + video, playlists, shuffle/repeat, speed, visualizer
+  Image Viewer        zoom, pan, rotate, slideshow
+  Reader              comfortable Markdown/text reading, remembers your place
+  Archive             search every file name in the manifest
+  Calculator          scientific, own expression parser (no eval)
+  Paint               draw, fill, undo, save PNG
+  Clock               clock, timer, stopwatch, world times
+  Calendar            month view with notes
+  Metronome           50 BPM by default
+  Task Manager        windows, FPS, memory, storage
+  Toolbox             base64, URL, SHA hashes, JSON, regex, colour, time, UUID
+  App Runner          runs pasted/opened HTML in a sandbox
+  Recorder            microphone to /home/user/Media
+  Snake, Minesweeper, Tasks, Settings, Welcome
+
+THEMES (17 X environments)
+  Phosphor Green, Amber Terminal, Cyan Relay, Sovereign Gold, Agape Pink,
+  Queen Ivory (light), Hearth Ember, Owrbit Violet, Deep Freeze, CC0 Rug,
+  Plushie Pastel (light), Zero Port, Blue Screen, Combine Steel, Triage Red,
+  Zookeeper Moss, Plain Paper (light).
+  Change in Settings > Appearance, the tray eye icon, or: theme <name>
+  Wallpapers (all drawn on canvas): stars, 50 BPM rings, grid, rain, flow,
+  plain, none.
+
+YOUR OWN MANIFEST.JSON
+  Settings > Archive: load one from a file or a URL, or boot with
+  ?manifest=https://example.org/files/manifest.json
+  Format: {generated, webPrefix, stats, items:[{name, type:"folder"|"file",
+  children, path (URL), size}]}. Anyone can bring their own archive.
+  Default tries: republicka.life/files/manifest.json, then files/manifest.json,
+  then manifest.json.
+
+KEYS
+  Ctrl+Space Spotlight (apps, archive files, quick maths)
+  Alt+T Terminal, Alt+F Files, Alt+N Notepad, Alt+G the game
+  Alt+W close, Alt+M minimise, Alt+Enter maximise, Alt+Tab next window
+  Drag title bars to move, drag edges to resize, drag to screen edge to snap.
+  On phones every window is full-screen.
+
+SAVES
+  Game saves live in the same browser storage as the standalone game, so the
+  two share one save. Your notes and files in /home/user live in this
+  browser's IndexedDB. Use Notepad "Export all (ZIP)" or Settings > Storage
+  to back up.
+
+HONEST LIMITS
+  - Archive files stream from their web addresses; nothing is copied. Reading
+    them as text or downloading them can be blocked by the host's cross-site
+    rules. Playing and viewing work.
+  - Mounting a folder from your computer needs Chrome or Edge.
+  - The OS tray shows your Standing next to the clock once the game has run.
+  - The game's mission text says the manifest came from republicka.life even
+    if you loaded a different one. Cosmetic.
 
 
 
