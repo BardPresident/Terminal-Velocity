@@ -1298,7 +1298,7 @@ const THEMES={
 };
 const THEME_ORDER=Object.keys(THEMES);
 const WALLS=["stars","rings","grid","rain","flow","plain","none"];
-const DEF={theme:"phosphor",wall:"auto",scan:true,vig:true,anim:true,verbose:true,autostart:true,fsize:13,sound:false,manifestUrl:"",sep:false};
+const DEF={theme:"phosphor",wall:"auto",scan:true,vig:true,anim:true,verbose:true,autostart:true,autostartMin:true,fsize:13,sound:false,manifestUrl:"",sep:false};
 const SET=Object.assign({},DEF,LS.get("tvos_settings",{}));
 function saveSet(){LS.set("tvos_settings",SET)}
 function hexA(c,a){c=c.replace("#","");if(c.length===3)c=c.replace(/./g,"$&$&");return`rgba(${parseInt(c.substr(0,2),16)},${parseInt(c.substr(2,2),16)},${parseInt(c.substr(4,2),16)},${a})`}
@@ -1832,7 +1832,7 @@ defApp("settings",{name:"Settings",icon:"gear",cat:"System",w:700,h:520,single:t
    Appearance(){const g=h("div",{class:"sw"});for(const k of THEME_ORDER){const t=THEMES[k],v=t.v;g.append(h("div",{class:"swc"+(SET.theme===k?" on":""),onclick:()=>{applyTheme(k);draw()}},h("div",{class:"bar",style:"background:"+v.bg},h("i",{style:"background:"+v.pn}),h("i",{style:"background:"+v.pn2}),h("i",{style:"background:"+v.ac}),h("i",{style:"background:"+v.ac2}),h("i",{style:"background:"+v.fg})),h("b",{},t.n),h("div",{class:"dim",style:"font-size:11px"},t.d)))}
     const ws=h("select",{class:"t",onchange:e=>{SET.wall=e.target.value;saveSet();setWall()}},...["auto",...WALLS].map(w=>h("option",{value:w,selected:SET.wall===w},w==="auto"?"auto (theme default)":w)));
     return[h("h3",{class:"ac",style:"margin:0"},"X environment (theme)"),g,h("div",{class:"row",style:"border:0;padding:0"},"Wallpaper (canvas, no images):",ws),chk("scan","CRT scanlines",()=>applyTheme(SET.theme)),chk("vig","Vignette",()=>applyTheme(SET.theme)),chk("anim","Window animations"),h("div",{class:"row",style:"border:0;padding:0"},"Text size",h("input",{type:"range",min:11,max:18,value:SET.fsize,oninput:e=>{SET.fsize=+e.target.value;applyTheme(SET.theme)}}),h("span",{class:"dim"},"light themes skip scanlines automatically"))]},
-   Boot(){return[h("h3",{class:"ac",style:"margin:0"},"Boot"),chk("verbose","Verbose boot log (say what it is doing at all times)"),chk("autostart","Start Terminal Velocity (the game) automatically after boot"),h("div",{class:"dim"},"Press any key or click during boot to skip the delays. The checks still run.")]},
+   Boot(){return[h("h3",{class:"ac",style:"margin:0"},"Boot"),chk("verbose","Verbose boot log (say what it is doing at all times)"),chk("autostart","Start Terminal Velocity (the game) automatically after boot"),chk("autostartMin","...and keep it minimised in the taskbar (desktop first)"),h("div",{class:"dim"},"Press any key or click during boot to skip the delays. The checks still run.")]},
    Archive(){const c=h("pre",{class:"out dim"},MAN.json?`Mounted: ${MAN.files.toLocaleString()} files · ${fmtBytes(MAN.size)}\nSource : ${MAN.src}\nFormat : {generated, webPrefix, items:[{name,type:"folder"|"file",children,path,size}]}`:"No manifest mounted.\n"+MAN.tried.map(t=>"  fail "+t.u+" ("+t.why+")").join("\n"));
     const u=h("input",{class:"t grow",placeholder:"https://example.org/files/manifest.json",value:SET.manifestUrl||""});
     const apply=async j=>{try{buildArchive(j,"custom");toast("Archive mounted: "+MAN.files.toLocaleString()+" files. Restart the game window to let it see the new manifest.");draw()}catch(e){dlgAlert("That manifest could not be used: "+e.message,"Manifest")}};
@@ -2290,7 +2290,7 @@ async function boot(){
  if(!skip&&SET.verbose)await sleep(380);
  removeEventListener("keydown",sk);removeEventListener("pointerdown",sk);
  const bt=$("#boot");bt.style.transition="opacity .35s";bt.style.opacity="0";await sleep(skip?0:350);bt.remove();
- if(SET.autostart&&!/[?&]nogame\b/.test(location.search)){const w=OS.open("tv");}else OS.open("help")}
+ if(SET.autostart&&!/[?&]nogame\b/.test(location.search)){const w=OS.open("tv");if(w&&SET.autostartMin!==false)OS.minimize(w)}else OS.open("help")}
 
 /* ===================== MAIN ===================== */
 (function(){
