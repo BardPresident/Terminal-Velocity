@@ -1497,7 +1497,7 @@ function buildTray(){const tr=$("#tray");tr.innerHTML="";tr.append(h("span",{cla
 function cycleTheme(d){const i=(THEME_ORDER.indexOf(SET.theme)+d+THEME_ORDER.length)%THEME_ORDER.length;applyTheme(THEME_ORDER[i]);toast("Theme: "+THEMES[SET.theme].n)}
 OS.on("manifest",m=>{const a=$("#arc");if(a)a.textContent="archive: "+m.files.toLocaleString()+" files"});
 /* ---- desktop icons & start menu ---- */
-const DESK_FIRST=["tv","terminal","files","music","books","comic","media","images","notepad","archive","reader","calc","settings"];
+const DESK_FIRST=["tv","terminal","files","music","books","audiobooks","comic","media","images","notepad","archive","reader","calc","settings"];
 function buildDesk(){const d=$("#dic");d.innerHTML="";const rest=Object.keys(OS.apps).filter(i=>!DESK_FIRST.includes(i)&&!OS.apps[i].hidden).sort((x,y)=>OS.apps[x].cat.localeCompare(OS.apps[y].cat)||OS.apps[x].name.localeCompare(OS.apps[y].name));for(const id of DESK_FIRST.concat(rest)){const a=OS.apps[id];if(!a)continue;const e=h("div",{class:"dic",tabindex:"0",title:a.name,onclick:e=>{if(isMob()||e.detail>=2)OS.open(id)},onkeydown:e=>{if(e.key==="Enter")OS.open(id)}},ic(a.icon),a.name);e.addEventListener("contextmenu",ev=>{ev.preventDefault();ctxMenu(ev.clientX,ev.clientY,[{t:"Open",fn:()=>OS.open(id)}])});d.append(e)}}
 $("#desk").addEventListener("contextmenu",e=>{if(e.target.id!=="desk"&&e.target.id!=="dic")return;e.preventDefault();ctxMenu(e.clientX,e.clientY,[{t:"Terminal here",ic:"term",fn:()=>OS.open("terminal")},{t:"Files",ic:"folder",fn:()=>OS.open("files")},{t:"New note",ic:"note",fn:()=>OS.open("notepad")},"-",{t:"Next theme",ic:"eye",fn:()=>cycleTheme(1)},{t:"Next wallpaper",ic:"image",fn:()=>{const i=(WALLS.indexOf(wallId())+1)%WALLS.length;SET.wall=WALLS[i];saveSet();setWall();toast("Wallpaper: "+SET.wall)}},{t:"Settings",ic:"gear",fn:()=>OS.open("settings")}])});
 let startSel=0;
@@ -2184,6 +2184,72 @@ defApp("comic",{name:"Comics",icon:"comic",cat:"Media",w:1000,h:720,single:true,
   stage.style.background=ST.bg;b.style.flexDirection="column";b.append(sty,top,stage,bot);
   const start=()=>{const a=typeof arg==="string"?arg:null;if(a&&load(a))return;if(!load("/archive/Republicka-Comic")){const l=LS.get("tvos_cm_last",null);if(!(l&&load(l))){emp.style.display="block";emp.innerHTML="";emp.append(h("div",{style:"font-size:18px;margin-bottom:10px"},"No comic found at /archive/Republicka-Comic."),h("div",{},"Load your manifest in Settings > Archive, or choose any folder of page images."),h("button",{class:"btn pri",style:"margin-top:14px",onclick:chooseFolder},ic("folder"),"Choose folder"))}}};
   win.openPath=a=>{load(a)};start()},
+ onArg(w,a){typeof a==="string"&&w.openPath&&w.openPath(a)}});
+
+/* --- Audiobooks: /archive/Audiobooks, resume where you stopped --- */
+IP.headp="M4 15v-3a8 8 0 0116 0v3 M4 14h3v6H4z M17 14h3v6h-3z";
+defApp("audiobooks",{name:"Audiobooks",icon:"headp",cat:"Media",w:920,h:600,single:true,desc:"listen to the Audiobooks archive, resumes where you stopped",kw:"audiobooks audiobook audio books narration listen mp3 spoken",
+ init(win,b,arg){
+  const DB_=LS.get("tvos_ab",{}),ST=Object.assign({rate:1,vol:.9},LS.get("tvos_ab_set",{})),saveDB=()=>LS.set("tvos_ab",DB_),saveSt=()=>LS.set("tvos_ab_set",ST);
+  let root=V.get("/archive/Audiobooks"),books=[],cur=null,filt="",sleepAt=0,sleepEnd=false,sleepT=0,lastSave=0,dead=false;
+  const au=h("audio",{preload:"metadata",style:"display:none"}),rec=p=>DB_[p]||(DB_[p]={t:0,d:0,fin:false,bm:[]});
+  const fmt=s=>{if(!isFinite(s)||s<0)s=0;s=Math.floor(s);const hh=Math.floor(s/3600),m=Math.floor(s%3600/60),ss=s%60;return(hh?hh+":"+String(m).padStart(2,"0"):m)+":"+String(ss).padStart(2,"0")};
+  const dur=(x)=>x>0?fmt(x):"";
+  /* ---- library ---- */
+  const scan=()=>{books=[];if(!root)return;for(const k of V.ls(root))if(!k.dir&&V.kind(k)==="audio")books.push({n:k,path:V.path(k),title:prettyWords(k.name.replace(/\.[^.]+$/,"")),size:k.size});books.sort((a,c)=>a.title.localeCompare(c.title))};
+  const lib=h("div",{class:"scr grow"}),fl=h("input",{class:"t grow",placeholder:"Filter audiobooks…"}),cnt=h("div",{class:"row dim",style:"font-size:12px"});
+  const pct=r=>r&&r.d>0?r.fin?100:Math.min(99,Math.round(r.t/r.d*100)):r&&r.fin?100:0;
+  const drawLib=()=>{lib.innerHTML="";const q=filt.toLowerCase();const list=books.filter(x=>!q||x.title.toLowerCase().includes(q));
+   const lastp=LS.get("tvos_ab_last",null),lb=lastp&&books.find(x=>x.path===lastp);
+   if(lb&&!q)lib.append(h("div",{class:"si",style:"background:var(--aca);flex-direction:column;align-items:flex-start;gap:0",onclick:()=>openBook(lb.path,true)},h("small",{},"CONTINUE LISTENING"),h("div",{style:"font-weight:600"},lb.title),h("small",{},fmt(rec(lb.path).t)+(rec(lb.path).d?" of "+fmt(rec(lb.path).d):""))));
+   list.forEach(x=>{const r=DB_[x.path],pc=pct(r);lib.append(h("div",{class:"si"+(cur&&cur.path===x.path?" sel":""),style:"flex-direction:column;align-items:stretch;gap:3px;padding:8px 10px",title:x.n.name,onclick:()=>openBook(x.path,true)},h("div",{style:"display:flex;gap:8px;align-items:baseline"},h("span",{style:"flex:1;font-weight:600;overflow-wrap:anywhere;line-height:1.25"},x.title),h("small",{},pc===100?"✓ finished":pc?pc+"%":fmtBytes(x.size))),pc?h("div",{style:"height:3px;background:var(--bd);border-radius:2px"},h("i",{style:"display:block;height:100%;background:var(--ac);border-radius:2px;width:"+pc+"%"})):""))});
+   if(!list.length)lib.append(h("div",{class:"pad dim"},root?"No audiobooks match.":"There is no /archive/Audiobooks folder in the mounted archive. Load a manifest in Settings > Archive, or choose another folder."));
+   cnt.firstChild&&0;cnt.textContent=books.length+" audiobooks"};
+  fl.addEventListener("input",()=>{filt=fl.value.trim();drawLib()});
+  /* ---- player pane ---- */
+  const ttl=h("div",{style:"font-size:24px;font-weight:700;color:var(--ac);overflow-wrap:anywhere;line-height:1.2"},"Choose an audiobook"),sub=h("div",{class:"dim"}),
+   seek=h("input",{type:"range",min:0,max:1000,value:0,style:"flex:1;accent-color:var(--ac);min-width:80px"}),tc=h("span",{style:"min-width:62px;text-align:right"},"0:00"),tr=h("span",{class:"dim",style:"min-width:70px"},"-0:00"),
+   pp=h("button",{class:"btn pri",style:"width:64px;height:48px",title:"Play / pause (Space)",onclick:()=>{if(!cur)return;au.paused?au.play().catch(()=>{}):au.pause()}},ic("play")),
+   rates=[.75,.9,1,1.1,1.25,1.5,1.75,2,2.5],rs=h("select",{class:"t",title:"Speed",onchange:e=>{ST.rate=+e.target.value;au.playbackRate=ST.rate;au.defaultPlaybackRate=ST.rate;saveSt()}},...rates.map(r=>h("option",{value:r,selected:r===ST.rate},r+"×"))),
+   vol=h("input",{type:"range",min:0,max:1,step:.05,value:ST.vol,title:"Volume",style:"width:90px;accent-color:var(--ac)",oninput:e=>{au.volume=ST.vol=+e.target.value;saveSt()}}),
+   sl=h("select",{class:"t",title:"Sleep timer",onchange:e=>setSleep(e.target.value)},...[["0","Sleep: off"],["15","15 min"],["30","30 min"],["45","45 min"],["60","60 min"],["90","90 min"],["end","End of book"]].map(([v,l])=>h("option",{value:v},l))),slL=h("span",{class:"dim",style:"font-size:12px"}),
+   bms=h("div",{class:"scr",style:"flex:1;min-height:60px;border:1px solid var(--bd);border-radius:6px"}),stat=h("div",{class:"dim",style:"min-height:18px;font-size:12px"});
+  au.volume=ST.vol;au.playbackRate=ST.rate;au.defaultPlaybackRate=ST.rate;
+  const skip=s=>{if(!cur)return;au.currentTime=Math.max(0,Math.min((au.duration||1e9)-1,au.currentTime+s))};
+  const sb=(s)=>h("button",{class:"btn",title:(s<0?"Back ":"Forward ")+Math.abs(s)+" seconds",style:"min-width:62px",onclick:()=>skip(s)},(s<0?"−":"+")+Math.abs(s)+"s");
+  function setSleep(v){clearTimeout(sleepT);sleepAt=0;sleepEnd=false;slL.textContent="";if(v==="0")return;if(v==="end"){sleepEnd=true;slL.textContent="stops at the end";return}sleepAt=Date.now()+ +v*60000;const tick=()=>{if(dead)return;const left=sleepAt-Date.now();if(left<=0){au.pause();slL.textContent="sleep timer: stopped";sl.value="0";sleepAt=0;return}slL.textContent=fmt(left/1000)+" left";sleepT=setTimeout(tick,1000)};tick()}
+  function drawBms(){bms.innerHTML="";if(!cur)return;const r=rec(cur.path);if(!r.bm.length)bms.append(h("div",{class:"pad dim",style:"font-size:12px"},"No bookmarks yet. Press B or the Bookmark button to mark a spot."));r.bm.slice().sort((a,c)=>a.t-c.t).forEach(m=>bms.append(h("div",{class:"si",onclick:()=>{au.currentTime=m.t;au.play().catch(()=>{})}},ic("list"),h("span",{style:"min-width:62px"},fmt(m.t)),h("span",{class:"grow",style:"overflow-wrap:anywhere"},m.n),h("button",{class:"btn sm",title:"Delete",onclick:e=>{e.stopPropagation();r.bm=r.bm.filter(x=>x!==m);saveDB();drawBms()}},"×"))))}
+  const addBm=async()=>{if(!cur)return;const r=rec(cur.path);const t=Math.floor(au.currentTime);r.bm.push({t,n:"Bookmark at "+fmt(t)});saveDB();drawBms();toast("Bookmarked "+fmt(t),0)};
+  function readAlong(){if(!cur)return;const slug=cur.n.name.replace(/\.[^.]+$/,"").toLowerCase().replace(/[^a-z0-9]+/g,"-");const bd=V.get("/archive/Books");if(!bd)return toast("No /archive/Books folder.",1);const strip=s=>s.replace(/^\d+-/,"").replace(/\.[^.]+$/,"").replace(/^the-/,"");const ks=V.ls(bd);const s2=strip(slug);const m=ks.find(k=>strip(k.name)===s2)||ks.find(k=>strip(k.name).startsWith(s2))||ks.find(k=>s2.startsWith(strip(k.name)));m?OS.open("books",V.path(m)):toast("No matching book text found.",1)}
+  /* ---- open / playback ---- */
+  async function openBook(path,play){const x=books.find(y=>y.path===path);if(!x)return;if(cur&&cur.path!==path)persist();cur=x;LS.set("tvos_ab_last",path);const r=rec(path);ttl.textContent=x.title;sub.textContent=x.n.name+" · "+fmtBytes(x.size);OS.title(win,"Audiobooks - "+x.title);
+   let url=x.n.url;if(!url)try{url=await V.read(x.n,"url")}catch(e){return toast(e.message,1)}
+   let triedAlt=false;au.onerror=()=>{if(x.n.alt&&!triedAlt&&au.src!==x.n.alt){triedAlt=true;const t=au.currentTime||r.t;au.src=x.n.alt;au.currentTime=t;if(play)au.play().catch(()=>{})}else stat.textContent="Cannot play this file."};
+   au.src=url;au.playbackRate=ST.rate;const t0=r.fin?0:r.t;const seekTo=()=>{if(t0>1)try{au.currentTime=t0}catch(e){}};au.addEventListener("loadedmetadata",function f(){au.removeEventListener("loadedmetadata",f);seekTo();if(au.duration&&isFinite(au.duration)){r.d=au.duration;saveDB()}upd()});
+   if(r.fin){r.fin=false;saveDB()}stat.textContent=t0>1?"Resuming at "+fmt(t0):"";if(play)au.play().catch(()=>{});drawBms();drawLib();upd();
+   if("mediaSession"in navigator){try{navigator.mediaSession.metadata=new MediaMetadata({title:x.title,artist:"Audiobook",album:"Republicka Audiobooks"});const ms=navigator.mediaSession;ms.setActionHandler("seekbackward",()=>skip(-15));ms.setActionHandler("seekforward",()=>skip(30));ms.setActionHandler("play",()=>au.play());ms.setActionHandler("pause",()=>au.pause())}catch(e){}}}
+  function persist(){if(!cur)return;const r=rec(cur.path);if(au.duration&&isFinite(au.duration)){r.d=au.duration}if(!r.fin&&au.currentTime>0)r.t=au.currentTime;saveDB()}
+  function upd(){if(!cur)return;const d=au.duration,t=au.currentTime||0;if(!seek.dragging)seek.value=d&&isFinite(d)?t/d*1000:0;tc.textContent=fmt(t);tr.textContent=d&&isFinite(d)?"-"+fmt((d-t)/(ST.rate||1))+" left":"";const now=Date.now();if(now-lastSave>5000&&!au.paused){lastSave=now;persist()}}
+  au.addEventListener("timeupdate",upd);au.addEventListener("play",()=>pp.replaceChildren(ic("pause")));au.addEventListener("pause",()=>{pp.replaceChildren(ic("play"));persist();drawLib()});au.addEventListener("waiting",()=>stat.textContent="Buffering…");au.addEventListener("playing",()=>{if(stat.textContent==="Buffering…")stat.textContent=""});
+  au.addEventListener("ended",()=>{if(!cur)return;const r=rec(cur.path);r.fin=true;r.t=0;saveDB();drawLib();if(sleepEnd){slL.textContent="finished";sl.value="0";sleepEnd=false;return}const i=books.indexOf(cur);if(!sleepAt&&books[i+1]&&confirm0())openBook(books[i+1].path,true)});
+  const confirm0=()=>false; /* no auto-advance between books: each is hours long */
+  seek.addEventListener("input",()=>{seek.dragging=1;if(au.duration)tc.textContent=fmt(seek.value/1000*au.duration)});seek.addEventListener("change",()=>{if(au.duration)au.currentTime=seek.value/1000*au.duration;seek.dragging=0});
+  /* ---- layout ---- */
+  const side=h("div",{style:"width:300px;flex:none;border-right:1px solid var(--bd);display:flex;flex-direction:column;background:var(--pn2);min-height:0"},h("div",{class:"row"},fl,h("button",{class:"btn sm",title:"Choose another folder",onclick:async()=>{const q=await pickPath({mode:"dir",title:"Choose a folder of audiobooks",start:"/archive"});if(q){root=V.get(q);scan();drawLib()}}},ic("folder"))),cnt,lib);
+  const main=h("div",{style:"flex:1;min-width:0;display:flex;flex-direction:column;padding:18px;gap:14px;overflow:auto"},h("div",{},ttl,sub),
+   h("div",{style:"display:flex;gap:8px;align-items:center"},tc,seek,tr),
+   h("div",{style:"display:flex;gap:8px;align-items:center;justify-content:center;flex-wrap:wrap"},sb(-60),sb(-15),pp,sb(15),sb(60)),
+   h("div",{style:"display:flex;gap:10px;align-items:center;justify-content:center;flex-wrap:wrap"},rs,ic("music"),vol,sl,slL),
+   h("div",{class:"row",style:"border:0;padding:0"},h("b",{class:"grow"},"Bookmarks"),h("button",{class:"btn sm",onclick:addBm},"+ Bookmark (B)"),h("button",{class:"btn sm",onclick:readAlong},ic("book"),"Read the text")),bms,stat);
+  b.style.flexDirection=isMob()?"column":"row";if(isMob()){side.style.cssText+="width:auto;max-height:42%;border-right:0;border-bottom:1px solid var(--bd)"}
+  b.append(au,side,main);b.tabIndex=0;
+  b.addEventListener("keydown",e=>{if(e.target.tagName==="INPUT"&&e.target.type!=="range"||e.target.tagName==="SELECT")return;if(e.ctrlKey||e.altKey||e.metaKey)return;const k=e.key;let u=true;
+   if(k===" ")pp.click();else if(k==="ArrowLeft")skip(e.shiftKey?-60:-15);else if(k==="ArrowRight")skip(e.shiftKey?60:15);else if(k==="ArrowUp"){au.volume=Math.min(1,au.volume+.05);vol.value=ST.vol=au.volume;saveSt()}else if(k==="ArrowDown"){au.volume=Math.max(0,au.volume-.05);vol.value=ST.vol=au.volume;saveSt()}
+   else if(k==="b"||k==="B")addBm();else if(k==="]"||k==="["){let i=rates.indexOf(ST.rate)+(k==="]"?1:-1);i=Math.max(0,Math.min(rates.length-1,i));ST.rate=rates[i];au.playbackRate=ST.rate;rs.value=ST.rate;saveSt();toast(ST.rate+"×",0)}else u=false;if(u)e.preventDefault()});
+  addEventListener("pagehide",persist);
+  win.on.close=()=>{dead=true;persist();clearTimeout(sleepT);au.pause();au.removeAttribute("src");au.load();removeEventListener("pagehide",persist)};
+  win.openPath=p=>{const x=books.find(y=>y.path===p);x&&openBook(p,true)};
+  scan();drawLib();const a=typeof arg==="string"?arg:null;if(a&&books.find(x=>x.path===a))openBook(a,true);else{const lp=LS.get("tvos_ab_last",null);if(lp&&books.find(x=>x.path===lp))openBook(lp,false)}},
  onArg(w,a){typeof a==="string"&&w.openPath&&w.openPath(a)}});
 
 /* ===================== BOOT ===================== */
