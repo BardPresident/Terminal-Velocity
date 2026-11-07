@@ -1240,7 +1240,7 @@ const fmtTime=s=>{if(!isFinite(s))return"0:00";s=Math.floor(s);const m=Math.floo
 const fmtDate=t=>{const d=new Date(t);return d.getFullYear()+"-"+pad(d.getMonth()+1)+"-"+pad(d.getDate())+" "+pad(d.getHours())+":"+pad(d.getMinutes())};
 const sleep=ms=>new Promise(r=>setTimeout(r,ms));
 const LS={get(k,d){try{const v=localStorage.getItem(k);return v==null?d:JSON.parse(v)}catch(e){return d}},set(k,v){try{localStorage.setItem(k,JSON.stringify(v));return true}catch(e){return false}}};
-const OS={apps:{},wins:[],z:10,bus:{},boot:performance.now(),ver:"1.0"};
+const OS={apps:{},wins:[],z:10,bus:{},boot:performance.now(),ver:"1.0 build 1107-2324"};
 OS.on=(ev,f)=>{(OS.bus[ev]=OS.bus[ev]||[]).push(f);return f};
 OS.off=(ev,f)=>{OS.bus[ev]=(OS.bus[ev]||[]).filter(x=>x!==f)};
 OS.emit=(ev,a)=>{(OS.bus[ev]||[]).slice().forEach(f=>{try{f(a)}catch(e){console.error(e)}})};
@@ -1298,7 +1298,7 @@ const THEMES={
 };
 const THEME_ORDER=Object.keys(THEMES);
 const WALLS=["stars","rings","grid","rain","flow","plain","none"];
-const DEF={theme:"phosphor",wall:"auto",scan:true,vig:true,anim:true,verbose:true,autostart:true,autostartMin:true,fsize:13,sound:false,manifestUrl:"",sep:false};
+const DEF={theme:"phosphor",wall:"auto",scan:true,vig:true,anim:true,verbose:true,bootSpeed:"normal",autostart:true,autostartMin:true,fsize:13,sound:false,manifestUrl:"",sep:false};
 const SET=Object.assign({},DEF,LS.get("tvos_settings",{}));
 function saveSet(){LS.set("tvos_settings",SET)}
 function hexA(c,a){c=c.replace("#","");if(c.length===3)c=c.replace(/./g,"$&$&");return`rgba(${parseInt(c.substr(0,2),16)},${parseInt(c.substr(2,2),16)},${parseInt(c.substr(4,2),16)},${a})`}
@@ -1832,7 +1832,7 @@ defApp("settings",{name:"Settings",icon:"gear",cat:"System",w:700,h:520,single:t
    Appearance(){const g=h("div",{class:"sw"});for(const k of THEME_ORDER){const t=THEMES[k],v=t.v;g.append(h("div",{class:"swc"+(SET.theme===k?" on":""),onclick:()=>{applyTheme(k);draw()}},h("div",{class:"bar",style:"background:"+v.bg},h("i",{style:"background:"+v.pn}),h("i",{style:"background:"+v.pn2}),h("i",{style:"background:"+v.ac}),h("i",{style:"background:"+v.ac2}),h("i",{style:"background:"+v.fg})),h("b",{},t.n),h("div",{class:"dim",style:"font-size:11px"},t.d)))}
     const ws=h("select",{class:"t",onchange:e=>{SET.wall=e.target.value;saveSet();setWall()}},...["auto",...WALLS].map(w=>h("option",{value:w,selected:SET.wall===w},w==="auto"?"auto (theme default)":w)));
     return[h("h3",{class:"ac",style:"margin:0"},"X environment (theme)"),g,h("div",{class:"row",style:"border:0;padding:0"},"Wallpaper (canvas, no images):",ws),chk("scan","CRT scanlines",()=>applyTheme(SET.theme)),chk("vig","Vignette",()=>applyTheme(SET.theme)),chk("anim","Window animations"),h("div",{class:"row",style:"border:0;padding:0"},"Text size",h("input",{type:"range",min:11,max:18,value:SET.fsize,oninput:e=>{SET.fsize=+e.target.value;applyTheme(SET.theme)}}),h("span",{class:"dim"},"light themes skip scanlines automatically"))]},
-   Boot(){return[h("h3",{class:"ac",style:"margin:0"},"Boot"),chk("verbose","Verbose boot log (say what it is doing at all times)"),chk("autostart","Start Terminal Velocity (the game) automatically after boot"),chk("autostartMin","...and keep it minimised in the taskbar (desktop first)"),h("div",{class:"dim"},"Press any key or click during boot to skip the delays. The checks still run.")]},
+   Boot(){return[h("h3",{class:"ac",style:"margin:0"},"Boot"),chk("verbose","Verbose boot log (say what it is doing at all times)"),h("label",{style:"display:flex;gap:8px;align-items:center"},"Boot speed",h("select",{class:"t",onchange:e=>{SET.bootSpeed=e.target.value;saveSet()}},...[["slow","Slow (about 14 s)"],["normal","Normal (about 7 s)"],["fast","Fast"],["instant","Instant"]].map(([v,l])=>h("option",{value:v,selected:(SET.bootSpeed||"normal")===v},l)))),chk("autostart","Start Terminal Velocity (the game) automatically after boot"),chk("autostartMin","...and keep it minimised in the taskbar (desktop first)"),h("div",{class:"dim"},"Press any key or click during boot to skip the delays. The checks still run.")]},
    Archive(){const c=h("pre",{class:"out dim"},MAN.json?`Mounted: ${MAN.files.toLocaleString()} files · ${fmtBytes(MAN.size)}\nSource : ${MAN.src}\nFormat : {generated, webPrefix, items:[{name,type:"folder"|"file",children,path,size}]}`:"No manifest mounted.\n"+MAN.tried.map(t=>"  fail "+t.u+" ("+t.why+")").join("\n"));
     const u=h("input",{class:"t grow",placeholder:"https://example.org/files/manifest.json",value:SET.manifestUrl||""});
     const apply=async j=>{try{buildArchive(j,"custom");toast("Archive mounted: "+MAN.files.toLocaleString()+" files. Restart the game window to let it see the new manifest.");draw()}catch(e){dlgAlert("That manifest could not be used: "+e.message,"Manifest")}};
@@ -2264,8 +2264,13 @@ const LOGO=`
 async function boot(){
  const bl=$("#bl"),pb=$("#bp");$("#blogo").textContent=window.innerWidth<720?"TERMINAL VELOCITY OS\n":LOGO;
  let skip=false;const t0=performance.now();const sk=()=>{skip=true};addEventListener("keydown",sk);addEventListener("pointerdown",sk);
- const line=(msg,cls)=>{if(!SET.verbose&&!/ok|er|wn/.test(cls||"")&&!/^(Terminal|desktop)/.test(msg))return;const ts=((performance.now()-t0)/1000).toFixed(6).padStart(10);bl.append(h("div",{class:cls||""},"["+ts+"] "+msg));while(bl.children.length>120)bl.firstChild.remove()};
- const step=async(msg,fn,pct,cls)=>{line(msg,cls);let r;try{r=fn?await fn():null}catch(e){line("  FAILED: "+(e&&e.message||e),"er");console.error(e)}if(pct!=null)pb.style.width=pct+"%";if(!skip&&SET.verbose)await sleep(14+Math.random()*46);return r};
+ const sp=({instant:0,fast:.3,normal:1,slow:2})[SET.bootSpeed||"normal"]??1;
+ const emit=(msg,cls)=>{if(!SET.verbose&&!/ok|er|wn/.test(cls||"")&&!/^(Terminal|desktop)/.test(msg))return;const ts=((performance.now()-t0)/1000).toFixed(6).padStart(10);bl.append(h("div",{class:cls||""},"["+ts+"] "+msg));bl.scrollTop=bl.scrollHeight;while(bl.children.length>120)bl.firstChild.remove()};
+ const Q=[];let pumping=0;
+ const pump=async()=>{if(pumping)return;pumping=1;while(Q.length){if(skip){while(Q.length)emit(...Q.shift());break}emit(...Q.shift());await sleep((30+Math.random()*60)*sp)}pumping=0};
+ const line=(msg,cls)=>{if(skip||!sp){emit(msg,cls);return}Q.push([msg,cls]);pump()};
+ const drain=async()=>{while((Q.length||pumping)&&!skip)await sleep(15)};
+ const step=async(msg,fn,pct,cls)=>{line(msg,cls);let r;try{r=fn?await fn():null}catch(e){line("  FAILED: "+(e&&e.message||e),"er");console.error(e)}await drain();if(pct!=null)pb.style.width=pct+"%";if(!skip&&sp&&SET.verbose)await sleep((120+Math.random()*240)*sp);return r};
  const ok=(n,v)=>line("  [ OK ] "+n+(v?"  "+v:""),"ok"),no=(n,v)=>line("  [FAIL] "+n+(v?"  "+v:""),"wn");
  line("Terminal Velocity OS "+OS.ver+" - cold boot","");
  line("  "+(navigator.userAgent.length>90?navigator.userAgent.slice(0,90)+"...":navigator.userAgent),"dm");
@@ -2287,7 +2292,7 @@ async function boot(){
  await step("apps: registered "+Object.keys(OS.apps).length+" ("+Object.values(OS.apps).filter(a=>!a.hidden).map(a=>a.name).join(", ")+")",null,94);
  await step("notes: checking for unsaved drafts...",async()=>{const s=await DB.get("np_session");s&&s.tabs&&s.tabs.length?ok(s.tabs.length+" unsaved note(s) will be restored when Notepad opens"):line("  none","dm")},97);
  line("desktop ready in "+Math.round(performance.now()-t0)+" ms","ok");pb.style.width="100%";
- if(!skip&&SET.verbose)await sleep(380);
+ await drain();if(!skip&&sp&&SET.verbose)await sleep(900*sp);
  removeEventListener("keydown",sk);removeEventListener("pointerdown",sk);
  const bt=$("#boot");bt.style.transition="opacity .35s";bt.style.opacity="0";await sleep(skip?0:350);bt.remove();
  if(SET.autostart&&!/[?&]nogame\b/.test(location.search)){const w=OS.open("tv");if(w&&SET.autostartMin!==false)OS.minimize(w)}else OS.open("help")}
