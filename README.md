@@ -397,7 +397,7 @@ HOW TO RUN IT
   Add ?nogame to the address to boot without auto-starting the game.
   Press any key during boot to skip the delays.
 
-THE APPS (22)
+THE APPS (24) - every one has a desktop icon
   Terminal Velocity   the game, in its own window, starts at boot
   Terminal            real shell: ls -lahs, cd, cat, grep, find, tree, mkdir,
                       cp, mv, rm, head, tail, wc, sort, pipes |, redirects >
@@ -408,7 +408,15 @@ THE APPS (22)
   Notepad             tabs, find/replace, Markdown preview, autosave drafts.
                       REAL EXPORT: Download, Save to computer (file picker),
                       Export all as ZIP, Tabs ZIP
+  Music               opens /archive/Atheden: pick an album, play it as a playlist
+                      (full track names, shuffle/repeat, visualizer, remembers
+                      your place)
+  Books               e-reader for /archive/Books: library with search and
+                      progress, chapter list, page or scroll mode, font/size/
+                      spacing/margins, Paper/Sepia/Night themes, in-book search,
+                      bookmarks that remember where you stopped
   Media Player        audio + video, playlists, shuffle/repeat, speed, visualizer
+                      (long file names now wrap instead of being cut off)
   Image Viewer        zoom, pan, rotate, slideshow
   Reader              comfortable Markdown/text reading, remembers your place
   Archive             search every file name in the manifest
