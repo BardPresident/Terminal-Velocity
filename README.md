@@ -1,5 +1,5 @@
 # Terminal-Velocity
-🖥️✨ Terminal Velocity: a single-file retro CRT terminal strategy RPG. Ingest video 🎙️ into permanent flat-files 📜, mirror them across the Hydra network 🌐 for Sovereign Agape, and defend against corporate probes 🛡️. Runs in your browser, no dependencies, CC0.
+🖥️✨ Terminal Velocity OS: a whole desktop in one HTML file that boots into the retro CRT strategy RPG Terminal Velocity. Terminal, files, notepad with export, media player, 17 themes, bring your own manifest.json. No dependencies, no images, CC0. 🌐📜🛡️
 
 =====================================================================
   🖥️  TERMINAL VELOCITY  ✨
