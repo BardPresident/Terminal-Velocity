@@ -135,6 +135,9 @@ hazards.
   Scribe Engines are upgraded.
 
   🎥 Record Street Footage (Media Studio)
+     Filming is what the factions hate: every recording raises Combine,
+     Triage and Zookeepers together and adds heat, and raw footage left
+     unscribed keeps feeding their anger and heating the network.
      Builds a stock of raw E footage. Costs bandwidth and power, adds
      heat, and stored footage slowly heats the network if left raw.
   📜 Run Scribe Engine (Media Studio)
