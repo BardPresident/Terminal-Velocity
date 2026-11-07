@@ -236,6 +236,10 @@ const SCR=[
  ['album1','Scroll of the First Album','release your first 12-track album','+2 heat cooling per turn',()=>S.albums>=1,'cool',2],
  ['sync1','Scroll of the First Sync','complete your first archive mission','+3% Agape income',()=>S.msn.done>=1,'ag',.03],
  ['sync10','Scroll of the Archivist','complete 10 archive missions','+6% Agape income',()=>S.msn.done>=10,'ag',.06],
+ ['rk4','Scroll of the Oath of Standing','reach the Archivist rank','+2% Agape income',()=>rankOf()>=4,'ag',.02],
+ ['rk9','Scroll of the Registrar','reach the Registrar rank','+3% Agape income',()=>rankOf()>=9,'ag',.03],
+ ['rk14','Scroll of the Warden of Agape','reach the Warden of Agape rank','+4% Agape income',()=>rankOf()>=14,'ag',.04],
+ ['rk19','Scroll of the Sovereign Archivist','reach the highest Standing','+6% Agape income',()=>rankOf()>=19,'ag',.06],
  ['pub1','Scroll of the Public Press','publish your first Book','+5% Agape income',()=>S.pub.b>=1,'ag',.05]];
 
 const EVS=[
@@ -286,7 +290,7 @@ const EVS=[
  {t:'Auditors Inspect the Data Halls',x:'The Triage Audit requests a walkthrough of every hall. They bring clipboards.',ok:()=>S.infTop>=0&&infN()>5,o:[
   ['Hold a tour','Triage -20, heat +10',()=>{S.fac.ta=Math.max(0,S.fac.ta-20);S.heat=Math.min(100,S.heat+10);log('The tour lasted four hours. The auditors learned nothing and left tired.','warn')}],
   ['Seal the doors','Triage +20, +40 flat-files per facility tier',()=>{S.fac.ta=Math.min(100,S.fac.ta+20);const n=addFiles(40*infKeys().length);log('The doors stayed shut. The Scribes used the quiet to transcribe: +'+fmtN(n)+' flat-files.','sys')}]]}];
-const init=()=>({v:3,stage:0,seeds:0,seed:null,arch:0,hadInter:false,raw:0,del:{},syn:{local:[],off:[],mesh:[],inter:[]},msn:{done:0,cur:null},pub:{s:0,b:0,a:0},albums:0,play:0,t:0,pw:30,cpu:12,bw:30,f:0,q:0,ag:20,earned:0,heat:0,fac:{cc:0,ta:0,sz:0},inc:{cc:0,ta:0,sz:0},kp:0,down:0,tk:0,T:{pi:1,desk:0,rack:0,lux:0,array:0},sticks:0,solar:1,inf:{},df:{cc:0,ta:0,sz:0},infTop:-1,bulk:1,ad:{cc:0,ta:0,sz:0,kp:0},ie:0,pe:0,nd:{local:1,off:0,mesh:0,inter:0},pr:{},adv:{rainbow:0,sage:0,noah:0,sophia:0},sc:{},st:{pur:1,gro:1,loc:1},layers:0,locked:0,mru:0,stu:0,dec:{si:0,ab:0,ch:0},rdisc:0,ivUnl:false,ev:null,nextEv:8,won:false,theme:'g'});
+const init=()=>({v:3,stage:0,seeds:0,seed:null,arch:0,hadInter:false,raw:0,del:{},syn:{local:[],off:[],mesh:[],inter:[]},msn:{done:0,cur:null,board:[],pin:0,nid:0,streak:0,best:0,exp:0,by:{},cd:{}},rep:0,dmg:{},rd:{},vf:{},pub:{s:0,b:0,a:0},albums:0,play:0,t:0,pw:30,cpu:12,bw:30,f:0,q:0,ag:20,earned:0,heat:0,fac:{cc:0,ta:0,sz:0},inc:{cc:0,ta:0,sz:0},kp:0,down:0,tk:0,T:{pi:1,desk:0,rack:0,lux:0,array:0},sticks:0,solar:1,inf:{},df:{cc:0,ta:0,sz:0},infTop:-1,bulk:1,ad:{cc:0,ta:0,sz:0,kp:0},ie:0,pe:0,nd:{local:1,off:0,mesh:0,inter:0},pr:{},adv:{rainbow:0,sage:0,noah:0,sophia:0},sc:{},st:{pur:1,gro:1,loc:1},layers:0,locked:0,mru:0,stu:0,dec:{si:0,ab:0,ch:0},rdisc:0,ivUnl:false,ev:null,nextEv:8,won:false,theme:'g'});
 const merge=o=>{const b=init();for(const k in o){if(o[k]&&typeof o[k]==='object'&&!Array.isArray(o[k])&&b[k]&&typeof b[k]==='object')Object.assign(b[k],o[k]);else b[k]=o[k]}
  if(o.arch===undefined)b.arch=(o.f||0)+(o.q||0)+(o.locked||0);
  if(o.stage===undefined&&o.won)b.stage=7;
@@ -322,7 +326,7 @@ const perk=k=>SCR.reduce((a,s)=>a+(S.sc[s[0]]&&s[5]===k?s[6]:0),0);
 const cpuCap=()=>12+3*mcSum('cpu')+ramGB(),bwCap=()=>F((30+6*mcSum('bw')+perk('bwc'))*(S.stage>=3?1.3:1)),pwCap=()=>40+S.solar*20;
 const sLv=()=>S.pr.scribe4?4:S.pr.scribe3?3:S.pr.scribe2?2:S.pr.scribe1?1:0;
 const ingMult=()=>(1+.35*sLv())*(1+.12*S.adv.sage+perk('ing'))*(S.stage>=4?1.5:1)*fx('ing');
-const agMult=()=>(S.pr.clock?1.1:1)*(S.pr.compiler?1.4:1)*(1+perk('ag'))*(1+.3*Math.sqrt(S.layers))*(S.stage>=1?1.1:1)*(1+.05*Math.pow(S.seeds,.8))*fx('ag');
+const agMult=()=>(S.pr.clock?1.1:1)*(S.pr.compiler?1.4:1)*(1+perk('ag'))*(1+.3*Math.sqrt(S.layers))*(S.stage>=1?1.1:1)*(1+.05*Math.pow(S.seeds,.8))*(1+.012*rankOf())*fx('ag');
 const rc=k=>F(PR[k].c*Math.max(.3,1-.08*S.adv.noah-perk('res'))*(S.rdisc>0?.7:1));
 let LID=0,SHOWN=0;
 function kpHit(){S.kp++;banner('💥 KERNEL PANIC :: PROBE REPELLED','gold');sndUp()}
@@ -474,7 +478,7 @@ function tick(){
  flavor();
  for(const k in S.dec)if(S.dec[k]>0){S.dec[k]--;if(!S.dec[k])log('A sovereign decree has run its course.','lore')}
  if(S.rdisc>0)S.rdisc--;
- tickDel();tickUnlock();msnTick();infUnlock();for(const k in S.ad)S.ad[k]=Math.max(0,S.ad[k]-.4);
+ tickDel();tickDmg();tickUnlock();msnTick();infUnlock();for(const k in S.ad)S.ad[k]=Math.max(0,S.ad[k]-.4);
  if(S.play>0){S.play--;if(!S.play)log('The album fades out. The network keeps the pulse.','lore')}
  if(S.ev===null&&S.t>=S.nextEv){const ok=EVS.map((e,i)=>i).filter(i=>!EVS[i].ok||EVS[i].ok());S.ev=ok[F(R()*ok.length)];S.nextEv=S.t+7+F(R()*6);log('DECISION REQUIRED: '+EVS[S.ev].t,'warn')}
  if(S.t%50==0){const b=gain(20+S.t);FK.forEach(k=>S.fac[k]=Math.max(0,S.fac[k]-8));log('50 BPM clock pulse synchronized local buffers. System jitter reduced to 0%. (+'+b+' ✨, factions -8)','res')}
@@ -526,8 +530,7 @@ function build(sec){
   a.push({l:'Propagate flat-files to the mesh 📜 → ✨',c:bc+' MB/s bandwidth'+(tx>1?' (doubled by the Bandwidth Tax)':'')+', Zookeepers +3',g:'Sends '+bt+' flat-files (kept, they are immutable) for about +'+g+' ✨ Sovereign Agape.'+(S.st.pur===2?' Pure stance: +25%.':''),dis:bt<4?'need flat-files and bandwidth':0,
    f(){S.bw-=bc;gain(g);S.fac.sz=Math.min(100,S.fac.sz+3);log('Hydra Mirror #'+(1+F(R()*tot()))+' propagated '+bt+' .txt flat-files to the global mesh. (+'+g+' ✨ Sovereign Agape)','res')}});
   a.push({l:'Found the MRU Node (Mythocratic Republic University)'+(S.mru?'  [FOUNDED]':''),c:'400 ✨, 20 MB/s bandwidth',g:'A soft university with no classrooms, grades or tests. Students enroll on their own and publish scrolls: passive flat-files and Agape. Survives flattening.',dis:S.mru?'already founded':S.ag<400?'need 400 ✨':S.bw<20?'need 20 MB/s':0,f(){S.ag-=400;S.bw-=20;S.mru=1;log('MRU founded. The doors have no locks and the scrolls have no grades.','lore')}})}
- if(sec==='hydra'&&S.msn.cur){const m=S.msn.cur,p=msnProg(m);if(p){const s=synSet(m.k),rest=p.fs.filter(f=>!s.has(cHash(f.key))),c0=rest[0]?syncCost(rest[0]):0;
-  a.push({l:'Sync mission target: '+p.nd.n+'  ('+p.done+'/'+p.fs.length+' files)',c:'1 MB/s per 30 MB of file, to '+NN[m.k],g:'MISSION: mirror '+(m.t==='dir'?'the whole production':'this file')+' to '+NN[m.k]+'. Reward about '+fmt(m.reward)+' ✨. Folders may take several turns (bandwidth). Type: mission',dis:!rest.length?'already synced':S.bw<c0?'need '+c0+' MB/s':0,f(){const r=syncCore(rest,m.k);if(r.n)log(syncMsg(r,m.k),'res')}})}}
+ if(sec==='hydra')for(const c of (S.msn.board||[])){const p=ctProg(c);if(!p)continue;a.push({l:'Contract #'+c.id+' ['+CT[c.t].n+']: '+ctText(c)+'  ('+p.done+'/'+p.need+')',c:c.t==='mirror'?'1 MB/s per 30 MB of file, to '+nodeShort(c.k):c.t==='verify'?'1 MB/s per 5 files':c.t==='repair'?'about '+(syncCost(MF.byKey[c.key])+1)+' MB/s':c.t==='restore'?'4 MB/s':'free',g:'CONTRACT: '+ctText(c)+'. Reward about '+fmt(c.reward)+' ✨ and '+c.rep+' Standing'+(c.dl?'. Deadline: turn '+c.dl:'')+'. Type: board',dis:ctWhy(c),f(){msnDo(c)}})}
  if(sec==='proto')for(const k in PR){const p=PR[k],c=rc(k);
   a.push({l:p.n+(S.pr[k]?'  [INSTALLED]':''),c:c+' ✨, 6 GHz CPU',g:p.d,dis:S.pr[k]?'already installed':p.gate&&S.stage<p.gate?'liberate '+CAMP[p.gate-1].n+' first (WORLD CAMPAIGN)':p.req&&!S.pr[p.req]?'needs '+PR[p.req].n:p.req2&&!S.pr[p.req2]?'needs '+PR[p.req2].n:S.ag<c?'need '+c+' ✨':S.cpu<6?'need 6 GHz':0,f(){S.ag-=c;S.cpu-=6;S.pr[k]=1;log('Protocol online: '+p.n+'.','sys')}})}
  if(sec==='sec'){
@@ -549,7 +552,7 @@ function build(sec){
   const L=1+F((S.f+S.q)/1500);
   a.push({free:1,l:'Flatten into the CC0 Rug (Hinata Trap)  (Rug layers: '+S.layers+')',c:'resets hardware, mirrors, resources and flat-files',g:'+'+L+' Rug layer(s). Each layer: Agape +15%, upkeep -12%, faction growth -8%, +30 starting Agape. Keeps protocols, advisors, scrolls, MRU. Needs 1,000 flat-files.',dis:S.f+S.q<1000?'need 1,000 flat-files ('+fmt(S.f+S.q)+')':0,
    f(){if(!ask('Flatten into the CC0 Rug? Hardware, mirrors, resources and flat-files reset. You keep protocols, advisors, scrolls and MRU, and gain '+L+' Rug layer(s).'))return false;
-    const keep={v:3,t:S.t,earned:S.earned,kp:S.kp,tk:S.tk,pr:S.pr,adv:S.adv,sc:S.sc,st:S.st,mru:S.mru,stu:S.stu,ivUnl:S.ivUnl,won:S.won,stage:S.stage,seeds:S.seeds,seed:S.seed,infTop:S.infTop,bulk:S.bulk,ie:S.ie,pe:S.earned,arch:S.arch,hadInter:S.hadInter,del:S.del,msn:S.msn,pub:S.pub,albums:S.albums,theme:S.theme,nextEv:S.t+8,layers:S.layers+L,locked:S.locked+S.f+S.q};
+    const keep={v:3,t:S.t,earned:S.earned,kp:S.kp,tk:S.tk,pr:S.pr,adv:S.adv,sc:S.sc,st:S.st,mru:S.mru,stu:S.stu,ivUnl:S.ivUnl,won:S.won,stage:S.stage,seeds:S.seeds,seed:S.seed,infTop:S.infTop,bulk:S.bulk,ie:S.ie,pe:S.earned,arch:S.arch,hadInter:S.hadInter,del:S.del,msn:Object.assign({},S.msn,{board:[],pin:0,cur:null}),rep:S.rep,pub:S.pub,albums:S.albums,theme:S.theme,nextEv:S.t+8,layers:S.layers+L,locked:S.locked+S.f+S.q};
     S=merge(keep);S.ag=20+30*S.layers;S.st.loc=S.st.loc===2?1:S.st.loc;LOG.push({t:S.t,m:'THE HINATA TRAP, INVERTED: you stepped down from the throne and became the floor. '+L+' Rug layer(s) added: the CC0 Rug now holds '+S.layers+' layer(s).',c:'lore'})}})}
  if(sec==='council')ADV.forEach(([k,n,t,e,lines])=>{const lv=S.adv[k],c=30*(lv+1)*(lv+1);
   a.push({l:'Consult '+n+' ('+t+')  Attunement '+lv+'/5',c:c+' ✨',g:'Permanent buff: '+e+'.',dis:lv>=5?'max attunement':S.ag<c?'need '+c+' ✨':0,
@@ -699,10 +702,10 @@ function mfLoad(){
  if(typeof fetch!=="function"){MF.ready=1;return}
  if(typeof setTimeout==="function")setTimeout(()=>{if(!MF.ready){MF.ready=1;msnTick();render()}},6000);
  const urls=["https://republicka.life/files/manifest.json","files/manifest.json","manifest.json"];
- const go=i=>{if(i>=urls.length){MF.ready=1;msnTick();render();return}fetch(urls[i],{cache:"no-cache"}).then(r=>{if(!r.ok)throw 0;return r.json()}).then(j=>{if(!j||!Array.isArray(j.items))throw 0;mfInstall(j,urls[i]);MF.ready=1;CON.lastU=mfU();if(S.msn.cur&&!MF.byKey[S.msn.cur.key])S.msn.cur=null;msnTick();log("manifest.json mounted: "+fmt(MF.list.length)+" archive files ("+cHuman(MF.stats.totalSize||0)+") from "+urls[i]+". Your flat-files now unlock real files in /flat-files.","lore");render()}).catch(()=>go(i+1))};
+ const go=i=>{if(i>=urls.length){MF.ready=1;msnTick();render();return}fetch(urls[i],{cache:"no-cache"}).then(r=>{if(!r.ok)throw 0;return r.json()}).then(j=>{if(!j||!Array.isArray(j.items))throw 0;mfInstall(j,urls[i]);MF.ready=1;CON.lastU=mfU();S.msn.board=(S.msn.board||[]).filter(c=>MF.byKey[c.key]);msnTick();log("manifest.json mounted: "+fmt(MF.list.length)+" archive files ("+cHuman(MF.stats.totalSize||0)+") from "+urls[i]+". Your flat-files now unlock real files in /flat-files.","lore");render()}).catch(()=>go(i+1))};
  go(0)}
 const mfU=()=>Math.min(MF.list.length,Math.max(MF.first,Math.floor(S.arch/FPE)));
-const mfR=()=>Math.min(mfU(),Math.floor(S.locked/FPE));
+const mfR=()=>Math.min(Math.floor(mfU()*.7),Math.floor(S.locked/FPE));
 const fileVis=(n,rug)=>n.hid?!rug:rug?n.id<mfR():(n.id>=mfR()&&n.id<mfU()&&!(S.del&&S.del[n.key]!==undefined));
 const dirVis=(n,rug)=>n.hid?!rug:rug?n.lo<mfR():(n.hi>=mfR()&&n.lo<mfU());
 
@@ -774,7 +777,7 @@ const MIRN={local:"local",off:"offshore",offshore:"offshore",mesh:"mesh",inter:"
 function cmdOf(it,sec,j){if(it.nav)return null;if(it.cmd)return it.cmd;const l=it.l;
  switch(sec){
  case "media":return /^Ingest transcript/.test(l)?"ingest":/^Batch-ingest/.test(l)?"ingest --batch":/^Record Street/.test(l)?"record":/^Run Scribe/.test(l)?"scribe":null;
- case "hydra":{for(const k in NN)if(l.indexOf("Deploy Hydra Mirror: "+NN[k])===0)return "mirror "+MIRK[k];return /^Propagate/.test(l)?"sync":/^Sync mission target/.test(l)?"sync mission":/^Found the MRU/.test(l)?"found mru":null}
+ case "hydra":{for(const k in NN)if(l.indexOf("Deploy Hydra Mirror: "+NN[k])===0)return "mirror "+MIRK[k];return /^Propagate/.test(l)?"sync":/^Contract #\d/.test(l)?"do "+l.match(/#(\d+)/)[1]:/^Found the MRU/.test(l)?"found mru":null}
  case "shop":{for(const k in MC)if(l.indexOf(MC[k].n)===0)return "buy "+k;return /^RAM Stick/.test(l)?"buy ram":/^Solar/.test(l)?"buy solar":null}
  case "proto":{for(const k in PR)if(l.indexOf(PR[k].n)===0)return "research "+k;return null}
  case "sec":return /^Trigger Kernel/.test(l)?"counter panic":/^Post the CC0/.test(l)?"counter notice":/^Deploy Plushie/.test(l)?"counter buffer":/^Route through/.test(l)?"counter route":/^Reboot offline/.test(l)?"counter reboot":/^Vent heat/.test(l)?"counter vent":/^Provoke/.test(l)?"counter provoke":null;
@@ -787,7 +790,7 @@ function cmdOf(it,sec,j){if(it.nav)return null;if(it.cmd)return it.cmd;const l=i
  return null}
 const ECHO={"ingest":"./scripts/ingest.sh","ingest --batch":"./scripts/ingest.sh --batch","record":"./scripts/record.sh","scribe":"./scripts/scribe.sh","sync":"./scripts/sync_owrbit.sh","counter panic":"./scripts/kernel_panic.sh","publish scroll":"./scripts/publish.sh scroll","publish book":"./scripts/publish.sh book","publish anthology":"./scripts/publish.sh anthology","compose":"./scripts/compose.sh","flatten":"./scripts/flatten.sh --yes"};
 function conPush(m,c){LOG.push({id:++LID,t:S.t,h:clk(),m,c,raw:1});if(LOG.length>500)LOG.shift()}
-function echoCmd(c){if(c==="sync mission"&&S.msn.cur)c="sync "+cPath(["flat-files"].concat(S.msn.cur.key.split("/").filter(Boolean)))+" "+SYNFLAG[S.msn.cur.k];conPush(ps1()+(ECHO[c]||c),"con ec")}
+function echoCmd(c){conPush(ps1()+(ECHO[c]||c),"con ec")}
 function cList(sec,prefix){const pm=menu,pi=items;menu=sec;const its=build(sec);menu=pm;items=pi;
  const o=its.map((it,j)=>({c:cmdOf(it,sec,j),it})).filter(x=>x.c&&x.c.indexOf(prefix)===0);
  return o.length?o.map(x=>x.c.padEnd(18)+x.it.l.split("  (")[0].replace(/\s*\[.*$/,"")+(x.it.dis?"   [locked: "+x.it.dis+"]":x.it.c?"   cost: "+x.it.c:"")).join("\n"):"nothing available here yet."}
@@ -830,7 +833,13 @@ const DOCS={
  df:["df","Archive size, how much is unlocked locally, files sealed in the Rug, and mirror count.","free",["df"],"du status"],
  status:["status  (also: top)","Live CPU, RAM, power, bandwidth, heat, Agape, flat-files, faction threats, nodes, archive progress and your current mission.","free",["status"],"mission campaign"],
  campaign:["campaign","The current world-campaign stage, its goal and your progress. After the Global Install, shows your Star Seed.","free",["campaign"],"seed status"],
- mission:["mission","Your current archive mission: sync one file or a whole production to a mirror node. Shows progress, reward, and the exact command. Completing missions pays Agape and unlocks scrolls.","free",["mission","sync /flat-files/01-The-Meaning-of-Life-2012 --local"],"sync missions"],
+ mission:["mission [N]","Your contract board, with Standing (reputation) and rank. mission N tracks one contract and shows its details and the exact command. Contracts: Mirror, Review, Verify, Repair, Restore.","free",["mission","mission 3"],"board rank do"],
+ board:["board","Same as mission: the contract board and your Standing rank.","free",["board"],"mission rank do"],
+ rank:["rank  (also: standing)","Your Standing rank, perks, unlocks, streak and the whole 20-rank ladder.","free",["rank"],"board mission"],
+ do:["do N","Work on contract N for one turn: sync the target, review the next file, verify, repair or restore. Same as the contract button in HYDRA MIRRORING.","1 turn",["do 3"],"board verify repair"],
+ verify:["verify PATH","Audit files for damage (5 files per MB/s of bandwidth). Counts toward Verify contracts and pays a little Agape.","1 turn",["verify /flat-files/01-The-Meaning-of-Life-2012"],"repair board"],
+ repair:["repair [PATH]","Repair bit-rotted files ([degraded] or [CORRUPT] in ls -l) by pulling clean copies from the mesh. Costs bandwidth per file. No PATH repairs everything it can afford.","1 turn",["repair","repair /flat-files/05-Living-Neverland-2013"],"verify board"],
+ abandon:["abandon N","Drop contract N from the board. Resets your streak.","free",["abandon 3"],"board"],
  history:["history","Commands you have typed this session. Use the Up and Down arrow keys to recall them.","free",["history"],"clear"],
  clear:["clear  (also: cls)","Clear the log view. Game state is untouched.","free",["clear"],""],
  echo:["echo TEXT...","Print text.","free",["echo hello 50 BPM"],""],
@@ -879,10 +888,10 @@ const DOCS={
 };
 const TOPICS={
  infra:"INFRASTRUCTURE  (menu D, or: menu infra)\n  The endless part of the game. After you own an Interstellar Substrate Array and an Interstellar mirror, a ladder of facilities opens:\n  Orbital Relay Station, Lunar Vault, Dyson Swarm Lattice ... and onward, forever.\n    build            list every tier: cost, weight, milestone\n    build 2          build tier 2 (uses your bulk amount)\n    build 2 x10      build ten at once, for one turn\n    bulk max         buy as many as you can afford, up to 100\n  Each unit adds Agape weight and CPU and bandwidth regen. Tier N+1 unlocks when you own 5 of tier N.\n  Prices climb 22% per unit. At 10, 25, 50 and 100 units (then every doubling) a tier's output doubles.\n  Bigger empires draw bigger attention: faction growth rises with the log of your weight, and counters weaken if you spam one (they adapt).\n  fortify cc|ta|sz buys permanent defense. Flattening resets facilities, but unlocked tiers stay unlocked.",
- quickstart:"QUICKSTART\n  1. ls flat-files            your archive lives here (also /flat-files)\n  2. mission                  read your current archive mission\n  3. sync <path> --local      mirror a file or a whole folder (see: help sync)\n  4. record, then scribe      the only way to make flat-files: transcripts come from footage\n  5. status                   check power, heat and the three factions\n  6. buy / research / mirror  grow the network (run each with no argument to list)\n  7. counter notice | vent    answer threats before a Takedown\n  8. Every ACTION costs one turn. Looking around is always free.\n  Tip: Tab completes commands and paths. Up/Down recalls history. Esc leaves the prompt.",
+ quickstart:"QUICKSTART\n  1. ls flat-files            your archive lives here (also /flat-files)\n  2. board                    contracts + Standing (reputation); try: do 1\n  3. sync <path> --local      mirror a file or a whole folder (see: help sync)\n  4. record, then scribe      the only way to make flat-files: transcripts come from footage\n  5. status                   check power, heat and the three factions\n  6. buy / research / mirror  grow the network (run each with no argument to list)\n  7. counter notice | vent    answer threats before a Takedown\n  8. Every ACTION costs one turn. Looking around is always free.\n  Tip: Tab completes commands and paths. Up/Down recalls history. Esc leaves the prompt.",
  paths:"PATHS\n  /home/guest    your home (~). Contains README.txt, manifest.json and flat-files\n  /flat-files    your archive: the real manifest, unlocked file by file\n  /books         scrolls, books and anthologies you have published\n  /music         albums you have composed\n  /system        live logs: psu_status.log, threat_matrix.conf, agape.dat, network.log, manifest.json\n  /scripts       one script per action (run scribe.sh)\n  /rug           files sealed by flattening. Read-only: the Rug holds\n  /mirrors       one folder per node type, listing the files mirrored there\n  /etc           passwd, hostname, motd\n  Absolute (/flat-files), relative (..), home (~) and wildcards (*, ?) all work.",
  pipes:"PIPES\n  Chain commands with |. The right-hand command reads the left-hand output.\n  Works with grep, head, tail and wc on the right.\n    ls /flat-files | grep 2015 | wc -l\n    cat /system/network.log | tail -5\n    ls -l /flat-files/Books | head -3\n  Action commands do not take piped input.",
- missions:"MISSIONS\n  There is always one archive mission, generated from your real file names.\n  Odd missions ask for a single file, even ones for a whole production folder.\n  Mirror the target to the named node (sync PATH --node, or the button\n  'Sync mission target' in HYDRA MIRRORING). Progress is counted per file,\n  however you sync them. Completing a mission pays Agape, scales with node\n  and size, and unlocks scrolls at 1 and 10 completions.\n  Folders may need several turns: bandwidth limits how many files go per turn.\n  Run: mission",
+ missions:"CONTRACTS AND STANDING\n  The BOARD holds several contracts at once, made from your real file names.\n  Types: Mirror (sync to a node), Review (cat or head files in a folder),\n  Verify (audit a folder), Repair (fix bit-rotted files), Restore (pull back\n  deleted files). Higher Standing unlocks Verify, Repair and Restore.\n  Contracts pay Agape and Standing (reputation). Standing has 20 ranks with\n  slow, growing costs: each rank adds board slots and +1.2% Agape.\n  Streaks (+5% rep each, max +50%) break if a deadline lapses or you abandon.\n  Files rot slowly: ls -l shows [degraded]/[CORRUPT]. repair PATH fixes them.\n  Free syncing always works too. Contracts are extras, never a gate.\n  Run: board   mission N   do N   verify PATH   repair PATH   rank   abandon N",
  manifest:"THE MANIFEST\n  Your real archive loads from republicka.life/files/manifest.json (then files/manifest.json or manifest.json beside the game) and mounts at /flat-files.\n  The first folder is open from turn 0. After that, every 4 flat-files you archive unlock the next real file, in manifest order.\n  cat, head, tail, wc and grep read real .txt files live. Video, audio and images are binary.\n  If the manifest cannot be reached, the game generates a procedural archive of folders and files instead, so every command still works.\n  Flattening seals your earliest files into the Rug. They stay listed in /flat-files (read-only, tagged [sealed in the Rug], also under /rug) but cannot be deleted or synced, and missions never target them.\n  cat manifest.json shows the current source and your unlock progress.",
  turns:"TURNS\n  The game advances only when you act. Free: ls cat head tail wc grep cd pwd du df status campaign mission history\n  clear echo whoami backup menu theme banner sound help.\n  1 turn: ingest record scribe sync mirror found buy research counter stance consult publish compose play decree\n  seed rm wait choose flatten.\n  A turn is one 50 BPM breath: income arrives, factions grow, events can fire.",
  scripts:"SCRIPTS\n  ls /scripts shows one script per action. cat shows what it does. Run one with ./scripts/NAME.sh or run NAME.sh.\n  Clicking a button types the matching script or command into the log, so what viewers see on screen is always a real command.",
@@ -894,7 +903,7 @@ function cSuggest(n){const c=Object.keys(CMDS).filter(k=>cLev(n,k)<=2||(n.length
 function cHelpCmd(n){const d=DOCS[n]||DOCS[{cls:"clear",top:"status",sleep:"wait",sh:"run",bash:"run",logout:"exit"}[n]];
  if(!d)return TOPICS[n]||("help: no manual entry for '"+n+"'."+cSuggest(n)+"\nTry: help topics");
  return n.toUpperCase()+"\n  USAGE     "+d[0]+"\n  COST      "+d[2]+"\n\n  "+d[1]+"\n\n  EXAMPLES\n"+d[3].map(e=>"    "+e).join("\n")+(d[4]?"\n\n  SEE ALSO  "+d[4]:"")}
-const HELPTXT="TERMINAL VELOCITY CONSOLE\nPress / to type, Esc to leave. Tab completes, Up/Down recalls history.\n\nNEW HERE?  help quickstart      Your archive: ls flat-files      Your mission: mission\n\nSTANDARD COMMANDS (free)\n  find [PATH] [-name PAT] [-type f|d]  locate a file by name\n  ls [-lahsSr1]  list      -s sizes, -h human, -S by size, -r reverse, -l long, -a hidden\n  cat  head  tail  wc  grep  cd  pwd  du  df  echo  clear  history  which\n  whoami  hostname  id  uname  date  uptime  fortune\n\nGAME VIEWS (free)\n  status  campaign  mission\n  clear  echo  whoami  hostname  id  uname  date  uptime  fortune  which  backup  menu  theme  banner  sound\n\nACTIONS (1 turn each)\n  record  scribe                  film, then transcribe (ingest = scribe)\n  sync  mirror  found            mirror files, deploy nodes, found MRU\n  buy  research                  hardware and protocols\n  build  bulk  fortify           endless infrastructure tiers and permanent defense\n  counter  panic  vent           security\n  stance  consult  decree  seed  strategy, advisors, Ivory, Star Seeds\n  publish  compose  play         media\n  rm  wait  choose  flatten      delete, rest, answer events, prestige\n\nHELP\n  help COMMAND   details and examples      COMMAND --help   same\n  help topics    quickstart, paths, pipes, missions, manifest, turns, scripts, deletion, keys, fun\n  Run any action with no argument to list its options and costs.\n";
+const HELPTXT="TERMINAL VELOCITY CONSOLE\nPress / to type, Esc to leave. Tab completes, Up/Down recalls history.\n\nNEW HERE?  help quickstart      Your archive: ls flat-files      Your mission: mission\n\nSTANDARD COMMANDS (free)\n  find [PATH] [-name PAT] [-type f|d]  locate a file by name\n  ls [-lahsSr1]  list      -s sizes, -h human, -S by size, -r reverse, -l long, -a hidden\n  cat  head  tail  wc  grep  cd  pwd  du  df  echo  clear  history  which\n  whoami  hostname  id  uname  date  uptime  fortune\n\nGAME VIEWS (free)\n  status  campaign  mission  board  rank\n  clear  echo  whoami  hostname  id  uname  date  uptime  fortune  which  backup  menu  theme  banner  sound\n\nACTIONS (1 turn each)\n  record  scribe                  film, then transcribe (ingest = scribe)\n  sync  mirror  found            mirror files, deploy nodes, found MRU\n  buy  research                  hardware and protocols\n  build  bulk  fortify           endless infrastructure tiers and permanent defense\n  counter  panic  vent           security\n  stance  consult  decree  seed  strategy, advisors, Ivory, Star Seeds\n  publish  compose  play         media\n  rm  wait  choose  flatten      delete, rest, answer events, prestige\n\nHELP\n  help COMMAND   details and examples      COMMAND --help   same\n  help topics    quickstart, paths, pipes, missions, manifest, turns, scripts, deletion, keys, fun\n  Run any action with no argument to list its options and costs.\n";
 
 /* --- sync + archive missions --- */
 const SYNF={"--local":"local","--offshore":"off","--owrbit":"off","--mesh":"mesh","--array":"inter","--inter":"inter"},SYNFLAG={local:"--local",off:"--offshore",mesh:"--mesh",inter:"--array"},NODEK=["local","off","mesh","inter"];
@@ -908,31 +917,110 @@ function syncCore(fs,k){const set=synSet(k);const todo=fs.filter(f=>!set.has(cHa
 const syncMsg=(r,k)=>"Synced "+r.n+" file(s) to "+NN[k]+" using "+r.bw+" MB/s of bandwidth, +"+fmt(r.ag)+" ✨. Folder progress "+(r.already+r.n)+"/"+r.total+"."+(r.left?" "+r.left+" left. Bandwidth is the limit (large files cost more) and it recovers each turn: run it again next turn, or build more bandwidth.":" Done.");
 function msnFiles(node){const o=[];(function w(n){if(n.d)n.k.forEach(w);else if(!n.hid)o.push(n)})(node);return o}
 function msnProg(m){const nd=MF.byKey[m.key];if(!nd)return null;const fs=msnFiles(nd);const s=synSet(m.k);return {nd,fs,done:fs.filter(f=>s.has(cHash(f.key))).length}}
-function msnAssign(){
- if(S.msn.cur||!MF.list.length||!MF.ready)return;
- const owned=NODEK.filter(k=>S.nd[k]>0);if(!owned.length)return;
- const d=S.msn.done,r=cRng(cHash("msn"+d+MF.src+MF.list.length));
- const U=mfU(),R=mfR(),base=F(d/2)%owned.length;
- for(let tt=0;tt<owned.length;tt++){const k=owned[(base+tt)%owned.length],set=synSet(k);
- const vis=f=>f.id>=R&&f.id<U&&!(S.del&&S.del[f.key]!==undefined);
- const cf=MF.list.filter(f=>vis(f)&&!set.has(cHash(f.key)));
- const cd=[];(function w(arr){for(const n of arr){if(!n.d||n.hid)continue;const fs=msnFiles(n);if(fs.length>=2&&fs.length<=60&&fs.every(vis)&&fs.some(f=>!set.has(cHash(f.key))))cd.push(n);w(n.k)}})(MF.tree);
- let isDir=d%2===1;if(isDir&&!cd.length)isDir=false;if(!isDir&&!cf.length){if(!cd.length)continue;isDir=true}
- let tgt,reward;
- if(isDir){tgt=cd[F(r()*cd.length)];const fs=msnFiles(tgt);reward=F((200+80*d+fs.reduce((a,f)=>a+mbOf(f),0)*.05)*Math.sqrt(NW[k])*agMult())}
- else{tgt=cf[F(r()*cf.length)];reward=F((80+30*d+mbOf(tgt)*.1)*Math.sqrt(NW[k])*agMult())}
- S.msn.cur={t:isDir?"dir":"file",key:tgt.key,k,reward};
- log("NEW MISSION #"+(d+1)+": mirror "+(isDir?"the production "+tgt.n+" ("+msnFiles(tgt).length+" files)":"the file "+tgt.n)+" (at "+cPath(["flat-files"].concat(tgt.key.split("/").filter(Boolean)))+") to "+NN[k]+". Reward about "+fmt(reward)+" ✨. Type: mission","lore");return}}
-function msnTick(){const m=S.msn&&S.msn.cur;
- if(m){const p=msnProg(m);
-  if(!p||S.nd[m.k]<=0||p.fs.some(f=>f.id<mfR())||p.fs.every(f=>S.del&&S.del[f.key]!==undefined)){S.msn.cur=null;log("Mission retargeted: the archive or your nodes changed.","sys")}
-  else if(p.fs.length&&p.done>=p.fs.length){const g=gain(m.reward);S.msn.done++;S.msn.cur=null;log("MISSION COMPLETE #"+S.msn.done+": "+p.nd.n+" is mirrored on "+NN[m.k]+". +"+fmt(g)+" ✨","lore");banner("📜 MISSION COMPLETE :: +"+fmt(g)+" ✨","gold");sndUp()}}
- if(!S.msn.cur)msnAssign()}
-function msnLine(){const m=S.msn.cur;if(!m)return "Archive mission: none right now";const p=msnProg(m);return p?"Mission #"+(S.msn.done+1)+": mirror "+p.nd.n+" to "+NN[m.k]+" ("+p.done+"/"+p.fs.length+")":"Archive mission: pending"}
-function cMission(){const m=S.msn.cur;if(!m){const own=NODEK.some(k=>S.nd[k]>0),un=mfU()-mfR();const why=!MF.list.length||!MF.ready?"the archive manifest is not loaded yet.":!own?"you have no mirror node yet. Build one (Server Shop / Hydra Mirroring).":un<=0?"you have no unlocked files yet. Record street footage and run the Scribe to unlock flat-files.":"every unlocked file is already mirrored on all of your nodes. Record more footage and run the Scribe to unlock new ones, or build another node.";return "No archive mission right now: "+why+" Completed: "+S.msn.done}
- const p=msnProg(m);if(!p)return "Mission target is not in the manifest any more. It will be retargeted.";
- const mb=p.fs.reduce((a,f)=>a+mbOf(f),0);const path=cPath(["flat-files"].concat(m.key.split("/").filter(Boolean)));const par=path.slice(0,path.lastIndexOf("/"))||"/";
- return "MISSION #"+(S.msn.done+1)+"   ("+S.msn.done+" completed)\n  "+(m.t==="dir"?"Mirror the whole production":"Mirror the file")+"  "+p.nd.n+"\n  to "+NN[m.k]+"   ("+p.fs.length+" file(s), "+cHuman(mb*1048576)+")\n  location  "+path+(m.t==="dir"?"/":"")+"\n  look      "+(m.t==="dir"?"ls "+path:"ls "+par)+"\n  progress  "+p.done+"/"+p.fs.length+" files\n  reward    about "+fmt(m.reward)+" ✨\n  do it     sync "+path+" "+SYNFLAG[m.k]+"\n            or the Sync mission target button in HYDRA MIRRORING, or: sync mission"+(S.nd[m.k]>0?"":"\n  needs the node first: mirror")}
+/* --- Standing (reputation), the contract board, and file health --- */
+const RANKS=["Volunteer","Cataloguer","Scribe","Keeper","Archivist","Warden","Curator","Custodian","Librarian","Registrar","Steward","Chancellor","High Archivist","Sentinel of the Rug","Warden of Agape","Sovereign Librarian","Keeper of the Flame","Eternal Registrar","Voice of the Archive","Sovereign Archivist"];
+const rankAt=i=>i<=0?0:Math.round(50*Math.pow(1.55,i)-50);
+function rankOf(){const r=S.rep||0;let i=0;while(i<RANKS.length-1&&r>=rankAt(i+1))i++;return i}
+const rankName=()=>RANKS[rankOf()];
+const slotsOf=()=>Math.min(7,2+Math.floor(rankOf()/3));
+const CT={mirror:{n:"Mirror",r:0,w:3},review:{n:"Review",r:0,w:2},verify:{n:"Verify",r:1,w:2},repair:{n:"Repair",r:2,w:5},restore:{n:"Restore",r:3,w:5}};
+const nodeShort=k=>NN[k].split(" (")[0];
+const ctPath=key=>cPath(["flat-files"].concat(key.split("/").filter(Boolean)));
+const ctVis=f=>f.id>=mfR()&&f.id<mfU()&&!(S.del&&S.del[f.key]!==undefined);
+function addRep(x){const a=rankOf();S.rep=(S.rep||0)+x;const b=rankOf();if(b>a){log("STANDING UP: you are now "+RANKS[b]+" (rank "+b+"/"+(RANKS.length-1)+"). Board slots "+slotsOf()+", Agape +"+(1.2*b).toFixed(1)+"%."+(CT.verify.r===b?" Unlocked: Verify contracts.":CT.repair.r===b?" Unlocked: Repair contracts.":CT.restore.r===b?" Unlocked: Restore contracts.":""),"lore");banner("★ STANDING :: "+RANKS[b].toUpperCase(),"gold");sndUp()}}
+function postStand(){try{if(typeof parent!=="undefined"&&parent!==window){const i=rankOf();parent.postMessage({tvos:"standing",rank:i,name:RANKS[i],rep:S.rep||0,next:i<RANKS.length-1?rankAt(i+1):0,done:S.msn.done},"*")}}catch(e){}}
+function ctText(c){const nm=(MF.byKey[c.key]||{n:c.key}).n;
+ if(c.t==="mirror")return "Mirror "+(c.d?"the production ":"the file ")+nm+" to "+nodeShort(c.k);
+ if(c.t==="review")return "Review "+c.n+" files in "+nm;
+ if(c.t==="verify")return "Audit "+nm+": verify "+c.n+" files";
+ if(c.t==="repair")return "Repair "+nm+" (damaged copy on "+nodeShort((S.dmg[c.key]||{k:c.k}).k)+")";
+ return "Restore "+nm+" (deleted locally)"}
+function ctProg(c){const nd=MF.byKey[c.key];if(!nd)return null;
+ if(c.t==="mirror"){if(!(S.nd[c.k]>0))return null;const p=msnProg(c);if(!p||p.fs.some(f=>f.id<mfR()))return null;return{done:p.done,need:p.fs.length,fs:p.fs}}
+ if(c.t==="review"||c.t==="verify"){const fs=msnFiles(nd).filter(ctVis);if(fs.length<c.n)return null;const M=c.t==="review"?S.rd:S.vf;return{done:Math.min(c.n,fs.filter(f=>M[f.key]!==undefined&&M[f.key]>=c.t0).length),need:c.n,fs}}
+ if(c.t==="repair")return{done:S.dmg[c.key]?0:1,need:1,fs:[nd]};
+ return{done:S.del&&S.del[c.key]!==undefined?0:1,need:1,fs:[nd]}}
+function repGain(c){const rk=rankOf();let b=c.t==="mirror"?8+(c.d?Math.min(30,(c.n||4)*1.2):0)+Math.min(10,(c.mb||0)*.02):c.t==="review"?5+c.n*1.5:c.t==="verify"?8+c.n*1.2:c.t==="repair"?14+(c.lv>1?8:0):14;
+ return Math.max(1,Math.round(b*(1+.08*rk)*(1+Math.min(.5,.05*(S.msn.streak||0)))*(c.dl?1.5:1)))}
+function ctGen(){
+ const M=S.msn,rk=rankOf(),U=mfU(),R=mfR();if(!MF.ready||!MF.list.length||U<=R)return null;
+ const r=cRng(cHash("ct"+M.nid+"|"+S.t+"|"+MF.src)),cdOk=k=>!(M.cd[k]>S.t),onB=(t,k)=>M.board.some(c=>c.t===t&&c.key===k),pick=a=>a[Math.floor(r()*a.length)];
+ const dirs=[];(function w(arr){for(const n of arr){if(!n.d||n.hid)continue;const fs=msnFiles(n).filter(ctVis);if(fs.length>=3&&fs.length<=40)dirs.push({n,fs});w(n.k)}})(MF.tree);
+ const owned=NODEK.filter(k=>S.nd[k]>0),opts={};
+ if(owned.length){const o=[];for(const k of owned){const set=synSet(k);const cf=MF.list.filter(f=>ctVis(f)&&!set.has(cHash(f.key))&&cdOk(f.key)&&!onB("mirror",f.key));const cd=dirs.filter(x=>x.fs.length>=2&&x.fs.some(f=>!set.has(cHash(f.key)))&&cdOk(x.n.key)&&!onB("mirror",x.n.key));if(cf.length||cd.length)o.push({k,cf,cd})}if(o.length)opts.mirror=o}
+ {const d=dirs.filter(x=>cdOk(x.n.key)&&!onB("review",x.n.key));if(d.length)opts.review=d}
+ if(rk>=CT.verify.r){const d=dirs.filter(x=>x.fs.length<=25&&cdOk(x.n.key)&&!onB("verify",x.n.key));if(d.length)opts.verify=d}
+ if(rk>=CT.repair.r){const d=Object.keys(S.dmg).filter(k=>MF.byKey[k]&&S.nd[S.dmg[k].k]>0&&!onB("repair",k));if(d.length)opts.repair=d}
+ if(rk>=CT.restore.r){const d=Object.keys(S.del||{}).filter(k=>MF.byKey[k]&&!onB("restore",k));if(d.length)opts.restore=d}
+ const types=Object.keys(opts);if(!types.length)return null;
+ const wt=types.map(t=>CT[t].w/(1+M.board.filter(c=>c.t===t).length*1.5)),tot_=wt.reduce((a,b)=>a+b,0);let x=r()*tot_,t=types[0];for(let i=0;i<types.length;i++){x-=wt[i];if(x<=0){t=types[i];break}}
+ const inc=Math.max(12,S.ie||0),mult=agMult();let c={id:++M.nid,t,key:"",t0:S.t,dl:0,reward:0};
+ if(t==="mirror"){const o=pick(opts.mirror);c.k=o.k;const dir=o.cd.length&&(!o.cf.length||r()<.45);if(dir){const x=pick(o.cd);c.d=true;c.key=x.n.key;c.n=x.fs.length;c.mb=x.fs.reduce((a,f)=>a+mbOf(f),0);c.reward=F((200+60*M.done+c.mb*.05)*Math.sqrt(NW[o.k])*mult)}else{const f=pick(o.cf);c.d=false;c.key=f.key;c.n=1;c.mb=mbOf(f);c.reward=F((80+25*M.done+c.mb*.1)*Math.sqrt(NW[o.k])*mult)}c.reward=Math.max(c.reward,F(inc*(c.d?6:3)))}
+ else if(t==="review"){const x=pick(opts.review);c.key=x.n.key;c.n=Math.min(x.fs.length,3+Math.floor(r()*3));c.reward=F(inc*(2+.8*c.n)*Math.max(1,mult/2))}
+ else if(t==="verify"){const x=pick(opts.verify);c.key=x.n.key;c.n=x.fs.length;c.reward=F(inc*(4+x.fs.length*.2)*Math.max(1,mult/2))}
+ else if(t==="repair"){c.key=pick(opts.repair);c.k=S.dmg[c.key].k;c.lv=S.dmg[c.key].l;c.reward=F(inc*(8+(c.lv>1?4:0))*Math.max(1,mult/2))}
+ else{c.key=pick(opts.restore);c.reward=F(inc*8*Math.max(1,mult/2))}
+ if(rk>=1&&r()<.3){c.dl=S.t+(t==="mirror"&&c.d?20+c.n:t==="restore"?40:30);c.reward=F(c.reward*1.4)}
+ c.rep=repGain(c);return c}
+function msnTick(){const M=S.msn;if(!M.board)M.board=[];if(!M.cd)M.cd={};if(!M.by)M.by={};if(M.nid==null)M.nid=0;if(M.streak==null)M.streak=0;if(!S.dmg)S.dmg={};if(!S.rd)S.rd={};if(!S.vf)S.vf={};if(S.rep==null)S.rep=0;
+ if(M.cur){const m=M.cur;M.cur=null;if(MF.byKey[m.key]&&S.nd[m.k]>0)M.board.push({id:++M.nid,t:"mirror",d:m.t==="dir",key:m.key,k:m.k,reward:m.reward,n:1,t0:S.t,dl:0,rep:8})}
+ if(MF.ready){
+  for(const c of M.board.slice()){
+   if(c.dl&&S.t>c.dl){M.board=M.board.filter(x=>x!==c);M.streak=0;M.exp=(M.exp||0)+1;log("CONTRACT LAPSED #"+c.id+": "+ctText(c)+". The deadline passed. Streak reset.","warn");continue}
+   const p=ctProg(c);if(!p){M.board=M.board.filter(x=>x!==c);log("Contract #"+c.id+" withdrawn: the archive or your nodes changed.","sys");continue}
+   if(p.done>=p.need){M.board=M.board.filter(x=>x!==c);const g=gain(c.reward);M.done++;M.streak++;M.best=Math.max(M.best||0,M.streak);M.by[c.t]=(M.by[c.t]||0)+1;M.cd[c.key]=S.t+40;const rp=repGain(c);addRep(rp);
+    log("CONTRACT COMPLETE #"+c.id+": "+ctText(c)+". +"+fmt(g)+" ✨, +"+rp+" Standing (streak "+M.streak+")","lore");banner("📜 CONTRACT COMPLETE :: +"+fmt(g)+" ✨  +"+rp+" ★","gold");sndUp()}}
+  let guard=0;while(M.board.length<slotsOf()&&guard++<3){const c=ctGen();if(!c)break;M.board.push(c);log("NEW CONTRACT #"+c.id+" ["+CT[c.t].n+"]: "+ctText(c)+(c.dl?" (by turn "+c.dl+")":"")+". Reward about "+fmt(c.reward)+" ✨ and "+c.rep+" Standing. Type: board","lore")}}
+ if(M.pin&&!M.board.some(c=>c.id===M.pin))M.pin=0;postStand()}
+function msnLine(){const M=S.msn;return "Standing: "+rankName()+" ("+fmt(S.rep||0)+")   Board: "+((M.board||[]).length)+" contract(s)   Done "+M.done+"   Streak "+(M.streak||0)}
+const ctTracked=t=>{const B=S.msn.board||[];return B.find(c=>c.id===S.msn.pin&&(!t||c.t===t))||B.find(c=>!t||c.t===t)||null};
+/* --- file health: bit-rot, verify, repair --- */
+function hashMap(){if(!MF._hm||MF._hn!==MF.list.length){MF._hm={};MF._hn=MF.list.length;for(const f of MF.list)MF._hm[cHash(f.key)]=f}return MF._hm}
+function tickDmg(){if(!S.dmg)S.dmg={};if(S.t<30||!MF.ready||Object.keys(S.dmg).length>=25)return;if(R()>.035+.0004*S.heat)return;
+ const ks=NODEK.filter(k=>(S.syn[k]||[]).length&&S.nd[k]>0);if(!ks.length)return;const k=ks[F(R()*ks.length)],arr=S.syn[k],hm=hashMap();
+ for(let tries=0;tries<12;tries++){const i=F(R()*arr.length),f=hm[arr[i]];if(!f||!ctVis(f)||S.dmg[f.key])continue;arr.splice(i,1);S.dmg[f.key]={k,l:R()<.3?2:1,t:S.t};
+  log("BIT-ROT: "+f.n+" lost its copy on "+nodeShort(k)+" and is flagged ["+(S.dmg[f.key].l>1?"CORRUPT":"degraded")+"]. Fix it: repair "+ctPath(f.key)+"  (ls -l shows the flag)","warn");return}}
+function verifyFiles(fs){const left=fs.filter(f=>S.vf[f.key]!==S.t);const n=Math.min(left.length,Math.floor(S.bw)*5);if(n<1)return{n:0,bad:0};const bw=Math.max(1,Math.ceil(n/5));let bad=0;for(const f of left.slice(0,n)){S.vf[f.key]=S.t;if(S.dmg[f.key])bad++}S.bw-=bw;gain(F(Math.max(12,S.ie||0)*.12*n/5));return{n,bad,bw,total:fs.length}}
+function repairFiles(keys){let budget=S.bw,n=0,bw=0,ag=0;for(const key of keys){const d=S.dmg[key],f=MF.byKey[key];if(!d||!f)continue;const c=syncCost(f)+1;if(c>budget)break;if(!(S.nd[d.k]>0))continue;budget-=c;bw+=c;const arr=S.syn[d.k]||(S.syn[d.k]=[]),h=cHash(key);if(arr.indexOf(h)<0)arr.push(h);delete S.dmg[key];n++;ag+=Math.sqrt(Math.max(1,mbOf(f)))*3*agMult()}
+ if(n){S.bw-=bw;ag=F(ag);gain(ag)}return{n,bw,ag}}
+function msnDo(c){/* one step toward a contract; used by the button and by: do N */
+ const p=ctProg(c);if(!p)return;
+ if(c.t==="mirror"){const s=synSet(c.k),rest=p.fs.filter(f=>!s.has(cHash(f.key)));const r=syncCore(rest,c.k);if(r.n)log(syncMsg(r,c.k),"res");else log("Contract #"+c.id+": not enough bandwidth this turn.","warn")}
+ else if(c.t==="review"){const M=S.rd,nx=p.fs.filter(f=>!(M[f.key]>=c.t0)).slice(0,1);if(nx.length){M[nx[0].key]=S.t;log("You review "+nx[0].n+" ("+(p.done+1)+"/"+c.n+" for contract #"+c.id+"). Tip: cat or head any file in the folder counts too.","res")}}
+ else if(c.t==="verify"){const r=verifyFiles(p.fs);log(r.n?"Verified "+r.n+" file(s) in "+(MF.byKey[c.key]||{n:"folder"}).n+" for "+r.bw+" MB/s"+(r.bad?"; "+r.bad+" damaged file(s) found (repair them)":"")+".":"verify: need 1 MB/s bandwidth.",r.n?"res":"warn")}
+ else if(c.t==="repair"){const r=repairFiles([c.key]);log(r.n?"Repaired "+(MF.byKey[c.key]||{n:"file"}).n+" from the mesh for "+r.bw+" MB/s (+"+fmt(r.ag)+" ✨).":"repair: not enough bandwidth ("+(syncCost(MF.byKey[c.key])+1)+" MB/s needed).",r.n?"res":"warn")}
+ else{const ks=Object.keys(S.del||{});if(!ks.length)return;if(!tot()){log("restore: no Hydra Mirror holds copies. Deploy one first.","warn");return}if(S.bw<4){log("restore: need 4 MB/s.","warn");return}S.bw-=4;S.f+=FPE*ks.length;S.del={};log("Restore: "+ks.length+" deleted file(s) pulled back from the mesh (+"+FPE*ks.length+" flat-files).","res")}}
+function ctWhy(c){const p=ctProg(c);if(!p)return "contract invalid";if(p.done>=p.need)return 0;
+ if(c.t==="mirror"){const s=synSet(c.k),rest=p.fs.filter(f=>!s.has(cHash(f.key)));if(!rest.length)return "already synced";const c0=syncCost(rest[0]);return S.bw<c0?"need "+c0+" MB/s":0}
+ if(c.t==="verify")return S.bw<1?"need 1 MB/s":0;
+ if(c.t==="repair"){const f=MF.byKey[c.key],n=syncCost(f)+1;return S.bw<n?"need "+n+" MB/s":0}
+ if(c.t==="restore")return !tot()?"needs a Hydra Mirror":S.bw<4?"need 4 MB/s":0;
+ return 0}
+function ctHow(c){const path=ctPath(c.key);
+ if(c.t==="mirror")return "sync "+path+" "+SYNFLAG[c.k]+"      or: do "+c.id;
+ if(c.t==="review")return "cat or head "+c.n+" files in "+path+"      or: do "+c.id+" (reads one per turn)";
+ if(c.t==="verify")return "verify "+path+"      or: do "+c.id;
+ if(c.t==="repair")return "repair "+path+"      or: do "+c.id;
+ return "sync --restore      or: do "+c.id}
+function cMission(a){const M=S.msn,B=M.board||[];a=a||[];
+ if(a[0]&&/^\d+$/.test(a[0])){const c=B.find(x=>x.id===+a[0]);if(!c)return "mission: no contract #"+a[0]+" on the board.";M.pin=c.id;const p=ctProg(c)||{done:0,need:1};
+  return "CONTRACT #"+c.id+"  ["+CT[c.t].n.toUpperCase()+"]\n  "+ctText(c)+"\n  location  "+ctPath(c.key)+(c.d?"/":"")+"\n  progress  "+p.done+"/"+p.need+"\n  reward    about "+fmt(c.reward)+" ✨  +"+c.rep+" Standing"+(c.dl?"\n  deadline  turn "+c.dl+" ("+Math.max(0,c.dl-S.t)+" left, rewards boosted)":"")+"\n  do it     "+ctHow(c)+"\n  (tracked: mission button and sync mission use this one)"}
+ const i=rankOf(),nxt=i<RANKS.length-1?rankAt(i+1):0;
+ let o="STANDING  ★ "+RANKS[i]+"  (rank "+i+"/"+(RANKS.length-1)+")   "+fmt(S.rep||0)+" rep"+(nxt?"   next: "+RANKS[i+1]+" at "+fmt(nxt)+" ("+fmt(nxt-S.rep)+" to go)":"   MAX RANK")+"\nBOARD  "+B.length+"/"+slotsOf()+" slots   streak "+(M.streak||0)+" (best "+(M.best||0)+")   completed "+M.done+"   lapsed "+(M.exp||0)+"\n";
+ if(!B.length)o+="\n  No contracts right now. "+(!MF.ready?"The archive manifest is still loading.":mfU()<=mfR()?"You have no live files yet: record footage and run the Scribe.":"New ones appear each turn. Build a mirror node or unlock more files to widen the pool.")+"\n";
+ for(const c of B){const p=ctProg(c)||{done:0,need:1};o+="\n #"+c.id+(S.msn.pin===c.id?"*":" ")+" ["+CT[c.t].n.toUpperCase().padEnd(7)+"] "+ctText(c)+"\n       "+p.done+"/"+p.need+"   +"+fmt(c.reward)+" ✨  +"+c.rep+" ★"+(c.dl?"   deadline turn "+c.dl+" ("+Math.max(0,c.dl-S.t)+" left)":"")+"\n       "+ctHow(c)+"\n"}
+ return o+"\nmission N tracks one · do N works on it · abandon N drops it (resets streak) · rank shows perks"}
+function cDo(a){if(!a[0])return "usage: do N   (N is a contract number from: board)";const c=(S.msn.board||[]).find(x=>x.id===+a[0]);if(!c)return "do: no contract #"+a[0]+". Run: board";return cFire("hydra","do "+c.id)}
+function cAbandon(a){const B=S.msn.board||[],c=B.find(x=>x.id===+a[0]);if(!c)return "usage: abandon N  (see: board)";S.msn.board=B.filter(x=>x!==c);S.msn.streak=0;S.msn.cd[c.key]=S.t+30;return "Contract #"+c.id+" abandoned. Streak reset."}
+function cRank(){const i=rankOf(),nxt=i<RANKS.length-1?rankAt(i+1):0;let o="STANDING  ★ "+RANKS[i]+"  (rank "+i+"/"+(RANKS.length-1)+")\n  reputation   "+fmt(S.rep||0)+(nxt?"   next "+RANKS[i+1]+" at "+fmt(nxt)+" ("+fmt(nxt-S.rep)+" to go)":"   (max)")+"\n  perks        "+slotsOf()+" board slots, Agape +"+(1.2*i).toFixed(1)+"%\n  contracts    "+S.msn.done+" done  ("+Object.keys(CT).map(t=>CT[t].n+" "+((S.msn.by||{})[t]||0)).join(", ")+")\n  streak       "+(S.msn.streak||0)+" now, "+(S.msn.best||0)+" best (+5% rep per streak, max +50%)\n  unlocks      "+Object.keys(CT).map(t=>CT[t].n+(CT[t].r>i?" (rank "+CT[t].r+")":" ✓")).join(", ")+"\n\nLADDER\n";
+ RANKS.forEach((n,j)=>{o+="  "+(j===i?"▶":" ")+String(j).padStart(2)+"  "+n.padEnd(22)+fmt(rankAt(j))+"\n"});return o}
+function ctResolve(paths){const fs=[],seen=new Set();for(const arg of cExpand(paths)){const d=vres(arg);if(!d)return{err:arg+": No such file or directory"};const parts=cNorm(arg);if(parts[0]==="rug")return{err:arg+": sealed in the Rug (read-only)"};if(parts[0]!=="flat-files"&&!(parts[0]==="home"&&parts[2]==="flat-files"))return{err:"only files under /flat-files"};
+  for(const x of (d.t==="d"?cWalk(d,cPath(parts)):[{d,path:cPath(parts)}]))if(x.d.mf&&!x.d.mf.hid&&!x.d.rug&&!seen.has(x.d.mf.key)){seen.add(x.d.mf.key);fs.push(x.d.mf)}}return{fs}}
+function cVerify(a){if(S.ev!==null&&S.ev!==undefined)return cEvent();if(!a.length)return "usage: verify PATH   (audit files for damage; 5 files per MB/s of bandwidth, 1 turn)";const r=ctResolve(a);if(r.err)return "verify: "+r.err;if(!r.fs.length)return "verify: nothing to verify there.";
+ const v=verifyFiles(r.fs);if(!v.n)return S.bw<1?"verify: need 1 MB/s of bandwidth.":"verify: those files were already verified this turn.";log("verify: checked "+v.n+" of "+v.total+" file(s) for "+v.bw+" MB/s"+(v.bad?"; "+v.bad+" damaged (repair them)":", all intact")+(v.n<v.total?". Run it again for the rest.":"."),"res");banner("🔎 VERIFY :: "+v.n+" FILE(S)");sndBell();tick();render();return ""}
+function cRepair(a){if(S.ev!==null&&S.ev!==undefined)return cEvent();const dm=Object.keys(S.dmg||{});if(!dm.length)return "repair: nothing is damaged. Files rot slowly over time; ls -l flags [degraded] and [CORRUPT] ones.";
+ let keys=dm;if(a.length){const r=ctResolve(a);if(r.err)return "repair: "+r.err;const ok=new Set(r.fs.map(f=>f.key));keys=dm.filter(k=>ok.has(k));if(!keys.length)return "repair: nothing damaged there."}
+ const r=repairFiles(keys);if(!r.n)return "repair: not enough bandwidth (needs "+(syncCost(MF.byKey[keys[0]])+1)+" MB/s for the first file) or its node is gone.";log("repair: "+r.n+" file(s) restored from the mesh for "+r.bw+" MB/s (+"+fmt(r.ag)+" ✨)."+(r.n<keys.length?" "+(keys.length-r.n)+" left.":""),"res");banner("🛠 REPAIR :: "+r.n+" FILE(S)");sndUp();tick();render();return ""}
 function cSyncPath(paths,k){
  if(S.ev!==null&&S.ev!==undefined)return cEvent();
  if(!(S.nd[k]>0))return "sync: you have no "+NN[k]+" yet. Deploy one: mirror "+MIRK[k];
@@ -954,7 +1042,7 @@ function cStatus(){const bars=k=>"["+bar(S.fac[k])+"] "+F(S.fac[k])+"%";
 function cLs(args,stdin,piped){let L=0,A=0,H=0,SZ=0,SS_=0,RV=0;const paths=[];
  for(const a of args){if(a[0]==="-"&&a.length>1){for(const c of a.slice(1)){if(c==="l")L=1;else if(c==="a")A=1;else if(c==="h")H=1;else if(c==="s")SZ=1;else if(c==="S")SS_=1;else if(c==="r")RV=1;else if(!"1FpRt".includes(c))return "ls: invalid option -- '"+c+"'"}}else paths.push(a)}
  const targets=cExpand(paths.length?paths:["."]);const out=[];
- const SS={};NODEK.forEach(k=>SS[k]=synSet(k));const tag=d=>{if(d.rug)return "  [sealed in the Rug]";if(!d.mf)return "";const h=cHash(d.mf.key),s=NODEK.filter(k=>SS[k].has(h)).map(k=>({local:"L",off:"O",mesh:"M",inter:"A"})[k]).join("");return s?"  ["+s+"]":""};
+ const SS={};NODEK.forEach(k=>SS[k]=synSet(k));const tag=d=>{if(d.rug)return "  [sealed in the Rug]";if(!d.mf)return "";if(S.dmg&&S.dmg[d.mf.key])return "  ["+(S.dmg[d.mf.key].l>1?"CORRUPT":"degraded")+" on "+nodeShort(S.dmg[d.mf.key].k)+"]";const h=cHash(d.mf.key),s=NODEK.filter(k=>SS[k].has(h)).map(k=>({local:"L",off:"O",mesh:"M",inter:"A"})[k]).join("");return s?"  ["+s+"]":""};
  const row=(d)=>{const sz=H?cHuman(cSize(d)):String(cSize(d));return d.m+" 1 "+(d.rug?"root":cUser())+" cc0 "+sz.padStart(H?5:10)+" "+cDate()+" "+d.n+(d.t==="d"?"/":"")+tag(d)};
  targets.forEach((p,ti)=>{const d=vres(p);if(!d){out.push("ls: cannot access '"+p+"': No such file or directory");return}
   if(d.t!=="d"){out.push(L?row(d):d.n);return}
@@ -978,13 +1066,13 @@ async function cCat(args,stdin){if(!args.length)return stdin==null?"cat: missing
  for(const f of cExpand(args)){const d=vres(f);if(!d){out.push("cat: "+f+": No such file or directory");continue}
   if(d.t==="d"){out.push("cat: "+f+": Is a directory");continue}
   if(cIsBin(d)){out.push("cat: "+d.n+": binary file ("+cHuman(cSize(d))+")"+(cIsMedia(d.n)?"  try: play":""));continue}
-  out.push((await cText(d)).replace(/\n$/,""))}
+  if(d.mf&&S.rd)S.rd[d.mf.key]=S.t;out.push((await cText(d)).replace(/\n$/,""))}
  return out.join("\n")}
 async function cHeadTail(which,a,stdin){let n=10;const files=[];for(let i=0;i<a.length;i++){if(a[i]==="-n"&&a[i+1]){n=parseInt(a[++i])||10}else if(/^-\d+$/.test(a[i]))n=parseInt(a[i].slice(1));else files.push(a[i])}
  const run=t=>{const l=t.replace(/\n$/,"").split("\n");return (which==="head"?l.slice(0,n):l.slice(-n)).join("\n")};
  if(!files.length)return stdin==null?which+": missing file operand":run(stdin);
  const out=[];for(const f of cExpand(files)){const d=vres(f);if(!d){out.push(which+": cannot open '"+f+"'");continue}if(d.t==="d"){out.push(which+": error reading '"+f+"': Is a directory");continue}if(cIsBin(d)){out.push(which+": "+d.n+": binary file");continue}
-  const tx=await cFull(d);out.push(tx==null?which+": "+d.n+": could not fetch the real file":run(tx))}
+  if(d.mf&&S.rd)S.rd[d.mf.key]=S.t;const tx=await cFull(d);out.push(tx==null?which+": "+d.n+": could not fetch the real file":run(tx))}
  return out.join("\n")}
 async function cWc(a,stdin){let fl=a.filter(x=>x[0]==="-").join("");const files=a.filter(x=>x[0]!=="-");const cnt=t=>{const l=t===""?0:t.replace(/\n$/,"").split("\n").length,w=t.split(/\s+/).filter(Boolean).length,c=t.length;
   const o=[];if(!fl||fl.includes("l"))o.push(l);if(!fl||fl.includes("w"))o.push(w);if(!fl||fl.includes("c"))o.push(c);return o.join(" ")};
@@ -1043,7 +1131,7 @@ function cRestore(){const ks=Object.keys(S.del||{});if(!ks.length)return "sync: 
 const JOKE=(m)=>()=>m;
 const MENUS=["shop","media","hydra","proto","sec","strat","council","scrolls","sys","ivory","camp","pub","music","deck"];
 const CMDS={
- help(a){if(!a[0])return HELPTXT;if(a[0]==="topics")return "TOPICS\n  "+Object.keys(TOPICS).join("   ")+"\nTry: help quickstart";return cHelpCmd(a[0])},mission:cMission,
+ help(a){if(!a[0])return HELPTXT;if(a[0]==="topics")return "TOPICS\n  "+Object.keys(TOPICS).join("   ")+"\nTry: help quickstart";return cHelpCmd(a[0])},mission:cMission,board:cMission,missions:cMission,do:cDo,verify:cVerify,repair:cRepair,rank:cRank,standing:cRank,abandon:cAbandon,
  ls:cLs,cat:cCat,head:(a,s)=>cHeadTail("head",a,s),tail:(a,s)=>cHeadTail("tail",a,s),wc:cWc,grep:cGrep,rm:cRm,
  pwd:()=>cPath(cNorm(".")),find:cFind,
  cd(a){const p=a[0]||"~";const d=vres(p);if(!d)return "cd: "+p+": No such file or directory";if(d.t!=="d")return "cd: "+p+": Not a directory";CON.cwd=cPath(cNorm(p));return ""},
@@ -1070,7 +1158,7 @@ const CMDS={
  reboot:JOKE("reboot: the network never sleeps. (wait = one 50 BPM breath)"),shutdown:JOKE("shutdown: the network never sleeps. (wait = one 50 BPM breath)"),
  df(){const U=mfU()-mfR(),size=cSum({t:"d",kids:()=>mfKids(MF.tree,false)}),tot_=MF.stats.totalSize||size;return "Filesystem      Size  Used  Avail Use% Mounted on\n/dev/archive "+cHuman(tot_).padStart(6)+" "+cHuman(size).padStart(5)+" "+cHuman(Math.max(0,tot_-size)).padStart(6)+" "+String(tot_?F(size/tot_*100):0).padStart(3)+"% /flat-files\n/dev/rug    "+String(mfR()).padStart(6)+" files sealed, read-only"+"        /rug\nmesh        "+String(tot()).padStart(6)+" mirrors"+"                        /mirrors"},
  du(a){const paths=a.filter(x=>x[0]!=="-");const h=a.some(x=>/^-.*h/.test(x));return cExpand(paths.length?paths:["."]).map(p=>{const d=vres(p);return !d?"du: cannot access '"+p+"': No such file or directory":(h?cHuman(cSum(d)):String(cSum(d))).padStart(6)+"  "+p}).join("\n")},
- sync(a){if(a.indexOf("--restore")>=0)return cRestore();const paths=a.filter(x=>x[0]!=="-"),fl=a.find(x=>SYNF[x]);if(paths[0]==="mission")return cFire("hydra","sync mission");if(!paths.length)return cFire("hydra","sync");return cSyncPath(paths,fl?SYNF[fl]:"local")},
+ sync(a){if(a.indexOf("--restore")>=0)return cRestore();const paths=a.filter(x=>x[0]!=="-"),fl=a.find(x=>SYNF[x]);if(paths[0]==="mission"){const m=ctTracked("mirror");return m?cFire("hydra","do "+m.id):"sync: no mirror contract on the board. Try: board"}if(!paths.length)return cFire("hydra","sync");return cSyncPath(paths,fl?SYNF[fl]:"local")},
  flatten(a){if(a.indexOf("--yes")<0){const L=1+F((S.f+S.q)/1500);return "flatten: this resets hardware, mirrors, resources and flat-files into the CC0 Rug and gives "+L+" Rug layer(s).\nProtocols, advisors, scrolls and the MRU node stay. Run: flatten --yes"}
   askOK=true;try{return cFire("strat","flatten")}finally{askOK=null}},
  wait(){if(S.ev!==null&&S.ev!==undefined)return cEvent();rest();return ""},sleep(){return CMDS.wait()},
@@ -1404,7 +1492,7 @@ addEventListener("resize",()=>{const d=$("#desk");OS.wins.forEach(w=>{if(w.max){
 /* ---- taskbar ---- */
 OS.renderTasks=function(){const t=$("#tasks");t.innerHTML="";for(const w of OS.wins){const a=OS.apps[w.app];t.append(h("div",{class:"tk"+(OS.cur===w&&!w.min?" focus":"")+(w.min?" min":""),title:w.title,onclick:()=>{if(OS.cur===w&&!w.min)OS.minimize(w);else OS.focus(w)},oncontextmenu:e=>{e.preventDefault();ctxMenu(e.clientX,e.clientY-90,[{t:"Restore / focus",fn:()=>OS.focus(w)},{t:"Minimise",fn:()=>OS.minimize(w)},{t:w.max?"Unmaximise":"Maximise",fn:()=>OS.toggleMax(w)},"-",{t:"Close",ic:"x",fn:()=>OS.close(w)}])}},ic(a.icon),h("span",{class:"ti"},w.title)))}};
 function tick(){const d=new Date();$("#clk").textContent=pad(d.getHours())+":"+pad(d.getMinutes());$("#clk").title=d.toDateString()}
-function buildTray(){const tr=$("#tray");tr.innerHTML="";tr.append(h("span",{class:"hide",title:"Next theme",onclick:()=>cycleTheme(1)},ic("eye")),h("span",{class:"hide",id:"arc",title:"Archive status",onclick:()=>OS.open("settings",{tab:"Archive"})},"archive: …"),h("span",{title:"Spotlight (Ctrl+Space)",onclick:()=>spot(true)},ic("search")),h("b",{id:"clk",onclick:()=>OS.open("clock")}));tick();setInterval(tick,10000)}
+function buildTray(){const tr=$("#tray");tr.innerHTML="";tr.append(h("span",{class:"hide",id:"stand",onclick:()=>OS.open("tv")}),h("span",{class:"hide",title:"Next theme",onclick:()=>cycleTheme(1)},ic("eye")),h("span",{class:"hide",id:"arc",title:"Archive status",onclick:()=>OS.open("settings",{tab:"Archive"})},"archive: …"),h("span",{title:"Spotlight (Ctrl+Space)",onclick:()=>spot(true)},ic("search")),h("b",{id:"clk",onclick:()=>OS.open("clock")}));tick();setInterval(tick,10000);setStand(LS.get("tvos_standing",null))}
 function cycleTheme(d){const i=(THEME_ORDER.indexOf(SET.theme)+d+THEME_ORDER.length)%THEME_ORDER.length;applyTheme(THEME_ORDER[i]);toast("Theme: "+THEMES[SET.theme].n)}
 OS.on("manifest",m=>{const a=$("#arc");if(a)a.textContent="archive: "+m.files.toLocaleString()+" files"});
 /* ---- desktop icons & start menu ---- */
@@ -1445,7 +1533,8 @@ addEventListener("keydown",e=>{
   else if(m[k]){e.preventDefault();OS.open(m[k])}}
 });
 addEventListener("keyup",e=>{if(e.key==="Meta"&&!e.ctrlKey&&!e.altKey&&!e.shiftKey&&!e.repeat)startToggle()});
-addEventListener("message",e=>{const d=e.data;if(!d||d.tvos!=="key")return;const ev=new KeyboardEvent("keydown",{key:d.key,code:d.code,ctrlKey:d.ctrlKey,altKey:d.altKey,metaKey:d.metaKey,shiftKey:d.shiftKey});dispatchEvent(ev)});
+function setStand(d){const e=$("#stand");if(!e||!d)return;e.textContent="★ "+d.name+" · "+Math.round(d.rep).toLocaleString()+" rep";e.title="Standing "+d.rank+"/19 in Terminal Velocity. "+(d.next?Math.round(d.next-d.rep).toLocaleString()+" rep to the next rank. ":"Max rank. ")+d.done+" contracts done. Click to open the game."}
+addEventListener("message",e=>{const d=e.data;if(d&&d.tvos==="standing"&&e.source===(OS.wins.find(w=>w.app==="tv")||{}).frame?.contentWindow){LS.set("tvos_standing",d);setStand(d);return}if(!d||d.tvos!=="key")return;const ev=new KeyboardEvent("keydown",{key:d.key,code:d.code,ctrlKey:d.ctrlKey,altKey:d.altKey,metaKey:d.metaKey,shiftKey:d.shiftKey});dispatchEvent(ev)});
 /* ===================== WALLPAPERS (canvas, no images) ===================== */
 const WC=$("#wall"),wx=WC.getContext("2d");let WW=0,WH=0,wstate={},wraf=0,wlast=0;
 function sizeWall(){const r=Math.min(devicePixelRatio||1,1.5);WW=WC.width=Math.ceil(innerWidth*r*.75);WH=WC.height=Math.ceil(innerHeight*r*.75);wstate={}}
