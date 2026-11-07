@@ -35,9 +35,10 @@ pages (GitHub Pages, your own server, an archive site).
 
 🎮 THE GAME LOOP
 
-  1. 🎙️ INGEST VIDEO DATA
-     Convert raw streams into permanent .txt flat-files. Costs
-     bandwidth, CPU and power.
+  1. 🎥 RECORD, THEN SCRIBE
+     Flat-files only come from transcripts, and transcripts only come
+     from footage. Record street footage, then scribe it into permanent
+     .txt flat-files. Filming angers the factions, so counter them.
 
   2. 🌐 DEPLOY HYDRA MIRRORS
      Spread flat-files across Localhost, Offshore, Global Mesh and
@@ -130,9 +131,10 @@ hazards.
 
 🎬 THE MEDIA PRODUCTION PIPELINE
 
-  Two ways to turn video into flat-files. Direct ingest is fast and
-  simple. The pipeline is slower to start but scales better once your
-  Scribe Engines are upgraded.
+  There is one way to make flat-files: record footage, then scribe it.
+  (The old direct ingest is gone; the ingest command is now an alias of
+  scribe.) Scribe Engine upgrades transcribe stored footage on their own
+  every turn, 60 hours per level.
 
   🎥 Record Street Footage (Media Studio)
      Filming is what the factions hate: every recording raises Combine,
@@ -189,7 +191,7 @@ hazards.
     ls flat-files             your archive (also /flat-files)
     mission                   your current archive mission
     sync <path> --local       mirror a file or a whole folder
-    record   then   scribe    make flat-files (or: ingest)
+    record   then   scribe    make flat-files (ingest = scribe)
     status                    power, heat and the three factions
     buy / research / mirror   grow the network (no argument lists options)
 
@@ -198,7 +200,7 @@ hazards.
            status (top) campaign mission history clear echo whoami
            hostname id uname date uptime fortune which help man backup
            menu theme banner sound
-    1 TURN ingest [--batch]  record  scribe
+    1 TURN record  scribe  (ingest = scribe)
            build [TIER] [x10|max]  fortify <cc|ta|sz>  (free: bulk)
            sync [PATH] [--local|--offshore|--mesh|--array]
            sync mission    sync --restore
