@@ -397,7 +397,7 @@ HOW TO RUN IT
   Add ?nogame to the address to boot without auto-starting the game.
   Press any key during boot to skip the delays.
 
-THE APPS (24) - every one has a desktop icon
+THE APPS (25) - every one has a desktop icon
   Terminal Velocity   the game, in its own window, starts at boot
   Terminal            real shell: ls -lahs, cd, cat, grep, find, tree, mkdir,
                       cp, mv, rm, head, tail, wc, sort, pipes |, redirects >
@@ -415,6 +415,11 @@ THE APPS (24) - every one has a desktop icon
                       progress, chapter list, page or scroll mode, font/size/
                       spacing/margins, Paper/Sepia/Night themes, in-book search,
                       bookmarks that remember where you stopped
+  Comics              reads /archive/Republicka-Comic (368 pages) or any folder of
+                      images: single page, two-page spread or vertical scroll;
+                      fit page/width/height, zoom, right-to-left (manga) order,
+                      page grid, fullscreen, arrow keys/tap/swipe, remembers
+                      your page
   Media Player        audio + video, playlists, shuffle/repeat, speed, visualizer
                       (long file names now wrap instead of being cut off)
   Image Viewer        zoom, pan, rotate, slideshow
