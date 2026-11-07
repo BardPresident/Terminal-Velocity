@@ -395,6 +395,7 @@ HOW TO RUN IT
   Open terminal-velocity-os.html in a browser, or upload it to
   republicka.life next to the game. Hard-refresh after uploading.
   Add ?nogame to the address to boot without auto-starting the game.
+  Boot takes about 7 seconds so you can read it. Settings > Boot: Slow / Normal / Fast / Instant.
   Press any key during boot to skip the delays.
 
 THE APPS (26) - every one has a desktop icon
