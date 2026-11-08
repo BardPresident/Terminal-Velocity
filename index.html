@@ -1254,7 +1254,7 @@ const MC={yr:y=>y>2024?y-2024:y-2025,ce:m=>m>0?m+2024:m+2025,ys:m=>(m<0?"-":"")+
 const fmtDate=t=>{const d=new Date(t),hm=" "+pad(d.getHours())+":"+pad(d.getMinutes());return MC.on()?MC.iso(d)+hm+" "+MC.era(d):d.getFullYear()+"-"+pad(d.getMonth()+1)+"-"+pad(d.getDate())+hm};
 const sleep=ms=>new Promise(r=>setTimeout(r,ms));
 const LS={get(k,d){try{const v=localStorage.getItem(k);return v==null?d:JSON.parse(v)}catch(e){return d}},set(k,v){try{localStorage.setItem(k,JSON.stringify(v));return true}catch(e){return false}}};
-const OS={apps:{},wins:[],z:10,bus:{},boot:performance.now(),ver:"1.0 build 1108-1155"};
+const OS={apps:{},wins:[],z:10,bus:{},boot:performance.now(),ver:"1.0 build 1108-1213"};
 OS.on=(ev,f)=>{(OS.bus[ev]=OS.bus[ev]||[]).push(f);return f};
 OS.off=(ev,f)=>{OS.bus[ev]=(OS.bus[ev]||[]).filter(x=>x!==f)};
 OS.emit=(ev,a)=>{(OS.bus[ev]||[]).slice().forEach(f=>{try{f(a)}catch(e){console.error(e)}})};
@@ -2630,7 +2630,7 @@ defApp("camera",{name:"Camera",icon:"camera",cat:"Media",w:860,h:660,single:true
  init(win,b){const vfmts=recSupported(REC_VIDEO),S=Object.assign({pos:"br",psz:22,pshape:"round",src:"cam",res:"720",fps:30,mute:false,mirror:true,vfmt:vfmts[0]?vfmts[0][1]+"|"+vfmts[0][0]:"",br:0,split:10,cd:0,cam:"",mic:"",face:"user"},LS.get("tvos_cam_set",{})),save=()=>LS.set("tvos_cam_set",S);
   if(vfmts.length&&!vfmts.some(m=>m[1]+"|"+m[0]===S.vfmt))S.vfmt=vfmts[0][1]+"|"+vfmts[0][0];
   let vstream=null,astream=null,cstream=null,dstream=null,sysA=null,tick=null,out=null,mix=null,state="idle",mr=null,sink=null,seg=1,segBytes=0,recSec=0,tStart=0,iv=0,paused=false,q=Promise.resolve(),splitTimer=0,ctxA=null,an=null,lvl=0,raf=0;
-  const vd=h("video",{autoplay:"",playsinline:"",muted:"",style:"width:100%;height:100%;object-fit:contain;background:#000"}),stage=h("div",{style:"position:relative;background:#000;flex:1;min-height:180px;display:flex;align-items:center;justify-content:center"},vd),
+  const vd=h("video",{autoplay:"",playsinline:"",muted:"",style:"position:absolute;inset:0;width:100%;height:100%;object-fit:contain;background:#000"}),stage=h("div",{style:"position:relative;background:#000;flex:1 1 0;min-height:120px;overflow:hidden"},vd),
    ov=h("div",{style:"position:absolute;inset:0;display:none;align-items:center;justify-content:center;font-size:96px;color:#fff;text-shadow:0 0 12px #000;pointer-events:none"}),rdot=h("div",{style:"position:absolute;left:10px;top:8px;color:#f44;font-weight:700;display:none;text-shadow:0 0 6px #000"},"● REC 0:00"),
    meter=h("canvas",{style:"position:absolute;left:10px;right:10px;bottom:8px;height:8px;width:calc(100% - 20px);opacity:.9"}),info=h("div",{class:"dim",style:"min-height:18px;overflow-wrap:anywhere;padding:0 4px"}),msg=h("div",{class:"dim",style:"overflow-wrap:anywhere;padding:0 4px"}),rl=recList();
   stage.append(ov,rdot,meter);
@@ -2694,9 +2694,9 @@ defApp("camera",{name:"Camera",icon:"camera",cat:"Media",w:860,h:660,single:true
    row("Source",srcSel),row("Camera",camSel),row("Microphone",micSel),h("label",{class:"row",style:"border:0;padding:0;gap:8px;cursor:pointer"},mute,"Mute microphone"),h("label",{class:"row",style:"border:0;padding:0;gap:8px;cursor:pointer"},mirror,"Mirror preview and photos"),
    row("Webcam corner",posSel),row("Webcam size",pszSel),row("Webcam shape",shapeSel),row("Resolution",resSel),row("Frame rate",fpsSel),row("Format",fmtSel),row("Quality",brSel),row("New file every",splitSel),row("Countdown",cdSel),REC.destRow(),
    h("div",{class:"dim",style:"font-size:12px"},"Recordings stream to your chosen folder as they are made. The file appears when each part finishes, so long takes are split. Screen recording needs a desktop browser. Screen + webcam draws your camera in a corner of the recording."),h("h3",{class:"ac",style:"margin:4px 0 0"},"This session"),rl.el);
-  const main=h("div",{style:"flex:1;min-width:0;display:flex;flex-direction:column"},stage,h("div",{class:"row",style:"flex-wrap:wrap;gap:6px;flex:none"},recBtn,pauB,photoB,flip,startB),info,msg);
+  const main=h("div",{style:"flex:1 1 0;min-width:0;min-height:0;display:flex;flex-direction:column"},stage,h("div",{class:"row",style:"flex-wrap:wrap;gap:6px;flex:none"},recBtn,pauB,photoB,flip,startB),info,msg);
   const wrap=h("div",{class:"mm-row",style:"display:flex;flex:1;min-height:0"},main,side);b.append(wrap);
-  if(isMob())side.style.cssText+=";width:auto;border-left:0;border-top:1px solid var(--bd);flex:none;max-height:42%";
+  if(isMob()){wrap.style.flexDirection="column";side.style.cssText+=";width:auto;border-left:0;border-top:1px solid var(--bd);flex:0 1 auto;max-height:45%;overflow-y:auto";main.style.flex="1 1 55%"};
   const loop=()=>{raf=requestAnimationFrame(loop);if(win.dead||win.min)return;const c=meter.getContext("2d"),W=meter.width=meter.clientWidth,H=meter.height=meter.clientHeight;c.clearRect(0,0,W,H);if(!an||S.mute)return;const d=new Uint8Array(an.fftSize);an.getByteTimeDomainData(d);let m=0;for(const v of d)m=Math.max(m,Math.abs(v-128)/128);lvl=Math.max(m,lvl*.9);c.fillStyle=lvl>.95?css("er"):css("ac");c.fillRect(0,0,W*Math.min(1,lvl*1.2),H)};
   paint();paintBtns();loop();
   if(!navigator.mediaDevices||!navigator.mediaDevices.getUserMedia)msg.textContent="This browser has no camera access (it needs HTTPS and a modern browser).";
