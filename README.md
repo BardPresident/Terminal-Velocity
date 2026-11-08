@@ -567,6 +567,15 @@ Screen + webcam: in the Camera app choose Source "Screen + webcam corner". Your 
   into a corner of the screen recording (choose corner, size, circle or rectangle; mirror applies
   to the bubble). Desktop browsers only. System audio (if you share it) and your mic are mixed.
 
+BROWSER (THE FREE WEB)
+----------------------
+Browser app: tabs, address bar, back/forward, reload, bookmarks (right-click a bookmark to rename
+or remove; Export/Import on the start page; included in Backup). republicka.life and kkk.education
+are bookmarked by default. It only shows sites that allow being embedded in other pages (the "free web").
+Google, Facebook, GitHub, most news sites and logins refuse; the OS says so and offers
+"Open in new tab". Typed words are searched with Marginalia (default), Wikipedia or Internet Archive; pick on the start page. YouTube/Vimeo watch links are converted to embeds.
+Plain http:// pages cannot be shown. Pages are sandboxed and sent no referrer.
+
 https://github.com/BardPresident https://republicka.life https://kkk.education https://archive.org/details/@bardpresident https://www.youtube.com/@BardPresident https://odysee.com/@BardPresident:0 https://www.bitchute.com/channel/P9QR7Z6nmVtm
 
 ☯ THE CORE PHILOSOPHY ☯ EMOTION = LOGIC · THE HINATA TRAP · MASTER = FLOOR
