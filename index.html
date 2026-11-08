@@ -1253,7 +1253,7 @@ const MC={yr:y=>y>2024?y-2024:y-2025,ce:m=>m>0?m+2024:m+2025,ys:m=>(m<0?"-":"")+
 const fmtDate=t=>{const d=new Date(t),hm=" "+pad(d.getHours())+":"+pad(d.getMinutes());return MC.on()?MC.iso(d)+hm+" "+MC.era(d):d.getFullYear()+"-"+pad(d.getMonth()+1)+"-"+pad(d.getDate())+hm};
 const sleep=ms=>new Promise(r=>setTimeout(r,ms));
 const LS={get(k,d){try{const v=localStorage.getItem(k);return v==null?d:JSON.parse(v)}catch(e){return d}},set(k,v){try{localStorage.setItem(k,JSON.stringify(v));return true}catch(e){return false}}};
-const OS={apps:{},wins:[],z:10,bus:{},boot:performance.now(),ver:"1.0 build 1108-0852"};
+const OS={apps:{},wins:[],z:10,bus:{},boot:performance.now(),ver:"1.0 build 1108-0856"};
 OS.on=(ev,f)=>{(OS.bus[ev]=OS.bus[ev]||[]).push(f);return f};
 OS.off=(ev,f)=>{OS.bus[ev]=(OS.bus[ev]||[]).filter(x=>x!==f)};
 OS.emit=(ev,a)=>{(OS.bus[ev]||[]).slice().forEach(f=>{try{f(a)}catch(e){console.error(e)}})};
@@ -2415,7 +2415,9 @@ const LOGO=`
     ╚═╝   ╚══════╝╚═╝  ╚═╝╚═╝     ╚═╝╚═╝╚═╝  ╚═══╝╚═╝  ╚═╝╚══════╝
         V E L O C I T Y   O S   ·   one file · CC0 · Republicka`;
 async function boot(){
- const bl=$("#bl"),pb=$("#bp");const lg=$("#blogo");lg.textContent=LOGO;lg.style.fontSize="12px";{const av=lg.clientWidth||innerWidth-32,w=lg.scrollWidth;if(w>av)lg.style.fontSize=Math.max(5,Math.floor(12*av/w*10)/10)+"px"}const mobB=innerWidth<720;
+ const bl=$("#bl"),pb=$("#bp");const lg=$("#blogo");lg.textContent=LOGO;
+ const fitLogo=()=>{try{const av=(lg.parentElement.clientWidth||innerWidth)-32,m=document.createElement("pre");m.textContent=LOGO;m.style.cssText="position:absolute;visibility:hidden;white-space:pre;margin:0;left:0;top:0;font:100px/1 "+getComputedStyle(lg).fontFamily+";letter-spacing:0";document.body.append(m);const w=m.getBoundingClientRect().width;m.remove();if(w>0)lg.style.fontSize=Math.min(12,Math.max(4,Math.floor(av/w*100*0.93*10)/10))+"px"}catch(e){}};
+ fitLogo();if(document.fonts&&document.fonts.ready)document.fonts.ready.then(fitLogo);setTimeout(fitLogo,250);setTimeout(fitLogo,900);addEventListener("resize",fitLogo);const mobB=innerWidth<720;
  let skip=false;const t0=performance.now();const sk=()=>{skip=true};addEventListener("keydown",sk);addEventListener("pointerdown",sk);
  const sp=({instant:0,fast:.3,normal:1,slow:2})[SET.bootSpeed||"normal"]??1;
  const emit=(msg,cls)=>{if(!SET.verbose&&!/ok|er|wn/.test(cls||"")&&!/^(Terminal|desktop)/.test(msg))return;const ts=((performance.now()-t0)/1000).toFixed(mobB?3:6).padStart(mobB?7:10);bl.append(h("div",{class:cls||""},"["+ts+"] "+msg));bl.scrollTop=bl.scrollHeight;while(bl.children.length>120)bl.firstChild.remove()};
