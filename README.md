@@ -517,7 +517,7 @@ SHARE YOUR OWN ARCHIVE (MANIFEST MAKER)
   1. Upload your folder of files to any web host.  2. In Manifest Maker type that web address,
   choose the folder, download manifest.json.  3. Upload manifest.json into the same online folder.
   4. Share the link it gives you:  terminal-velocity.html?manifest=https://yoursite.org/files/manifest.json
-  generate-manifest.js is the command line version:  node generate-manifest.js ./files https://yoursite.org/files
+  generate-manifest.js is the command line version:  node generate-manifest.js ./files https://yoursite.org/files  
   If the OS and your files are on different websites, the files server must send
   Access-Control-Allow-Origin: *  (at least for manifest.json).
 
