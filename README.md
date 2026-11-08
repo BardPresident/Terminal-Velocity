@@ -575,6 +575,9 @@ are bookmarked by default. It only shows sites that allow being embedded in othe
 Google, Facebook, GitHub, most news sites and logins refuse; the OS says so and offers
 "Open in new tab". Typed words are searched with Marginalia (default), Wikipedia or Internet Archive; pick on the start page. YouTube/Vimeo watch links are converted to embeds.
 Plain http:// pages cannot be shown. Pages are sandboxed and sent no referrer.
+Browser space: on phones the Browser shows one slim bar (Back, address, Reload, menu). The menu has Forward, Start page,
+bookmarks, tabs and "About this browser" (the free-web explanation). On desktop, the expand button hides the tabs and
+bookmarks bars and the "i" button shows the explanation.
 
 https://github.com/BardPresident https://republicka.life https://kkk.education https://archive.org/details/@bardpresident https://www.youtube.com/@BardPresident https://odysee.com/@BardPresident:0 https://www.bitchute.com/channel/P9QR7Z6nmVtm
 
