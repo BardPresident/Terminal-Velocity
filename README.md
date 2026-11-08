@@ -398,7 +398,7 @@ HOW TO RUN IT
   Boot takes about 7 seconds so you can read it. Settings > Boot: Slow / Normal / Fast / Instant.
   Press any key during boot to skip the delays.
 
-THE APPS (26) - every one has a desktop icon
+THE APPS (27) - every one has a desktop icon
   Terminal Velocity   the game, starts at boot minimised in the taskbar (desktop first;
                       Settings > Boot changes this)
   Terminal            real shell: ls -lahs, cd, cat, grep, find, tree, mkdir,
@@ -417,6 +417,10 @@ THE APPS (26) - every one has a desktop icon
                       progress, chapter list, page or scroll mode, font/size/
                       spacing/margins, Paper/Sepia/Night themes, in-book search,
                       bookmarks that remember where you stopped
+  BookBinder          bind many .txt books into one file (dividers, file-name
+                      headings) or split them into chunk ZIPs for NotebookLM
+                      and other AI tools. Add files from your computer or a
+                      whole archive folder
   Audiobooks          the 24 books in /archive/Audiobooks: remembers where you
                       stopped in each, +/-15s and 60s skips, speed 0.75x-2.5x,
                       sleep timer, bookmarks, "Read the text" jumps to the
