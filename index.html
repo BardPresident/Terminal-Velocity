@@ -90,13 +90,14 @@ input.t:focus,select.t:focus,textarea.t:focus{border-color:var(--ac)}
 pre.out{margin:0;white-space:pre-wrap;word-break:break-word;font:inherit}
 .sw{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px}
 .swc{border:2px solid var(--bd);border-radius:8px;padding:8px;cursor:pointer}.swc.on{border-color:var(--ac)}.swc .bar{height:34px;border-radius:5px;display:flex;overflow:hidden;margin-bottom:6px}.swc .bar i{flex:1}
-@media(max-width:700px){#mcd{display:none}.tb button[title=Maximise],.tb button[title=Restore]{display:none}.win{left:0!important;top:0!important;width:100%!important;height:100%!important;border-radius:0}.win .rz{display:none}.fl.lst .it{padding:8px 10px;min-height:42px;border-bottom:1px solid var(--bd)}.fl.lst .it .n{white-space:normal;overflow-wrap:anywhere;line-height:1.25}.fl.lst .it .m{width:auto!important;min-width:0;font-size:11px;white-space:nowrap}.fl.lst .it .m+.m{display:none}.mm-side{width:auto!important;max-height:34%;border-right:0!important;border-bottom:1px solid var(--bd);flex:none}.mm-row,.md-row{flex-direction:column}.mm-cover{width:72px!important;height:72px!important}.mm-ctl{flex-wrap:wrap}.mm-ctl input[type=range]:not([max="1"]){flex:1 1 100%!important;order:9;min-width:0}.md-pl{width:auto!important;max-height:36%;border-left:0!important;border-top:1px solid var(--bd)}.bk-lib{width:100%!important;border-right:0!important}.cm-top{flex-wrap:wrap!important;gap:4px}.cm-top .grow{display:none}.cm-top select{flex:1 1 30%;min-width:0;max-width:48%}.row{flex-wrap:wrap}.btn{min-height:34px}.tk{flex:0 0 40px;min-width:40px;padding:0 8px}.tk .ti{display:none}#tray .hide{display:none}#dic{flex-flow:row wrap;align-content:flex-start;right:8px}.side{width:96px}}
+@media(max-width:700px){#mcd{display:none}.tb button[title=Maximise],.tb button[title=Restore]{display:none}.win{left:0!important;top:0!important;width:100%!important;height:100%!important;border-radius:0}.win .rz{display:none}.fl.lst .it{padding:8px 10px;min-height:42px;border-bottom:1px solid var(--bd)}.fl.lst .it .n{white-space:normal;overflow-wrap:anywhere;line-height:1.25}.fl.lst .it .m{width:auto!important;min-width:0;font-size:11px;white-space:nowrap}.fl.lst .it .m+.m{display:none}.sc-side{display:none;position:absolute;left:0;top:0;bottom:0;width:82%!important;max-height:none!important;z-index:6;border-right:1px solid var(--bd)!important;border-bottom:0!important;box-shadow:6px 0 18px #000a}.sc-side.open{display:block}.sc-sbtn{display:inline-flex!important}.mm-side{width:auto!important;max-height:34%;border-right:0!important;border-bottom:1px solid var(--bd);flex:none}.mm-row,.md-row{flex-direction:column}.mm-cover{width:72px!important;height:72px!important}.mm-ctl{flex-wrap:wrap}.mm-ctl input[type=range]:not([max="1"]){flex:1 1 100%!important;order:9;min-width:0}.md-pl{width:auto!important;max-height:36%;border-left:0!important;border-top:1px solid var(--bd)}.bk-lib{width:100%!important;border-right:0!important}.cm-top{flex-wrap:wrap!important;gap:4px}.cm-top .grow{display:none}.cm-top select{flex:1 1 30%;min-width:0;max-width:48%}.row{flex-wrap:wrap}.btn{min-height:34px}.tk{flex:0 0 40px;min-width:40px;padding:0 8px}.tk .ti{display:none}#tray .hide{display:none}#dic{flex-flow:row wrap;align-content:flex-start;right:8px}.side{width:96px}}
 #boot{position:fixed;inset:0;z-index:9900;background:var(--bg);color:var(--ac);padding:14px 16px;font:12px/1.5 var(--ff);overflow:hidden;display:flex;flex-direction:column}
 #boot pre{margin:0;white-space:pre;color:var(--ac)}#boot #bl{flex:1;overflow:hidden;white-space:pre-wrap;word-break:break-all;display:flex;flex-direction:column;justify-content:flex-end}
 #boot .ok{color:var(--ok)}#boot .wn{color:var(--wn)}#boot .er{color:var(--er)}#boot .dm{color:var(--dim)}
 #boot .pb{height:6px;background:var(--bd);margin-top:8px;border-radius:3px;overflow:hidden}#boot .pb i{display:block;height:100%;width:0;background:var(--ac);transition:width .15s}
 .kbd{border:1px solid var(--bd);border-bottom-width:2px;border-radius:4px;padding:0 5px;font-size:11px}
 canvas{display:block}
+.sc-sbtn{display:none}.sc-player:fullscreen{display:flex;flex-direction:column;background:#000;max-height:none}.sc-player:fullscreen .sc-stage{flex:1;height:auto!important}.sc-player:fullscreen .sc-bar{background:#000c}
 .rd h1,.rd h2,.rd h3{color:var(--ac);line-height:1.25}.rd code,.rd pre{background:var(--bg);padding:1px 5px;border-radius:4px}.rd pre{padding:10px;overflow:auto;white-space:pre-wrap}.rd blockquote{border-left:3px solid var(--ac);margin:8px 0;padding:2px 12px;color:var(--dim)}.rd p{margin:.7em 0}
 #boot::after{content:'press any key to skip delays';position:absolute;right:16px;top:12px;color:var(--dim);font-size:11px}
 #boot,#boot *{-webkit-text-size-adjust:100%;text-size-adjust:100%}#boot #blogo{margin-bottom:8px;overflow:visible}#boot #blogo svg{filter:drop-shadow(0 0 5px var(--ac))}
@@ -1253,7 +1254,7 @@ const MC={yr:y=>y>2024?y-2024:y-2025,ce:m=>m>0?m+2024:m+2025,ys:m=>(m<0?"-":"")+
 const fmtDate=t=>{const d=new Date(t),hm=" "+pad(d.getHours())+":"+pad(d.getMinutes());return MC.on()?MC.iso(d)+hm+" "+MC.era(d):d.getFullYear()+"-"+pad(d.getMonth()+1)+"-"+pad(d.getDate())+hm};
 const sleep=ms=>new Promise(r=>setTimeout(r,ms));
 const LS={get(k,d){try{const v=localStorage.getItem(k);return v==null?d:JSON.parse(v)}catch(e){return d}},set(k,v){try{localStorage.setItem(k,JSON.stringify(v));return true}catch(e){return false}}};
-const OS={apps:{},wins:[],z:10,bus:{},boot:performance.now(),ver:"1.0 build 1108-1020"};
+const OS={apps:{},wins:[],z:10,bus:{},boot:performance.now(),ver:"1.0 build 1108-1051"};
 OS.on=(ev,f)=>{(OS.bus[ev]=OS.bus[ev]||[]).push(f);return f};
 OS.off=(ev,f)=>{OS.bus[ev]=(OS.bus[ev]||[]).filter(x=>x!==f)};
 OS.emit=(ev,a)=>{(OS.bus[ev]||[]).slice().forEach(f=>{try{f(a)}catch(e){console.error(e)}})};
@@ -1311,7 +1312,7 @@ const THEMES={
 };
 const THEME_ORDER=Object.keys(THEMES);
 const WALLS=["stars","rings","grid","rain","flow","plain","none"];
-const DEF={theme:"phosphor",wall:"auto",scan:true,vig:true,anim:true,verbose:true,bootSpeed:"normal",autostart:true,autostartMin:true,fsize:13,sound:false,dateMode:"mc",manifestUrl:"",sep:false};
+const DEF={theme:"phosphor",wall:"auto",scan:true,vig:true,anim:true,verbose:true,bootSpeed:"normal",autostart:true,autostartMin:true,fsize:13,sound:false,restoreSession:true,showDataApps:false,dateMode:"mc",manifestUrl:"",sep:false};
 const SET=Object.assign({},DEF,LS.get("tvos_settings",{}));
 function saveSet(){LS.set("tvos_settings",SET)}
 function hexA(c,a){c=c.replace("#","");if(c.length===3)c=c.replace(/./g,"$&$&");return`rgba(${parseInt(c.substr(0,2),16)},${parseInt(c.substr(2,2),16)},${parseInt(c.substr(4,2),16)},${a})`}
@@ -1465,6 +1466,8 @@ V.mount=async()=>{if(!window.showDirectoryPicker)throw new Error("This browser h
  const n=addKid(V.mnt,mkNode(name,1,"mnt",{handle:h,ro:0}));n.ro=0;await scanDir(h,n,{n:20000});OS.emit("fs","/mnt/"+name);return n};
 
 /* ===================== WINDOW MANAGER ===================== */
+const hasDir=p=>{const n=V.get(p);return !!(n&&n.dir&&n.kids&&n.kids.size)};
+const appVisible=a=>{if(!a||a.hidden)return false;if(!a.needs||SET.showDataApps)return true;try{return !!a.needs()}catch(e){return true}};
 function defApp(id,o){OS.apps[id]=Object.assign({id,cat:"Accessories",w:640,h:440,single:false},o)}
 const isMob=()=>innerWidth<=700;
 let wid=0;
@@ -1508,13 +1511,13 @@ OS.renderTasks=function(){const t=$("#tasks");t.innerHTML="";for(const w of OS.w
 function tick(){const d=new Date(),c=$("#clk");c.textContent=pad(d.getHours())+":"+pad(d.getMinutes());c.title=MC.dual(d);const m=$("#mcd");if(m){m.textContent=MC.on()?MC.short(d)+" "+MC.era(d):d.getDate()+" "+MONTHS[d.getMonth()].slice(0,3)+" "+d.getFullYear();m.title=MC.dual(d)}}
 function buildTray(){const tr=$("#tray");tr.innerHTML="";tr.append(h("span",{class:"hide",id:"stand",onclick:()=>OS.open("tv")}),h("span",{class:"hide",title:"Next theme",onclick:()=>cycleTheme(1)},ic("eye")),h("span",{class:"hide",id:"arc",title:"Archive status",onclick:()=>OS.open("settings",{tab:"Archive"})},"archive: …"),h("span",{title:"Spotlight (Ctrl+Space)",onclick:()=>spot(true)},ic("search")),h("span",{id:"mcd",onclick:()=>OS.open("calendar")}),h("b",{id:"clk",onclick:()=>OS.open("clock")}));tick();setInterval(tick,10000);setStand(LS.get("tvos_standing",null))}
 function cycleTheme(d){const i=(THEME_ORDER.indexOf(SET.theme)+d+THEME_ORDER.length)%THEME_ORDER.length;applyTheme(THEME_ORDER[i]);toast("Theme: "+THEMES[SET.theme].n)}
-OS.on("manifest",m=>{const a=$("#arc");if(a)a.textContent="archive: "+m.files.toLocaleString()+" files"});
+OS.on("manifest",m=>{try{buildDesk()}catch(e){}const a=$("#arc");if(a)a.textContent="archive: "+m.files.toLocaleString()+" files"});
 /* ---- desktop icons & start menu ---- */
-const DESK_FIRST=["tv","terminal","files","music","books","audiobooks","comic","media","images","notepad","archive","reader","calc","settings"];
-function buildDesk(){const d=$("#dic");d.innerHTML="";const rest=Object.keys(OS.apps).filter(i=>!DESK_FIRST.includes(i)&&!OS.apps[i].hidden).sort((x,y)=>OS.apps[x].cat.localeCompare(OS.apps[y].cat)||OS.apps[x].name.localeCompare(OS.apps[y].name));for(const id of DESK_FIRST.concat(rest)){const a=OS.apps[id];if(!a)continue;const e=h("div",{class:"dic",tabindex:"0",title:a.name,onclick:e=>{if(isMob()||e.detail>=2)OS.open(id)},onkeydown:e=>{if(e.key==="Enter")OS.open(id)}},ic(a.icon),a.name);e.addEventListener("contextmenu",ev=>{ev.preventDefault();ctxMenu(ev.clientX,ev.clientY,[{t:"Open",fn:()=>OS.open(id)}])});d.append(e)}}
+const DESK_FIRST=["tv","terminal","files","music","books","audiobooks","comic","school","media","images","notepad","archive","reader","calc","settings"];
+function buildDesk(){const d=$("#dic");d.innerHTML="";const rest=Object.keys(OS.apps).filter(i=>!DESK_FIRST.includes(i)&&appVisible(OS.apps[i])).sort((x,y)=>OS.apps[x].cat.localeCompare(OS.apps[y].cat)||OS.apps[x].name.localeCompare(OS.apps[y].name));for(const id of DESK_FIRST.concat(rest)){const a=OS.apps[id];if(!a||!appVisible(a))continue;const e=h("div",{class:"dic",tabindex:"0",title:a.name,onclick:e=>{if(isMob()||e.detail>=2)OS.open(id)},onkeydown:e=>{if(e.key==="Enter")OS.open(id)}},ic(a.icon),a.name);e.addEventListener("contextmenu",ev=>{ev.preventDefault();ctxMenu(ev.clientX,ev.clientY,[{t:"Open",fn:()=>OS.open(id)}])});d.append(e)}}
 $("#desk").addEventListener("contextmenu",e=>{if(e.target.id!=="desk"&&e.target.id!=="dic")return;e.preventDefault();ctxMenu(e.clientX,e.clientY,[{t:"Terminal here",ic:"term",fn:()=>OS.open("terminal")},{t:"Files",ic:"folder",fn:()=>OS.open("files")},{t:"New note",ic:"note",fn:()=>OS.open("notepad")},"-",{t:"Next theme",ic:"eye",fn:()=>cycleTheme(1)},{t:"Next wallpaper",ic:"image",fn:()=>{const i=(WALLS.indexOf(wallId())+1)%WALLS.length;SET.wall=WALLS[i];saveSet();setWall();toast("Wallpaper: "+SET.wall)}},{t:"Settings",ic:"gear",fn:()=>OS.open("settings")}])});
 let startSel=0;
-function startList(q){const l=$("#sl");l.innerHTML="";q=(q||"").toLowerCase().trim();const cats={};for(const id in OS.apps){const a=OS.apps[id];if(a.hidden)continue;if(q&&!(a.name+" "+a.cat+" "+(a.kw||"")).toLowerCase().includes(q))continue;(cats[a.cat]=cats[a.cat]||[]).push(a)}
+function startList(q){const l=$("#sl");l.innerHTML="";q=(q||"").toLowerCase().trim();const cats={};for(const id in OS.apps){const a=OS.apps[id];if(!appVisible(a))continue;if(q&&!(a.name+" "+a.cat+" "+(a.kw||"")).toLowerCase().includes(q))continue;(cats[a.cat]=cats[a.cat]||[]).push(a)}
  const order=["Games","System","Accessories","Media","Tools"];let n=0;for(const c of Object.keys(cats).sort((a,b)=>order.indexOf(a)-order.indexOf(b))){l.append(h("h6",{},c));for(const a of cats[c].sort((x,y)=>x.name.localeCompare(y.name))){l.append(h("div",{class:"si"+(n++===startSel?" sel":""),"data-app":a.id,onclick:()=>{startToggle(false);OS.open(a.id)}},ic(a.icon),a.name,h("small",{},a.desc||"")))}}
  if(!n)l.append(h("div",{class:"pad dim"},"No app matches."))}
 function startToggle(on){const s=$("#start");on=on==null?!s.classList.contains("on"):on;s.classList.toggle("on",on);$("#sbtn").classList.toggle("on",on);if(on){startSel=0;$("#sq").value="";startList("");if(!matchMedia("(pointer:coarse)").matches)setTimeout(()=>$("#sq").focus(),0)}else $("#sq").blur()}
@@ -1522,11 +1525,24 @@ function buildStart(){$("#sbtn").append(ic("logo"),h("span",{},"TV·OS"));$("#sb
  $("#sq").addEventListener("input",e=>{startSel=0;startList(e.target.value)});$("#sq").addEventListener("keydown",e=>{const items=$$(".si",$("#sl"));if(e.key==="ArrowDown"){startSel=Math.min(items.length-1,startSel+1);startList($("#sq").value)}else if(e.key==="ArrowUp"){startSel=Math.max(0,startSel-1);startList($("#sq").value)}else if(e.key==="Enter"){const it=items[startSel];if(it){startToggle(false);OS.open(it.dataset.app)}}else if(e.key==="Escape")startToggle(false)});
  const f=$("#sf");f.append(h("span",{},"Terminal Velocity OS "+OS.ver),h("span",{style:"display:flex;gap:6px"},h("button",{class:"btn sm",title:"Save this whole OS as one .html file",onclick:()=>{startToggle(false);saveOS()}},ic("save"),"Save OS"),h("button",{class:"btn sm",onclick:()=>{startToggle(false);cycleTheme(1)}},"Theme"),h("button",{class:"btn sm",onclick:async()=>{startToggle(false);if(await dlgConfirm("Reboot Terminal Velocity OS? Unsaved notes are kept as drafts.","Reboot","Reboot"))location.reload()}},ic("power"),"Reboot")));
  addEventListener("pointerdown",e=>{if(!e.target.closest("#start")&&!e.target.closest("#sbtn"))startToggle(false)})}
+/* ---- session: remember open windows and where they were ---- */
+const SESS_KEY="tvos_session";let sessLast="";
+const sessSnap=()=>{const ws=[...OS.wins].filter(w=>!w.dead&&OS.apps[w.app]&&!OS.apps[w.app].hidden).sort((a,b)=>(+a.el.style.zIndex||0)-(+b.el.style.zIndex||0));
+ return{v:1,cur:OS.cur&&!OS.cur.dead?ws.indexOf(OS.cur):-1,w:ws.map(w=>{const o={a:w.app,x:Math.round(w.x),y:Math.round(w.y),w:Math.round(w.w),h:Math.round(w.h)};if(w.max){o.max=1;if(w.prev)o.p=[w.prev.x,w.prev.y,w.prev.w,w.prev.h].map(Math.round)}if(w.min)o.min=1;if(typeof w.arg==="string"||typeof w.arg==="number")o.arg=w.arg;return o})}};
+function sessSave(){if(!OS.sessReady)return;try{const s=JSON.stringify(sessSnap());if(s!==sessLast){sessLast=s;localStorage.setItem(SESS_KEY,s)}}catch(e){}}
+function sessLoad(){try{const s=JSON.parse(localStorage.getItem(SESS_KEY)||"null");return s&&Array.isArray(s.w)?s:null}catch(e){return null}}
+function sessRestore(sess){const d=$("#desk"),dw=d.clientWidth,dh=d.clientHeight;let fw=null,n=0;
+ sess.w.forEach((o,i)=>{const app=OS.apps[o.a];if(!app||app.hidden||!appVisible(app))return;let w=null;try{w=OS.open(o.a,o.arg)}catch(e){}if(!w)return;n++;
+  if(!isMob()){if(w.max)OS.toggleMax(w,false);const g=o.max&&o.p?{x:o.p[0],y:o.p[1],w:o.p[2],h:o.p[3]}:o;w.w=Math.max(260,Math.min(g.w,dw));w.h=Math.max(140,Math.min(g.h,dh));w.x=Math.min(Math.max(0,g.x),Math.max(0,dw-80));w.y=Math.min(Math.max(0,g.y),Math.max(0,dh-40));setRect(w);w.on.resize&&w.on.resize();
+   if(o.max)OS.toggleMax(w,true)}
+  if(o.min)OS.minimize(w);if(i===sess.cur)fw=w});
+ if(fw&&!fw.min)OS.focus(fw);return n}
+function sessStart(){OS.sessReady=true;sessSave();setInterval(sessSave,1500);addEventListener("pagehide",sessSave);addEventListener("beforeunload",sessSave);document.addEventListener("visibilitychange",()=>{if(document.hidden)sessSave()})}
 /* ---- spotlight ---- */
 let spSel=0,spRes=[];
 function spot(on){const s=$("#spot");s.classList.toggle("on",on);if(on){$("#spi").value="";spRender("");if(!matchMedia("(pointer:coarse)").matches)setTimeout(()=>$("#spi").focus(),0)}else $("#spi").blur()}
 function spRender(q){q=q.trim();const r=$("#spr");r.innerHTML="";spRes=[];const ql=q.toLowerCase();
- for(const id in OS.apps){const a=OS.apps[id];if(a.hidden)continue;if(!ql||(a.name+" "+(a.kw||"")).toLowerCase().includes(ql))spRes.push({t:a.name,s:"app · "+a.cat,i:a.icon,f:()=>OS.open(id)})}
+ for(const id in OS.apps){const a=OS.apps[id];if(!appVisible(a))continue;if(!ql||(a.name+" "+(a.kw||"")).toLowerCase().includes(ql))spRes.push({t:a.name,s:"app · "+a.cat,i:a.icon,f:()=>OS.open(id)})}
  if(ql.length>=2){let c=0;V.walk(V.root,(n,d)=>{if(c>40||!n.parent)return;if(n.name.toLowerCase().includes(ql)){c++;spRes.push({t:n.name,s:V.path(n.parent),i:V.icon(n),f:()=>OS.openNode(n)})}})}
  if(ql){const m=/^[\d\s+\-*/().^%,a-z]+$/i.test(q)&&/\d/.test(q)&&/[+\-*/^%]/.test(q);if(m)try{const v=calcEval(q);spRes.unshift({t:"= "+v,s:"calculator",i:"calc",f:()=>{navigator.clipboard&&navigator.clipboard.writeText(String(v));toast("Copied "+v)}})}catch(e){}}
  spRes=spRes.slice(0,60);spSel=0;spRes.forEach((x,i)=>r.append(h("div",{class:"si"+(i===0?" sel":""),onclick:()=>{spot(false);x.f()}},ic(x.i),x.t,h("small",{},x.s))));if(!spRes.length)r.append(h("div",{class:"pad dim"},"Nothing found."))}
@@ -1831,7 +1847,7 @@ defApp("runner",{name:"App Runner",icon:"code",cat:"Tools",w:760,h:520,desc:"run
  onArg(w,a){typeof a==="string"&&w.load(a)},single:false});
 
 /* --- Archive search --- */
-defApp("archive",{name:"Archive",icon:"search",cat:"Media",w:760,h:520,desc:"search the whole manifest",kw:"search find archive manifest files republicka",single:true,
+defApp("archive",{needs:()=>MAN.files>0,name:"Archive",icon:"search",cat:"Media",w:760,h:520,desc:"search the whole manifest",kw:"search find archive manifest files republicka",single:true,
  init(win,b){let flat=null,kind="all",lim=200;const inp=h("input",{class:"t grow",placeholder:"search all archive file names… (words match anywhere in the path)"}),out=h("div",{class:"fl lst scr grow"}),st=h("div",{class:"row dim",style:"border-top:1px solid var(--bd);border-bottom:0;font-size:12px"});
   const build=()=>{flat=[];V.walk(V.arch,(n)=>{if(n.parent&&!n.dir)flat.push({n,k:(V.path(n).toLowerCase()),kind:V.kind(n)})})};
   const draw=()=>{if(!flat)build();const ws=inp.value.toLowerCase().split(/\s+/).filter(Boolean);let r=flat.filter(x=>(kind==="all"||x.kind===kind)&&ws.every(w=>x.k.includes(w)));st.textContent=(r.length).toLocaleString()+" of "+flat.length.toLocaleString()+" files"+(MAN.json?"":" · no manifest mounted");out.innerHTML="";r.slice(0,lim).forEach(x=>out.append(h("div",{class:"it",title:V.path(x.n),onclick:()=>OS.openNode(x.n),oncontextmenu:e=>{e.preventDefault();ctxMenu(e.clientX,e.clientY,[{t:"Open",fn:()=>OS.openNode(x.n)},{t:"Show in Files",fn:()=>OS.open("files",V.path(x.n.parent))},{t:"Add to Media playlist",dis:x.kind!=="audio"&&x.kind!=="video",fn:()=>OS.open("media",V.path(x.n))}])}},ic(V.icon(x.n)),h("span",{class:"n"},x.n.name),h("span",{class:"m",style:"width:auto;max-width:45%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap"},V.path(x.n.parent).replace("/archive","")||"/"),h("span",{class:"m"},fmtBytes(x.n.size)))));if(r.length>lim)out.append(h("button",{class:"btn",style:"margin:8px",onclick:()=>{lim+=800;draw()}},"Show more"))};
@@ -1846,8 +1862,8 @@ defApp("settings",{name:"Settings",icon:"gear",cat:"System",w:700,h:520,single:t
   const P={
    Appearance(){const g=h("div",{class:"sw"});for(const k of THEME_ORDER){const t=THEMES[k],v=t.v;g.append(h("div",{class:"swc"+(SET.theme===k?" on":""),onclick:()=>{applyTheme(k);draw()}},h("div",{class:"bar",style:"background:"+v.bg},h("i",{style:"background:"+v.pn}),h("i",{style:"background:"+v.pn2}),h("i",{style:"background:"+v.ac}),h("i",{style:"background:"+v.ac2}),h("i",{style:"background:"+v.fg})),h("b",{},t.n),h("div",{class:"dim",style:"font-size:11px"},t.d)))}
     const ws=h("select",{class:"t",onchange:e=>{SET.wall=e.target.value;saveSet();setWall()}},...["auto",...WALLS].map(w=>h("option",{value:w,selected:SET.wall===w},w==="auto"?"auto (theme default)":w)));
-    return[h("h3",{class:"ac",style:"margin:0"},"X environment (theme)"),g,h("div",{class:"row",style:"border:0;padding:0"},"Wallpaper (canvas, no images):",ws),h("div",{class:"row",style:"border:0;padding:0"},"Calendar & dates:",h("select",{class:"t",onchange:e=>{SET.dateMode=e.target.value;saveSet();tick()}},h("option",{value:"mc",selected:SET.dateMode!=="ce"},"Mythocratic first (Gregorian secondary)"),h("option",{value:"ce",selected:SET.dateMode==="ce"},"Gregorian first (MC secondary)"))),chk("scan","CRT scanlines",()=>applyTheme(SET.theme)),chk("vig","Vignette",()=>applyTheme(SET.theme)),chk("anim","Window animations"),h("div",{class:"row",style:"border:0;padding:0"},"Text size",h("input",{type:"range",min:11,max:18,value:SET.fsize,oninput:e=>{SET.fsize=+e.target.value;applyTheme(SET.theme)}}),h("span",{class:"dim"},"light themes skip scanlines automatically"))]},
-   Boot(){return[h("h3",{class:"ac",style:"margin:0"},"Boot"),chk("verbose","Verbose boot log (say what it is doing at all times)"),h("label",{style:"display:flex;gap:8px;align-items:center"},"Boot speed",h("select",{class:"t",onchange:e=>{SET.bootSpeed=e.target.value;saveSet()}},...[["slow","Slow (about 14 s)"],["normal","Normal (about 7 s)"],["fast","Fast"],["instant","Instant"]].map(([v,l])=>h("option",{value:v,selected:(SET.bootSpeed||"normal")===v},l)))),chk("autostart","Start Terminal Velocity (the game) automatically after boot"),chk("autostartMin","...and keep it minimised in the taskbar (desktop first)"),h("div",{class:"dim"},"Press any key or click during boot to skip the delays. The checks still run.")]},
+    return[h("h3",{class:"ac",style:"margin:0"},"X environment (theme)"),g,h("div",{class:"row",style:"border:0;padding:0"},"Wallpaper (canvas, no images):",ws),h("div",{class:"row",style:"border:0;padding:0"},"Calendar & dates:",h("select",{class:"t",onchange:e=>{SET.dateMode=e.target.value;saveSet();tick()}},h("option",{value:"mc",selected:SET.dateMode!=="ce"},"Mythocratic first (Gregorian secondary)"),h("option",{value:"ce",selected:SET.dateMode==="ce"},"Gregorian first (MC secondary)"))),chk("scan","CRT scanlines",()=>applyTheme(SET.theme)),chk("vig","Vignette",()=>applyTheme(SET.theme)),chk("anim","Window animations"),chk("showDataApps","Show Music, Books, Comics, Audiobooks and Archive even when their files are not mounted",()=>{buildDesk()}),h("div",{class:"row",style:"border:0;padding:0"},"Text size",h("input",{type:"range",min:11,max:18,value:SET.fsize,oninput:e=>{SET.fsize=+e.target.value;applyTheme(SET.theme)}}),h("span",{class:"dim"},"light themes skip scanlines automatically"))]},
+   Boot(){return[h("h3",{class:"ac",style:"margin:0"},"Boot"),chk("verbose","Verbose boot log (say what it is doing at all times)"),h("label",{style:"display:flex;gap:8px;align-items:center"},"Boot speed",h("select",{class:"t",onchange:e=>{SET.bootSpeed=e.target.value;saveSet()}},...[["slow","Slow (about 14 s)"],["normal","Normal (about 7 s)"],["fast","Fast"],["instant","Instant"]].map(([v,l])=>h("option",{value:v,selected:(SET.bootSpeed||"normal")===v},l)))),chk("restoreSession","Reopen my windows, and where they were, after a reboot or refresh (close everything and reboot to start fresh)"),chk("autostart","First boot: start Terminal Velocity (the game) automatically"),chk("autostartMin","...and keep it minimised in the taskbar (desktop first)"),h("div",{class:"dim"},"Press any key or click during boot to skip the delays. The checks still run.")]},
    Archive(){const c=h("pre",{class:"out dim"},MAN.json?`Mounted: ${MAN.files.toLocaleString()} files · ${fmtBytes(MAN.size)}\nSource : ${MAN.src}\nFormat : {generated, webPrefix, items:[{name,type:"folder"|"file",children,path,size}]}`:"No manifest mounted.\n"+MAN.tried.map(t=>"  fail "+t.u+" ("+t.why+")").join("\n"));
     const u=h("input",{class:"t grow",placeholder:"https://example.org/files/manifest.json",value:SET.manifestUrl||""});
     const apply=async j=>{try{buildArchive(j,"custom");toast("Archive mounted: "+MAN.files.toLocaleString()+" files. Restart the game window to let it see the new manifest.");draw()}catch(e){dlgAlert("That manifest could not be used: "+e.message,"Manifest")}};
@@ -2013,7 +2029,7 @@ const smallWords=new Set("a an and as at but by for in of on or the to with".spl
 function prettyWords(s){return s.replace(/[-_]+/g," ").replace(/\s+/g," ").trim().split(" ").map((w,i)=>i&&smallWords.has(w.toLowerCase())?w.toLowerCase():w.charAt(0).toUpperCase()+w.slice(1)).join(" ")}
 
 /* --- Music: albums from /archive/Atheden, tracks as a playlist --- */
-defApp("music",{name:"Music",icon:"disc",cat:"Media",w:900,h:580,single:true,desc:"Atheden albums, play like a playlist",kw:"atheden album mp3 songs playlist music player",
+defApp("music",{needs:()=>hasDir("/archive/Atheden"),name:"Music",icon:"disc",cat:"Media",w:900,h:580,single:true,desc:"Atheden albums, play like a playlist",kw:"atheden album mp3 songs playlist music player",
  init(win,b,arg){let root=V.get("/archive/Atheden"),albums=[],ai=-1,ti=-1,order=[],shuf=false,rep=0,actx=null,an=null,raf=0,noViz=false,wired=false;
   const au=h("audio",{preload:"metadata"}),cover=h("img",{class:"mm-cover",style:"width:128px;height:128px;object-fit:cover;border-radius:8px;border:1px solid var(--bd);background:var(--bg);flex:none",alt:"",onerror:e=>e.target.style.display="none"}),ttl=h("div",{style:"font-size:20px;font-weight:700;color:var(--ac);overflow-wrap:anywhere"}),sub=h("div",{class:"dim"}),viz=h("canvas",{style:"width:100%;height:46px;margin-top:6px"}),
    side=h("div",{class:"side mm-side",style:"width:250px"}),tl=h("div",{class:"scr grow"}),npT=h("div",{style:"font-weight:600;overflow-wrap:anywhere;line-height:1.3"},"Nothing playing"),npF=h("div",{class:"dim",style:"font-size:11px;overflow-wrap:anywhere"}),
@@ -2055,7 +2071,7 @@ defApp("music",{name:"Music",icon:"disc",cat:"Media",w:900,h:580,single:true,des
   loop()}});
 
 /* --- Books: e-reader for the text files in /archive/Books --- */
-defApp("books",{name:"Books",icon:"books",cat:"Media",w:960,h:640,single:true,startMax:false,desc:"e-reader for the Books archive",kw:"books ebook reader library txt read novel text e-reader",
+defApp("books",{needs:()=>hasDir("/archive/Books"),name:"Books",icon:"books",cat:"Media",w:960,h:640,single:true,startMax:false,desc:"e-reader for the Books archive",kw:"books ebook reader library txt read novel text e-reader",
  init(win,b,arg){
   const ST=Object.assign({fs:19,ff:"serif",lh:1.65,mar:44,theme:"paper",mode:"page"},LS.get("tvos_bk_set",{})),PR=LS.get("tvos_bk_prog",{}),saveSt=()=>LS.set("tvos_bk_set",ST),savePr=()=>LS.set("tvos_bk_prog",PR);
   const TH={os:null,paper:{bg:"#f7f1e1",fg:"#2a2418",ac:"#8a5a12",dm:"#8b7f63"},sepia:{bg:"#eadbbd",fg:"#43341f",ac:"#7a4a12",dm:"#8a7656"},night:{bg:"#101114",fg:"#c4c4cc",ac:"#8fb4ff",dm:"#70707c"},black:{bg:"#000",fg:"#9d9d9d",ac:"#c9a227",dm:"#5c5c5c"}};
@@ -2133,7 +2149,7 @@ defApp("books",{name:"Books",icon:"books",cat:"Media",w:960,h:640,single:true,st
 
 /* --- Comics: image-folder comic reader (default /archive/Republicka-Comic) --- */
 IP.comic="M3 4h18v12h-9l-5 4v-4H3z M7 9h10 M7 12h6";
-defApp("comic",{name:"Comics",icon:"comic",cat:"Media",w:1000,h:720,single:true,desc:"read image comics page by page",kw:"comic comics manga republicka graphic novel pages reader panels",
+defApp("comic",{needs:()=>hasDir("/archive/Republicka-Comic"),name:"Comics",icon:"comic",cat:"Media",w:1000,h:720,single:true,desc:"read image comics page by page",kw:"comic comics manga republicka graphic novel pages reader panels",
  init(win,b,arg){
   const ST=Object.assign({mode:"page",fit:"fit",z:1,rtl:false,cover:true,bg:"#0b0b0e"},LS.get("tvos_cm_set",{})),PR=LS.get("tvos_cm_prog",{}),saveSt=()=>LS.set("tvos_cm_set",ST);
   let pages=[],folder=null,p=0,sbuilt=null,gridBuilt=false,wheelT=0,dead=false;
@@ -2209,7 +2225,7 @@ defApp("comic",{name:"Comics",icon:"comic",cat:"Media",w:1000,h:720,single:true,
 
 /* --- Audiobooks: /archive/Audiobooks, resume where you stopped --- */
 IP.headp="M4 15v-3a8 8 0 0116 0v3 M4 14h3v6H4z M17 14h3v6h-3z";
-defApp("audiobooks",{name:"Audiobooks",icon:"headp",cat:"Media",w:920,h:600,single:true,desc:"listen to the Audiobooks archive, resumes where you stopped",kw:"audiobooks audiobook audio books narration listen mp3 spoken",
+defApp("audiobooks",{needs:()=>hasDir("/archive/Audiobooks"),name:"Audiobooks",icon:"headp",cat:"Media",w:920,h:600,single:true,desc:"listen to the Audiobooks archive, resumes where you stopped",kw:"audiobooks audiobook audio books narration listen mp3 spoken",
  init(win,b,arg){
   const DB_=LS.get("tvos_ab",{}),ST=Object.assign({rate:1,vol:.9},LS.get("tvos_ab_set",{})),saveDB=()=>LS.set("tvos_ab",DB_),saveSt=()=>LS.set("tvos_ab_set",ST);
   let root=V.get("/archive/Audiobooks"),books=[],cur=null,filt="",sleepAt=0,sleepEnd=false,sleepT=0,lastSave=0,dead=false;
@@ -2468,6 +2484,68 @@ defApp("manifest",{name:"Manifest Maker",icon:"folderplus",cat:"Tools",w:640,h:6
   b.append(tabsEl,body);draw()}});
 function pickFolderInput(){return new Promise(res=>{const i=h("input",{type:"file",webkitdirectory:"",multiple:"",style:"display:none"});i.setAttribute("webkitdirectory","");i.onchange=()=>{res([...i.files]);i.remove()};i.oncancel=()=>res([]);document.body.append(i);i.click()})}
 
+/* --- School: the numbered video series in /archive (01-..., 02-..., each a folder of mp4 / mp3 / jpg) --- */
+IP.school="M12 4L2 9l10 5 10-5-10-5z M6 11.6V16c0 1.6 2.7 3 6 3s6-1.4 6-3v-4.4 M22 9v6";
+const scDirs=()=>{const r=V.arch;return r&&r.kids?V.ls(r).filter(k=>k.dir&&/^\d/.test(k.name)).sort((a,b)=>a.name.localeCompare(b.name,undefined,{numeric:true})):[]};
+const scHas=()=>scDirs().some(d=>V.ls(d).some(x=>{const k=V.kind(x);return k==="video"||k==="audio"}));
+const scMeta=n=>{const m=/^(\d+)[-_ ](.*)$/.exec(n.name);let rest=m?m[2]:n.name,yrs=[];const ym=/((?:-\d{4})+)$/.exec(rest);if(ym){yrs=ym[1].split("-").filter(Boolean);rest=rest.slice(0,-ym[1].length)}return{no:m?m[1]:"",base:rest,name:prettyWords(rest),year:yrs.map(y=>+y>=1000?y:y+" MC").join("–")}};
+const scEp=(f,meta)=>{let s=f.name.replace(/\.[^.]+$/,"").replace(/^\d+[-_ ]/,"").replace(/[-_]+/g," ");const b=meta.base.replace(/[-_ ]+/g," ").toLowerCase();if(b&&s.toLowerCase().startsWith(b))s=s.slice(b.length).replace(/^[\s-]+/,"");const m=/^(\d+)\s+(.*)$/.exec(s);const t=prettyWords(m?m[2]:s);return{no:m?m[1]:"",title:t||prettyWords(f.name.replace(/\.[^.]+$/,""))}};
+const scFt=s=>{if(!isFinite(s)||s<0)s=0;s=Math.floor(s);const hh=Math.floor(s/3600),m=Math.floor(s%3600/60);return(hh?hh+":"+pad(m):m)+":"+pad(s%60)};
+defApp("school",{needs:scHas,name:"School",icon:"school",cat:"Media",w:980,h:640,single:true,desc:"the numbered video series (lectures, films, shows)",kw:"cinema video series lectures films shows episodes watch tv movies mp4 school",
+ init(win,b,arg){let series=[],si=-1,eps=[],ei=-1,metaCur=null,prog=LS.get("tvos_sc_prog",{}),lastSave=0,filter="",spd=1;
+  const SPEEDS=[.75,1,1.25,1.5,1.75,2];
+  const vd=h("video",{playsinline:"",preload:"metadata",style:"width:100%;height:100%;object-fit:contain;background:#000;display:block"}),img=h("img",{alt:"",style:"display:none;width:100%;height:100%;object-fit:contain;background:#000;position:absolute;inset:0"}),
+   aud=h("div",{style:"display:none;position:absolute;inset:0;flex-direction:column;align-items:center;justify-content:center;gap:8px;color:var(--ac);background:radial-gradient(circle at 50% 40%,var(--aca),#000 70%);text-align:center;padding:12px"}),
+   stage=h("div",{class:"sc-stage",style:"position:relative;background:#000;width:100%;height:220px;flex:none;display:flex;align-items:center;justify-content:center",onclick:e=>{if(e.target===vd)pp.click()}},vd,img,aud),
+   side=h("div",{class:"side sc-side",style:"width:260px"}),list=h("div",{class:"scr grow",style:"position:relative"}),
+   ttl=h("div",{style:"font-size:19px;font-weight:700;color:var(--ac);overflow-wrap:anywhere"}),sub=h("div",{class:"dim"}),npT=h("div",{style:"font-weight:600;overflow-wrap:anywhere;line-height:1.3"},"Nothing playing"),npF=h("div",{class:"dim",style:"font-size:11px;overflow-wrap:anywhere"}),
+   seek=h("input",{type:"range",min:0,max:1000,value:0,style:"flex:1;accent-color:var(--ac);min-width:60px"}),tm=h("span",{class:"dim",style:"min-width:96px;text-align:center"},"0:00 / 0:00"),vol=h("input",{type:"range",min:0,max:1,step:.01,value:.9,style:"width:80px;accent-color:var(--ac)"}),
+   find=h("input",{class:"t",placeholder:"Find a series...",style:"width:100%;box-sizing:border-box",oninput:e=>{filter=e.target.value.toLowerCase();drawSide()}});
+  const vkey=f=>V.path(f);
+  const pct=f=>{const p=prog[vkey(f)];return p&&p[1]?p[0]/p[1]:0};
+  const drawSide=()=>{side.innerHTML="";side.append(h("div",{style:"padding:4px 2px"},find));series.forEach((s,i)=>{if(filter&&!(s.meta.name+" "+s.meta.no+" "+s.meta.year).toLowerCase().includes(filter))return;side.append(h("div",{class:i===si?"on":"",style:"align-items:flex-start;line-height:1.25",onclick:()=>{openSeries(i);side.classList.remove("open")}},h("span",{class:"dim",style:"min-width:22px"},s.meta.no),h("span",{style:"flex:1;overflow-wrap:anywhere"},s.meta.name,h("div",{class:"dim",style:"font-size:11px"},(s.meta.year?s.meta.year+" · ":"")+s.n.length+" items"))))})};
+  const badge=f=>{const p=pct(f);return p>.92?"✓":p>.02?Math.round(p*100)+"%":""};
+  const drawList=()=>{list.innerHTML="";eps.forEach((f,j)=>{const e=scEp(f,metaCur),k=V.kind(f);list.append(h("div",{class:"si"+(j===ei?" sel":""),"data-j":j,title:f.name,style:"align-items:flex-start",onclick:()=>play(j)},h("span",{class:"dim",style:"min-width:26px;text-align:right"},e.no||j+1),h("span",{style:"flex:1;overflow-wrap:anywhere;line-height:1.3"},e.title,k!=="video"?h("span",{class:"dim"},"  ["+(k==="audio"?"audio":"image")+"]"):""),h("small",{class:"ac",id:"scb"+j},badge(f)),h("small",{},fmtBytes(f.size))))})};
+  function openSeries(i,keep){si=i;const s=series[i];metaCur=s.meta;eps=s.n;drawSide();ttl.textContent=s.meta.name;const vids=eps.filter(f=>V.kind(f)==="video").length;sub.textContent=(s.meta.year?s.meta.year+" · ":"")+"Series "+(s.meta.no||i+1)+" · "+eps.length+" items ("+vids+" videos) · "+fmtBytes(eps.reduce((a,f)=>a+(f.size||0),0));if(!keep)ei=-1;drawList()}
+  const playable=f=>{const k=V.kind(f);return k==="video"||k==="audio"};
+  async function play(j,auto){const f=eps[j];if(!f)return;ei=j;$$(".si",list).forEach(x=>x.classList.toggle("sel",+x.dataset.j===j));const row=$(".si.sel",list);if(row){const t=row.offsetTop,bt=t+row.offsetHeight;if(t<list.scrollTop)list.scrollTop=t;else if(bt>list.scrollTop+list.clientHeight)list.scrollTop=bt-list.clientHeight}
+   const e=scEp(f,metaCur),k=V.kind(f);npT.textContent=e.title+"  ·  "+metaCur.name;npF.textContent=f.name;OS.title(win,"School - "+e.title);LS.set("tvos_sc_last",{s:series[si].n0.name,f:f.name});
+   let url=f.url;if(!url)try{url=await V.read(f,"url")}catch(er){return toast(er.message,1)}
+   if(k==="image"){vd.pause();vd.removeAttribute("src");vd.style.visibility="hidden";aud.style.display="none";img.style.display="block";img.src=url;img.onerror=()=>{if(f.alt&&img.src!==f.alt)img.src=f.alt};return}
+   img.style.display="none";vd.style.visibility="visible";
+   if(k==="audio"){aud.innerHTML="";aud.append(h("div",{style:"width:64px;height:64px"},ic("music")),h("div",{style:"font-size:18px;font-weight:700"},e.title),h("div",{class:"dim"},metaCur.name));aud.style.display="flex"}else aud.style.display="none";
+   const p=prog[vkey(f)],t0=p&&p[1]&&p[0]>5&&p[0]<p[1]-10?p[0]:0;let tried=0;
+   const go=u=>{vd.src=u;vd.playbackRate=spd;vd.onloadedmetadata=()=>{if(t0)vd.currentTime=t0};vd.play().catch(()=>{})};
+   vd.onerror=()=>{if(!tried&&f.alt&&url!==f.alt){tried=1;url=f.alt;go(url)}else toast("Cannot play "+f.name,1)};go(url);
+   if("mediaSession"in navigator){try{navigator.mediaSession.metadata=new MediaMetadata({title:e.title,artist:"School",album:metaCur.name});navigator.mediaSession.setActionHandler("nexttrack",()=>step(1));navigator.mediaSession.setActionHandler("previoustrack",()=>step(-1))}catch(er){}}}
+  const step=d=>{let j=ei+d;while(j>=0&&j<eps.length&&!playable(eps[j]))j+=d;if(j>=0&&j<eps.length)play(j,1)};
+  const save=force=>{const f=eps[ei];if(!f||!playable(f)||!vd.duration)return;const now=Date.now();if(!force&&now-lastSave<4000)return;lastSave=now;prog[vkey(f)]=[Math.floor(vd.currentTime),Math.floor(vd.duration)];LS.set("tvos_sc_prog",prog);const bd=document.getElementById("scb"+ei);if(bd)bd.textContent=badge(f)};
+  vd.addEventListener("timeupdate",()=>{if(!seek.dragging)seek.value=vd.duration?vd.currentTime/vd.duration*1000:0;tm.textContent=scFt(vd.currentTime)+" / "+scFt(vd.duration);save()});
+  vd.addEventListener("pause",()=>{save(1);pp.replaceChildren(ic("play"))});vd.addEventListener("play",()=>pp.replaceChildren(ic("pause")));
+  vd.addEventListener("ended",()=>{save(1);step(1)});
+  seek.addEventListener("input",()=>{seek.dragging=1;vd.currentTime=seek.value/1000*(vd.duration||0)});seek.addEventListener("change",()=>seek.dragging=0);vol.addEventListener("input",()=>vd.volume=vol.value);vd.volume=.9;
+  const pp=h("button",{class:"btn pri",onclick:()=>{if(ei<0){const j=eps.findIndex(playable);if(j>=0)play(j)}else vd.paused?vd.play():vd.pause()}},ic("play"));
+  const bt=(i,t,f)=>h("button",{class:"btn",title:t,onclick:f},ic(i));
+  const spb=h("button",{class:"btn sm",title:"Playback speed",onclick:()=>{spd=SPEEDS[(SPEEDS.indexOf(spd)+1)%SPEEDS.length];vd.playbackRate=spd;spb.textContent=spd+"x"}},"1x");
+  const fsb=h("button",{class:"btn sm",title:"Full screen (F)",onclick:()=>{const el=player;if(document.fullscreenElement)document.exitFullscreen();else (el.requestFullscreen||el.webkitRequestFullscreen||(()=>toast("Full screen not supported here",1))).call(el)}},"Full");
+  const bar=h("div",{class:"sc-bar",style:"border-top:1px solid var(--bd);background:var(--pn2);padding:8px 12px;display:flex;flex-direction:column;gap:6px;flex:none"},h("div",{},npT,npF),h("div",{class:"mm-ctl",style:"display:flex;gap:8px;align-items:center"},bt("prev","Previous",()=>step(-1)),pp,bt("next","Next",()=>step(1)),seek,tm,spb,vol,fsb));
+  const player=h("div",{class:"sc-player",style:"display:flex;flex-direction:column;flex:none"},stage,bar);
+  const cont=h("button",{class:"btn sm",style:"display:none"},"Continue"),sbtn=h("button",{class:"btn sm sc-sbtn",onclick:()=>side.classList.toggle("open")},ic("list")," Series");
+  const head=h("div",{style:"padding:8px 12px;border-bottom:1px solid var(--bd);flex:none;display:flex;gap:10px;align-items:center;flex-wrap:wrap"},h("div",{class:"grow",style:"min-width:150px"},ttl,sub),sbtn,cont,h("button",{class:"btn pri sm",onclick:()=>{const j=eps.findIndex(playable);if(j>=0)play(j)}},ic("play"),"Play series"));
+  const main=h("div",{class:"sc-main",style:"flex:1;min-width:0;display:flex;flex-direction:column;min-height:0"},head,player,list);
+  const fit=()=>{if(win.dead||document.fullscreenElement)return;const w=main.clientWidth,mh=main.clientHeight;if(w)stage.style.height=Math.round(Math.max(120,Math.min(w*9/16,mh*.5)))+"px"};if(window.ResizeObserver){const ro=new ResizeObserver(fit);ro.observe(main);win.on.ro=ro}
+  b.style.position="relative";b.append(h("div",{class:"mm-row sc-row",style:"display:flex;flex:1;min-height:0"},side,main));b.tabIndex=0;
+  b.addEventListener("keydown",e=>{if(e.target.tagName==="INPUT"&&e.target.type!=="range")return;const k=e.key;if(k===" "){e.preventDefault();pp.click()}else if(k==="ArrowRight"){vd.currentTime+=10}else if(k==="ArrowLeft"){vd.currentTime-=10}else if(k==="n"||k==="N")step(1);else if(k==="p"||k==="P")step(-1);else if(k==="f"||k==="F")fsb.click();else if(k==="ArrowUp"){vd.volume=Math.min(1,vd.volume+.1);vol.value=vd.volume}else if(k==="ArrowDown"){vd.volume=Math.max(0,vd.volume-.1);vol.value=vd.volume}});
+  const load=()=>{series=scDirs().map(n=>({n0:n,meta:scMeta(n),n:V.ls(n).filter(x=>!x.dir&&["video","audio","image"].includes(V.kind(x))).sort((a,c)=>a.name.localeCompare(c.name,undefined,{numeric:true}))})).filter(s=>s.n.length).map(s=>Object.assign(s,{n:s.n}));
+   series.forEach(s=>{s.n=s.n});};
+  load();
+  const mf=OS.on("manifest",()=>{if(win.dead)return;const cur=si>=0&&series[si]?series[si].n0.name:null;load();drawSide();const i=series.findIndex(s=>s.n0.name===cur);if(i>=0){si=i}else if(series.length)openSeries(0)});
+  win.on.close=()=>{save(1);try{win.on.ro&&win.on.ro.disconnect()}catch(e){}OS.off("manifest",mf);vd.pause();vd.removeAttribute("src");if(document.fullscreenElement)document.exitFullscreen().catch(()=>{})};
+  if(!series.length){list.append(h("div",{class:"pad dim"},"No numbered series folders (01-..., 02-...) were found in the mounted archive. Load a manifest in Settings > Archive."));drawSide()}
+  else{drawSide();const lv=LS.get("tvos_sc_last",null);let i=0;if(typeof arg==="string"){const q=series.findIndex(s=>V.path(s.n0)===arg);if(q>=0)i=q}else if(lv){const q=series.findIndex(s=>s.n0.name===lv.s);if(q>=0)i=q}openSeries(i);
+   if(lv&&series[i]&&series[i].n0.name===lv.s){const j=eps.findIndex(f=>f.name===lv.f);if(j>=0){const e=scEp(eps[j],metaCur);cont.style.display="";cont.textContent="Continue: "+e.title.slice(0,28);cont.onclick=()=>play(j)}}}
+ }});
+
 /* ===================== BOOT ===================== */
 const LOGO=`
  ████████╗███████╗██████╗ ███╗   ███╗██╗███╗   ██╗ █████╗ ██╗
@@ -2512,11 +2590,15 @@ async function boot(){
  await step("compositor: window manager, taskbar, tray, start menu, spotlight...",()=>{buildTray();buildStart();spBind();buildDesk();OS.renderTasks();const m=MAN.json;const a=$("#arc");a&&(a.textContent=m?"archive: "+MAN.files.toLocaleString()+" files":"archive: none")},90);
  await step("apps: registered "+Object.keys(OS.apps).length+" ("+Object.values(OS.apps).filter(a=>!a.hidden).map(a=>a.name).join(", ")+")",null,94);
  await step("notes: checking for unsaved drafts...",async()=>{const s=await DB.get("np_session");s&&s.tabs&&s.tabs.length?ok(s.tabs.length+" unsaved note(s) will be restored when Notepad opens"):line("  none","dm")},97);
+ const nog=/[?&]nogame\b/.test(location.search),sess=sessLoad(),doRestore=!nog&&SET.restoreSession!==false&&sess;
+ await step("session: "+(doRestore?(sess.w.length?"restoring "+sess.w.length+" window"+(sess.w.length===1?"":"s")+" ("+sess.w.map(o=>(OS.apps[o.a]&&OS.apps[o.a].name)||o.a).join(", ")+")":"nothing was open - starting fresh"):nog?"test mode, no restore":sess?"restore is off in Settings":"first boot - Terminal Velocity will start minimised"),null,99);
  line("desktop ready in "+Math.round(performance.now()-t0)+" ms","ok");pb.style.width="100%";
  await drain();if(!skip&&sp&&SET.verbose)await sleep(900*sp);
  removeEventListener("keydown",sk);removeEventListener("pointerdown",sk);
  const bt=$("#boot");bt.style.transition="opacity .35s";bt.style.opacity="0";await sleep(skip?0:350);bt.remove();
- if(SET.autostart&&!/[?&]nogame\b/.test(location.search)){const w=OS.open("tv");if(w&&SET.autostartMin!==false)OS.minimize(w)}else OS.open("help")}
+ if(doRestore)sessRestore(sess);
+ else if(SET.autostart&&!nog){const w=OS.open("tv");if(w&&SET.autostartMin!==false)OS.minimize(w)}else OS.open("help");
+ sessStart()}
 
 /* ===================== MAIN ===================== */
 (function(){
