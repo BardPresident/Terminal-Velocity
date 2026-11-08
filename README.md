@@ -546,6 +546,23 @@ SESSION RESTORE (REBOOT KEEPS YOUR WORK SPACE)
   Settings > Boot: "Reopen my windows..." turns this off (then the first-boot behaviour repeats each time).
   Also remembered by their own apps: notes drafts, last song/book/comic/audiobook/series and positions.
 
+
+RECORDING: AUDIO (WAV) AND CAMERA
+---------------------------------
+Recorder app: records real WAV (16-bit PCM, mono or stereo, at your device's sample rate).
+  Also offers compressed formats (m4a/webm/ogg) if your browser supports them.
+  Choose microphone, optional voice clean-up (off by default for archive quality),
+  pause/resume, level meter, and "start a new file every N minutes".
+Camera app: webcam or screen recording (desktop), photos (JPG), pause, countdown,
+  resolution 480p-4K, frame rate, format (MP4 where supported, else WebM), quality,
+  mic select/mute, mirror, front/back flip on phones.
+Saving: pick "A folder on this device" and recordings stream straight to a real folder
+  (Chrome/Edge/Opera desktop and Android Chrome). The file appears when each part finishes,
+  so long takes are split into parts. Other browsers (Firefox, Safari) download the file when
+  you press Stop. "Inside this OS" saves to /home/user/Recordings (browser storage; export it).
+Not available in the Appilix APK (its WebView blocks camera/mic/folders). Use a browser.
+Chrome's WebM files may not seek smoothly in some players; choose MP4 if offered.
+
 https://github.com/BardPresident https://republicka.life https://kkk.education https://archive.org/details/@bardpresident https://www.youtube.com/@BardPresident https://odysee.com/@BardPresident:0 https://www.bitchute.com/channel/P9QR7Z6nmVtm
 
 ☯ THE CORE PHILOSOPHY ☯ EMOTION = LOGIC · THE HINATA TRAP · MASTER = FLOOR
