@@ -591,6 +591,11 @@ kkk.education), add this snippet to your pages and those links will open as a ne
 if(window.parent!==window){document.addEventListener("click",function(e){var a=e.target.closest&&e.target.closest("a[href]");if(!a)return;var t=a.getAttribute("target");if(t==="_blank"||t==="_new"){e.preventDefault();parent.postMessage({tvos:"open",url:a.href},"*")}},true)}
 </script>
 
+UPDATE: pages on the same site as the OS (e.g. republicka.life when the OS runs from republicka.life) are
+wired up automatically: their new-window links and window.open() calls become Browser tabs, with no snippet needed.
+Other sites (kkk.education, anyone else's) can only do this with the snippet above, or you can copy the link and use
+the Browser's "Paste & go" button (desktop toolbar / phone menu: "Paste link and go").
+
 https://github.com/BardPresident https://republicka.life https://kkk.education https://archive.org/details/@bardpresident https://www.youtube.com/@BardPresident https://odysee.com/@BardPresident:0 https://www.bitchute.com/channel/P9QR7Z6nmVtm
 
 ☯ THE CORE PHILOSOPHY ☯ EMOTION = LOGIC · THE HINATA TRAP · MASTER = FLOOR
