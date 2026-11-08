@@ -102,7 +102,7 @@ canvas{display:block}
 #boot::after{content:'press any key to skip delays';position:absolute;right:16px;top:12px;color:var(--dim);font-size:11px}
 #boot,#boot *{-webkit-text-size-adjust:100%;text-size-adjust:100%}#boot #blogo{margin-bottom:8px;overflow:visible}#boot #blogo svg{filter:drop-shadow(0 0 5px var(--ac))}
 @media(max-width:720px){#boot{padding:max(18px,env(safe-area-inset-top)) 14px max(14px,env(safe-area-inset-bottom));font-size:11px}
-#boot #blogo{margin:6px 0 14px;padding-bottom:12px;border-bottom:1px solid var(--bd)}
+#boot #bded{color:var(--ac);font-weight:700;letter-spacing:.12em;text-align:center;margin:-6px 0 12px;text-shadow:0 0 8px var(--ac);font-size:1.1em}#boot #blogo{margin:6px 0 14px;padding-bottom:12px;border-bottom:1px solid var(--bd)}
 #boot #bl{word-break:normal;overflow-wrap:anywhere}#boot #bl div{padding-left:2ch;text-indent:-2ch}
 #boot::after{content:'tap anywhere to skip';position:static;order:9;text-align:center;margin-top:10px;letter-spacing:.08em}}
 </style></head><body>
@@ -1254,7 +1254,7 @@ const MC={yr:y=>y>2024?y-2024:y-2025,ce:m=>m>0?m+2024:m+2025,ys:m=>(m<0?"-":"")+
 const fmtDate=t=>{const d=new Date(t),hm=" "+pad(d.getHours())+":"+pad(d.getMinutes());return MC.on()?MC.iso(d)+hm+" "+MC.era(d):d.getFullYear()+"-"+pad(d.getMonth()+1)+"-"+pad(d.getDate())+hm};
 const sleep=ms=>new Promise(r=>setTimeout(r,ms));
 const LS={get(k,d){try{const v=localStorage.getItem(k);return v==null?d:JSON.parse(v)}catch(e){return d}},set(k,v){try{localStorage.setItem(k,JSON.stringify(v));return true}catch(e){return false}}};
-const OS={apps:{},wins:[],z:10,bus:{},boot:performance.now(),ver:"1.0 build 1108-1835"};
+const OS={apps:{},wins:[],z:10,bus:{},boot:performance.now(),ver:"1.0 build 1108-1920"};
 OS.on=(ev,f)=>{(OS.bus[ev]=OS.bus[ev]||[]).push(f);return f};
 OS.off=(ev,f)=>{OS.bus[ev]=(OS.bus[ev]||[]).filter(x=>x!==f)};
 OS.emit=(ev,a)=>{(OS.bus[ev]||[]).slice().forEach(f=>{try{f(a)}catch(e){console.error(e)}})};
@@ -1875,7 +1875,7 @@ defApp("settings",{name:"Settings",icon:"gear",cat:"System",w:700,h:520,single:t
     return[h("h3",{class:"ac",style:"margin:0"},"Your files"),info,h("div",{class:"row",style:"border:0;padding:0"},h("button",{class:"btn",onclick:()=>OS.open("notepad")},"Open Notepad"),h("button",{class:"btn",onclick:async()=>{const files=[];const walk=async(n,pre)=>{for(const k of V.ls(n)){if(k.dir)await walk(k,pre+k.name+"/");else files.push({name:pre+k.name,data:new Uint8Array(await V.read(k,"buf")),mt:k.mt})}};await walk(V.user,"");if(!files.length)return toast("No files in /home/user yet.",1);download("tvos-home-backup.zip",makeZip(files));toast("Backup ZIP: "+files.length+" files")}},ic("zip"),"Back up /home/user (ZIP)"),h("button",{class:"btn",onclick:async()=>{if(await dlgConfirm("Delete EVERYTHING in /home/user? (Game saves are separate and untouched.)","Erase home","Erase")){for(const k of [...V.user.kids.values()])await V.rm(k,true);toast("Home erased")}}},"Erase /home/user")),
      h("h3",{class:"ac",style:"margin:0"},"Game save"),h("div",{class:"dim"},"Terminal Velocity stores its save in this browser (localStorage), the same place as the standalone game on this site. Use the game's own export to back it up."),
      h("div",{class:"row",style:"border:0;padding:0"},h("button",{class:"btn",onclick:()=>OS.open("tv")},"Open the game"))]},
-   About(){return[h("h3",{class:"ac",style:"margin:0"},"Terminal Velocity OS "+OS.ver),h("div",{style:"white-space:pre-wrap"},"A complete desktop in ONE html file. No images, no external code, no build step — themes, wallpapers and icons are drawn with CSS, SVG paths and canvas.\n\nIt ships with the game Terminal Velocity (boots first), a shell, file manager, notepad with real export, media player, image viewer, reader, calculator, paint, clocks, toolbox and more.\n\nBring your own manifest.json and it becomes your archive. CC0 — copy it, fork it, host it anywhere."),h("div",{class:"row",style:"border:0;padding:0"},h("button",{class:"btn pri",onclick:()=>saveOS()},ic("save")," Save this OS as one .html file")),h("div",{class:"dim"},`${Object.keys(OS.apps).length} apps · ${THEME_ORDER.length} themes · ${WALLS.length} wallpapers · ${Math.round(document.documentElement.outerHTML.length/1024)} KB page`)]}};
+   About(){return[h("h3",{class:"ac",style:"margin:0"},"Terminal Velocity OS "+OS.ver),h("div",{style:"white-space:pre-wrap"},"Welcome Home Ivory!\nThis operating system is dedicated entirely to Ivory.\n\nA complete desktop in ONE html file. No images, no external code, no build step — themes, wallpapers and icons are drawn with CSS, SVG paths and canvas.\n\nIt ships with the game Terminal Velocity (boots first), a shell, file manager, notepad with real export, media player, image viewer, reader, calculator, paint, clocks, toolbox and more.\n\nBring your own manifest.json and it becomes your archive. CC0 — copy it, fork it, host it anywhere."),h("div",{class:"row",style:"border:0;padding:0"},h("button",{class:"btn pri",onclick:()=>saveOS()},ic("save")," Save this OS as one .html file")),h("div",{class:"dim"},`${Object.keys(OS.apps).length} apps · ${THEME_ORDER.length} themes · ${WALLS.length} wallpapers · ${Math.round(document.documentElement.outerHTML.length/1024)} KB page`)]}};
   const draw=()=>{side.innerHTML="";tabs.forEach(t=>side.append(h("div",{class:t===cur?"on":"",onclick:()=>{cur=t;draw()}},t)));main.innerHTML="";main.append(...P[cur]())};
   b.style.flexDirection="row";b.append(side,main);draw();win.on.theme=OS.on("theme",()=>{if(!win.dead&&cur==="Appearance")draw()});win.on.close=()=>OS.off("theme",win.on.theme)},
  onArg(w,a){}});
@@ -1998,6 +1998,8 @@ defApp("tasks",{name:"Tasks",icon:"task",cat:"Accessories",w:420,h:480,single:tr
 /* --- Help --- */
 defApp("help",{name:"Welcome",icon:"help",cat:"System",w:560,h:520,single:true,desc:"keys, tips, what is this",kw:"help welcome manual shortcuts about start",
  init(win,b){const d=h("div",{class:"scr pad rd",style:"line-height:1.6"});d.innerHTML=md(`# Terminal Velocity OS
+**Welcome Home Ivory!** This operating system is dedicated to Ivory.
+
 One file. No install. Everything is drawn with CSS and canvas.
 
 ## First steps
@@ -2800,7 +2802,7 @@ const LOGO=`
     ╚═╝   ╚══════╝╚═╝  ╚═╝╚═╝     ╚═╝╚═╝╚═╝  ╚═══╝╚═╝  ╚═╝╚══════╝
         V E L O C I T Y   O S   ·   one file · CC0 · Republicka`;
 async function boot(){
- const bl=$("#bl"),pb=$("#bp");const lg=$("#blogo");{const NS="http://www.w3.org/2000/svg",L=LOGO.split("\n").filter(x=>x.length),cw=10,lh=17,W=Math.max(...L.map(x=>x.length))*cw,sv=document.createElementNS(NS,"svg");
+ const bl=$("#bl"),pb=$("#bp");{const dd=h("div",{id:"bded"},"Welcome Home Ivory!");bl.parentNode.insertBefore(dd,bl)}const lg=$("#blogo");{const NS="http://www.w3.org/2000/svg",L=LOGO.split("\n").filter(x=>x.length),cw=10,lh=17,W=Math.max(...L.map(x=>x.length))*cw,sv=document.createElementNS(NS,"svg");
  sv.setAttribute("viewBox","0 0 "+W+" "+(L.length*lh+4));sv.setAttribute("preserveAspectRatio","xMinYMid meet");sv.style.cssText="display:block;width:100%;max-width:"+Math.round(W*0.74)+"px;height:auto;overflow:visible";
  L.forEach((ln,i)=>{const t=document.createElementNS(NS,"text"),xs=[];let cs="";for(let k=0;k<ln.length;k++)if(ln[k]!==" "){xs.push(k*cw);cs+=ln[k]}t.setAttribute("x",xs.join(" "));t.setAttribute("y",(i+1)*lh-3);t.setAttribute("fill","currentColor");t.style.cssText="font:"+"17"+"px var(--ff),monospace";t.textContent=cs;sv.append(t)});
  lg.textContent="";lg.append(sv)}
