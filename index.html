@@ -1254,7 +1254,7 @@ const MC={yr:y=>y>2024?y-2024:y-2025,ce:m=>m>0?m+2024:m+2025,ys:m=>(m<0?"-":"")+
 const fmtDate=t=>{const d=new Date(t),hm=" "+pad(d.getHours())+":"+pad(d.getMinutes());return MC.on()?MC.iso(d)+hm+" "+MC.era(d):d.getFullYear()+"-"+pad(d.getMonth()+1)+"-"+pad(d.getDate())+hm};
 const sleep=ms=>new Promise(r=>setTimeout(r,ms));
 const LS={get(k,d){try{const v=localStorage.getItem(k);return v==null?d:JSON.parse(v)}catch(e){return d}},set(k,v){try{localStorage.setItem(k,JSON.stringify(v));return true}catch(e){return false}}};
-const OS={apps:{},wins:[],z:10,bus:{},boot:performance.now(),ver:"1.0 build 1108-2009"};
+const OS={apps:{},wins:[],z:10,bus:{},boot:performance.now(),ver:"1.0 build 1108-2014"};
 OS.on=(ev,f)=>{(OS.bus[ev]=OS.bus[ev]||[]).push(f);return f};
 OS.off=(ev,f)=>{OS.bus[ev]=(OS.bus[ev]||[]).filter(x=>x!==f)};
 OS.emit=(ev,a)=>{(OS.bus[ev]||[]).slice().forEach(f=>{try{f(a)}catch(e){console.error(e)}})};
@@ -2709,11 +2709,11 @@ defApp("camera",{name:"Camera",icon:"camera",cat:"Media",w:860,h:660,single:true
 /* ===================== BROWSER: the free web (sites that allow being embedded) ===================== */
 IP.home="M3 11l9-8 9 8 M5 10v10h14V10";
 const BR={
- seed:[{t:"Republicka",u:"https://republicka.life"},{t:"KKK Education",u:"https://kkk.education"},{t:"Odysee",u:"https://odysee.com/@BardPresident:0"},{t:"BitChute",u:"https://www.bitchute.com/channel/P9QR7Z6nmVtm"}],
+ seed:[{t:"Republicka",u:"https://republicka.life"},{t:"KKK Education",u:"https://kkk.education"},{t:"Odysee",u:"https://odysee.com/"},{t:"BitChute",u:"https://www.bitchute.com/channel/P9QR7Z6nmVtm"}],
  sugg:[["Marginalia Search","https://marginalia-search.com"],["Wikipedia","https://en.wikipedia.org"],["Wikibooks","https://en.wikibooks.org"],["Wikisource","https://en.wikisource.org"],["Wikimedia Commons","https://commons.wikimedia.org"],["Internet Archive","https://archive.org"],["Project Gutenberg","https://www.gutenberg.org"],["OpenStreetMap","https://www.openstreetmap.org"]],
  /* hosts that are known to refuse embedding; we say so instead of showing an empty frame */
  blocked:["google.com","bing.com","duckduckgo.com","facebook.com","instagram.com","twitter.com","x.com","linkedin.com","github.com","reddit.com","amazon.com","netflix.com","paypal.com","apple.com","microsoft.com","live.com","office.com","tiktok.com","pinterest.com","twitch.tv","spotify.com","whatsapp.com","telegram.org","discord.com","stackoverflow.com","medium.com","nytimes.com","cnn.com","bbc.com","bbc.co.uk","theguardian.com","ebay.com"],
- bm(){let b=LS.get("tvos_bm",null);if(!Array.isArray(b)){b=BR.seed.map(x=>({...x}));LS.set("tvos_bm",b);LS.set("tvos_bm_seed3",1);LS.set("tvos_bm_seed4",1)}else if(!LS.get("tvos_bm_seed3",0)){LS.set("tvos_bm_seed3",1);const n=b.filter(x=>!(x.u==="https://republicka.life/chat"&&x.t==="Live Chamber"));if(n.length!==b.length){b=n;LS.set("tvos_bm",b)}}if(!LS.get("tvos_bm_seed4",0)){LS.set("tvos_bm_seed4",1);let ch=0;for(const m of BR.seed.slice(2))if(!b.some(x=>x.u===m.u)){b.push({...m});ch=1}if(ch)LS.set("tvos_bm",b)}return b},
+ bm(){let b=LS.get("tvos_bm",null);if(!Array.isArray(b)){b=BR.seed.map(x=>({...x}));LS.set("tvos_bm",b);LS.set("tvos_bm_seed3",1);LS.set("tvos_bm_seed4",1);LS.set("tvos_bm_seed5",1)}else if(!LS.get("tvos_bm_seed3",0)){LS.set("tvos_bm_seed3",1);const n=b.filter(x=>!(x.u==="https://republicka.life/chat"&&x.t==="Live Chamber"));if(n.length!==b.length){b=n;LS.set("tvos_bm",b)}}if(!LS.get("tvos_bm_seed4",0)){LS.set("tvos_bm_seed4",1);let ch=0;for(const m of BR.seed.slice(2))if(!b.some(x=>x.u===m.u)){b.push({...m});ch=1}if(ch)LS.set("tvos_bm",b)}if(!LS.get("tvos_bm_seed5",0)){LS.set("tvos_bm_seed5",1);let c2=0;for(const m of b)if(m.u==="https://odysee.com/@BardPresident:0"){m.u="https://odysee.com/";c2=1}if(c2)LS.set("tvos_bm",b)}return b},
  setBm(b){LS.set("tvos_bm",b)},
  hist(){const h2=LS.get("tvos_bm_hist",[]);return Array.isArray(h2)?h2:[]},
  addHist(u,t){let a=BR.hist().filter(x=>x.u!==u);a.unshift({u,t:t||u,d:Date.now()});LS.set("tvos_bm_hist",a.slice(0,60))},
@@ -2796,7 +2796,7 @@ defApp("browser",{name:"Browser",icon:"globe",cat:"Internet",w:960,h:680,single:
    const spin=h("div",{style:"position:absolute;left:0;right:0;top:0;padding:4px 8px;background:var(--pn2);font-size:12px;z-index:2"},"Loading "+BR.host(u)+"...");t.pane.append(f,spin);t.ifr=f;
    f.onload=()=>{spin.remove();hookFrame(f,t)};setTimeout(()=>spin.remove(),15000);f.src=u}
   /* pages on the same origin as the OS (republicka.life) can be wired up directly: new-window links become OS tabs */
-  function hookFrame(f,t){try{const d=f.contentDocument,w=f.contentWindow;if(!d||!w||d.__tvh)return;d.__tvh=1;
+  function hookFrame(f,t){try{const d=f.contentDocument,w=f.contentWindow;if(!d||!w||d.__tvh)return;d.__tvh=1;try{const cu=w.location.href;if(/^https?:/i.test(cu)&&cu!==t.url&&cu!=="about:blank"){t.url=cu;if(t.hist[t.pos]!==cu){t.hist=t.hist.slice(0,t.pos+1);t.hist.push(cu);t.pos=t.hist.length-1}if(t===cur)syncBar();drawTabs()}}catch(e){}
    d.addEventListener("click",e=>{if(e.defaultPrevented||e.button||e.ctrlKey||e.metaKey||e.shiftKey)return;const a=e.target.closest&&e.target.closest("a[href]");if(!a||a.hasAttribute("download"))return;const tg=(a.getAttribute("target")||"").toLowerCase();if(tg!=="_blank"&&tg!=="_new")return;if(!/^https?:\/\//i.test(a.href))return;e.preventDefault();newTab(a.href)},true);
    w.open=u=>{try{const x=new URL(u,d.baseURI).href;if(/^https?:\/\//i.test(x))newTab(x)}catch(e){}return null}}catch(e){}}
   async function pasteGo(){try{const x=(await navigator.clipboard.readText()||"").trim();if(!x)return toast("Clipboard is empty",1);go(x)}catch(e){bar.focus();toast("Paste the link into the address bar",1)}}
