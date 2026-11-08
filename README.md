@@ -563,6 +563,10 @@ Saving: pick "A folder on this device" and recordings stream straight to a real 
 Not available in the Appilix APK (its WebView blocks camera/mic/folders). Use a browser.
 Chrome's WebM files may not seek smoothly in some players; choose MP4 if offered.
 
+Screen + webcam: in the Camera app choose Source "Screen + webcam corner". Your camera is drawn
+  into a corner of the screen recording (choose corner, size, circle or rectangle; mirror applies
+  to the bubble). Desktop browsers only. System audio (if you share it) and your mic are mixed.
+
 https://github.com/BardPresident https://republicka.life https://kkk.education https://archive.org/details/@bardpresident https://www.youtube.com/@BardPresident https://odysee.com/@BardPresident:0 https://www.bitchute.com/channel/P9QR7Z6nmVtm
 
 ☯ THE CORE PHILOSOPHY ☯ EMOTION = LOGIC · THE HINATA TRAP · MASTER = FLOOR
