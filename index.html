@@ -99,7 +99,7 @@ pre.out{margin:0;white-space:pre-wrap;word-break:break-word;font:inherit}
 canvas{display:block}
 .rd h1,.rd h2,.rd h3{color:var(--ac);line-height:1.25}.rd code,.rd pre{background:var(--bg);padding:1px 5px;border-radius:4px}.rd pre{padding:10px;overflow:auto;white-space:pre-wrap}.rd blockquote{border-left:3px solid var(--ac);margin:8px 0;padding:2px 12px;color:var(--dim)}.rd p{margin:.7em 0}
 #boot::after{content:'press any key to skip delays';position:absolute;right:16px;top:12px;color:var(--dim);font-size:11px}
-#boot,#boot *{-webkit-text-size-adjust:100%;text-size-adjust:100%}#boot #blogo{line-height:1.08;margin-bottom:8px;text-shadow:0 0 8px var(--ac);overflow:hidden}
+#boot,#boot *{-webkit-text-size-adjust:100%;text-size-adjust:100%}#boot #blogo{margin-bottom:8px;overflow:visible}#boot #blogo svg{filter:drop-shadow(0 0 5px var(--ac))}
 @media(max-width:720px){#boot{padding:max(18px,env(safe-area-inset-top)) 14px max(14px,env(safe-area-inset-bottom));font-size:11px}
 #boot #blogo{margin:6px 0 14px;padding-bottom:12px;border-bottom:1px solid var(--bd)}
 #boot #bl{word-break:normal;overflow-wrap:anywhere}#boot #bl div{padding-left:2ch;text-indent:-2ch}
@@ -1253,7 +1253,7 @@ const MC={yr:y=>y>2024?y-2024:y-2025,ce:m=>m>0?m+2024:m+2025,ys:m=>(m<0?"-":"")+
 const fmtDate=t=>{const d=new Date(t),hm=" "+pad(d.getHours())+":"+pad(d.getMinutes());return MC.on()?MC.iso(d)+hm+" "+MC.era(d):d.getFullYear()+"-"+pad(d.getMonth()+1)+"-"+pad(d.getDate())+hm};
 const sleep=ms=>new Promise(r=>setTimeout(r,ms));
 const LS={get(k,d){try{const v=localStorage.getItem(k);return v==null?d:JSON.parse(v)}catch(e){return d}},set(k,v){try{localStorage.setItem(k,JSON.stringify(v));return true}catch(e){return false}}};
-const OS={apps:{},wins:[],z:10,bus:{},boot:performance.now(),ver:"1.0 build 1108-0904"};
+const OS={apps:{},wins:[],z:10,bus:{},boot:performance.now(),ver:"1.0 build 1108-0909"};
 OS.on=(ev,f)=>{(OS.bus[ev]=OS.bus[ev]||[]).push(f);return f};
 OS.off=(ev,f)=>{OS.bus[ev]=(OS.bus[ev]||[]).filter(x=>x!==f)};
 OS.emit=(ev,a)=>{(OS.bus[ev]||[]).slice().forEach(f=>{try{f(a)}catch(e){console.error(e)}})};
@@ -2415,9 +2415,11 @@ const LOGO=`
     ╚═╝   ╚══════╝╚═╝  ╚═╝╚═╝     ╚═╝╚═╝╚═╝  ╚═══╝╚═╝  ╚═╝╚══════╝
         V E L O C I T Y   O S   ·   one file · CC0 · Republicka`;
 async function boot(){
- const bl=$("#bl"),pb=$("#bp");const lg=$("#blogo");lg.textContent=LOGO;
- const fitLogo=()=>{try{let fs=12;lg.style.fontSize=fs+"px";const av=lg.clientWidth;lg.style.width="max-content";for(let i=0;i<12;i++){const w=lg.offsetWidth;if(!av||w<=av*0.97)break;fs=Math.max(3,Math.floor(fs*av/w*0.96*10)/10);lg.style.fontSize=fs+"px"}lg.style.width=""}catch(e){lg.style.width=""}};
- fitLogo();if(document.fonts&&document.fonts.ready)document.fonts.ready.then(fitLogo);setTimeout(fitLogo,250);setTimeout(fitLogo,900);addEventListener("resize",fitLogo);const mobB=innerWidth<720;
+ const bl=$("#bl"),pb=$("#bp");const lg=$("#blogo");{const NS="http://www.w3.org/2000/svg",L=LOGO.split("\n").filter(x=>x.length),cw=10,lh=17,W=Math.max(...L.map(x=>x.length))*cw,sv=document.createElementNS(NS,"svg");
+ sv.setAttribute("viewBox","0 0 "+W+" "+(L.length*lh+4));sv.setAttribute("preserveAspectRatio","xMinYMid meet");sv.style.cssText="display:block;width:100%;max-width:"+Math.round(W*0.74)+"px;height:auto;overflow:visible";
+ L.forEach((ln,i)=>{const t=document.createElementNS(NS,"text"),xs=[];let cs="";for(let k=0;k<ln.length;k++)if(ln[k]!==" "){xs.push(k*cw);cs+=ln[k]}t.setAttribute("x",xs.join(" "));t.setAttribute("y",(i+1)*lh-3);t.setAttribute("fill","currentColor");t.style.cssText="font:"+"17"+"px var(--ff),monospace";t.textContent=cs;sv.append(t)});
+ lg.textContent="";lg.append(sv)}
+ const mobB=innerWidth<720;
  let skip=false;const t0=performance.now();const sk=()=>{skip=true};addEventListener("keydown",sk);addEventListener("pointerdown",sk);
  const sp=({instant:0,fast:.3,normal:1,slow:2})[SET.bootSpeed||"normal"]??1;
  const emit=(msg,cls)=>{if(!SET.verbose&&!/ok|er|wn/.test(cls||"")&&!/^(Terminal|desktop)/.test(msg))return;const ts=((performance.now()-t0)/1000).toFixed(mobB?3:6).padStart(mobB?7:10);bl.append(h("div",{class:cls||""},"["+ts+"] "+msg));bl.scrollTop=bl.scrollHeight;while(bl.children.length>120)bl.firstChild.remove()};
