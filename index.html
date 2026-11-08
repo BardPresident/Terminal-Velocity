@@ -1240,7 +1240,7 @@ const fmtTime=s=>{if(!isFinite(s))return"0:00";s=Math.floor(s);const m=Math.floo
 const fmtDate=t=>{const d=new Date(t);return d.getFullYear()+"-"+pad(d.getMonth()+1)+"-"+pad(d.getDate())+" "+pad(d.getHours())+":"+pad(d.getMinutes())};
 const sleep=ms=>new Promise(r=>setTimeout(r,ms));
 const LS={get(k,d){try{const v=localStorage.getItem(k);return v==null?d:JSON.parse(v)}catch(e){return d}},set(k,v){try{localStorage.setItem(k,JSON.stringify(v));return true}catch(e){return false}}};
-const OS={apps:{},wins:[],z:10,bus:{},boot:performance.now(),ver:"1.0 build 1107-2324"};
+const OS={apps:{},wins:[],z:10,bus:{},boot:performance.now(),ver:"1.0 build 1108-0021"};
 OS.on=(ev,f)=>{(OS.bus[ev]=OS.bus[ev]||[]).push(f);return f};
 OS.off=(ev,f)=>{OS.bus[ev]=(OS.bus[ev]||[]).filter(x=>x!==f)};
 OS.emit=(ev,a)=>{(OS.bus[ev]||[]).slice().forEach(f=>{try{f(a)}catch(e){console.error(e)}})};
@@ -2251,6 +2251,56 @@ defApp("audiobooks",{name:"Audiobooks",icon:"headp",cat:"Media",w:920,h:600,sing
   win.openPath=p=>{const x=books.find(y=>y.path===p);x&&openBook(p,true)};
   scan();drawLib();const a=typeof arg==="string"?arg:null;if(a&&books.find(x=>x.path===a))openBook(a,true);else{const lp=LS.get("tvos_ab_last",null);if(lp&&books.find(x=>x.path===lp))openBook(lp,false)}},
  onArg(w,a){typeof a==="string"&&w.openPath&&w.openPath(a)}});
+
+/* --- BookBinder: bind many .txt books into one file, or split into chunk ZIPs --- */
+defApp("bookbinder",{name:"BookBinder",icon:"books",cat:"Tools",w:780,h:660,single:true,desc:"bind many .txt books into one file, or split them into chunks",kw:"bind combine merge join concatenate txt books chunks zip notebooklm sources",
+ init(win,b,arg){
+  let items=[],busy=false;const enc=new TextEncoder();
+  const T=(a,c)=>h("input",Object.assign({class:"t"},a),c),num=(v,mn,mx)=>T({type:"number",value:v,min:mn,max:mx,style:"width:80px"});
+  const divider=T({type:"text",value:"════════════════════════════════════════════════════════════",style:"flex:2;min-width:0"}),spacing=num(4,1,20),
+   useH=T({type:"checkbox",checked:true}),stripExt=T({type:"checkbox",checked:true}),firstH=T({type:"checkbox",checked:true}),under=T({type:"checkbox"}),
+   headStyle=h("select",{class:"t",style:"flex:2;min-width:0"},...[["plain","Plain: Book Title"],["upper","UPPERCASE: BOOK TITLE"],["markdown","# Markdown: # Book Title"],["framed","Framed: ✦ Book Title ✦"]].map(([v,l])=>h("option",{value:v},l))),
+   outName=T({type:"text",value:"complete-archive.txt",style:"flex:2;min-width:0"}),chunk=num(10,1,999),keep=T({type:"checkbox"}),
+   status=h("div",{class:"dim",style:"min-height:1.3em;font-size:12.5px;overflow-wrap:anywhere"}),listBox=h("div",{class:"scr",style:"max-height:230px;border:1px solid var(--bd);border-radius:6px;display:none"}),cnt=h("span",{}),tot=h("span",{class:"dim"});
+  const setStatus=(m,c)=>{status.textContent=m;status.style.color=c==="ok"?"var(--ok)":c==="er"?"var(--er)":""};
+  const row=(lab,...c)=>h("label",{style:"display:flex;gap:10px;align-items:center;flex-wrap:wrap"},h("span",{style:"flex:1;min-width:150px"},lab),...c);
+  const chkRow=(el,t)=>h("label",{style:"display:flex;gap:10px;align-items:center;cursor:pointer"},el,t);
+  /* ---- sources ---- */
+  const nat=(a,c)=>a.name.localeCompare(c.name,undefined,{numeric:true});
+  function addItems(list){let n=0;for(const x of list)if(!items.find(y=>y.key===x.key)){items.push(x);n++}items.sort(nat);draw();return n}
+  const fromNode=n=>({key:"v:"+V.path(n),name:n.name,size:n.size||0,get:()=>V.read(n,"text")}),fromFile=f=>({key:"f:"+f.name+":"+f.size,name:f.name,size:f.size,get:()=>f.text()});
+  const isTxt=n=>!n.dir&&["text","md"].includes(V.kind(n));
+  function addPath(p){const nd=V.get(p);if(!nd)return 0;if(nd.dir){const k=V.ls(nd).filter(isTxt);setStatus("Added "+addItems(k.map(fromNode))+" file(s) from "+nd.name+(k.length?"":" (no text files in it)"));return k.length}return isTxt(nd)?addItems([fromNode(nd)]):0}
+  const fmt=n=>n<1024?n+" B":n<1048576?(n/1024).toFixed(1)+" KB":(n/1048576).toFixed(2)+" MB";
+  function draw(){listBox.style.display=items.length?"":"none";listBox.innerHTML="";items.forEach(x=>listBox.append(h("div",{class:"si"},ic("file"),h("span",{class:"grow",style:"overflow-wrap:anywhere"},x.name),h("small",{},fmt(x.size)),h("button",{class:"btn sm",title:"Remove",onclick:()=>{items=items.filter(y=>y!==x);draw()}},"×"))));
+   cnt.textContent=items.length+" book"+(items.length===1?"":"s")+" loaded";tot.textContent=items.length?fmt(items.reduce((s,x)=>s+x.size,0))+" total":"";bindB.disabled=splitB.disabled=!items.length||busy}
+  /* ---- build ---- */
+  function heading(name){let t=name;if(stripExt.checked)t=t.replace(/\.(txt|md)$/i,"");switch(headStyle.value){case"upper":return t.toUpperCase();case"markdown":return"# "+t;case"framed":return"✦ "+t+" ✦";default:return t}}
+  function block(text,name,first){const body=text.trim();if(!useH.checked||(first&&!firstH.checked))return body;const d=divider.value;let hd=heading(name);if(under.checked&&d)hd+="\n"+d;return hd+"\n\n"+body}
+  async function readAll(){const gap="\n".repeat(parseInt(spacing.value)||4),sep=gap+divider.value+gap,texts=[];for(let i=0;i<items.length;i++){setStatus("Reading "+(i+1)+" of "+items.length+": "+items[i].name);texts.push(await items[i].get())}return{texts,sep}}
+  const lock=v=>{busy=v;draw()};
+  async function saveCopy(name,data,mime){if(!keep.checked)return"";const p="/home/user/Documents/"+name;try{await V.write(p,data,null,mime);return" and kept a copy at "+p}catch(e){return" (could not keep a copy: "+e.message+")"}}
+  async function bind(){if(!items.length)return;lock(true);try{const{texts,sep}=await readAll();const out=texts.map((t,i)=>block(t,items[i].name,i===0)).join(sep)+"\n";let nm=(outName.value||"complete-archive.txt").trim();if(!/\.[a-z0-9]+$/i.test(nm))nm+=".txt";const blob=new Blob([out],{type:"text/plain;charset=utf-8"});download(nm,blob);const k=await saveCopy(nm,blob,"text/plain");setStatus("✦ Bound "+items.length+" books · "+fmt(blob.size)+" · downloaded as "+nm+k,"ok")}catch(e){setStatus("Error: "+e.message,"er")}lock(false)}
+  async function split(){if(!items.length)return;const size=parseInt(chunk.value)||10;lock(true);try{const{texts,sep}=await readAll();const parts=[];for(let i=0;i<texts.length;i+=size)parts.push({s:i,t:texts.slice(i,i+size)});const pad=String(parts.length).length;
+   const files=parts.map((c,idx)=>({name:"archive-part-"+String(idx+1).padStart(pad,"0")+".txt",data:enc.encode(c.t.map((t,j)=>block(t,items[c.s+j].name,j===0)).join(sep)+"\n"),mt:Date.now()}));
+   setStatus("Packaging "+parts.length+" chunks into a ZIP...");const z=makeZip(files);download("archive-chunks.zip",z);const k=await saveCopy("archive-chunks.zip",z,"application/zip");setStatus("✦ Split into "+parts.length+" chunk"+(parts.length===1?"":"s")+" of up to "+size+" books · downloaded as archive-chunks.zip"+k,"ok")}catch(e){setStatus("Error: "+e.message,"er")}lock(false)}
+  /* ---- layout ---- */
+  const bindB=h("button",{class:"btn pri",disabled:true,onclick:bind},"✦ Bind all books"),splitB=h("button",{class:"btn",disabled:true,onclick:split},"✦ Split into chunks"),clrB=h("button",{class:"btn",onclick:()=>{items=[];draw();setStatus("Cleared.")}},"Clear");
+  const drop=h("div",{style:"border:2px dashed var(--bd);border-radius:10px;padding:22px 16px;text-align:center;background:var(--pn2)"},h("div",{style:"font-size:16px;color:var(--ac);margin-bottom:4px"},"Add the books you want to bind"),h("div",{class:"dim",style:"font-size:12px;margin-bottom:12px"},"drop .txt files here, or use the buttons · any order · any number · sorted by name"),
+   h("div",{style:"display:flex;gap:8px;justify-content:center;flex-wrap:wrap"},
+    h("button",{class:"btn",onclick:async()=>{const fs=await pickDisk(".txt,.md,text/plain",true);if(fs.length)setStatus("Added "+addItems(fs.map(fromFile))+" file(s) from your computer.")}},ic("dl"),"From computer"),
+    h("button",{class:"btn",onclick:async()=>{const p=await pickPath({mode:"dir",title:"Add every text file in a folder (e.g. /archive/Books)",start:"/archive"});if(p)addPath(p)}},ic("folder"),"A whole folder"),
+    h("button",{class:"btn",onclick:async()=>{const p=await pickPath({title:"Add one text file",exts:["text","md"],start:"/archive"});if(p)addPath(p)}},ic("file"),"One file…")));
+  const opts=h("div",{style:"display:flex;flex-direction:column;gap:12px;border:1px solid var(--bd);border-radius:8px;padding:14px;background:var(--pn2)"},
+   row("Divider between books",divider),row("Blank lines between books",spacing),
+   h("div",{style:"border-top:1px solid var(--bd);padding-top:12px;display:flex;flex-direction:column;gap:10px"},h("div",{class:"dim",style:"font-size:11px;letter-spacing:.1em"},"✦ FILE NAME HEADINGS"),chkRow(useH,"Use each file name as a heading after the divider"),row("Heading style",headStyle),chkRow(stripExt,"Hide the .txt extension"),chkRow(firstH,"Also put a heading on the very first book"),chkRow(under,"Add a second divider line under the heading")),
+   h("div",{style:"border-top:1px solid var(--bd);padding-top:12px;display:flex;flex-direction:column;gap:10px"},row("Output filename",outName),h("div",{class:"dim",style:"font-size:11px;letter-spacing:.1em"},"✦ SPLIT INTO CHUNKS"),row("Books per chunk",chunk,h("span",{class:"dim",style:"font-size:12px"},"downloads as a .zip")),chkRow(keep,"Also keep a copy in my files (/home/user/Documents)")));
+  const body=h("div",{class:"scr grow",style:"padding:14px;display:flex;flex-direction:column;gap:14px"},drop,h("div",{class:"row",style:"border:0;padding:0;justify-content:space-between"},cnt,tot),listBox,opts,h("div",{style:"display:flex;gap:10px;flex-wrap:wrap"},bindB,splitB,clrB),status,h("div",{class:"dim",style:"font-size:11px;letter-spacing:.08em;text-align:center;padding:6px 0 2px"},"CC0 PUBLICKÁ DOMÁNIA · REPUBLICKA · ALL LOVE RESERVED"));
+  b.append(body);
+  b.addEventListener("dragover",e=>{e.preventDefault();drop.style.borderColor="var(--ac)"});b.addEventListener("dragleave",()=>drop.style.borderColor="");
+  b.addEventListener("drop",e=>{e.preventDefault();drop.style.borderColor="";const fs=[...(e.dataTransfer&&e.dataTransfer.files||[])].filter(f=>/\.(txt|md)$/i.test(f.name));if(fs.length)setStatus("Added "+addItems(fs.map(fromFile))+" file(s).");else setStatus("Drop .txt or .md files.","er")});
+  win.addPath=addPath;win.api={bind,split,items:()=>items};draw();if(typeof arg==="string")addPath(arg)},
+ onArg(w,a){typeof a==="string"&&w.addPath&&w.addPath(a)}});
 
 /* ===================== BOOT ===================== */
 const LOGO=`
