@@ -419,6 +419,8 @@ THE APPS (27) - every one has a desktop icon
                       bookmarks that remember where you stopped
   Manifest Maker      turn any folder into manifest.json, try it in the OS, get a share link;
                       has a Guide tab and the generate-manifest.js script
+  School              the numbered video series (01-..., 02-...): mp4 video, mp3 audio, jpg stills;
+                      episode list, resume, watched marks, speed, next/prev, full screen
   Backup              one-click ZIP of your files, settings, app data and game save;
                       restore into any other copy of the OS (merge or replace)
   BookBinder          bind many .txt books into one file (dividers, file-name
@@ -520,6 +522,29 @@ SHARE YOUR OWN ARCHIVE (MANIFEST MAKER)
   generate-manifest.js is the command line version:  node generate-manifest.js ./files https://yoursite.org/files  
   If the OS and your files are on different websites, the files server must send
   Access-Control-Allow-Origin: *  (at least for manifest.json).
+
+APPS THAT NEED A DATA ARCHIVE
+  Music, Books, Comics, Audiobooks and School only show on the desktop, Start menu and search when
+  /archive/Atheden, /archive/Books, /archive/Republicka-Comic and /archive/Audiobooks exist
+  (School needs numbered folders such as /archive/01-Name-2012)
+  (Archive search shows when any manifest is loaded). If someone points the OS at their own
+  manifest, those apps disappear. Settings > Appearance has a switch to show them anyway
+  (useful if you pick your own folders inside them). Apps can still be opened by name.
+
+SCHOOL
+  Reads every folder in /archive whose name starts with a number. Left: the series (number, name,
+  years; MC years such as 0002 MC are shown as written). Right: player, controls and the item list.
+  Videos play in the window; mp3 plays with a title card; jpg shows full size. Keys: Space play/pause,
+  Left/Right +-10s, N/P next/previous, F full screen, Up/Down volume. Position is remembered per
+  file, finished items get a check mark, and "Continue" jumps back to what you last watched.
+  On a phone, tap Series to switch.
+
+SESSION RESTORE (REBOOT KEEPS YOUR WORK SPACE)
+  The OS remembers which windows are open, where they are, their size, maximised/minimised state
+  and which one had focus. Reboot or refresh and they come back. First boot ever: Terminal Velocity
+  starts minimised in the taskbar. To start fresh, close every window and reboot.
+  Settings > Boot: "Reopen my windows..." turns this off (then the first-boot behaviour repeats each time).
+  Also remembered by their own apps: notes drafts, last song/book/comic/audiobook/series and positions.
 
 https://github.com/BardPresident https://republicka.life https://kkk.education https://archive.org/details/@bardpresident https://www.youtube.com/@BardPresident https://odysee.com/@BardPresident:0 https://www.bitchute.com/channel/P9QR7Z6nmVtm
 
