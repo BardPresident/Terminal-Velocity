@@ -1254,7 +1254,7 @@ const MC={yr:y=>y>2024?y-2024:y-2025,ce:m=>m>0?m+2024:m+2025,ys:m=>(m<0?"-":"")+
 const fmtDate=t=>{const d=new Date(t),hm=" "+pad(d.getHours())+":"+pad(d.getMinutes());return MC.on()?MC.iso(d)+hm+" "+MC.era(d):d.getFullYear()+"-"+pad(d.getMonth()+1)+"-"+pad(d.getDate())+hm};
 const sleep=ms=>new Promise(r=>setTimeout(r,ms));
 const LS={get(k,d){try{const v=localStorage.getItem(k);return v==null?d:JSON.parse(v)}catch(e){return d}},set(k,v){try{localStorage.setItem(k,JSON.stringify(v));return true}catch(e){return false}}};
-const OS={apps:{},wins:[],z:10,bus:{},boot:performance.now(),ver:"1.0 build 1108-1051"};
+const OS={apps:{},wins:[],z:10,bus:{},boot:performance.now(),ver:"1.0 build 1108-1128"};
 OS.on=(ev,f)=>{(OS.bus[ev]=OS.bus[ev]||[]).push(f);return f};
 OS.off=(ev,f)=>{OS.bus[ev]=(OS.bus[ev]||[]).filter(x=>x!==f)};
 OS.emit=(ev,a)=>{(OS.bus[ev]||[]).slice().forEach(f=>{try{f(a)}catch(e){console.error(e)}})};
@@ -1995,10 +1995,6 @@ defApp("tasks",{name:"Tasks",icon:"task",cat:"Accessories",w:420,h:480,single:tr
   inp.addEventListener("keydown",e=>{if(e.key==="Enter"&&inp.value.trim()){items.unshift({t:inp.value.trim(),d:false});inp.value="";sv()}});b.append(h("div",{class:"row"},inp,h("button",{class:"btn",onclick:()=>{items=items.filter(t=>!t.d);sv()}},"Clear done")),list);draw()}});
 
 /* --- Recorder (microphone -> /home/user/Media) --- */
-defApp("recorder",{name:"Recorder",icon:"mic",cat:"Media",w:380,h:300,single:true,desc:"record audio to your files",kw:"voice microphone audio record memo",
- init(win,b){let mr=null,chunks=[],t0=0,iv=0,stream=null;const lab=h("div",{style:"text-align:center;font-size:36px;color:var(--ac)"},"0:00"),msg=h("div",{class:"dim",style:"text-align:center;padding:0 12px"},"Records from your microphone (the browser will ask). Saved into /home/user/Media."),btn=h("button",{class:"btn pri",style:"align-self:center",onclick:async()=>{if(mr&&mr.state==="recording"){mr.stop();return}try{stream=await navigator.mediaDevices.getUserMedia({audio:true})}catch(e){return msg.textContent="Microphone unavailable: "+e.message}chunks=[];mr=new MediaRecorder(stream);mr.ondataavailable=e=>chunks.push(e.data);mr.onstop=async()=>{clearInterval(iv);stream.getTracks().forEach(t=>t.stop());btn.textContent="Record";const bl=new Blob(chunks,{type:mr.mimeType||"audio/webm"});const ext=/ogg/.test(bl.type)?"ogg":/mp4/.test(bl.type)?"m4a":"webm";const p="/home/user/Media/recording-"+Date.now()+"."+ext;await V.write(p,bl,null,bl.type);msg.textContent="Saved "+p;toast("Saved "+p)};mr.start();t0=Date.now();btn.textContent="Stop";iv=setInterval(()=>lab.textContent=fmtTime((Date.now()-t0)/1000),250)}},"Record");
-  b.append(h("div",{style:"flex:1"}),lab,btn,msg,h("div",{style:"flex:1"}));b.style.gap="12px";win.on.close=()=>{clearInterval(iv);try{mr&&mr.state==="recording"&&mr.stop()}catch(e){}}}});
-
 /* --- Help --- */
 defApp("help",{name:"Welcome",icon:"help",cat:"System",w:560,h:520,single:true,desc:"keys, tips, what is this",kw:"help welcome manual shortcuts about start",
  init(win,b){const d=h("div",{class:"scr pad rd",style:"line-height:1.6"});d.innerHTML=md(`# Terminal Velocity OS
@@ -2545,6 +2541,156 @@ defApp("school",{needs:scHas,name:"School",icon:"school",cat:"Media",w:980,h:640
   else{drawSide();const lv=LS.get("tvos_sc_last",null);let i=0;if(typeof arg==="string"){const q=series.findIndex(s=>V.path(s.n0)===arg);if(q>=0)i=q}else if(lv){const q=series.findIndex(s=>s.n0.name===lv.s);if(q>=0)i=q}openSeries(i);
    if(lv&&series[i]&&series[i].n0.name===lv.s){const j=eps.findIndex(f=>f.name===lv.f);if(j>=0){const e=scEp(eps[j],metaCur);cont.style.display="";cont.textContent="Continue: "+e.title.slice(0,28);cont.onclick=()=>play(j)}}}
  }});
+
+/* ===================== RECORDING: audio (WAV) + camera/screen video, saved to your device ===================== */
+IP.camera="M4 7h3l2-2h6l2 2h3a1 1 0 011 1v10a1 1 0 01-1 1H4a1 1 0 01-1-1V8a1 1 0 011-1z M12 9.5a3.5 3.5 0 100 7 3.5 3.5 0 000-7z";
+const REC={canDir:!!window.showDirectoryPicker,
+ dest(){const d=LS.get("tvos_rec_dest",null);return d==="dir"&&!REC.canDir?"dl":(d||(REC.canDir?"dir":"dl"))},
+ setDest(v){LS.set("tvos_rec_dest",v)},
+ async dirName(){try{const h=await DB.get("rec_dir");return h?h.name:""}catch(e){return""}},
+ async dir(ask){let h=null;try{h=await DB.get("rec_dir")}catch(e){}
+  if(h){try{let p=await h.queryPermission({mode:"readwrite"});if(p!=="granted"&&ask)p=await h.requestPermission({mode:"readwrite"});if(p==="granted")return h}catch(e){}}
+  if(!ask)return null;try{h=await showDirectoryPicker({mode:"readwrite",id:"tvos-rec"});await DB.set("rec_dir",h);return h}catch(e){return null}},
+ name(prefix,ext,seg){const d=new Date();return prefix+"-"+MC.iso(d)+"_"+pad(d.getHours())+pad(d.getMinutes())+pad(d.getSeconds())+(seg>1?"-part"+seg:"")+"."+ext},
+ async open(name,mime){const mode=REC.dest();
+  if(mode==="dir"){const dh=await REC.dir(true);if(!dh)throw new Error("No save folder chosen");const fh=await dh.getFileHandle(name,{create:true}),w=await fh.createWritable();let size=0;const where=dh.name+"/"+name;
+   return{where,get size(){return size},async write(d){await w.write(d);size+=d.size!=null?d.size:d.byteLength},async writeAt(pos,d){await w.write({type:"write",position:pos,data:d})},async close(){await w.close();return{name,size,where}},async abort(){try{await w.abort()}catch(e){}}}}
+  const parts=[];let size=0;const sz=d=>d.size!=null?d.size:d.byteLength;
+  return{where:mode==="os"?"/home/user/Recordings/"+name:"Downloads/"+name,get size(){return size},async write(d){parts.push(d);size+=sz(d)},async writeAt(pos,d){if(pos===0)parts[0]=d},
+   async close(){const bl=new Blob(parts,{type:mime});parts.length=0;if(mode==="os"){V.mkdirp("/home/user/Recordings");await V.write("/home/user/Recordings/"+name,bl,"/",mime);return{name,size:bl.size,where:"/home/user/Recordings/"+name}}download(name,bl,mime);return{name,size:bl.size,where:"Downloads/"+name}},async abort(){parts.length=0}}},
+ /* little UI pieces shared by both apps */
+ destRow(msgEl){const sel=h("select",{class:"t",onchange:async e=>{REC.setDest(e.target.value);if(e.target.value==="dir"&&!(await REC.dir(false))){await choose()}paint()}},
+   ...(REC.canDir?[h("option",{value:"dir"},"A folder on this device (streams to disk)")]:[]),h("option",{value:"dl"},"Downloads (kept in memory until you stop)"),h("option",{value:"os"},"Inside this OS (browser storage)")),
+  lab=h("span",{class:"dim",style:"font-size:12px"}),btn=h("button",{class:"btn sm",onclick:async()=>{await choose();paint()}},"Choose folder...");
+  async function choose(){try{const h2=await showDirectoryPicker({mode:"readwrite",id:"tvos-rec"});await DB.set("rec_dir",h2);toast("Saving to "+h2.name)}catch(e){}}
+  async function paint(){sel.value=REC.dest();btn.style.display=REC.canDir&&sel.value==="dir"?"":"none";const n=await REC.dirName();lab.textContent=sel.value==="dir"?(n?"Folder: "+n:"No folder chosen yet. You will be asked when you record."):sel.value==="os"?"Saved to /home/user/Recordings. Browsers can clear this storage, so export it.":REC.canDir?"":"This browser cannot save straight to a folder, so recordings download when you stop."}
+  paint();return h("div",{style:"display:flex;flex-direction:column;gap:4px"},h("div",{class:"row",style:"border:0;padding:0;flex-wrap:wrap"},"Save to:",sel,btn),lab)},
+ guard(on){if(on&&!REC._g){REC._g=e=>{e.preventDefault();e.returnValue=""};addEventListener("beforeunload",REC._g)}else if(!on&&REC._g){removeEventListener("beforeunload",REC._g);REC._g=null}},
+ wavHeader(sr,ch,bytes){const b=new ArrayBuffer(44),v=new DataView(b),s=(o,t)=>{for(let i=0;i<t.length;i++)v.setUint8(o+i,t.charCodeAt(i))};s(0,"RIFF");v.setUint32(4,36+bytes,true);s(8,"WAVE");s(12,"fmt ");v.setUint32(16,16,true);v.setUint16(20,1,true);v.setUint16(22,ch,true);v.setUint32(24,sr,true);v.setUint32(28,sr*ch*2,true);v.setUint16(32,ch*2,true);v.setUint16(34,16,true);s(36,"data");v.setUint32(40,bytes,true);return new Uint8Array(b)},
+ /* raw microphone samples -> onData(Float32Array[] per channel). Returns {stop(),ctx} */
+ async pcm(stream,nch,onData){const ctx=new (window.AudioContext||window.webkitAudioContext)(),src=ctx.createMediaStreamSource(stream);let node=null;
+  const sink=ctx.createGain();sink.gain.value=0;sink.connect(ctx.destination);
+  if(ctx.audioWorklet&&window.AudioWorkletNode){try{const code='class P extends AudioWorkletProcessor{constructor(){super();this.b=[];this.n=0}process(i){const c=i[0];if(c&&c.length){this.b.push(c.map(x=>x.slice()));this.n+=c[0].length;if(this.n>=4096){const o=[];for(let k=0;k<c.length;k++){const a=new Float32Array(this.n);let p=0;for(const q of this.b){a.set(q[k],p);p+=q[k].length}o.push(a)}this.b=[];this.n=0;this.port.postMessage(o,o.map(x=>x.buffer))}}return true}}registerProcessor("tvpcm",P)';
+    const u=URL.createObjectURL(new Blob([code],{type:"text/javascript"}));await ctx.audioWorklet.addModule(u);URL.revokeObjectURL(u);node=new AudioWorkletNode(ctx,"tvpcm",{numberOfInputs:1,numberOfOutputs:1,channelCount:nch,channelCountMode:"explicit",outputChannelCount:[nch]});node.port.onmessage=e=>onData(e.data);src.connect(node);node.connect(sink)}catch(e){node=null}}
+  if(!node){const sp=ctx.createScriptProcessor(4096,nch,nch);sp.onaudioprocess=e=>{const o=[];for(let k=0;k<nch;k++)o.push(new Float32Array(e.inputBuffer.getChannelData(Math.min(k,e.inputBuffer.numberOfChannels-1))));onData(o)};src.connect(sp);sp.connect(sink);node=sp}
+  if(ctx.state==="suspended")await ctx.resume();
+  return{ctx,sr:ctx.sampleRate,stop(){try{src.disconnect();node.disconnect();ctx.close()}catch(e){}}}},
+ pickMime(list){for(const m of list)try{if(MediaRecorder.isTypeSupported(m[0]))return m}catch(e){}return null}};
+const REC_AUDIO=[["audio/mp4","m4a","AAC (m4a)"],["audio/webm;codecs=opus","webm","Opus (webm)"],["audio/ogg;codecs=opus","ogg","Opus (ogg)"],["audio/webm","webm","WebM audio"]];
+const REC_VIDEO=[["video/mp4;codecs=avc1.640028,mp4a.40.2","mp4","MP4 (H.264 + AAC)"],["video/mp4","mp4","MP4"],["video/webm;codecs=vp9,opus","webm","WebM (VP9 + Opus)"],["video/webm;codecs=vp8,opus","webm","WebM (VP8 + Opus)"],["video/webm","webm","WebM"]];
+const recSupported=list=>{const out=[];for(const m of list){try{if(window.MediaRecorder&&MediaRecorder.isTypeSupported(m[0])&&!out.some(o=>o[1]===m[1]&&o[2].split(" ")[0]===m[2].split(" ")[0]))out.push(m)}catch(e){}}return out};
+const recList=()=>{const box=h("div",{style:"display:flex;flex-direction:column;gap:2px;font-size:12px"});return{el:box,add(r){box.prepend(h("div",{class:"dim",style:"overflow-wrap:anywhere"},"✓ "+r.where+"  ("+fmtBytes(r.size)+")"))}}};
+
+/* --- Recorder: WAV or compressed audio --- */
+defApp("recorder",{name:"Recorder",icon:"mic",cat:"Media",w:480,h:640,single:true,desc:"record audio as WAV (or compressed) and save it to your device",kw:"voice microphone audio record memo wav sound capture",
+ init(win,b){const S=Object.assign({fmt:"wav",ch:2,clean:false,split:30,dev:""},LS.get("tvos_rec_set",{})),save=()=>LS.set("tvos_rec_set",S);
+  let state="idle",stream=null,pcm=null,mr=null,sink=null,seg=1,segBytes=0,recSec=0,tStart=0,iv=0,paused=false,level=0,q=Promise.resolve(),mrFmt=null,raf=0,splitTimer=0;
+  const lab=h("div",{style:"text-align:center;font-size:44px;color:var(--ac);font-variant-numeric:tabular-nums"},"0:00"),info=h("div",{class:"dim",style:"text-align:center;min-height:18px"}),meter=h("canvas",{style:"width:100%;height:30px;background:var(--bg);border:1px solid var(--bd);border-radius:6px"}),msg=h("div",{class:"dim",style:"text-align:center;padding:0 8px;overflow-wrap:anywhere"}),rl=recList();
+  const comp=recSupported(REC_AUDIO);if(!comp.length&&S.fmt!=="wav")S.fmt="wav";
+  const devSel=h("select",{class:"t",style:"max-width:230px",onchange:e=>{S.dev=e.target.value;save()}},h("option",{value:""},"Default microphone"));
+  const fmtSel=h("select",{class:"t",onchange:e=>{S.fmt=e.target.value;save();paintOpts()}},h("option",{value:"wav"},"WAV (lossless, 16-bit)"),...comp.map(m=>h("option",{value:m[1]+"|"+m[0]},m[2]+" (compressed)")));
+  const chSel=h("select",{class:"t",onchange:e=>{S.ch=+e.target.value;save()}},h("option",{value:1},"Mono"),h("option",{value:2},"Stereo"));
+  const clean=h("input",{type:"checkbox"});clean.checked=!!S.clean;clean.onchange=()=>{S.clean=clean.checked;save()};
+  const splitSel=h("select",{class:"t",onchange:e=>{S.split=+e.target.value;save()}},...[[0,"never"],[5,"5 minutes"],[10,"10 minutes"],[30,"30 minutes"],[60,"60 minutes"]].map(x=>h("option",{value:x[0]},x[1])));
+  const paintOpts=()=>{fmtSel.value=S.fmt;chSel.value=S.ch;splitSel.value=S.split;chRow.style.display=S.fmt==="wav"?"":"none"};
+  const chRow=h("div",{class:"row",style:"border:0;padding:0"},"Channels:",chSel);
+  const rec=h("button",{class:"btn pri",onclick:()=>state==="idle"?start():stop()},ic("rec")," Record"),pau=h("button",{class:"btn",style:"display:none",onclick:()=>{paused=!paused;if(mr){paused?mr.pause():mr.resume()}pau.textContent=paused?"Resume":"Pause";if(paused)recSec+=(Date.now()-tStart)/1000;else tStart=Date.now()}},"Pause");
+  const elapsed=()=>recSec+(paused||state!=="rec"?0:(Date.now()-tStart)/1000);
+  async function devices(){try{const d=(await navigator.mediaDevices.enumerateDevices()).filter(x=>x.kind==="audioinput");devSel.innerHTML="";devSel.append(h("option",{value:""},"Default microphone"));d.forEach(x=>devSel.append(h("option",{value:x.deviceId},x.label||"Microphone")));devSel.value=d.some(x=>x.deviceId===S.dev)?S.dev:""}catch(e){}}
+  async function openSeg(){const isWav=S.fmt==="wav",ext=isWav?"wav":S.fmt.split("|")[0],mime=isWav?"audio/wav":S.fmt.split("|")[1].split(";")[0];sink=await REC.open(REC.name("rec",ext,seg>1?seg:0),mime);segBytes=0;if(isWav){await sink.write(REC.wavHeader(pcm.sr,S.ch,0))}return{ext,mime}}
+  async function closeSeg(){if(!sink)return;const s=sink;sink=null;if(S.fmt==="wav"){try{await s.writeAt(0,REC.wavHeader(pcm.sr,S.ch,segBytes))}catch(e){}}try{const r=await s.close();rl.add(r);msg.textContent="Saved "+r.where;toast("Saved "+r.name)}catch(e){msg.textContent="Save failed: "+e.message;toast("Save failed",1)}}
+  const toI16=(chs,n)=>{const nch=S.ch,o=new Int16Array(n*nch);for(let i=0;i<n;i++)for(let k=0;k<nch;k++){let v=chs[Math.min(k,chs.length-1)][i];if(nch===1&&chs.length>1){v=0;for(const c of chs)v+=c[i];v/=chs.length}v=Math.max(-1,Math.min(1,v));o[i*nch+k]=v<0?v*32768:v*32767}return o};
+  async function start(){msg.textContent="";const clean_=!!S.clean;
+   try{stream=await navigator.mediaDevices.getUserMedia({audio:{deviceId:S.dev?{exact:S.dev}:undefined,channelCount:{ideal:S.fmt==="wav"?S.ch:2},echoCancellation:clean_,noiseSuppression:clean_,autoGainControl:clean_}})}catch(e){return msg.textContent="Microphone unavailable: "+e.message}
+   devices();seg=1;recSec=0;paused=false;q=Promise.resolve();
+   try{if(S.fmt==="wav"){pcm=await REC.pcm(stream,S.ch,chs=>{if(paused||state!=="rec")return;const n=chs[0].length;let s=0;for(const c of chs)for(let i=0;i<n;i+=8)s=Math.max(s,Math.abs(c[i]));level=Math.max(s,level*.8);const i16=toI16(chs,n);segBytes+=i16.byteLength;q=q.then(async()=>{if(sink){await sink.write(i16);if(segBytes>3.9e9){await rotate()}}}).catch(e=>{msg.textContent="Write failed: "+e.message})});await openSeg()}
+    else{mrFmt=S.fmt.split("|");await openSeg();startMR()}}
+   catch(e){stream.getTracks().forEach(t=>t.stop());return msg.textContent="Could not start: "+e.message}
+   state="rec";tStart=Date.now();REC.guard(true);rec.replaceChildren(ic("x")," Stop");pau.style.display="";pau.textContent="Pause";if(S.split&&!splitTimer)splitTimer=setInterval(()=>{if(state==="rec"&&!paused)rotate()},S.split*60000);
+   iv=setInterval(()=>{lab.textContent=fmtTime(elapsed());info.textContent=(sink?fmtBytes(segBytes||sink.size):"")+(seg>1?"  ·  part "+seg:"")+(paused?"  ·  paused":"")+(sink?"  ·  "+sink.where:"")},250);
+   if(S.fmt==="wav")info.textContent=(pcm.sr/1000)+" kHz · "+S.ch+" ch · 16-bit"}
+  function startMR(){mr=new MediaRecorder(stream,{mimeType:mrFmt[1]});mr.ondataavailable=e=>{if(e.data&&e.data.size){const s=sink;q=q.then(()=>s&&s.write(e.data)).catch(er=>{msg.textContent="Write failed: "+er.message})}};mr.start(1000);segBytes=0}
+  async function rotate(){if(state!=="rec")return;if(S.fmt==="wav"){const old=q;await q;await closeSeg();seg++;await openSeg()}else{const m=mr;await new Promise(r=>{m.onstop=r;m.stop()});await q;await closeSeg();seg++;await openSeg();startMR()}}
+  async function stop(){if(state!=="rec")return;state="stopping";rec.disabled=true;clearInterval(iv);clearInterval(splitTimer);splitTimer=0;
+   if(mr){const m=mr;mr=null;await new Promise(r=>{m.onstop=r;try{m.stop()}catch(e){r()}})}
+   if(pcm){pcm.stop()}await q;await closeSeg();pcm=null;stream&&stream.getTracks().forEach(t=>t.stop());stream=null;REC.guard(false);
+   state="idle";level=0;rec.disabled=false;rec.replaceChildren(ic("rec")," Record");pau.style.display="none";info.textContent="Done · "+fmtTime(elapsed())+" recorded"}
+  const loop=()=>{raf=requestAnimationFrame(loop);if(win.dead||win.min)return;const c=meter.getContext("2d"),W=meter.width=meter.clientWidth,H=meter.height=meter.clientHeight;c.clearRect(0,0,W,H);const v=Math.min(1,level*1.4);level*=.92;c.fillStyle=v>.9?css("er"):css("ac");c.globalAlpha=.9;c.fillRect(0,0,W*v,H);c.globalAlpha=1};
+  b.append(h("div",{class:"scr grow pad",style:"display:flex;flex-direction:column;gap:10px"},lab,meter,info,h("div",{class:"row",style:"border:0;padding:0;justify-content:center"},rec,pau),msg,
+   h("h3",{class:"ac",style:"margin:6px 0 0"},"Settings"),h("div",{class:"row",style:"border:0;padding:0;flex-wrap:wrap"},"Microphone:",devSel),h("div",{class:"row",style:"border:0;padding:0;flex-wrap:wrap"},"Format:",fmtSel),chRow,
+   h("label",{class:"row",style:"border:0;padding:0;gap:8px;cursor:pointer"},clean,"Voice clean-up (noise suppression, echo cancel, auto gain). Leave off for music and archive quality."),
+   h("div",{class:"row",style:"border:0;padding:0;flex-wrap:wrap"},"Start a new file every:",splitSel),REC.destRow(),
+   h("div",{class:"dim",style:"font-size:12px"},"WAV is written as raw samples, about 5 MB a minute for mono and 10 MB for stereo at 48 kHz. Long recordings are split so a crash never loses everything. In a chosen folder the file appears when each part finishes."),
+   h("h3",{class:"ac",style:"margin:6px 0 0"},"This session"),rl.el));
+  paintOpts();devices();loop();
+  win.on.close=()=>{cancelAnimationFrame(raf);if(state==="rec")stop();else{clearInterval(iv);stream&&stream.getTracks().forEach(t=>t.stop())}}}});
+
+/* --- Camera: photo, video, screen recording --- */
+defApp("camera",{name:"Camera",icon:"camera",cat:"Media",w:860,h:660,single:true,desc:"record video from your webcam or screen, take photos, save to your device",kw:"webcam video record photo screen capture mp4 webm selfie",
+ init(win,b){const vfmts=recSupported(REC_VIDEO),S=Object.assign({src:"cam",res:"720",fps:30,mute:false,mirror:true,vfmt:vfmts[0]?vfmts[0][1]+"|"+vfmts[0][0]:"",br:0,split:10,cd:0,cam:"",mic:"",face:"user"},LS.get("tvos_cam_set",{})),save=()=>LS.set("tvos_cam_set",S);
+  if(vfmts.length&&!vfmts.some(m=>m[1]+"|"+m[0]===S.vfmt))S.vfmt=vfmts[0][1]+"|"+vfmts[0][0];
+  let vstream=null,astream=null,out=null,mix=null,state="idle",mr=null,sink=null,seg=1,segBytes=0,recSec=0,tStart=0,iv=0,paused=false,q=Promise.resolve(),splitTimer=0,ctxA=null,an=null,lvl=0,raf=0;
+  const vd=h("video",{autoplay:"",playsinline:"",muted:"",style:"width:100%;height:100%;object-fit:contain;background:#000"}),stage=h("div",{style:"position:relative;background:#000;flex:1;min-height:180px;display:flex;align-items:center;justify-content:center"},vd),
+   ov=h("div",{style:"position:absolute;inset:0;display:none;align-items:center;justify-content:center;font-size:96px;color:#fff;text-shadow:0 0 12px #000;pointer-events:none"}),rdot=h("div",{style:"position:absolute;left:10px;top:8px;color:#f44;font-weight:700;display:none;text-shadow:0 0 6px #000"},"● REC 0:00"),
+   meter=h("canvas",{style:"position:absolute;left:10px;right:10px;bottom:8px;height:8px;width:calc(100% - 20px);opacity:.9"}),info=h("div",{class:"dim",style:"min-height:18px;overflow-wrap:anywhere;padding:0 4px"}),msg=h("div",{class:"dim",style:"overflow-wrap:anywhere;padding:0 4px"}),rl=recList();
+  stage.append(ov,rdot,meter);
+  const opt=(arr)=>arr.map(x=>h("option",{value:x[0]},x[1])),sel=(key,arr,after)=>{const s=h("select",{class:"t",onchange:e=>{S[key]=isNaN(+e.target.value)||e.target.value===""||key==="vfmt"||key==="src"||key==="cam"||key==="mic"||key==="res"||key==="face"?e.target.value:+e.target.value;save();after&&after()}},...opt(arr));s.value=String(S[key]);return s};
+  const srcSel=sel("src",[["cam","Webcam"],...(navigator.mediaDevices&&navigator.mediaDevices.getDisplayMedia&&!isMob()?[["screen","Screen"]]:[])],()=>{paint();preview()}),
+   camSel=sel("cam",[["","Default camera"]],()=>preview()),micSel=sel("mic",[["","Default microphone"]],()=>preview()),resSel=sel("res",[["480","480p"],["720","720p HD"],["1080","1080p Full HD"],["2160","4K"]],()=>preview()),fpsSel=sel("fps",[[24,"24 fps"],[30,"30 fps"],[60,"60 fps"]],()=>preview()),
+   fmtSel=h("select",{class:"t",onchange:e=>{S.vfmt=e.target.value;save()}},...(vfmts.length?vfmts.map(m=>h("option",{value:m[1]+"|"+m[0]},m[2])):[h("option",{value:""},"Recording not supported here")])),brSel=sel("br",[[0,"Auto quality"],[2e6,"2 Mbps (small)"],[5e6,"5 Mbps"],[10e6,"10 Mbps"],[20e6,"20 Mbps (large)"]]),
+   splitSel=sel("split",[[0,"never"],[5,"5 minutes"],[10,"10 minutes"],[30,"30 minutes"],[60,"60 minutes"]]),cdSel=sel("cd",[[0,"No countdown"],[3,"3 s countdown"],[10,"10 s countdown"]]);
+  fmtSel.value=S.vfmt;
+  const mute=h("input",{type:"checkbox"});mute.checked=!!S.mute;mute.onchange=()=>{S.mute=mute.checked;save();if(astream)astream.getAudioTracks().forEach(t=>t.enabled=!S.mute)};
+  const mirror=h("input",{type:"checkbox"});mirror.checked=!!S.mirror;mirror.onchange=()=>{S.mirror=mirror.checked;save();paintMirror()};
+  const paintMirror=()=>{vd.style.transform=S.mirror&&S.src==="cam"?"scaleX(-1)":""};
+  const paint=()=>{camSel.parentElement&&(camSel.parentElement.style.display=S.src==="cam"?"":"none");flip.style.display=S.src==="cam"&&isMob()?"":"none";paintMirror()};
+  const wh={480:[854,480],720:[1280,720],1080:[1920,1080],2160:[3840,2160]};
+  async function listDevs(){try{const d=await navigator.mediaDevices.enumerateDevices(),c=d.filter(x=>x.kind==="videoinput"),m=d.filter(x=>x.kind==="audioinput");camSel.innerHTML="";camSel.append(h("option",{value:""},"Default camera"),...c.map(x=>h("option",{value:x.deviceId},x.label||"Camera")));camSel.value=c.some(x=>x.deviceId===S.cam)?S.cam:"";micSel.innerHTML="";micSel.append(h("option",{value:""},"Default microphone"),...m.map(x=>h("option",{value:x.deviceId},x.label||"Microphone")));micSel.value=m.some(x=>x.deviceId===S.mic)?S.mic:""}catch(e){}}
+  function stopTracks(){[vstream,astream,out].forEach(s=>s&&s.getTracks().forEach(t=>t.stop()));vstream=astream=out=null;if(ctxA){try{ctxA.close()}catch(e){}ctxA=null;an=null}vd.srcObject=null}
+  async function preview(){if(state==="rec"||state==="starting")return;stopTracks();msg.textContent="";const [W,H]=wh[S.res]||wh[720];
+   try{if(S.src==="screen"){vstream=await navigator.mediaDevices.getDisplayMedia({video:{frameRate:S.fps},audio:true});vstream.getVideoTracks()[0].onended=()=>{if(state==="rec")stop();stopTracks();info.textContent="Screen sharing ended."}}
+    else vstream=await navigator.mediaDevices.getUserMedia({video:{deviceId:S.cam?{exact:S.cam}:undefined,facingMode:S.cam?undefined:S.face,width:{ideal:W},height:{ideal:H},frameRate:{ideal:S.fps}},audio:false})}
+   catch(e){msg.textContent=(e&&e.name==="NotAllowedError"?"Permission was denied. Allow camera access in the browser address bar and try again.":"Camera or screen unavailable: "+(e&&e.message||e));return}
+   try{astream=await navigator.mediaDevices.getUserMedia({audio:{deviceId:S.mic?{exact:S.mic}:undefined,echoCancellation:true,noiseSuppression:true}});astream.getAudioTracks().forEach(t=>t.enabled=!S.mute)}catch(e){astream=null;msg.textContent="No microphone ("+(e&&e.message||e)+"). Video will record without sound."}
+   vd.srcObject=vstream;vd.muted=true;vd.play().catch(()=>{});listDevs();
+   if(astream){try{ctxA=new (window.AudioContext||window.webkitAudioContext)();an=ctxA.createAnalyser();an.fftSize=256;ctxA.createMediaStreamSource(astream).connect(an)}catch(e){}}
+   const vt=vstream.getVideoTracks()[0],st=vt&&vt.getSettings?vt.getSettings():{};info.textContent=(st.width?st.width+"x"+st.height:"")+(st.frameRate?" @ "+Math.round(st.frameRate)+" fps":"")}
+  function buildOut(){const tracks=[...vstream.getVideoTracks()];const auds=[];if(astream&&!S.mute)auds.push(astream);if(S.src==="screen"&&vstream.getAudioTracks().length)auds.push(new MediaStream(vstream.getAudioTracks()));
+   if(auds.length===1&&auds[0]===astream)tracks.push(...astream.getAudioTracks());
+   else if(auds.length){const c=new (window.AudioContext||window.webkitAudioContext)(),d=c.createMediaStreamDestination();auds.forEach(a=>c.createMediaStreamSource(a).connect(d));mix=c;tracks.push(...d.stream.getAudioTracks())}
+   return new MediaStream(tracks)}
+  async function openSeg(){const f=S.vfmt.split("|");sink=await REC.open(REC.name("cam",f[0],seg>1?seg:0),f[1].split(";")[0]);segBytes=0}
+  function startMR(){const f=S.vfmt.split("|"),o={mimeType:f[1]};if(S.br)o.videoBitsPerSecond=S.br;mr=new MediaRecorder(out,o);mr.ondataavailable=e=>{if(e.data&&e.data.size){const s=sink;segBytes+=e.data.size;q=q.then(()=>s&&s.write(e.data)).catch(er=>{msg.textContent="Write failed: "+er.message})}};mr.start(1000)}
+  async function closeSeg(){if(!sink)return;const s=sink;sink=null;try{const r=await s.close();rl.add(r);msg.textContent="Saved "+r.where;toast("Saved "+r.name)}catch(e){msg.textContent="Save failed: "+e.message;toast("Save failed",1)}}
+  async function rotate(){if(state!=="rec")return;const m=mr;await new Promise(r=>{m.onstop=r;try{m.stop()}catch(e){r()}});await q;await closeSeg();seg++;await openSeg();startMR()}
+  const elapsed=()=>recSec+(paused||state!=="rec"?0:(Date.now()-tStart)/1000);
+  async function record(){if(!vstream)await preview();if(!vstream)return;if(!vfmts.length)return msg.textContent="This browser cannot record video.";
+   if(S.cd){state="starting";for(let i=S.cd;i>0;i--){ov.style.display="flex";ov.textContent=i;await new Promise(r=>setTimeout(r,1000));if(win.dead||state!=="starting"){ov.style.display="none";return}}ov.style.display="none"}
+   try{await openSeg()}catch(e){state="idle";return msg.textContent=e.message}
+   seg=1;recSec=0;paused=false;q=Promise.resolve();out=buildOut();try{startMR()}catch(e){state="idle";msg.textContent="Could not start recording: "+e.message;await closeSeg();return}
+   state="rec";tStart=Date.now();REC.guard(true);paintBtns();if(S.split)splitTimer=setInterval(()=>{if(state==="rec"&&!paused)rotate()},S.split*60000);
+   iv=setInterval(()=>{const t=fmtTime(elapsed());rdot.style.display="";rdot.textContent=(paused?"❚❚ PAUSED ":"● REC ")+t;info.textContent=(sink?fmtBytes(segBytes):"")+(seg>1?"  ·  part "+seg:"")+(sink?"  ·  "+sink.where:"")},250)}
+  async function stop(){if(state==="starting"){state="idle";ov.style.display="none";return}if(state!=="rec")return;state="stopping";clearInterval(iv);clearInterval(splitTimer);splitTimer=0;paintBtns();rdot.style.display="none";
+   if(mr){const m=mr;mr=null;await new Promise(r=>{m.onstop=r;try{m.stop()}catch(e){r()}})}await q;await closeSeg();if(mix){try{mix.close()}catch(e){}mix=null}REC.guard(false);state="idle";paintBtns();info.textContent="Done · "+fmtTime(elapsed())+" recorded"}
+  async function photo(){if(!vstream||!vd.videoWidth)return toast("Start the camera first",1);const c=document.createElement("canvas");c.width=vd.videoWidth;c.height=vd.videoHeight;const x=c.getContext("2d");if(S.mirror&&S.src==="cam"){x.translate(c.width,0);x.scale(-1,1)}x.drawImage(vd,0,0);
+   const bl=await new Promise(r=>c.toBlob(r,"image/jpeg",.93));try{const s=await REC.open(REC.name("photo","jpg"),"image/jpeg");await s.write(bl);const r=await s.close();rl.add(r);msg.textContent="Saved "+r.where;toast("Photo saved")}catch(e){msg.textContent="Save failed: "+e.message;toast("Save failed",1)}}
+  const recBtn=h("button",{class:"btn pri",onclick:()=>state==="idle"?record():stop()}),pauB=h("button",{class:"btn",onclick:()=>{if(state!=="rec")return;paused=!paused;paused?(mr.pause(),recSec+=(Date.now()-tStart)/1000):(mr.resume(),tStart=Date.now());paintBtns()}}),photoB=h("button",{class:"btn",onclick:photo},ic("image")," Photo"),
+   flip=h("button",{class:"btn",style:"display:none",onclick:()=>{S.face=S.face==="user"?"environment":"user";S.cam="";save();preview()}},"Flip camera"),startB=h("button",{class:"btn",onclick:()=>preview()},ic("refresh")," Restart preview");
+  function paintBtns(){const idle=state==="idle";recBtn.replaceChildren(ic(idle?"rec":"x"),idle?" Record":state==="starting"?" Cancel":" Stop");recBtn.disabled=state==="stopping";pauB.style.display=state==="rec"?"":"none";pauB.textContent=paused?"Resume":"Pause";[srcSel,camSel,micSel,resSel,fpsSel,fmtSel,brSel,splitSel].forEach(e=>e.disabled=state==="rec"||state==="stopping")}
+  const row=(label,el)=>h("div",{class:"row",style:"border:0;padding:0;flex-wrap:wrap;gap:6px"},h("span",{class:"dim",style:"min-width:78px"},label),el);
+  const side=h("div",{class:"scr",style:"width:270px;flex:none;border-left:1px solid var(--bd);padding:10px;display:flex;flex-direction:column;gap:7px;box-sizing:border-box"},
+   row("Source",srcSel),row("Camera",camSel),row("Microphone",micSel),h("label",{class:"row",style:"border:0;padding:0;gap:8px;cursor:pointer"},mute,"Mute microphone"),h("label",{class:"row",style:"border:0;padding:0;gap:8px;cursor:pointer"},mirror,"Mirror preview and photos"),
+   row("Resolution",resSel),row("Frame rate",fpsSel),row("Format",fmtSel),row("Quality",brSel),row("New file every",splitSel),row("Countdown",cdSel),REC.destRow(),
+   h("div",{class:"dim",style:"font-size:12px"},"Recordings stream to your chosen folder as they are made. The file appears when each part finishes, so long takes are split. Screen recording needs a desktop browser."),h("h3",{class:"ac",style:"margin:4px 0 0"},"This session"),rl.el);
+  const main=h("div",{style:"flex:1;min-width:0;display:flex;flex-direction:column"},stage,h("div",{class:"row",style:"flex-wrap:wrap;gap:6px;flex:none"},recBtn,pauB,photoB,flip,startB),info,msg);
+  const wrap=h("div",{class:"mm-row",style:"display:flex;flex:1;min-height:0"},main,side);b.append(wrap);
+  if(isMob())side.style.cssText+=";width:auto;border-left:0;border-top:1px solid var(--bd);flex:none;max-height:42%";
+  const loop=()=>{raf=requestAnimationFrame(loop);if(win.dead||win.min)return;const c=meter.getContext("2d"),W=meter.width=meter.clientWidth,H=meter.height=meter.clientHeight;c.clearRect(0,0,W,H);if(!an||S.mute)return;const d=new Uint8Array(an.fftSize);an.getByteTimeDomainData(d);let m=0;for(const v of d)m=Math.max(m,Math.abs(v-128)/128);lvl=Math.max(m,lvl*.9);c.fillStyle=lvl>.95?css("er"):css("ac");c.fillRect(0,0,W*Math.min(1,lvl*1.2),H)};
+  paint();paintBtns();loop();
+  if(!navigator.mediaDevices||!navigator.mediaDevices.getUserMedia)msg.textContent="This browser has no camera access (it needs HTTPS and a modern browser).";
+  else{info.textContent="Starting camera...";preview()}
+  win.on.close=()=>{cancelAnimationFrame(raf);if(state==="rec")stop().then(stopTracks);else stopTracks();clearInterval(iv);clearInterval(splitTimer)};
+  win.on.minimize=null}});
 
 /* ===================== BOOT ===================== */
 const LOGO=`
