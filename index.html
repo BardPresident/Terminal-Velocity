@@ -1254,7 +1254,7 @@ const MC={yr:y=>y>2024?y-2024:y-2025,ce:m=>m>0?m+2024:m+2025,ys:m=>(m<0?"-":"")+
 const fmtDate=t=>{const d=new Date(t),hm=" "+pad(d.getHours())+":"+pad(d.getMinutes());return MC.on()?MC.iso(d)+hm+" "+MC.era(d):d.getFullYear()+"-"+pad(d.getMonth()+1)+"-"+pad(d.getDate())+hm};
 const sleep=ms=>new Promise(r=>setTimeout(r,ms));
 const LS={get(k,d){try{const v=localStorage.getItem(k);return v==null?d:JSON.parse(v)}catch(e){return d}},set(k,v){try{localStorage.setItem(k,JSON.stringify(v));return true}catch(e){return false}}};
-const OS={apps:{},wins:[],z:10,bus:{},boot:performance.now(),ver:"1.0 build 1108-1941"};
+const OS={apps:{},wins:[],z:10,bus:{},boot:performance.now(),ver:"1.0 build 1108-1947"};
 OS.on=(ev,f)=>{(OS.bus[ev]=OS.bus[ev]||[]).push(f);return f};
 OS.off=(ev,f)=>{OS.bus[ev]=(OS.bus[ev]||[]).filter(x=>x!==f)};
 OS.emit=(ev,a)=>{(OS.bus[ev]||[]).slice().forEach(f=>{try{f(a)}catch(e){console.error(e)}})};
@@ -2731,7 +2731,7 @@ const BR={
   if(hn==="youtu.be"&&x.pathname.length>1)return"https://www.youtube.com/embed"+x.pathname;
   const m=hn==="vimeo.com"&&x.pathname.match(/^\/(\d+)/);if(m)return"https://player.vimeo.com/video/"+m[1]}catch(e){}return u},
  sandboxFor(u){let same=false;try{same=new URL(u).origin===location.origin}catch(e){}
-  return"allow-scripts allow-forms allow-popups allow-popups-to-escape-sandbox allow-presentation allow-downloads"+(same?"":" allow-same-origin")}};
+  return"allow-scripts allow-forms allow-popups allow-popups-to-escape-sandbox allow-presentation allow-downloads allow-same-origin"}};
 
 BR.inst=[];
 BR.openUrl=u=>{const i=BR.inst[BR.inst.length-1];if(i){i.newTab(u);try{OS.focus(i.win)}catch(e){}}else OS.open("browser",u)};
@@ -2748,13 +2748,13 @@ defApp("browser",{name:"Browser",icon:"globe",cat:"Internet",w:960,h:680,single:
   const tabbar=h("div",{style:"display:flex;gap:2px;overflow-x:auto;flex:none;padding:4px 4px 0;border-bottom:1px solid var(--bd)"}),bms=h("div",{style:"display:flex;gap:4px;overflow-x:auto;flex:none;padding:4px;border-bottom:1px solid var(--bd);min-height:26px;align-items:center"}),
    notice=h("div",{style:"flex:none;padding:5px 8px;font-size:12px;background:var(--pn2);border-bottom:1px solid var(--bd);color:var(--wn);overflow-wrap:anywhere"},"FREE WEB ONLY: this browser shows sites that allow themselves to be displayed inside other pages. Many big sites (Google, Facebook, GitHub, news sites, logins) refuse, so a page may be blank. Use Open in new tab for those. Links clicked inside a page are not tracked by Back/Forward."),
    hint=h("div",{style:"flex:none;padding:3px 8px;font-size:12px;display:none",class:"dim"}),view=h("div",{style:"position:relative;flex:1 1 0;min-height:0;background:var(--bg)"});
-  const bInfo=h("button",{class:"btn sm",title:"About this browser (free web only)",onclick:()=>{info.style.display=info.style.display==="none"?"block":"none"}},"i"),
+  const bPaste=h("button",{class:"btn sm",title:"Paste a copied link and open it here",onclick:()=>pasteGo()},"Paste & go"),bInfo=h("button",{class:"btn sm",title:"About this browser (free web only)",onclick:()=>{info.style.display=info.style.display==="none"?"block":"none"}},"i"),
    bFocus=h("button",{class:"btn sm",title:"Hide or show tabs and bookmarks bar",onclick:()=>setCompact(!compact)},ic("max")),
-   bMenu=h("button",{class:"btn sm",title:"Menu",onclick:()=>{const r=bMenu.getBoundingClientRect(),m=[{t:"Forward",fn:()=>step(1)},{t:"Start page",fn:()=>go("about:home")},{t:cur&&isBm(cur.url)?"Remove bookmark":"Bookmark this page",fn:toggleBm},{t:"Open in new tab (real browser)",fn:()=>bExt.click()},"-",{t:"New tab",fn:()=>newTab()},...tabs.map(t=>({t:(t===cur?"● ":"")+(t.url==="about:home"?"Start":BR.host(t.url)),fn:()=>sel(t)})),tabs.length>1?{t:"Close this tab",fn:()=>closeTab(cur)}:null,"-",...BR.bm().map(x=>({t:"★ "+(x.t||BR.host(x.u)),fn:()=>go(x.u)})),"-",{t:"About this browser",fn:()=>{info.style.display="block"}}].filter(Boolean);ctxMenu(Math.max(4,r.right-180),r.bottom+2,m)}},"⋮");
+   bMenu=h("button",{class:"btn sm",title:"Menu",onclick:()=>{const r=bMenu.getBoundingClientRect(),m=[{t:"Forward",fn:()=>step(1)},{t:"Start page",fn:()=>go("about:home")},{t:"Paste link and go",fn:pasteGo},{t:cur&&isBm(cur.url)?"Remove bookmark":"Bookmark this page",fn:toggleBm},{t:"Open in new tab (real browser)",fn:()=>bExt.click()},"-",{t:"New tab",fn:()=>newTab()},...tabs.map(t=>({t:(t===cur?"● ":"")+(t.url==="about:home"?"Start":BR.host(t.url)),fn:()=>sel(t)})),tabs.length>1?{t:"Close this tab",fn:()=>closeTab(cur)}:null,"-",...BR.bm().map(x=>({t:"★ "+(x.t||BR.host(x.u)),fn:()=>go(x.u)})),"-",{t:"About this browser",fn:()=>{info.style.display="block"}}].filter(Boolean);ctxMenu(Math.max(4,r.right-180),r.bottom+2,m)}},"⋮");
   let compact=LS.get("tvos_bm_compact",isMob());
   const setCompact=v=>{compact=v;LS.set("tvos_bm_compact",v);tabbar.style.display=bms.style.display=v?"none":""};
   const tools=h("div",{class:"row",style:"flex:none;gap:4px;flex-wrap:nowrap;padding:4px"});
-  if(isMob()){tools.append(bBack,bar,bRel,bMenu)}else{tools.append(bBack,bFwd,bRel,bHome,bar,bStar,bExt,bFocus,bInfo)}
+  if(isMob()){tools.append(bBack,bar,bRel,bMenu)}else{tools.append(bBack,bFwd,bRel,bHome,bar,bPaste,bStar,bExt,bFocus,bInfo)}
   const info=h("div",{style:"display:none;position:absolute;left:0;right:0;top:0;z-index:6;background:var(--pn2);border-bottom:2px solid var(--wn);max-height:80%;overflow:auto;box-shadow:0 6px 18px rgba(0,0,0,.6)"},notice,hint,h("div",{style:"padding:6px 8px;display:flex;gap:6px"},h("button",{class:"btn sm",onclick:()=>info.style.display="none"},"Close")));
   hint.style.display="";hint.textContent="Blank page, or \"refused to connect\"? That site does not allow embedding. Use Open in new tab. Links clicked inside a page are not tracked by Back/Forward.";
   view.append(info);
@@ -2794,7 +2794,12 @@ defApp("browser",{name:"Browser",icon:"globe",cat:"Internet",w:960,h:680,single:
    BR.addHist(u);
    const f=h("iframe",{style:"position:absolute;inset:0;width:100%;height:100%;border:0;background:#fff",sandbox:BR.sandboxFor(u),referrerpolicy:"no-referrer",allow:"fullscreen; autoplay; encrypted-media; picture-in-picture",allowfullscreen:"",loading:"eager"});
    const spin=h("div",{style:"position:absolute;left:0;right:0;top:0;padding:4px 8px;background:var(--pn2);font-size:12px;z-index:2"},"Loading "+BR.host(u)+"...");t.pane.append(f,spin);t.ifr=f;
-   f.onload=()=>{spin.remove()};setTimeout(()=>spin.remove(),15000);f.src=u}
+   f.onload=()=>{spin.remove();hookFrame(f,t)};setTimeout(()=>spin.remove(),15000);f.src=u}
+  /* pages on the same origin as the OS (republicka.life) can be wired up directly: new-window links become OS tabs */
+  function hookFrame(f,t){try{const d=f.contentDocument,w=f.contentWindow;if(!d||!w||d.__tvh)return;d.__tvh=1;
+   d.addEventListener("click",e=>{if(e.defaultPrevented||e.button||e.ctrlKey||e.metaKey||e.shiftKey)return;const a=e.target.closest&&e.target.closest("a[href]");if(!a||a.hasAttribute("download"))return;const tg=(a.getAttribute("target")||"").toLowerCase();if(tg!=="_blank"&&tg!=="_new")return;if(!/^https?:\/\//i.test(a.href))return;e.preventDefault();newTab(a.href)},true);
+   w.open=u=>{try{const x=new URL(u,d.baseURI).href;if(/^https?:\/\//i.test(x))newTab(x)}catch(e){}return null}}catch(e){}}
+  async function pasteGo(){try{const x=(await navigator.clipboard.readText()||"").trim();if(!x)return toast("Clipboard is empty",1);go(x)}catch(e){bar.focus();toast("Paste the link into the address bar",1)}}
   function blockCard(u,why){return h("div",{class:"pad",style:"max-width:560px;margin:30px auto;display:flex;flex-direction:column;gap:10px;text-align:center"},h("h2",{style:"color:var(--wn);margin:0"},"Not part of the free web"),h("div",{},why),h("div",{class:"dim"},"The site decides this, not the OS. You can still read it in a normal browser tab."),h("div",{class:"row",style:"justify-content:center;border:0;gap:8px"},h("button",{class:"btn pri",onclick:()=>window.open(u,"_blank","noopener")},"Open "+BR.host(u)+" in a new tab"),h("button",{class:"btn",onclick:()=>go("about:home")},"Back to start")))}
   BR.inst.push({win,newTab:u=>newTab(u),has:w=>tabs.some(t=>t.ifr&&t.ifr.contentWindow===w)});drawBms();setCompact(compact);newTab(arg&&typeof arg==="string"?arg:"about:home");
   win.on.close=()=>{BR.inst=BR.inst.filter(x=>x.win!==win);tabs.forEach(t=>{try{t.pane.innerHTML=""}catch(e){}})}}});
