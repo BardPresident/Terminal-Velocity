@@ -5,25 +5,41 @@
 //
 // Scans your archive and creates manifest.json for cinema.html
 //
-// HOW TO USE:
-// 1. Make sure ARCHIVE_DIR below points to your media directory
-// 2. Run: node generate-manifest.js
-// 3. Upload cinema.html + manifest.json to https://kkk.education/cinema/
-// 4. Point any other site (e.g. GitHub Pages) at the SAME manifest –
-//    all media will stream from https://kkk.education/cinema/....
+// HOW TO USE (two ways):
+//
+//  A) Pass the folder and its public web address:
+//       node generate-manifest.js ./files https://yoursite.org/files
+//
+//  B) Or edit ARCHIVE_DIR and WEB_PREFIX below and run:
+//       node generate-manifest.js
+//
+// Options:  -o, --out <file>   output file name (default manifest.json)
+//           --skip-hidden      leave out files/folders whose names start with a dot
+//           --quiet            only print the final summary
+//           -h, --help         show this help
+//
+// Then:
+//  1. Upload your folder to your web host so <WEB_PREFIX>/<file> opens in a browser.
+//  2. Upload manifest.json into that same folder (<WEB_PREFIX>/manifest.json).
+//  3. Open Terminal Velocity OS with
+//       terminal-velocity.html?manifest=<WEB_PREFIX>/manifest.json
+//     or paste that address in Settings > Archive. The OS also has a Manifest
+//     Maker app that does the same job in the browser, no Node needed.
+//  If the OS and your files are on different websites, the files server must
+//  send the header  Access-Control-Allow-Origin: *  (at least for manifest.json).
 //
 ////////////////////////////////////////////////////////////////////////////////
 
 // ═════════════════════════════════════════════════════════════════════════
-// 👇 CHANGE THIS TO YOUR MEDIA FOLDER ON THE SERVER 👇
+// 👇 DEFAULTS (or pass them on the command line instead) 👇
 // ═════════════════════════════════════════════════════════════════════════
-const ARCHIVE_DIR = '/home/wikkkan/domains/republicka.life/public_html/files';
+let ARCHIVE_DIR = '/home/wikkkan/domains/republicka.life/public_html/files';
 
-// All media is served from here (canonical origin for files)
-const WEB_PREFIX = 'https://republicka.life/files';
+// All media is served from here (the public web address of that folder)
+let WEB_PREFIX = 'https://republicka.life/files';
 
 // Output file
-const OUTPUT_FILE = 'manifest.json';
+let OUTPUT_FILE = 'manifest.json';
 
 ////////////////////////////////////////////////////////////////////////////////
 // DON'T EDIT BELOW UNLESS YOU KNOW WHAT YOU'RE DOING
@@ -31,6 +47,40 @@ const OUTPUT_FILE = 'manifest.json';
 
 const fs = require('fs');
 const path = require('path');
+
+// Command line (optional): node generate-manifest.js <folder> <web-address> [options]
+const argv = process.argv.slice(2);
+const positional = [];
+let SKIP_HIDDEN = false, QUIET = false;
+function usage(code) {
+    const src = fs.readFileSync(__filename, 'utf8').split('\n');
+    const start = src.findIndex(l => l.includes('HOW TO USE'));
+    const end = src.findIndex((l, i) => i > start && /^\/\/\/\/\/\//.test(l));
+    console.log(src.slice(start, end).map(l => l.replace(/^\/\/ ?/, '')).join('\n'));
+    process.exit(code);
+}
+for (let i = 0; i < argv.length; i++) {
+    const a = argv[i];
+    if (a === '-h' || a === '--help') usage(0);
+    else if (a === '-o' || a === '--out') OUTPUT_FILE = argv[++i];
+    else if (a === '--skip-hidden') SKIP_HIDDEN = true;
+    else if (a === '--quiet') QUIET = true;
+    else if (a.startsWith('-')) { console.error('Unknown option: ' + a); usage(1); }
+    else positional.push(a);
+}
+if (!OUTPUT_FILE) usage(1);
+if (positional.length === 2) {
+    ARCHIVE_DIR = path.resolve(positional[0]);
+    WEB_PREFIX = positional[1].replace(/\/+$/, '');
+} else if (positional.length !== 0) {
+    console.error('Give both the folder and its web address, or neither.');
+    usage(1);
+}
+if (!/^https?:\/\//i.test(WEB_PREFIX)) {
+    console.error('The web address must start with http:// or https://  (got: ' + WEB_PREFIX + ')');
+    process.exit(1);
+}
+const OUTPUT_ABS = path.resolve(OUTPUT_FILE);
 
 // Video and audio extensions to count as productions
 const VIDEO_EXTS = ['mp4', 'mpeg4', 'ogv', 'webm', 'avi', 'mov', 'mkv', 'm4v'];
@@ -69,7 +119,7 @@ console.log('');
 // Check if directory exists
 if (!fs.existsSync(ARCHIVE_DIR)) {
     log('red', '❌ ERROR: Directory not found: ' + ARCHIVE_DIR);
-    log('yellow', '💡 Edit this script and set ARCHIVE_DIR to your media directory');
+    log('yellow', '💡 Pass the folder on the command line, or edit ARCHIVE_DIR in this script');
     process.exit(1);
 }
 
@@ -99,6 +149,8 @@ function processDir(dirPath, relativePath = '', indent = '') {
 
     entries.forEach(entry => {
         const fullPath = path.join(dirPath, entry);
+        if (SKIP_HIDDEN && entry.startsWith('.')) return;
+        if (fullPath === OUTPUT_ABS) return; // never list the manifest itself
         let stat;
 
         try {
@@ -136,7 +188,7 @@ function processDir(dirPath, relativePath = '', indent = '') {
     files.forEach(({ name, stat }) => {
         const fullPath = path.join(dirPath, name);
         const relPathPart = relativePath ? `${relativePath}/` : '';
-        const webPath = `${WEB_PREFIX}/${relPathPart}${name}`;
+        const webPath = `${WEB_PREFIX}/${(relativePath ? relativePath.split('/') : []).concat(name).map(encodeURIComponent).join('/')}`;
         const size = stat.size;
         const ext = path.extname(name).substring(1).toLowerCase();
 
@@ -163,12 +215,15 @@ function processDir(dirPath, relativePath = '', indent = '') {
 }
 
 // Scan the directory
+const realLog = console.log;
+if (QUIET) console.log = () => {};
 const items = processDir(ARCHIVE_DIR);
+console.log = realLog;
 
 // Create manifest
 const manifest = {
     generated: new Date().toISOString(),
-    archiveDir: ARCHIVE_DIR,
+    archiveDir: path.basename(ARCHIVE_DIR) || ARCHIVE_DIR,
     webPrefix: WEB_PREFIX,
     stats: {
         folders: stats.folders,
@@ -204,10 +259,10 @@ console.log('');
 log('cyan', '📝 Output file:     ' + colors.yellow + OUTPUT_FILE);
 console.log('');
 log('green', '🚀 NEXT STEPS:');
-console.log(`   1. Upload ${colors.yellow}cinema.html${colors.reset} and ${colors.yellow}${OUTPUT_FILE}${colors.reset} to https://kkk.education/cinema/`);
-console.log(`   2. Make sure files in ${colors.yellow}${ARCHIVE_DIR}${colors.reset} are web-accessible at ${colors.yellow}${WEB_PREFIX}${colors.reset}`);
-console.log('   3. On GitHub Pages, use the SAME manifest.json – media will stream from kkk.education.');
-console.log('   4. Visit your cinema page! 🎬');
+console.log(`   1. Make sure the files in ${colors.yellow}${ARCHIVE_DIR}${colors.reset} are web-accessible at ${colors.yellow}${WEB_PREFIX}${colors.reset}`);
+console.log(`   2. Upload ${colors.yellow}${OUTPUT_FILE}${colors.reset} to ${colors.yellow}${WEB_PREFIX}/manifest.json${colors.reset}`);
+console.log(`   3. Open Terminal Velocity OS with ${colors.yellow}terminal-velocity.html?manifest=${WEB_PREFIX}/manifest.json${colors.reset}`);
+console.log('   4. Share that link. 🎬');
 console.log('');
 log('cyan', '💀 Built in detention. Watched forever. 💀');
 console.log('');
