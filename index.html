@@ -1248,7 +1248,7 @@ const MC={yr:y=>y>2024?y-2024:y-2025,ce:m=>m>0?m+2024:m+2025,ys:m=>(m<0?"-":"")+
 const fmtDate=t=>{const d=new Date(t),hm=" "+pad(d.getHours())+":"+pad(d.getMinutes());return MC.on()?MC.iso(d)+hm+" "+MC.era(d):d.getFullYear()+"-"+pad(d.getMonth()+1)+"-"+pad(d.getDate())+hm};
 const sleep=ms=>new Promise(r=>setTimeout(r,ms));
 const LS={get(k,d){try{const v=localStorage.getItem(k);return v==null?d:JSON.parse(v)}catch(e){return d}},set(k,v){try{localStorage.setItem(k,JSON.stringify(v));return true}catch(e){return false}}};
-const OS={apps:{},wins:[],z:10,bus:{},boot:performance.now(),ver:"1.0 build 1108-0120"};
+const OS={apps:{},wins:[],z:10,bus:{},boot:performance.now(),ver:"1.0 build 1108-0838"};
 OS.on=(ev,f)=>{(OS.bus[ev]=OS.bus[ev]||[]).push(f);return f};
 OS.off=(ev,f)=>{OS.bus[ev]=(OS.bus[ev]||[]).filter(x=>x!==f)};
 OS.emit=(ev,a)=>{(OS.bus[ev]||[]).slice().forEach(f=>{try{f(a)}catch(e){console.error(e)}})};
@@ -1515,7 +1515,7 @@ function startList(q){const l=$("#sl");l.innerHTML="";q=(q||"").toLowerCase().tr
 function startToggle(on){const s=$("#start");on=on==null?!s.classList.contains("on"):on;s.classList.toggle("on",on);$("#sbtn").classList.toggle("on",on);if(on){startSel=0;$("#sq").value="";startList("");if(!matchMedia("(pointer:coarse)").matches)setTimeout(()=>$("#sq").focus(),0)}else $("#sq").blur()}
 function buildStart(){$("#sbtn").append(ic("logo"),h("span",{},"TV·OS"));$("#sbtn").onclick=e=>{e.stopPropagation();startToggle()};
  $("#sq").addEventListener("input",e=>{startSel=0;startList(e.target.value)});$("#sq").addEventListener("keydown",e=>{const items=$$(".si",$("#sl"));if(e.key==="ArrowDown"){startSel=Math.min(items.length-1,startSel+1);startList($("#sq").value)}else if(e.key==="ArrowUp"){startSel=Math.max(0,startSel-1);startList($("#sq").value)}else if(e.key==="Enter"){const it=items[startSel];if(it){startToggle(false);OS.open(it.dataset.app)}}else if(e.key==="Escape")startToggle(false)});
- const f=$("#sf");f.append(h("span",{},"Terminal Velocity OS "+OS.ver),h("span",{style:"display:flex;gap:6px"},h("button",{class:"btn sm",onclick:()=>{startToggle(false);cycleTheme(1)}},"Theme"),h("button",{class:"btn sm",onclick:async()=>{startToggle(false);if(await dlgConfirm("Reboot Terminal Velocity OS? Unsaved notes are kept as drafts.","Reboot","Reboot"))location.reload()}},ic("power"),"Reboot")));
+ const f=$("#sf");f.append(h("span",{},"Terminal Velocity OS "+OS.ver),h("span",{style:"display:flex;gap:6px"},h("button",{class:"btn sm",title:"Save this whole OS as one .html file",onclick:()=>{startToggle(false);saveOS()}},ic("save"),"Save OS"),h("button",{class:"btn sm",onclick:()=>{startToggle(false);cycleTheme(1)}},"Theme"),h("button",{class:"btn sm",onclick:async()=>{startToggle(false);if(await dlgConfirm("Reboot Terminal Velocity OS? Unsaved notes are kept as drafts.","Reboot","Reboot"))location.reload()}},ic("power"),"Reboot")));
  addEventListener("pointerdown",e=>{if(!e.target.closest("#start")&&!e.target.closest("#sbtn"))startToggle(false)})}
 /* ---- spotlight ---- */
 let spSel=0,spRes=[];
@@ -1575,6 +1575,7 @@ function expandGlob(a,cwd){if(!/[*?]/.test(a))return[a];const i=a.lastIndexOf("/
 const SH={};
 const need=(n,m)=>{if(!n)throw new Error(m)};
 SH.help=()=>`Terminal Velocity OS shell. Commands:
+ saveos   download this whole OS as one .html file
  ls [-lahs] [path]   cd [dir]   pwd   cat f...   head/tail [-n N] f   wc [-lwc] f
  grep [-inrcl] pat [f...]   find [path] [-name pat] [-type f|d]   tree [path]
  mkdir [-p]   touch   rm [-r]   cp   mv   echo text [> file]   stat   du   df
@@ -1646,6 +1647,7 @@ SH.theme=(a)=>{if(!a[0])return THEME_ORDER.map(k=>(k===SET.theme?"* ":"  ")+k.pa
 SH.wallpaper=(a)=>{if(!a[0])return"wallpapers: auto "+WALLS.join(" ")+"   (now: "+wallId()+")";need(a[0]==="auto"||WALLS.includes(a[0]),"wallpaper: unknown");SET.wall=a[0];saveSet();setWall();return"wallpaper: "+a[0]};
 SH.mount=async()=>{const n=await V.mount();return"mounted at "+V.path(n)+" ("+V.count(n).files+" files)"};
 SH.manifest=()=>MAN.json?`archive: ${MAN.files.toLocaleString()} files, ${fmtBytes(MAN.size)}\nsource : ${MAN.src}\ngenerated: ${MAN.gen||"?"}\nattempts:\n`+MAN.tried.map(t=>"  "+(t.ok?"ok   ":"fail ")+t.u+(t.why?" ("+t.why+")":"")).join("\n"):"no manifest mounted. Settings > Archive lets you load a manifest.json from a file or URL.\nattempts:\n"+MAN.tried.map(t=>"  fail "+t.u+" ("+t.why+")").join("\n");
+SH.saveos=()=>{saveOS();return"saving this OS as a single .html file..."};
 SH.reboot=()=>{setTimeout(()=>location.reload(),300);return"rebooting..."};
 SH.neofetch=()=>{const A=MAN.files;return`  ████████╗██╗   ██╗      user@terminal-velocity\n  ╚══██╔══╝██║   ██║      ---------------------\n     ██║   ██║   ██║      OS: Terminal Velocity OS ${OS.ver}\n     ██║   ╚██╗ ██╔╝      Host: ${navigator.userAgent.split(") ")[0].split("(").pop()||"browser"}\n     ██║    ╚████╔╝       Uptime: ${Math.round((performance.now()-OS.boot)/1000)}s\n     ╚═╝     ╚═══╝        Theme: ${THEMES[SET.theme].n}\n                          Wallpaper: ${wallId()}\n                          Archive: ${A?A.toLocaleString()+" files":"not mounted"}\n                          Windows: ${OS.wins.length}   Apps: ${Object.keys(OS.apps).length}\n                          Screen: ${innerWidth}x${innerHeight}\n                          License: CC0`};
 SH.sleep=async a=>{await sleep((+a[0]||1)*1000);return""};
@@ -1852,7 +1854,7 @@ defApp("settings",{name:"Settings",icon:"gear",cat:"System",w:700,h:520,single:t
     return[h("h3",{class:"ac",style:"margin:0"},"Your files"),info,h("div",{class:"row",style:"border:0;padding:0"},h("button",{class:"btn",onclick:()=>OS.open("notepad")},"Open Notepad"),h("button",{class:"btn",onclick:async()=>{const files=[];const walk=async(n,pre)=>{for(const k of V.ls(n)){if(k.dir)await walk(k,pre+k.name+"/");else files.push({name:pre+k.name,data:new Uint8Array(await V.read(k,"buf")),mt:k.mt})}};await walk(V.user,"");if(!files.length)return toast("No files in /home/user yet.",1);download("tvos-home-backup.zip",makeZip(files));toast("Backup ZIP: "+files.length+" files")}},ic("zip"),"Back up /home/user (ZIP)"),h("button",{class:"btn",onclick:async()=>{if(await dlgConfirm("Delete EVERYTHING in /home/user? (Game saves are separate and untouched.)","Erase home","Erase")){for(const k of [...V.user.kids.values()])await V.rm(k,true);toast("Home erased")}}},"Erase /home/user")),
      h("h3",{class:"ac",style:"margin:0"},"Game save"),h("div",{class:"dim"},"Terminal Velocity stores its save in this browser (localStorage), the same place as the standalone game on this site. Use the game's own export to back it up."),
      h("div",{class:"row",style:"border:0;padding:0"},h("button",{class:"btn",onclick:()=>OS.open("tv")},"Open the game"))]},
-   About(){return[h("h3",{class:"ac",style:"margin:0"},"Terminal Velocity OS "+OS.ver),h("div",{style:"white-space:pre-wrap"},"A complete desktop in ONE html file. No images, no external code, no build step — themes, wallpapers and icons are drawn with CSS, SVG paths and canvas.\n\nIt ships with the game Terminal Velocity (boots first), a shell, file manager, notepad with real export, media player, image viewer, reader, calculator, paint, clocks, toolbox and more.\n\nBring your own manifest.json and it becomes your archive. CC0 — copy it, fork it, host it anywhere."),h("div",{class:"dim"},`${Object.keys(OS.apps).length} apps · ${THEME_ORDER.length} themes · ${WALLS.length} wallpapers · ${Math.round(document.documentElement.outerHTML.length/1024)} KB page`)]}};
+   About(){return[h("h3",{class:"ac",style:"margin:0"},"Terminal Velocity OS "+OS.ver),h("div",{style:"white-space:pre-wrap"},"A complete desktop in ONE html file. No images, no external code, no build step — themes, wallpapers and icons are drawn with CSS, SVG paths and canvas.\n\nIt ships with the game Terminal Velocity (boots first), a shell, file manager, notepad with real export, media player, image viewer, reader, calculator, paint, clocks, toolbox and more.\n\nBring your own manifest.json and it becomes your archive. CC0 — copy it, fork it, host it anywhere."),h("div",{class:"row",style:"border:0;padding:0"},h("button",{class:"btn pri",onclick:()=>saveOS()},ic("save")," Save this OS as one .html file")),h("div",{class:"dim"},`${Object.keys(OS.apps).length} apps · ${THEME_ORDER.length} themes · ${WALLS.length} wallpapers · ${Math.round(document.documentElement.outerHTML.length/1024)} KB page`)]}};
   const draw=()=>{side.innerHTML="";tabs.forEach(t=>side.append(h("div",{class:t===cur?"on":"",onclick:()=>{cur=t;draw()}},t)));main.innerHTML="";main.append(...P[cur]())};
   b.style.flexDirection="row";b.append(side,main);draw();win.on.theme=OS.on("theme",()=>{if(!win.dead&&cur==="Appearance")draw()});win.on.close=()=>OS.off("theme",win.on.theme)},
  onArg(w,a){}});
@@ -2315,6 +2317,88 @@ defApp("bookbinder",{name:"BookBinder",icon:"books",cat:"Tools",w:780,h:660,sing
   b.addEventListener("drop",e=>{e.preventDefault();drop.style.borderColor="";const fs=[...(e.dataTransfer&&e.dataTransfer.files||[])].filter(f=>/\.(txt|md)$/i.test(f.name));if(fs.length)setStatus("Added "+addItems(fs.map(fromFile))+" file(s).");else setStatus("Drop .txt or .md files.","er")});
   win.addPath=addPath;win.api={bind,split,items:()=>items};draw();if(typeof arg==="string")addPath(arg)},
  onArg(w,a){typeof a==="string"&&w.addPath&&w.addPath(a)}});
+
+/* --- Backup: everything the user owns, in one ZIP --- */
+const BK_FMT="tvos-backup";
+const bkKeys=g=>{const o=[];for(let i=0;i<localStorage.length;i++){const k=localStorage.key(i);if(g==="game"?k.startsWith("terminal_velocity"):(k.startsWith("tvos_")&&k!=="tvos_backup_last"))o.push(k)}return o};
+const bkHome=()=>{const f=[];V.walk(V.user,(n)=>{if(n!==V.user)f.push(n)});return f};
+async function bkZipRead(file){const buf=new Uint8Array(await file.arrayBuffer()),dv=new DataView(buf.buffer);let e=-1;
+ for(let i=buf.length-22;i>=Math.max(0,buf.length-65557);i--)if(dv.getUint32(i,true)===0x06054b50){e=i;break}
+ if(e<0)throw new Error("this is not a ZIP file");
+ const cnt=dv.getUint16(e+10,true);let p=dv.getUint32(e+16,true);const out=new Map(),dec=new TextDecoder();
+ for(let i=0;i<cnt;i++){if(dv.getUint32(p,true)!==0x02014b50)throw new Error("damaged ZIP directory");
+  const meth=dv.getUint16(p+10,true),csz=dv.getUint32(p+20,true),nl=dv.getUint16(p+28,true),xl=dv.getUint16(p+30,true),cl=dv.getUint16(p+32,true),lo=dv.getUint32(p+42,true),name=dec.decode(buf.subarray(p+46,p+46+nl));p+=46+nl+xl+cl;
+  if(name.endsWith("/"))continue;const ln=dv.getUint16(lo+26,true),lx=dv.getUint16(lo+28,true),st=lo+30+ln+lx;out.set(name,{meth,raw:buf.subarray(st,st+csz)})}
+ return out}
+async function bkBytes(en){if(en.meth===0)return en.raw;if(en.meth===8&&window.DecompressionStream){const r=new Blob([en.raw]).stream().pipeThrough(new DecompressionStream("deflate-raw"));return new Uint8Array(await new Response(r).arrayBuffer())}throw new Error("this ZIP uses compression this browser cannot read")}
+async function bkMake(inc,onProg){const enc=new TextEncoder(),now=new Date(),files=[],man={format:BK_FMT,v:1,build:OS.ver,created:now.toISOString(),mc:MC.dual(now),includes:inc,files:[]};
+ if(inc.files){const all=bkHome();let i=0;for(const n of all){const p=V.path(n);if(n.dir){man.files.push({p,dir:1,mt:n.mt});continue}
+   let bytes,str=0;const d=n.data;if(typeof d==="string"){str=1;bytes=enc.encode(d)}else if(d instanceof Blob)bytes=new Uint8Array(await d.arrayBuffer());else if(d&&d.byteLength!=null)bytes=new Uint8Array(d);else bytes=new Uint8Array(0);
+   man.files.push({p,str,mime:n.mime||"",mt:n.mt});files.push({name:"files"+p,data:bytes,mt:n.mt});if(onProg&&++i%20===0){onProg("packing files "+i+" / "+all.length);await new Promise(r=>setTimeout(r))}}}
+ const ls={};if(inc.settings)for(const k of bkKeys("tvos"))ls[k]=localStorage.getItem(k);if(inc.game)for(const k of bkKeys("game"))ls[k]=localStorage.getItem(k);
+ man.keys=Object.keys(ls).length;
+ files.unshift({name:"README.txt",data:enc.encode("Terminal Velocity OS backup\nCreated: "+MC.dual(now)+"\nBuild: "+OS.ver+"\n\nTo restore: open Terminal Velocity OS > Backup > Restore from a backup ZIP.\nfiles/ holds your /home/user files. localstorage.json holds settings, app data and the game save.\nThe ZIP is plain: you can open it with any unzip tool.\n"),mt:+now});
+ files.unshift({name:"backup.json",data:enc.encode(JSON.stringify(man,null,1)),mt:+now});
+ files.splice(2,0,{name:"localstorage.json",data:enc.encode(JSON.stringify(ls,null,1)),mt:+now});
+ const g=ls.terminal_velocity_v3;if(g)files.splice(3,0,{name:"game-save.json",data:enc.encode(g),mt:+now});
+ return{blob:makeZip(files),man}}
+defApp("backup",{name:"Backup",icon:"save",cat:"Tools",w:560,h:640,single:true,desc:"back up and restore all your files, settings and game save",kw:"backup restore export import zip save game data migrate transfer",
+ init(win,b){const root=h("div",{class:"scr grow pad",style:"display:flex;flex-direction:column;gap:12px"}),cb={};
+  const mk=(id,txt,on)=>{const c=h("input",{type:"checkbox"});c.checked=on!==false;cb[id]=c;return h("label",{class:"row",style:"border:0;padding:0;gap:8px;cursor:pointer"},c,txt)};
+  const draw=async()=>{root.innerHTML="";const files=bkHome().filter(n=>!n.dir),size=files.reduce((a,n)=>a+(n.size||0),0),sk=bkKeys("tvos").length;let turn=null;try{const g=JSON.parse(localStorage.getItem("terminal_velocity_v3")||"null");if(g)turn=g.t}catch(e){}
+   const last=LS.get("tvos_backup_last",0);let pers="";try{pers=navigator.storage&&navigator.storage.persisted?(await navigator.storage.persisted())?"persistent":"not marked persistent, so the browser may clear it":""}catch(e){}
+   const msg=h("div",{class:"dim"}),sec=t=>h("h3",{class:"ac",style:"margin:6px 0 0"},t);
+   root.append(h("div",{class:"dim"},"Everything you own in this OS, in one ZIP. Restore it into any other copy of the OS (another browser, device or newer build)."),
+    sec("What you have now"),
+    h("div",{},"Files in /home/user: ",h("b",{},files.length+" ("+fmtBytes(size)+")")),
+    h("div",{},"Settings and app data: ",h("b",{},sk+" items"),h("span",{class:"dim"}," (themes, books, comics, audiobooks, music, tasks, calendar notes...)")),
+    h("div",{},"Game save: ",h("b",{},turn==null?"none yet":"turn "+turn)),
+    h("div",{},"Last backup: ",h("b",{},last?MC.dual(new Date(last)):"never")),
+    pers?h("div",{class:"dim"},"Browser storage is "+pers+"."):"",
+    sec("Create a backup"),mk("files","Files (/home/user)"),mk("settings","Settings and app data"),mk("game","Game save (Terminal Velocity)"),
+    h("div",{class:"row",style:"border:0;padding:0"},h("button",{class:"btn pri",onclick:async()=>{const inc={files:cb.files.checked,settings:cb.settings.checked,game:cb.game.checked};if(!inc.files&&!inc.settings&&!inc.game)return toast("Pick something to back up",1);
+      try{msg.textContent="packing...";const{blob,man}=await bkMake(inc,t=>msg.textContent=t);const d=new Date(),nm="TVOS-backup-"+MC.iso(d)+"_"+pad(d.getHours())+pad(d.getMinutes())+".zip";download(nm,blob,"application/zip");LS.set("tvos_backup_last",Date.now());msg.textContent="Saved "+nm+" ("+fmtBytes(blob.size)+", "+man.files.filter(f=>!f.dir).length+" files, "+man.keys+" settings items). Keep it somewhere safe.";toast("Backup created")}catch(e){msg.textContent="Backup failed: "+e.message;toast("Backup failed",1)}}},ic("dl")," Create backup ZIP"),
+     h("button",{class:"btn",title:"Ask the browser not to clear this OS's storage",onclick:async()=>{try{const ok=await navigator.storage.persist();toast(ok?"Storage marked persistent":"Browser declined persistent storage",!ok);draw()}catch(e){toast("Not supported here",1)}}},"Protect storage")),
+    msg,
+    sec("Restore from a backup ZIP"),
+    h("div",{class:"dim"},"Choose a ZIP made by this app. You can pick what to restore before anything changes."),
+    h("div",{class:"row",style:"border:0;padding:0"},h("button",{class:"btn",onclick:async()=>{const f=(await pickDisk(".zip,application/zip"))[0];if(f)restoreFrom(f)}},ic("up")," Choose backup ZIP...")),
+    sec("Save the OS itself"),h("div",{class:"dim"},"Download this whole OS as one .html file. Host it anywhere or give it to a friend."),h("div",{class:"row",style:"border:0;padding:0"},h("button",{class:"btn",onclick:()=>saveOS()},ic("save")," Save OS as .html")),sec("Game save only"),
+    h("div",{class:"row",style:"border:0;padding:0"},h("button",{class:"btn",onclick:()=>{const g=localStorage.getItem("terminal_velocity_v3");if(!g)return toast("No game save yet",1);download("terminal-velocity-save-"+MC.iso(new Date())+".json",g,"application/json")}},"Export game save"),
+     h("button",{class:"btn",onclick:async()=>{const f=(await pickDisk(".json,.txt"))[0];if(!f)return;try{const t=await f.text();const o=JSON.parse(t);if(!o||typeof o!=="object")throw 0;if(!await dlgConfirm("Replace your current game save with this file? The OS restarts afterwards.","Import game save","Replace"))return;localStorage.setItem("terminal_velocity_v3",t);toast("Game save imported. Restarting...");setTimeout(()=>location.reload(),1200)}catch(e){toast("That is not a game save file",1)}}},"Import game save")),
+    h("div",{class:"dim",style:"font-size:12px"},"Not included: /archive (it streams from the web and is the same everywhere), and real folders you mounted under /mnt (they stay on your computer)."))};
+  async function restoreFrom(file){let z,man,ls={};
+   try{z=await bkZipRead(file);const mb=z.get("backup.json");if(!mb)throw new Error("no backup.json: this is not a Terminal Velocity OS backup");man=JSON.parse(new TextDecoder().decode(await bkBytes(mb)));if(man.format!==BK_FMT)throw new Error("unknown backup format");const lb=z.get("localstorage.json");if(lb)ls=JSON.parse(new TextDecoder().decode(await bkBytes(lb)))}catch(e){return toast("Cannot read backup: "+e.message,1)}
+   const nF=man.files.filter(f=>!f.dir).length,sKeys=Object.keys(ls).filter(k=>k.startsWith("tvos_")),gKeys=Object.keys(ls).filter(k=>k.startsWith("terminal_velocity"));
+   const rc={},mkr=(id,txt,on)=>{const c=h("input",{type:"checkbox"});c.checked=on;rc[id]=c;return h("label",{class:"row",style:"border:0;padding:0;gap:8px;cursor:pointer"},c,txt)};
+   const mode=h("select",{class:"t"},h("option",{value:"merge"},"Merge (keep what is here, overwrite matching names)"),h("option",{value:"replace"},"Replace (make this OS match the backup)")),safe=h("input",{type:"checkbox"});safe.checked=true;const msg=h("div",{class:"dim"});
+   root.innerHTML="";root.append(h("h3",{class:"ac",style:"margin:0"},"Restore preview"),h("div",{class:"dim"},file.name),
+    h("div",{},"Made: ",h("b",{},man.mc||man.created)),h("div",{},"From build: ",h("b",{},man.build||"?")),
+    nF||man.files.length?mkr("files","Files: "+nF+" files",true):h("div",{class:"dim"},"No files in this backup."),
+    sKeys.length?mkr("settings","Settings and app data: "+sKeys.length+" items",true):"",
+    gKeys.length?mkr("game","Game save: included (replaces the current one)",true):h("div",{class:"dim"},"No game save in this backup."),
+    h("div",{class:"row",style:"border:0;padding:0"},"Mode:",mode),
+    h("label",{class:"row",style:"border:0;padding:0;gap:8px;cursor:pointer"},safe,"Download a safety backup of the current state first"),
+    h("div",{class:"row",style:"border:0;padding:0"},h("button",{class:"btn",onclick:draw},"Cancel"),h("button",{class:"btn pri",onclick:async()=>{
+      const doF=rc.files&&rc.files.checked,doS=rc.settings&&rc.settings.checked,doG=rc.game&&rc.game.checked;if(!doF&&!doS&&!doG)return toast("Nothing selected",1);
+      if(!await dlgConfirm((mode.value==="replace"?"Replace":"Merge")+" the selected items from this backup into this OS?\nThe OS restarts when it is done.","Restore","Restore"))return;
+      try{if(safe.checked){msg.textContent="saving a safety backup...";const s=await bkMake({files:true,settings:true,game:true});download("TVOS-before-restore-"+MC.iso(new Date())+".zip",s.blob,"application/zip")}
+       if(doF){if(mode.value==="replace"){msg.textContent="clearing files...";for(const n of [...V.user.kids.values()])await V.rm(n,true)}
+        let i=0;for(const f of man.files){const en=z.get("files"+f.p);if(f.dir){V.mkdirp(f.p);continue}if(!en)continue;const by=await bkBytes(en),data=f.str?new TextDecoder().decode(by):new Blob([by],{type:f.mime||V.mime(f.p)});const nd=await V.write(f.p,data,"/",f.mime||undefined);if(f.mt){nd.mt=f.mt;await V.save(nd)}if(++i%10===0){msg.textContent="restoring files "+i+" / "+nF;await new Promise(r=>setTimeout(r))}}}
+       if(doS){if(mode.value==="replace")for(const k of bkKeys("tvos"))localStorage.removeItem(k);for(const k of sKeys)if(k!=="tvos_backup_last")localStorage.setItem(k,ls[k])}
+       if(doG){if(mode.value==="replace")for(const k of bkKeys("game"))localStorage.removeItem(k);for(const k of gKeys)localStorage.setItem(k,ls[k])}
+       msg.textContent="Done. Restarting the OS...";toast("Restore complete. Restarting...");setTimeout(()=>location.reload(),1500)}catch(e){msg.textContent="Restore failed: "+e.message;toast("Restore failed",1)}}},"Restore")),msg)}
+  b.append(root);draw()}});
+
+/* --- Save this OS as one .html file --- */
+async function saveOS(name){name=name||"terminal-velocity.html";let fh=null;
+ try{if(window.showSaveFilePicker&&window.isSecureContext){try{fh=await window.showSaveFilePicker({suggestedName:name,types:[{description:"HTML page",accept:{"text/html":[".html"]}}]})}catch(e){if(e&&e.name==="AbortError")return false}}}catch(e){}
+ let src;try{const u=location.href.split("#")[0].split("?")[0];const r=await fetch(u,{cache:"no-cache"});if(!r.ok)throw new Error("HTTP "+r.status);src=await r.text()}
+ catch(e){try{src=await new Promise((ok,no)=>{const x=new XMLHttpRequest();x.open("GET",location.href.split("#")[0].split("?")[0]);x.onload=()=>ok(x.responseText);x.onerror=()=>no(new Error("blocked"));x.send()})}catch(e2){toast("The browser will not let a page read itself here. Use Ctrl+S (Save Page As, HTML only).",1);return false}}
+ if(!src||src.length<50000||src.indexOf('id="tvgame"')<0){toast("Could not get a complete copy of the page. Use Ctrl+S (Save Page As, HTML only).",1);return false}
+ const blob=new Blob([src],{type:"text/html"});
+ if(fh){try{const w=await fh.createWritable();await w.write(blob);await w.close();toast("Saved "+fh.name+" ("+fmtBytes(blob.size)+")");return true}catch(e){toast("Save failed: "+e.message,1);return false}}
+ download(name,blob,"text/html");toast("Saved "+name+" ("+fmtBytes(blob.size)+")");return true}
 
 /* ===================== BOOT ===================== */
 const LOGO=`
