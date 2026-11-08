@@ -579,6 +579,18 @@ Browser space: on phones the Browser shows one slim bar (Back, address, Reload, 
 bookmarks, tabs and "About this browser" (the free-web explanation). On desktop, the expand button hides the tabs and
 bookmarks bars and the "i" button shows the explanation.
 
+LINKS INSIDE THE OS
+-------------------
+Links in the OS itself (Notepad, Reader, Welcome, etc.) open as a tab in the Browser instead of leaving the OS.
+Links INSIDE a framed website are controlled by that website; the OS cannot see them. By default a
+target="_blank" link in a framed page opens a normal browser tab. For pages YOU control (republicka.life,
+kkk.education), add this snippet to your pages and those links will open as a new tab in the OS Browser
+(outside the OS it does nothing, so it is safe on every page):
+
+<script>
+if(window.parent!==window){document.addEventListener("click",function(e){var a=e.target.closest&&e.target.closest("a[href]");if(!a)return;var t=a.getAttribute("target");if(t==="_blank"||t==="_new"){e.preventDefault();parent.postMessage({tvos:"open",url:a.href},"*")}},true)}
+</script>
+
 https://github.com/BardPresident https://republicka.life https://kkk.education https://archive.org/details/@bardpresident https://www.youtube.com/@BardPresident https://odysee.com/@BardPresident:0 https://www.bitchute.com/channel/P9QR7Z6nmVtm
 
 ☯ THE CORE PHILOSOPHY ☯ EMOTION = LOGIC · THE HINATA TRAP · MASTER = FLOOR
