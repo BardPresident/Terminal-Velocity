@@ -417,6 +417,8 @@ THE APPS (27) - every one has a desktop icon
                       progress, chapter list, page or scroll mode, font/size/
                       spacing/margins, Paper/Sepia/Night themes, in-book search,
                       bookmarks that remember where you stopped
+  Manifest Maker      turn any folder into manifest.json, try it in the OS, get a share link;
+                      has a Guide tab and the generate-manifest.js script
   Backup              one-click ZIP of your files, settings, app data and game save;
                       restore into any other copy of the OS (merge or replace)
   BookBinder          bind many .txt books into one file (dividers, file-name
@@ -509,6 +511,15 @@ SAVE THE OS ITSELF
   Start menu > Save OS (also Backup app, Settings > About, or the terminal command "saveos")
   downloads this whole OS as one .html file. In Chromium browsers you choose where to save it.
   If a browser blocks a page from reading itself (e.g. opened from disk), use Ctrl+S, HTML only.
+
+SHARE YOUR OWN ARCHIVE (MANIFEST MAKER)
+  Start > Manifest Maker (or Settings > Archive > Manifest Maker...).
+  1. Upload your folder of files to any web host.  2. In Manifest Maker type that web address,
+  choose the folder, download manifest.json.  3. Upload manifest.json into the same online folder.
+  4. Share the link it gives you:  terminal-velocity.html?manifest=https://yoursite.org/files/manifest.json
+  generate-manifest.js is the command line version:  node generate-manifest.js ./files https://yoursite.org/files
+  If the OS and your files are on different websites, the files server must send
+  Access-Control-Allow-Origin: *  (at least for manifest.json).
 
 https://github.com/BardPresident https://republicka.life https://kkk.education https://archive.org/details/@bardpresident https://www.youtube.com/@BardPresident https://odysee.com/@BardPresident:0 https://www.bitchute.com/channel/P9QR7Z6nmVtm
 
