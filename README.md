@@ -417,6 +417,8 @@ THE APPS (27) - every one has a desktop icon
                       progress, chapter list, page or scroll mode, font/size/
                       spacing/margins, Paper/Sepia/Night themes, in-book search,
                       bookmarks that remember where you stopped
+  Backup              one-click ZIP of your files, settings, app data and game save;
+                      restore into any other copy of the OS (merge or replace)
   BookBinder          bind many .txt books into one file (dividers, file-name
                       headings) or split them into chunk ZIPs for NotebookLM
                       and other AI tools. Add files from your computer or a
@@ -493,6 +495,20 @@ MYTHOCRATIC CALENDAR (MC)
   Shown in: tray (date + clock, hover for both), Clock app (MC tab converts years and dates),
   Calendar header, terminal "date", file dates (ls -l, stat, Files), boot log.
   Settings > Appearance > "Calendar & dates" switches to Gregorian-first if wanted.
+
+BACKUP AND MIGRATION
+  Start > Backup > Create backup ZIP. The ZIP holds /home/user files, settings and app data
+  (books, comics, audiobooks, music, tasks, calendar notes) and the Terminal Velocity save.
+  To move to another browser, device or newer build: open the new OS, Backup > Choose backup ZIP,
+  pick what to restore, Merge or Replace. The OS restarts when it finishes.
+  A safety backup of the current state downloads first unless you untick it.
+  Not included: /archive (streams from the web) and real folders mounted under /mnt.
+  "Protect storage" asks the browser not to clear this OS's data; backups are still the real safety net.
+
+SAVE THE OS ITSELF
+  Start menu > Save OS (also Backup app, Settings > About, or the terminal command "saveos")
+  downloads this whole OS as one .html file. In Chromium browsers you choose where to save it.
+  If a browser blocks a page from reading itself (e.g. opened from disk), use Ctrl+S, HTML only.
 
 https://github.com/BardPresident https://republicka.life https://kkk.education https://archive.org/details/@bardpresident https://www.youtube.com/@BardPresident https://odysee.com/@BardPresident:0 https://www.bitchute.com/channel/P9QR7Z6nmVtm
 
