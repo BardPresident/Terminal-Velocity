@@ -437,8 +437,8 @@ THE APPS (27) - every one has a desktop icon
   Archive             search every file name in the manifest
   Calculator          scientific, own expression parser (no eval)
   Paint               draw, fill, undo, save PNG
-  Clock               clock, timer, stopwatch, world times
-  Calendar            month view with notes
+  Clock               clock, MC converter tab, timer, stopwatch, world times
+  Calendar            month view with notes (MC month header, CE secondary)
   Metronome           50 BPM by default
   Task Manager        windows, FPS, memory, storage
   Toolbox             base64, URL, SHA hashes, JSON, regex, colour, time, UUID
@@ -484,6 +484,15 @@ HONEST LIMITS
   - The OS tray shows your Standing next to the clock once the game has run.
   - The game's mission text says the manifest came from republicka.life even
     if you loaded a different one. Cosmetic.
+
+
+MYTHOCRATIC CALENDAR (MC)
+  The whole OS runs on Mythocratic time, with Gregorian (CE) as the secondary date.
+  2025 CE = 0001 MC.  2024 CE = -0001 PMC (Pre-Mythocratic Calendar, negative years keep the minus sign).  There is no year 0000.  2026 CE = 0002 MC.
+  Months and days follow the Gregorian pattern.
+  Shown in: tray (date + clock, hover for both), Clock app (MC tab converts years and dates),
+  Calendar header, terminal "date", file dates (ls -l, stat, Files), boot log.
+  Settings > Appearance > "Calendar & dates" switches to Gregorian-first if wanted.
 
 https://github.com/BardPresident https://republicka.life https://kkk.education https://archive.org/details/@bardpresident https://www.youtube.com/@BardPresident https://odysee.com/@BardPresident:0 https://www.bitchute.com/channel/P9QR7Z6nmVtm
 
