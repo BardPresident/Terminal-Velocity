@@ -11,7 +11,7 @@ CONTENTS
    1. What it is
    2. Quick start and hosting
    3. The desktop
-   4. The apps (36)
+   4. The apps (37)
    5. Your data: saving, Backup, Cleaner, reboot
    6. Your own archive (manifest.json)
    7. Links, the Browser and the OS
@@ -34,7 +34,7 @@ you choose to export it.
 
 It starts with a long, chatty boot log that says what it is doing (the
 checks are real, not decoration), then gives you a desktop with windows,
-a taskbar, a Start menu, a file system, a terminal and 36 apps. The first
+a taskbar, a Start menu, a file system, a terminal and 37 apps. The first
 of those apps is the game Terminal Velocity, which lives inside the OS
 (section 11).
 
@@ -133,7 +133,7 @@ SESSION RESTORE
 
 
 =====================================================================
-4. THE APPS (36)
+4. THE APPS (37)
 =====================================================================
 
 Every app has a desktop icon, a Start menu entry and a Spotlight entry,
@@ -356,6 +356,19 @@ BookBinder
   split them into chunk ZIPs for NotebookLM and other AI tools. Add
   files from your computer or a whole archive folder.
 
+Crypt
+  Scrambles text into Republicka gibberish and back. Pick Encode or Decode,
+  type or paste, and the result appears as you type. Copy it, save it as a
+  .txt, or use Swap to flip the result back into the input. No keys, no
+  passphrase: it is the same for everyone.
+  Every letter moves 10 places along the alphabet (the 10 letters of
+  "Republicka") and every digit moves 5, so "Hello 2026" becomes
+  "Rovvy 7571". Capitals, spaces, punctuation, emoji and other languages
+  are left alone, and the text stays exactly the same length.
+  This is a simple scramble, not encryption. Anyone who knows the trick, or
+  reads this open-source OS, can undo it in seconds. It only stops a
+  message being read at a glance.
+
 Toolbox
   Base64, URL, SHA hashes, JSON, regex, colour, time, UUID, text and
   random tools.
@@ -389,7 +402,7 @@ WHERE THINGS LIVE
 BACKUP  (Start > Backup)
   Create backup ZIP holds: your /home/user files, your settings and app
   data (books, comics, audiobooks, music, tasks, calendar notes, Diary,
-  Sequencer, bookmarks and more) and the Terminal Velocity game save.
+  Sequencer, bookmarks, and more) and the Terminal Velocity game save.
   It is a plain ZIP; any unzip tool opens it. To move to another browser,
   device or newer build: open the new OS, Backup > Choose backup ZIP,
   pick what to restore, Merge or Replace. The OS restarts when it is
@@ -550,7 +563,8 @@ WHAT KEEPS IT LIGHT
   - Mounting a folder from your computer needs Chrome or Edge.
   - The Browser can only show sites that allow framing. Nothing in an app
     can override a website's own refusal.
-  - The Diary PIN is not encryption.
+  - The Diary PIN is not encryption, and neither is Crypt: Crypt is a simple
+    letter shift anyone can undo.
   - Sequencer loops are not saved; export a WAV to keep them.
   - Dragging to reorder tabs and taskbar buttons works with a mouse, not
     by touch.
