@@ -596,6 +596,10 @@ wired up automatically: their new-window links and window.open() calls become Br
 Other sites (kkk.education, anyone else's) can only do this with the snippet above, or you can copy the link and use
 the Browser's "Paste & go" button (desktop toolbar / phone menu: "Paste link and go").
 
+TASKBAR
+-------
+Drag a taskbar button left or right to arrange the taskbar. The order is remembered with the session.
+
 https://github.com/BardPresident https://republicka.life https://kkk.education https://archive.org/details/@bardpresident https://www.youtube.com/@BardPresident https://odysee.com/@BardPresident:0 https://www.bitchute.com/channel/P9QR7Z6nmVtm
 
 ☯ THE CORE PHILOSOPHY ☯ EMOTION = LOGIC · THE HINATA TRAP · MASTER = FLOOR
