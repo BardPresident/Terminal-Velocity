@@ -615,6 +615,30 @@ Low power mode (Settings > Appearance, or the Benchmark app): Auto / On / Off. T
   the vignette and the moving wallpaper, and slows the music visualisers. Auto switches it on for devices with 2 cores
   or fewer, or 2 GB of memory or less.
 
+Diary app (Accessories): a pretty paper diary.
+  Opens as a closed rose-coloured book; tap the heart clasp to open it. One page per day, with ruled lines,
+  a margin, hole punches and washi tape. Pick a mood, tap stickers to drop them into your writing, flip days
+  with the arrows, jump to any date, see the month with a heart on every day you wrote, and search all pages.
+  Dates show in the Mythocratic Calendar with the Gregorian date underneath (follows your Settings choice).
+  Gear button: cover colour (rose, lilac, peach, mint, sky), ink colour, handwriting style, cover title,
+  optional PIN, save as .txt or .json, add pages from a .json, tear out a page.
+  A PIN keeps casual snoopers out. It does NOT encrypt: anyone who can read this browser's stored data can
+  read the pages. Data is stored under the key tvos_diary, so the Backup app includes it.
+  The handwriting style uses fonts already on the device (it looks best on Windows, Mac, iOS and Android).
+
+Sequencer app (Media): drum machine and loop recorder.
+  Eight synthesized drum sounds (kick, snare, closed hat, open hat, clap, tom, rim, cowbell), no sample files.
+  Tap a square once for a normal hit, twice for an accent, a third time to turn it off. Mouse users can drag
+  to paint. 8, 16 or 32 steps, tempo 40 to 240 BPM (button "50" sets the heartbeat tempo), tap tempo, swing,
+  four patterns A to D (switching while playing waits for the end of the loop), mute, solo and volume per
+  track, six starter beats. Keys A S D F G H J K play the sounds, Space starts and stops.
+  Live hits: while playing, your key taps are added into the pattern.
+  Loop recorder: two slots. Press Record, the app waits for the next loop start, then records from the
+  microphone for 1, 2 or 4 loops and plays it back in time. Use headphones. If a recording sounds late, raise
+  "Fix lateness". Loops are kept only while the app is open.
+  Save as WAV renders the pattern plus your loops to a stereo 16-bit file (uses the same save location as the
+  Recorder). Patterns are stored under tvos_seq and included in Backup.
+
 https://github.com/BardPresident https://republicka.life https://kkk.education https://archive.org/details/@bardpresident https://www.youtube.com/@BardPresident https://odysee.com/@BardPresident:0 https://www.bitchute.com/channel/P9QR7Z6nmVtm
 
 ☯ THE CORE PHILOSOPHY ☯ EMOTION = LOGIC · THE HINATA TRAP · MASTER = FLOOR
