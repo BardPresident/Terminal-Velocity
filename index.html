@@ -45,7 +45,7 @@ body.vig #fx{display:block;box-shadow:inset 0 0 160px rgba(0,0,0,.55)}
 #tbar .sb:hover,#tbar .sb.on{background:var(--ac);color:var(--bg)}
 #tasks{flex:1;display:flex;gap:4px;overflow-x:auto;min-width:0}
 .tk{display:flex;align-items:center;gap:6px;height:32px;max-width:170px;min-width:36px;padding:0 10px;border:1px solid transparent;border-bottom:2px solid var(--bd);background:var(--pn);border-radius:5px;cursor:pointer;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex:0 1 160px}
-.tk .ti{overflow:hidden;text-overflow:ellipsis}.tk svg{color:var(--ac);font-size:15px}
+.tk .ti{overflow:hidden;text-overflow:ellipsis}.tk{touch-action:pan-x}.tk.drag{cursor:grabbing;border-color:var(--ac);background:var(--hv);box-shadow:0 0 8px var(--ac)}.tk svg{color:var(--ac);font-size:15px}
 .tk:hover{background:var(--hv)}.tk.focus{border-bottom-color:var(--ac);background:var(--pn2)}.tk.min{opacity:.55}
 #tray{display:flex;align-items:center;gap:10px;color:var(--dim);padding-right:4px;white-space:nowrap}
 #tray b{color:var(--fg);font-weight:600}#tray span{cursor:pointer}#tray span:hover{color:var(--ac)}
@@ -1254,7 +1254,8 @@ const MC={yr:y=>y>2024?y-2024:y-2025,ce:m=>m>0?m+2024:m+2025,ys:m=>(m<0?"-":"")+
 const fmtDate=t=>{const d=new Date(t),hm=" "+pad(d.getHours())+":"+pad(d.getMinutes());return MC.on()?MC.iso(d)+hm+" "+MC.era(d):d.getFullYear()+"-"+pad(d.getMonth()+1)+"-"+pad(d.getDate())+hm};
 const sleep=ms=>new Promise(r=>setTimeout(r,ms));
 const LS={get(k,d){try{const v=localStorage.getItem(k);return v==null?d:JSON.parse(v)}catch(e){return d}},set(k,v){try{localStorage.setItem(k,JSON.stringify(v));return true}catch(e){return false}}};
-const OS={apps:{},wins:[],z:10,bus:{},boot:performance.now(),ver:"1.0 build 1110-0519"};
+const fmtUp=s=>{s=Math.max(0,Math.round(s));const d=Math.floor(s/86400),hr=Math.floor(s%86400/3600),m=Math.floor(s%3600/60),sc=s%60;if(d)return d+" d "+hr+" h";if(hr)return hr+" h "+m+" min";if(m)return m+" min "+sc+" s";return sc+" s"};
+const OS={apps:{},wins:[],z:10,bus:{},boot:performance.now(),ver:"1.0 build 1110-0525"};
 OS.on=(ev,f)=>{(OS.bus[ev]=OS.bus[ev]||[]).push(f);return f};
 OS.off=(ev,f)=>{OS.bus[ev]=(OS.bus[ev]||[]).filter(x=>x!==f)};
 OS.emit=(ev,a)=>{(OS.bus[ev]||[]).slice().forEach(f=>{try{f(a)}catch(e){console.error(e)}})};
@@ -1507,9 +1508,18 @@ function resizeStart(e,win,d){if(win.max||isMob())return;e.preventDefault();e.st
  const up=()=>{removeEventListener("pointermove",mv);removeEventListener("pointerup",up)};addEventListener("pointermove",mv);addEventListener("pointerup",up)}
 addEventListener("resize",()=>{const d=$("#desk");OS.wins.forEach(w=>{if(w.max){w.w=d.clientWidth;w.h=d.clientHeight;setRect(w)}else{w.x=Math.min(w.x,Math.max(0,d.clientWidth-80));w.y=Math.min(w.y,Math.max(0,d.clientHeight-40));setRect(w)}w.on.resize&&w.on.resize()});sizeWall()});
 /* ---- taskbar ---- */
-OS.renderTasks=function(){const t=$("#tasks");t.innerHTML="";for(const w of OS.wins){const a=OS.apps[w.app];t.append(h("div",{class:"tk"+(OS.cur===w&&!w.min?" focus":"")+(w.min?" min":""),title:w.title,onclick:()=>{if(OS.cur===w&&!w.min)OS.minimize(w);else OS.focus(w)},oncontextmenu:e=>{e.preventDefault();ctxMenu(e.clientX,e.clientY-90,[{t:"Restore / focus",fn:()=>OS.focus(w)},{t:"Minimise",fn:()=>OS.minimize(w)},{t:w.max?"Unmaximise":"Maximise",fn:()=>OS.toggleMax(w)},"-",{t:"Close",ic:"x",fn:()=>OS.close(w)}])}},ic(a.icon),h("span",{class:"ti"},w.title)))}};
+/* drag a taskbar button left or right to put the taskbar in the order you like */
+function tkDrag(e,el){if(e.button>0||e.pointerType==="touch")return;const sx=e.clientX;let on=false;
+ const mv=ev=>{if(!on){if(Math.abs(ev.clientX-sx)<6)return;on=true;OS.tkDrag=1;el.classList.add("drag")}
+  const sibs=[...el.parentNode.children].filter(c=>c!==el);let idx=0;for(const c of sibs){const r=c.getBoundingClientRect();if(ev.clientX>r.left+r.width/2)idx++}
+  const cur=[...el.parentNode.children].indexOf(el);if(cur!==idx){const ref=sibs[idx]||null;el.parentNode.insertBefore(el,ref)}};
+ const up=()=>{removeEventListener("pointermove",mv);removeEventListener("pointerup",up);removeEventListener("pointercancel",up);
+  if(on){const stop=ev=>{ev.stopPropagation();ev.preventDefault()};el.addEventListener("click",stop,{capture:true,once:true});setTimeout(()=>el.removeEventListener("click",stop,true),80);
+   const ord=[...el.parentNode.children].map(c=>c._w).filter(Boolean);OS.wins=ord.concat(OS.wins.filter(w=>!ord.includes(w)));OS.tkDrag=0;el.classList.remove("drag");OS.renderTasks();if(typeof sessSave==="function")sessSave()}};
+ addEventListener("pointermove",mv);addEventListener("pointerup",up);addEventListener("pointercancel",up)}
+OS.renderTasks=function(){if(OS.tkDrag)return;const t=$("#tasks");t.innerHTML="";for(const w of OS.wins){const a=OS.apps[w.app];const tk=h("div",{class:"tk"+(OS.cur===w&&!w.min?" focus":"")+(w.min?" min":""),title:w.title,onclick:()=>{if(OS.cur===w&&!w.min)OS.minimize(w);else OS.focus(w)},oncontextmenu:e=>{e.preventDefault();ctxMenu(e.clientX,e.clientY-90,[{t:"Restore / focus",fn:()=>OS.focus(w)},{t:"Minimise",fn:()=>OS.minimize(w)},{t:w.max?"Unmaximise":"Maximise",fn:()=>OS.toggleMax(w)},"-",{t:"Close",ic:"x",fn:()=>OS.close(w)}])}},ic(a.icon),h("span",{class:"ti"},w.title));tk._w=w;tk.addEventListener("pointerdown",ev=>tkDrag(ev,tk));t.append(tk)}};
 function tick(){const d=new Date(),c=$("#clk");c.textContent=pad(d.getHours())+":"+pad(d.getMinutes());c.title=MC.dual(d);const m=$("#mcd");if(m){m.textContent=MC.on()?MC.short(d)+" "+MC.era(d):d.getDate()+" "+MONTHS[d.getMonth()].slice(0,3)+" "+d.getFullYear();m.title=MC.dual(d)}}
-function buildTray(){const tr=$("#tray");tr.innerHTML="";tr.append(h("span",{class:"hide",id:"stand",onclick:()=>OS.open("tv")}),h("span",{class:"hide",title:"Next theme",onclick:()=>cycleTheme(1)},ic("eye")),h("span",{class:"hide",id:"arc",title:"Archive status",onclick:()=>OS.open("settings",{tab:"Archive"})},"archive: …"),h("span",{title:"Spotlight (Ctrl+Space)",onclick:()=>spot(true)},ic("search")),h("span",{id:"mcd",onclick:()=>OS.open("calendar")}),h("b",{id:"clk",onclick:()=>OS.open("clock")}));tick();setInterval(tick,10000);setStand(LS.get("tvos_standing",null))}
+function buildTray(){const tr=$("#tray");tr.innerHTML="";tr.append(h("span",{class:"hide",title:"Next theme",onclick:()=>cycleTheme(1)},ic("eye")),h("span",{class:"hide",id:"arc",title:"Archive status",onclick:()=>OS.open("settings",{tab:"Archive"})},"archive: …"),h("span",{title:"Spotlight (Ctrl+Space)",onclick:()=>spot(true)},ic("search")),h("span",{id:"mcd",onclick:()=>OS.open("calendar")}),h("b",{id:"clk",onclick:()=>OS.open("clock")}));tick();setInterval(tick,10000);setStand(LS.get("tvos_standing",null))}
 function cycleTheme(d){const i=(THEME_ORDER.indexOf(SET.theme)+d+THEME_ORDER.length)%THEME_ORDER.length;applyTheme(THEME_ORDER[i]);toast("Theme: "+THEMES[SET.theme].n)}
 OS.on("manifest",m=>{try{buildDesk()}catch(e){}const a=$("#arc");if(a)a.textContent="archive: "+m.files.toLocaleString()+" files"});
 /* ---- desktop icons & start menu ---- */
@@ -1533,15 +1543,15 @@ function buildStart(){$("#sbtn").append(ic("logo"),h("span",{},"TV·OS"));$("#sb
 /* ---- session: remember open windows and where they were ---- */
 const SESS_KEY="tvos_session";let sessLast="";
 const sessSnap=()=>{const ws=[...OS.wins].filter(w=>!w.dead&&OS.apps[w.app]&&!OS.apps[w.app].hidden).sort((a,b)=>(+a.el.style.zIndex||0)-(+b.el.style.zIndex||0));
- return{v:1,cur:OS.cur&&!OS.cur.dead?ws.indexOf(OS.cur):-1,w:ws.map(w=>{const o={a:w.app,x:Math.round(w.x),y:Math.round(w.y),w:Math.round(w.w),h:Math.round(w.h)};if(w.max){o.max=1;if(w.prev)o.p=[w.prev.x,w.prev.y,w.prev.w,w.prev.h].map(Math.round)}if(w.min)o.min=1;if(typeof w.arg==="string"||typeof w.arg==="number")o.arg=w.arg;return o})}};
+ return{v:1,cur:OS.cur&&!OS.cur.dead?ws.indexOf(OS.cur):-1,w:ws.map(w=>{const o={t:OS.wins.indexOf(w),a:w.app,x:Math.round(w.x),y:Math.round(w.y),w:Math.round(w.w),h:Math.round(w.h)};if(w.max){o.max=1;if(w.prev)o.p=[w.prev.x,w.prev.y,w.prev.w,w.prev.h].map(Math.round)}if(w.min)o.min=1;if(typeof w.arg==="string"||typeof w.arg==="number")o.arg=w.arg;return o})}};
 function sessSave(){if(!OS.sessReady)return;try{const s=JSON.stringify(sessSnap());if(s!==sessLast){sessLast=s;localStorage.setItem(SESS_KEY,s)}}catch(e){}}
 function sessLoad(){try{const s=JSON.parse(localStorage.getItem(SESS_KEY)||"null");return s&&Array.isArray(s.w)?s:null}catch(e){return null}}
-function sessRestore(sess){const d=$("#desk"),dw=d.clientWidth,dh=d.clientHeight;let fw=null,n=0;
- sess.w.forEach((o,i)=>{const app=OS.apps[o.a];if(!app||app.hidden||!appVisible(app))return;let w=null;try{w=OS.open(o.a,o.arg)}catch(e){}if(!w)return;n++;
+function sessRestore(sess){const d=$("#desk"),dw=d.clientWidth,dh=d.clientHeight;let fw=null,n=0;const made=[];
+ sess.w.forEach((o,i)=>{const app=OS.apps[o.a];if(!app||app.hidden||!appVisible(app))return;let w=null;try{w=OS.open(o.a,o.arg)}catch(e){}if(!w)return;n++;made.push([w,o.t]);
   if(!isMob()){if(w.max)OS.toggleMax(w,false);const g=o.max&&o.p?{x:o.p[0],y:o.p[1],w:o.p[2],h:o.p[3]}:o;w.w=Math.max(260,Math.min(g.w,dw));w.h=Math.max(140,Math.min(g.h,dh));w.x=Math.min(Math.max(0,g.x),Math.max(0,dw-80));w.y=Math.min(Math.max(0,g.y),Math.max(0,dh-40));setRect(w);w.on.resize&&w.on.resize();
    if(o.max)OS.toggleMax(w,true)}
   if(o.min)OS.minimize(w);if(i===sess.cur)fw=w});
- if(fw&&!fw.min)OS.focus(fw);OS.rescue&&OS.rescue();return n}
+ if(made.length&&made.every(x=>typeof x[1]==="number")){const ord=made.slice().sort((a,b)=>a[1]-b[1]).map(x=>x[0]);OS.wins=ord.concat(OS.wins.filter(w=>!ord.includes(w)));OS.renderTasks()}if(fw&&!fw.min)OS.focus(fw);OS.rescue&&OS.rescue();return n}
 function sessStart(){OS.sessReady=true;sessSave();setInterval(sessSave,1500);addEventListener("pagehide",sessSave);addEventListener("beforeunload",sessSave);document.addEventListener("visibilitychange",()=>{if(document.hidden)sessSave()})}
 /* ---- spotlight ---- */
 let spSel=0,spRes=[];
@@ -1675,7 +1685,7 @@ SH.mount=async()=>{const n=await V.mount();return"mounted at "+V.path(n)+" ("+V.
 SH.manifest=()=>MAN.json?`archive: ${MAN.files.toLocaleString()} files, ${fmtBytes(MAN.size)}\nsource : ${MAN.src}\ngenerated: ${MAN.gen||"?"}\nattempts:\n`+MAN.tried.map(t=>"  "+(t.ok?"ok   ":"fail ")+t.u+(t.why?" ("+t.why+")":"")).join("\n"):"no manifest mounted. Settings > Archive lets you load a manifest.json from a file or URL.\nattempts:\n"+MAN.tried.map(t=>"  fail "+t.u+" ("+t.why+")").join("\n");
 SH.saveos=()=>{saveOS();return"saving this OS as a single .html file..."};
 SH.reboot=()=>{setTimeout(()=>location.reload(),300);return"rebooting..."};
-SH.neofetch=()=>{const A=MAN.files;return`  ████████╗██╗   ██╗      user@terminal-velocity\n  ╚══██╔══╝██║   ██║      ---------------------\n     ██║   ██║   ██║      OS: Terminal Velocity OS ${OS.ver}\n     ██║   ╚██╗ ██╔╝      Host: ${navigator.userAgent.split(") ")[0].split("(").pop()||"browser"}\n     ██║    ╚████╔╝       Uptime: ${Math.round((performance.now()-OS.boot)/1000)}s\n     ╚═╝     ╚═══╝        Theme: ${THEMES[SET.theme].n}\n                          Wallpaper: ${wallId()}\n                          Archive: ${A?A.toLocaleString()+" files":"not mounted"}\n                          Windows: ${OS.wins.length}   Apps: ${Object.keys(OS.apps).length}\n                          Screen: ${innerWidth}x${innerHeight}\n                          License: CC0`};
+SH.neofetch=()=>{const A=MAN.files;return`  ████████╗██╗   ██╗      user@terminal-velocity\n  ╚══██╔══╝██║   ██║      ---------------------\n     ██║   ██║   ██║      OS: Terminal Velocity OS ${OS.ver}\n     ██║   ╚██╗ ██╔╝      Host: ${navigator.userAgent.split(") ")[0].split("(").pop()||"browser"}\n     ██║    ╚████╔╝       Uptime: ${fmtUp((performance.now()-OS.boot)/1000)}\n     ╚═╝     ╚═══╝        Theme: ${THEMES[SET.theme].n}\n                          Wallpaper: ${wallId()}\n                          Archive: ${A?A.toLocaleString()+" files":"not mounted"}\n                          Windows: ${OS.wins.length}   Apps: ${Object.keys(OS.apps).length}\n                          Screen: ${innerWidth}x${innerHeight}\n                          License: CC0`};
 SH.sleep=async a=>{await sleep((+a[0]||1)*1000);return""};
 async function runLine(line,t){/* returns output string */
  const toks=tokenize(line);if(!toks.length)return"";const stages=[[]];for(const x of toks){if(x==="|")stages.push([]);else stages[stages.length-1].push(x)}
@@ -1952,7 +1962,7 @@ defApp("paint",{name:"Paint",icon:"paint",cat:"Media",w:720,h:520,desc:"draw wit
 /* --- Task Manager --- */
 defApp("taskmgr",{name:"Task Manager",icon:"mon",cat:"System",w:520,h:420,single:true,desc:"windows, memory, storage",kw:"processes kill memory performance monitor",
  init(win,b){const info=h("pre",{class:"out dim",style:"padding:8px 12px"}),list=h("div",{class:"scr grow"});let frames=0,fps=0,last=performance.now();const fr=()=>{if(win.dead)return;frames++;const t=performance.now();if(t-last>=1000){fps=frames;frames=0;last=t}requestAnimationFrame(fr)};fr();
-  const draw=async()=>{if(win.dead)return;let u="?";try{const e=await navigator.storage.estimate();u=fmtBytes(e.usage)+" / "+fmtBytes(e.quota)}catch(e){}const m=performance.memory;info.textContent=`Uptime ${Math.round((performance.now()-OS.boot)/1000)}s   FPS ${fps}   JS heap ${m?fmtBytes(m.usedJSHeapSize):"n/a"}   Storage ${u}   Cores ${navigator.hardwareConcurrency||"?"}   Net ${navigator.onLine?"online":"offline"}`;list.innerHTML="";OS.wins.forEach(w=>list.append(h("div",{class:"row"},ic(OS.apps[w.app].icon),h("span",{class:"grow"},w.title),h("span",{class:"dim"},w.min?"minimised":w===OS.cur?"focused":"running"),h("button",{class:"btn sm",onclick:()=>OS.focus(w)},"Focus"),h("button",{class:"btn sm",onclick:()=>OS.close(w)},"End"))))};
+  const draw=async()=>{if(win.dead)return;let u="?";try{const e=await navigator.storage.estimate();u=fmtBytes(e.usage)+" / "+fmtBytes(e.quota)}catch(e){}const m=performance.memory;info.textContent=`Uptime ${fmtUp((performance.now()-OS.boot)/1000)}   FPS ${fps}   JS heap ${m?fmtBytes(m.usedJSHeapSize):"n/a"}   Storage ${u}   Cores ${navigator.hardwareConcurrency||"?"}   Net ${navigator.onLine?"online":"offline"}`;list.innerHTML="";OS.wins.forEach(w=>list.append(h("div",{class:"row"},ic(OS.apps[w.app].icon),h("span",{class:"grow"},w.title),h("span",{class:"dim"},w.min?"minimised":w===OS.cur?"focused":"running"),h("button",{class:"btn sm",onclick:()=>OS.focus(w)},"Focus"),h("button",{class:"btn sm",onclick:()=>OS.close(w)},"End"))))};
   b.append(info,list);draw();const iv=setInterval(draw,1500);win.on.close=()=>clearInterval(iv)}});
 
 /* --- Toolbox --- */
