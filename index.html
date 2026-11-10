@@ -1256,7 +1256,7 @@ const fmtDate=t=>{const d=new Date(t),hm=" "+pad(d.getHours())+":"+pad(d.getMinu
 const sleep=ms=>new Promise(r=>setTimeout(r,ms));
 const LS={get(k,d){try{const v=localStorage.getItem(k);return v==null?d:JSON.parse(v)}catch(e){return d}},set(k,v){try{localStorage.setItem(k,JSON.stringify(v));return true}catch(e){return false}}};
 const fmtUp=s=>{s=Math.max(0,Math.round(s));const d=Math.floor(s/86400),hr=Math.floor(s%86400/3600),m=Math.floor(s%3600/60),sc=s%60;if(d)return d+" d "+hr+" h";if(hr)return hr+" h "+m+" min";if(m)return m+" min "+sc+" s";return sc+" s"};
-const OS={apps:{},wins:[],z:10,bus:{},boot:performance.now(),ver:"1.0 build 1110-0837"};
+const OS={apps:{},wins:[],z:10,bus:{},boot:performance.now(),ver:"1.0 build 1110-0848"};
 OS.on=(ev,f)=>{(OS.bus[ev]=OS.bus[ev]||[]).push(f);return f};
 OS.off=(ev,f)=>{OS.bus[ev]=(OS.bus[ev]||[]).filter(x=>x!==f)};
 /* reboot that always fetches the newest copy of this page (like Ctrl+Shift+R), then reloads */
@@ -3504,6 +3504,172 @@ defApp("sequencer",{name:"Sequencer",icon:"seq",cat:"Media",w:880,h:640,single:t
   buildGrid();paintGrid();paintBanks();paintPlay();buildSlots();ro.observe(b);nar=b.clientWidth<640;root.classList.toggle("nar",nar);showMix=!nar;paintMix();
   win.on.close=()=>{try{stop()}catch(e){}ro.disconnect();clearInterval(tm);cancelAnimationFrame(raf);if(mic){try{mic.st.getTracks().forEach(t=>t.stop())}catch(e){}}if(ctx){try{ctx.close()}catch(e){}}sv()};
   win.seq={S,slots,play,stop,hit,get ctx(){return ctx},get run(){return run},exportWav,arm:armSlot};
+ }});
+
+/* ===================== CLEANER: see everything this OS has saved in your browser, and clear what you no longer want ===================== */
+IP.broom="M14 3l-4.5 8.5 M7 11.5l9 4.5-1.5 5.5H5.5L4 17z M8.5 15.5l-1 4.5 M12 17.5l-.5 3.5";
+const CL={
+ cats:["Your writing and creations","Settings","Progress and saved places","App preferences","Game","Housekeeping","Other OS data","Not part of this OS"],
+ known:{
+  tvos_settings:["OS settings","Theme, wallpaper, date style, low power mode and the other choices in Settings.","Settings","Deleting it puts every setting back to default."],
+  tvos_session:["Open windows","Which windows were open last time, so they can come back at start.","Housekeeping"],
+  tvos_diary:["Diary","Every page you wrote in the Diary, its colours and its PIN.","Your writing and creations","This is your writing. Deleting it removes every Diary page and the PIN."],
+  tvos_seq:["Sequencer patterns","Your drum patterns A to D, tempo and mixer settings.","Your writing and creations","Deleting it erases your drum patterns."],
+  tvos_tasks:["Tasks","Your task list.","Your writing and creations","Deleting it erases your task list."],
+  tvos_bm:["Browser bookmarks","Your bookmarks in the Browser app.","Your writing and creations","Deleting it removes your bookmarks (the two starter bookmarks may come back)."],
+  tvos_cal:["Calendar data","What the Calendar app has saved.","Your writing and creations","Deleting it removes anything you saved in the Calendar."],
+  tvos_bm_hist:["Browser history","Pages you opened in the Browser app.","Progress and saved places"],
+  tvos_music:["Music player","The Music app's saved state.","Progress and saved places"],
+  tvos_snake:["Snake best score","Your highest Snake score.","Progress and saved places"],
+  tvos_sc_prog:["School progress","How far you have got in School lessons.","Progress and saved places"],
+  tvos_sc_last:["School: last lesson","The last School lesson you opened.","Progress and saved places"],
+  tvos_cm_prog:["Comics progress","Where you stopped in each comic.","Progress and saved places"],
+  tvos_cm_last:["Comics: last opened","The last comic you opened.","Progress and saved places"],
+  tvos_bk_prog:["Books progress","Where you stopped in each book.","Progress and saved places"],
+  tvos_bk_last:["Books: last opened","The last book you opened.","Progress and saved places"],
+  tvos_ab:["Audiobook progress","How far you have listened in each audiobook.","Progress and saved places"],
+  tvos_ab_last:["Audiobooks: last played","The last audiobook you played.","Progress and saved places"],
+  tvos_bench_hist:["Benchmark history","Your earlier Benchmark results.","Progress and saved places"],
+  tvos_metro:["Metronome","Your metronome tempo and beats per bar.","App preferences"],
+  tvos_cm_set:["Comics settings","How the Comics reader is set up.","App preferences"],
+  tvos_bk_set:["Books reader settings","Font size, theme and layout in Books.","App preferences"],
+  tvos_ab_set:["Audiobooks settings","Audiobook player choices.","App preferences"],
+  tvos_rec_set:["Recorder settings","Format, channels and other Recorder choices.","App preferences"],
+  tvos_rec_dest:["Where recordings save","Downloads, a folder, or inside the OS.","App preferences"],
+  tvos_cam_set:["Camera settings","Resolution, format and other Camera choices.","App preferences"],
+  tvos_paint_to:["Where Paint saves","Downloads or inside the OS.","App preferences"],
+  tvos_fview:["Files view","Grid or list in the Files app.","App preferences"],
+  tvos_rfs:["Reader text size","Text size in the Reader app.","App preferences"],
+  tvos_mm_prefix:["Manifest Maker setting","A choice saved by the Manifest Maker.","App preferences"],
+  tvos_bm_engine:["Browser search engine","Which search engine the Browser uses.","App preferences"],
+  tvos_bm_compact:["Browser compact mode","Whether the Browser hides its extra bars.","App preferences"],
+  tvos_bench_tab:["Benchmark tab","Which Benchmark tab you last looked at.","App preferences"],
+  tvos_standing:["Old game standing","A value from an older version. It is no longer shown anywhere.","Housekeeping"],
+  tvos_marker:["Internal marker","A marker the OS uses to check that storage works.","Housekeeping"],
+  tvos_backup_last:["Time of your last backup","Used for the backup reminder. It is not included in backups.","Housekeeping"],
+  terminal_velocity_v3:["Game save","Your Terminal Velocity game progress.","Game","Deleting it erases your game progress for good. Make a backup first if you might want it."],
+  terminal_velocity_prefs:["Game preferences","Sound and display choices inside the game.","Game"]
+ },
+ info(k){const e=CL.known[k];if(e)return{name:e[0],desc:e[1],cat:e[2],warn:e[3]||""};
+  if(k.startsWith("tvos_rpos_"))return{name:"Reading position",desc:"Where you stopped in "+decodeURIComponent(k.slice(10)).split("/").pop()+".",cat:"Progress and saved places",warn:""};
+  if(/^tvos_bm_seed/.test(k))return{name:"Starter bookmarks marker",desc:"Remembers that the starter bookmarks were already added. Deleting it may bring them back.",cat:"Housekeeping",warn:""};
+  if(k.startsWith("tvos_bench_"))return{name:"Benchmark data",desc:"Saved by the Benchmark app.",cat:"Progress and saved places",warn:""};
+  if(k.startsWith("tvos_"))return{name:"Other OS data",desc:"Saved by Terminal Velocity OS. This build does not have a friendlier label for it.",cat:"Other OS data",warn:""};
+  if(k.startsWith("terminal_velocity"))return{name:"Game data",desc:"Saved by the Terminal Velocity game.",cat:"Game",warn:"This may be part of your game save."};
+  return{name:"Saved by something else",desc:"Another page on this website (or a browser extension) saved this. Terminal Velocity OS does not use it and Backup does not include it.",cat:"Not part of this OS",warn:""}},
+ inBackup:k=>(k.startsWith("tvos_")&&k!=="tvos_backup_last")||k.startsWith("terminal_velocity"),
+ sz(v){try{if(v==null)return 0;if(typeof v==="string")return v.length*2;if(v instanceof Blob)return v.size;if(v.byteLength!=null)return v.byteLength;if(typeof FileSystemHandle!=="undefined"&&v instanceof FileSystemHandle)return 0;return JSON.stringify(v).length*2}catch(e){return 0}},
+ metaInfo:{np_session:["Notepad drafts","Unsaved Notepad tabs, kept so they survive a restart."],rec_dir:["Recorder save folder","Permission to the folder you chose for recordings. Deleting it means you will be asked to choose again."],manifest:["Saved archive manifest","The archive manifest you loaded in Settings."]},
+ async meta(){return new Promise(res=>{if(!DB.db)return res([]);const o=[];const r=DB.db.transaction("meta").objectStore("meta").openCursor();r.onsuccess=()=>{const c=r.result;if(c){o.push({k:String(c.key),v:c.value});c.continue()}else res(o)};r.onerror=()=>res(o)})},
+ css(){if(document.getElementById("clcss"))return;const s=document.createElement("style");s.id="clcss";s.textContent=`
+.cl{position:absolute;inset:0;display:flex;flex-direction:column}
+.cl .body{flex:1;min-height:0;overflow:auto;padding:10px;display:flex;flex-direction:column;gap:8px}
+.cl .tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:8px}
+.cl .tile{border:1px solid var(--bd);border-radius:8px;padding:8px 10px;display:flex;flex-direction:column;gap:3px;background:var(--pn2)}
+.cl .tile b{font-size:15px;color:var(--ac)}.cl .small{font-size:12px;opacity:.75;line-height:1.4}
+.cl .grp{display:flex;align-items:center;gap:8px;margin-top:6px;padding:4px 2px;border-bottom:1px solid var(--bd);font-weight:700;color:var(--ac)}
+.cl .it{display:flex;gap:8px;align-items:flex-start;padding:6px 4px;border-bottom:1px dashed var(--bd)}
+.cl .it:hover{background:var(--hv)}
+.cl .it .tx{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}
+.cl .it .nm{font-weight:700;overflow-wrap:anywhere}.cl .it code{font-size:11px;opacity:.6;overflow-wrap:anywhere}
+.cl .badge{font-size:11px;border:1px solid var(--bd);border-radius:10px;padding:0 7px;white-space:nowrap}.cl .badge.y{color:var(--ac);border-color:var(--ac)}.cl .badge.n{color:var(--wn);border-color:var(--wn)}
+.cl .sz{font-size:12px;white-space:nowrap;min-width:60px;text-align:right;opacity:.85}
+.cl .act{display:flex;gap:6px;align-items:center;flex-wrap:wrap;padding:6px 10px;border-top:1px solid var(--bd);flex:none}
+.cl pre{white-space:pre-wrap;overflow-wrap:anywhere;max-height:50vh;overflow:auto;margin:0;font-size:12px;border:1px solid var(--bd);border-radius:6px;padding:8px;background:var(--bg)}
+`;document.head.append(s)}
+};
+defApp("cleaner",{name:"Cleaner",icon:"broom",cat:"System",w:820,h:640,single:true,desc:"see everything this OS has saved in your browser, and clear what you no longer want",kw:"clean clear delete storage localstorage saved data privacy reset cache indexeddb space backup export what is saved",
+ init(win,b){
+  CL.css();
+  let tab=LS.get("tvos_cleaner_tab","Overview"),D=null,sel=new Set(),bin=[],changed=false,busy=false;
+  const tabs=["Overview","Settings and data","Your files","Other storage"];if(!tabs.includes(tab))tab="Overview";
+  const root=h("div",{class:"cl"}),tabsEl=h("div",{class:"tabs"}),body=h("div",{class:"body"}),act=h("div",{class:"act"});
+  const ago=t=>t?fmtDate(t):"never";
+  /* ---------- scan ---------- */
+  async function scan(){const d={ls:[],files:[],meta:[],dbs:[],caches:[],cookies:[],est:null,pers:null};
+   for(let i=0;i<localStorage.length;i++){const k=localStorage.key(i);let v="";try{v=localStorage.getItem(k)||""}catch(e){}d.ls.push(Object.assign({k,v,size:(k.length+v.length)*2,bk:CL.inBackup(k)},CL.info(k)))}
+   d.ls.sort((a,c)=>CL.cats.indexOf(a.cat)-CL.cats.indexOf(c.cat)||c.size-a.size);
+   V.walk(V.user,n=>{if(n!==V.user&&!n.dir)d.files.push(n)});d.files.sort((a,c)=>(c.size||0)-(a.size||0));
+   for(const m of await CL.meta())d.meta.push({k:m.k,v:m.v,size:CL.sz(m.v),info:CL.metaInfo[m.k]});
+   try{if(indexedDB.databases)d.dbs=(await indexedDB.databases()).filter(x=>x.name&&x.name!=="tvos")}catch(e){}
+   try{if(window.caches)d.caches=await caches.keys()}catch(e){}
+   d.cookies=document.cookie?document.cookie.split(";").map(x=>x.trim().split("=")[0]).filter(Boolean):[];
+   try{if(navigator.storage&&navigator.storage.estimate)d.est=await navigator.storage.estimate()}catch(e){}try{if(navigator.storage&&navigator.storage.persisted)d.pers=await navigator.storage.persisted()}catch(e){}
+   D=d}
+  const lsSum=()=>D.ls.reduce((a,x)=>a+x.size,0),inB=()=>D.ls.filter(x=>x.bk),fsSum=()=>D.files.reduce((a,n)=>a+(n.size||0),0);
+  /* ---------- helpers ---------- */
+  const badge=y=>h("span",{class:"badge "+(y?"y":"n"),title:y?"A Backup ZIP includes this":"A Backup ZIP does not include this"},y?"in Backup":"not in Backup");
+  const chk=id=>{const c=h("input",{type:"checkbox",onchange:e=>{e.target.checked?sel.add(id):sel.delete(id);paintAct()}});c.checked=sel.has(id);return c};
+  const tile=(t,big,sub)=>h("div",{class:"tile"},h("div",{class:"small"},t),h("b",{},big),h("div",{class:"small"},sub));
+  async function viewDlg(title,key,v){let txt;if(typeof v==="string"){try{txt=JSON.stringify(JSON.parse(v),null,1)}catch(e){txt=v}}else if(v instanceof Blob||(v&&v.byteLength!=null))txt="(binary data, "+fmtBytes(CL.sz(v))+")";else{try{txt=JSON.stringify(v,null,1)}catch(e){txt=String(v)}}
+   if(txt==null)txt="";const cut=txt.length>30000;dlg((bx,d)=>{bx.append(h("h3",{},title),h("div",{class:"dim",style:"font-size:12px;overflow-wrap:anywhere"},key),h("pre",{},cut?txt.slice(0,30000)+"\n\n... (showing the first 30,000 characters)":txt),h("div",{class:"acts"},h("button",{class:"btn",onclick:()=>{try{navigator.clipboard.writeText(txt);toast("Copied")}catch(e){toast("Copy not allowed here",1)}}},"Copy"),h("button",{class:"btn pri",onclick:()=>d(1)},"Close")))})}
+  /* ---------- tabs ---------- */
+  function drawTabs(){tabsEl.innerHTML="";for(const t of tabs)tabsEl.append(h("div",{class:"tab"+(t===tab?" on":""),onclick:()=>{tab=t;LS.set("tvos_cleaner_tab",t);sel.clear();draw()}},t))}
+  function overview(){const lsB=inB(),ls_other=D.ls.filter(x=>!x.bk),game=D.ls.filter(x=>x.cat==="Game");
+   const est=D.est?fmtBytes(D.est.usage||0)+" of "+fmtBytes(D.est.quota||0):"not available";
+   body.append(
+    h("div",{class:"small"},"Everything below is what this website has actually saved in your browser. Nothing is hidden: if it is saved, it is listed. Items marked \"in Backup\" are exactly what a Backup ZIP will contain, so you can clean first and then export with confidence."),
+    h("div",{class:"tiles"},
+     tile("Settings and app data",D.ls.length+" items · "+fmtBytes(lsSum()),lsB.length+" are in Backup"+(ls_other.length?", "+ls_other.length+" are not":"")),
+     tile("Your files (/home/user)",D.files.length+" files · "+fmtBytes(fsSum()),"All in Backup"),
+     tile("Other storage",(D.meta.length+D.dbs.length+D.caches.length+D.cookies.length)+" items","Drafts, folder permissions, other databases, caches, cookies. Not in Backup."),
+     tile("Browser's own estimate",est,"Everything this site stores, including the items above.")),
+    h("div",{class:"tile"},h("div",{class:"small"},"Keep my data safe"),h("div",{},D.pers===true?"The browser has agreed to keep this data unless you clear it yourself.":D.pers===false?"The browser may remove this data on its own if the device runs low on space.":"Not reported by this browser."),
+     D.pers===false?h("button",{class:"btn sm",style:"align-self:flex-start",onclick:async()=>{try{const ok=await navigator.storage.persist();toast(ok?"Done. The browser will keep your data.":"The browser said no. Installing the app or bookmarking the site often helps.");await scan();draw()}catch(e){toast("Not available here",1)}}},"Ask the browser to keep it"):null),
+    h("div",{class:"tile"},h("div",{class:"small"},"Last backup"),h("div",{},ago(LS.get("tvos_backup_last",0))),h("button",{class:"btn sm",style:"align-self:flex-start",onclick:()=>OS.open("backup")},"Open Backup")),
+    h("div",{class:"small"},"How to use this: open Settings and data to see every saved item, look inside any of them with View, tick what you do not want and press Delete. Deleted items can be put back with Undo until you close Cleaner (files you delete cannot be undone). Game save: "+(game.length?"found ("+game.map(x=>x.k).join(", ")+").":"none found.")))}
+  function lsTab(){let last=null;
+   for(const x of D.ls){if(x.cat!==last){last=x.cat;const grp=D.ls.filter(y=>y.cat===x.cat),all=h("input",{type:"checkbox",title:"Tick or untick this whole group",onchange:e=>{for(const y of grp)e.target.checked?sel.add("ls:"+y.k):sel.delete("ls:"+y.k);draw()}});all.checked=grp.every(y=>sel.has("ls:"+y.k));
+     body.append(h("div",{class:"grp"},all,x.cat+" ("+grp.length+")",h("span",{style:"flex:1"}),h("span",{class:"sz"},fmtBytes(grp.reduce((a,y)=>a+y.size,0)))))}
+    body.append(h("div",{class:"it"},chk("ls:"+x.k),h("div",{class:"tx"},h("div",{class:"nm"},x.name),h("div",{class:"small"},x.desc),h("code",{},x.k)),badge(x.bk),h("span",{class:"sz"},fmtBytes(x.size)),h("button",{class:"btn sm",onclick:()=>viewDlg(x.name,x.k,x.v)},"View")))}
+   if(!D.ls.length)body.append(h("div",{class:"small"},"Nothing is saved in this category."))}
+  function filesTab(){body.append(h("div",{class:"small"},"Files in /home/user. These are all included in a Backup. Biggest first. Deleted files cannot be undone."));
+   for(const n of D.files){const p=V.path(n);body.append(h("div",{class:"it"},chk("file:"+p),h("div",{class:"tx"},h("div",{class:"nm"},n.name),h("code",{},p+" · "+ago(n.mt))),badge(true),h("span",{class:"sz"},fmtBytes(n.size||0)),h("button",{class:"btn sm",onclick:()=>OS.open("files",V.path(n.parent))},"Show")))}
+   if(!D.files.length)body.append(h("div",{class:"small"},"You have no files saved in /home/user."))}
+  function otherTab(){body.append(h("div",{class:"small"},"Other things this site keeps in the browser. None of this is in a Backup."));
+   const sec=t=>body.append(h("div",{class:"grp"},t));
+   sec("App storage inside the OS database ("+D.meta.length+")");
+   for(const m of D.meta){const i=m.info||[m.k,"Saved by the OS."];body.append(h("div",{class:"it"},chk("idb:"+m.k),h("div",{class:"tx"},h("div",{class:"nm"},i[0]),h("div",{class:"small"},i[1]),h("code",{},m.k)),badge(false),h("span",{class:"sz"},fmtBytes(m.size)),h("button",{class:"btn sm",onclick:()=>viewDlg(i[0],m.k,m.v)},"View")))}
+   if(!D.meta.length)body.append(h("div",{class:"small"},"Nothing here."));
+   sec("Other databases on this site ("+D.dbs.length+")");
+   for(const x of D.dbs)body.append(h("div",{class:"it"},chk("db:"+x.name),h("div",{class:"tx"},h("div",{class:"nm"},x.name),h("div",{class:"small"},"A browser database that Terminal Velocity OS did not create or does not use. It may belong to another page on this website.")),badge(false)));
+   if(!D.dbs.length)body.append(h("div",{class:"small"},"None."));
+   sec("Cache storage ("+D.caches.length+")");
+   for(const x of D.caches)body.append(h("div",{class:"it"},chk("cache:"+x),h("div",{class:"tx"},h("div",{class:"nm"},x),h("div",{class:"small"},"Downloaded copies of files kept by the browser.")),badge(false)));
+   if(!D.caches.length)body.append(h("div",{class:"small"},"None."));
+   sec("Cookies ("+D.cookies.length+")");
+   for(const x of D.cookies)body.append(h("div",{class:"it"},chk("ck:"+x),h("div",{class:"tx"},h("div",{class:"nm"},x),h("div",{class:"small"},"A small value the browser sends to this website.")),badge(false)));
+   if(!D.cookies.length)body.append(h("div",{class:"small"},"None. (Some cookies are hidden from pages by the website itself and cannot be listed here.)"))}
+  /* ---------- actions ---------- */
+  function paintAct(){act.innerHTML="";const n=sel.size;
+   if(tab!=="Overview"){act.append(h("button",{class:"btn",disabled:!n,onclick:()=>clean()},ic("trash"),"Delete selected ("+n+")"),h("button",{class:"btn sm",onclick:()=>{allIds().forEach(i=>sel.add(i));draw()}},"Select all"),h("button",{class:"btn sm",disabled:!n,onclick:()=>{sel.clear();draw()}},"Clear ticks"))}
+   act.append(h("span",{style:"flex:1"}));
+   if(bin.length)act.append(h("button",{class:"btn sm",title:"Put back the items you last deleted",onclick:undo},"Undo last clean ("+bin.length+")"));
+   act.append(h("button",{class:"btn sm",onclick:()=>OS.open("backup")},"Backup first"));
+   if(changed)act.append(h("button",{class:"btn sm pri",title:"Some apps only notice changes after a reboot",onclick:()=>OS.reload()},"Reboot to apply"))}
+  function allIds(){if(tab==="Settings and data")return D.ls.map(x=>"ls:"+x.k);if(tab==="Your files")return D.files.map(n=>"file:"+V.path(n));return[...D.meta.map(m=>"idb:"+m.k),...D.dbs.map(x=>"db:"+x.name),...D.caches.map(x=>"cache:"+x),...D.cookies.map(x=>"ck:"+x)]}
+  async function clean(){if(busy||!sel.size)return;const ids=[...sel],names=[],warns=[];let fileCount=0;
+   for(const id of ids){const t=id.slice(0,id.indexOf(":")),k=id.slice(id.indexOf(":")+1);
+    if(t==="ls"){const x=D.ls.find(y=>y.k===k);if(x){names.push(x.name+(x.name.startsWith("Saved by")?" ("+k+")":""));if(x.warn)warns.push(x.name+": "+x.warn)}}else if(t==="file"){fileCount++;names.push(k)}else names.push(k)}
+   const msg="Delete "+ids.length+" item"+(ids.length>1?"s":"")+"?\n\n"+names.slice(0,12).join("\n")+(names.length>12?"\n...and "+(names.length-12)+" more":"")+(warns.length?"\n\nPlease note:\n"+warns.join("\n"):"")+(fileCount?"\n\n"+fileCount+" file"+(fileCount>1?"s":"")+" will be deleted for good. That cannot be undone.":"")+"\n\nIf you might want any of this later, make a Backup first.";
+   if(!await dlgConfirm(msg,"Delete saved data","Delete"))return;
+   busy=true;const removed=[];let nf=0,fail=0;
+   for(const id of ids){const t=id.slice(0,id.indexOf(":")),k=id.slice(id.indexOf(":")+1);
+    try{
+     if(t==="ls"){removed.push({t,k,v:localStorage.getItem(k)});localStorage.removeItem(k)}
+     else if(t==="idb"){const m=D.meta.find(x=>x.k===k);removed.push({t,k,v:m&&m.v});await DB.del(k)}
+     else if(t==="file"){const n=V.get(k);if(n){await V.rm(n,true);nf++}}
+     else if(t==="db"){await new Promise(res=>{const r=indexedDB.deleteDatabase(k);r.onsuccess=r.onerror=r.onblocked=()=>res()})}
+     else if(t==="cache"){await caches.delete(k)}
+     else if(t==="ck"){document.cookie=k+"=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/"}
+    }catch(e){fail++}}
+   busy=false;if(removed.length)bin=removed;changed=true;sel.clear();await scan();draw();
+   toast("Deleted "+(ids.length-fail)+" item"+(ids.length-fail===1?"":"s")+(fail?" ("+fail+" could not be deleted)":"")+(removed.length?". Undo is available until you close Cleaner.":""),fail?1:0)}
+  async function undo(){if(!bin.length)return;let n=0;for(const r of bin){try{if(r.t==="ls"){if(r.v!=null){localStorage.setItem(r.k,r.v);n++}}else if(r.t==="idb"){await DB.set(r.k,r.v);n++}}catch(e){}}bin=[];await scan();draw();toast("Put back "+n+" item"+(n===1?"":"s"))}
+  function draw(){const keep=body.scrollTop;drawTabs();body.innerHTML="";if(!D){body.append(h("div",{class:"small"},"Looking..."));return}
+   if(tab==="Overview")overview();else if(tab==="Settings and data")lsTab();else if(tab==="Your files")filesTab();else otherTab();paintAct();body.scrollTop=keep}
+  root.append(tabsEl,body,act);b.append(root);draw();scan().then(draw);
+  const onFs=()=>{if(win.dead||win.min)return};OS.on("fs",onFs);win.on.close=()=>OS.off("fs",onFs);
  }});
 
 /* ===================== BOOT ===================== */
