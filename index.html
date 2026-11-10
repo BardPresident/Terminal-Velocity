@@ -1256,7 +1256,7 @@ const fmtDate=t=>{const d=new Date(t),hm=" "+pad(d.getHours())+":"+pad(d.getMinu
 const sleep=ms=>new Promise(r=>setTimeout(r,ms));
 const LS={get(k,d){try{const v=localStorage.getItem(k);return v==null?d:JSON.parse(v)}catch(e){return d}},set(k,v){try{localStorage.setItem(k,JSON.stringify(v));return true}catch(e){return false}}};
 const fmtUp=s=>{s=Math.max(0,Math.round(s));const d=Math.floor(s/86400),hr=Math.floor(s%86400/3600),m=Math.floor(s%3600/60),sc=s%60;if(d)return d+" d "+hr+" h";if(hr)return hr+" h "+m+" min";if(m)return m+" min "+sc+" s";return sc+" s"};
-const OS={apps:{},wins:[],z:10,bus:{},boot:performance.now(),ver:"1.0 build 1110-1320"};
+const OS={apps:{},wins:[],z:10,bus:{},boot:performance.now(),ver:"1.0 build 1110-2334"};
 OS.on=(ev,f)=>{(OS.bus[ev]=OS.bus[ev]||[]).push(f);return f};
 OS.off=(ev,f)=>{OS.bus[ev]=(OS.bus[ev]||[]).filter(x=>x!==f)};
 /* reboot that always fetches the newest copy of this page (like Ctrl+Shift+R), then reloads */
@@ -2061,18 +2061,19 @@ defApp("music",{needs:()=>hasDir("/archive/Atheden"),name:"Music",icon:"disc",ca
    tl.innerHTML="";a.files.forEach((f,j)=>{const t=trackName(f,a);tl.append(h("div",{class:"si"+(j===ti&&keep?" sel":""),"data-j":j,style:"align-items:flex-start",title:f.name,onclick:()=>playTrack(j)},h("span",{class:"dim",style:"min-width:26px;text-align:right"},t.no||j+1),h("span",{style:"flex:1;overflow-wrap:anywhere;line-height:1.3"},t.title,h("div",{class:"dim",style:"font-size:11px"},f.name)),h("small",{},fmtBytes(f.size))))});
    if(!keep){ti=-1;mkOrder()}};
   const mkOrder=()=>{const n=albums[ai]?albums[ai].files.length:0;order=[...Array(n).keys()];if(shuf)for(let i=n-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[order[i],order[j]]=[order[j],order[i]]}};
-  async function playTrack(j,t0){const a=albums[ai];if(!a||j<0||j>=a.files.length)return;ti=j;const f=a.files[j],nm=trackName(f,a);$$(".si",tl).forEach(x=>x.classList.toggle("sel",+x.dataset.j===j));const row=$(".si.sel",tl);row&&row.scrollIntoView({block:"nearest"});
+  async function playTrack(j,t0,hold){const a=albums[ai];if(!a||j<0||j>=a.files.length)return;ti=j;const f=a.files[j],nm=trackName(f,a);$$(".si",tl).forEach(x=>x.classList.toggle("sel",+x.dataset.j===j));const row=$(".si.sel",tl);row&&row.scrollIntoView({block:"nearest"});
    npT.textContent=nm.title+"  ·  "+a.name;npF.textContent=f.name;OS.title(win,"Music - "+nm.title);let url=f.url;if(!url)try{url=await V.read(f,"url")}catch(e){return toast(e.message,1)}
-   const go=cors=>{au.removeAttribute("crossorigin");if(cors&&!/^blob:/.test(url))au.crossOrigin="anonymous";au.src=url;if(t0)au.currentTime=t0;au.play().catch(()=>{})};
+   const go=cors=>{au.removeAttribute("crossorigin");if(cors&&!/^blob:/.test(url))au.crossOrigin="anonymous";au.src=url;if(t0)au.addEventListener("loadedmetadata",()=>{try{au.currentTime=t0}catch(e){}},{once:true});if(!hold)au.play().catch(()=>{})};
    au.onerror=()=>{if(au.crossOrigin){noViz=true;go(false)}else if(f.alt&&url!==f.alt){url=f.alt;go(false)}else toast("Cannot play "+f.name,1)};go(!noViz);
    if("mediaSession"in navigator){try{navigator.mediaSession.metadata=new MediaMetadata({title:nm.title,artist:"Atheden",album:a.name});navigator.mediaSession.setActionHandler("nexttrack",()=>step(1));navigator.mediaSession.setActionHandler("previoustrack",()=>step(-1))}catch(e){}}
-   LS.set("tvos_music",{ai,ti:j})}
+   LS.set("tvos_music",{ai,ti:j,t:t0||0,vol:au.volume})}
+  let lastPos=0;const savePos=force=>{if(ti<0||!au.duration||!isFinite(au.duration))return;const n=Date.now();if(!force&&n-lastPos<4000)return;lastPos=n;LS.set("tvos_music",{ai,ti,t:au.currentTime>au.duration-5?0:Math.floor(au.currentTime),vol:au.volume})}
   const step=d=>{const a=albums[ai];if(!a)return;let p=order.indexOf(ti)+d;if(p>=order.length){if(!rep)return;p=0}if(p<0)p=0;playTrack(order[p])};
   au.addEventListener("ended",()=>{if(rep===2)playTrack(ti);else step(1)});
-  au.addEventListener("timeupdate",()=>{if(!seek.dragging)seek.value=au.duration?au.currentTime/au.duration*1000:0;tm.textContent=fmtTime(au.currentTime)+" / "+fmtTime(au.duration)});
-  seek.addEventListener("input",()=>{seek.dragging=1;au.currentTime=seek.value/1000*(au.duration||0)});seek.addEventListener("change",()=>seek.dragging=0);vol.addEventListener("input",()=>au.volume=vol.value);au.volume=.85;
+  au.addEventListener("timeupdate",()=>{if(!seek.dragging)seek.value=au.duration?au.currentTime/au.duration*1000:0;tm.textContent=fmtTime(au.currentTime)+" / "+fmtTime(au.duration);savePos()});
+  seek.addEventListener("input",()=>{seek.dragging=1;au.currentTime=seek.value/1000*(au.duration||0)});seek.addEventListener("change",()=>seek.dragging=0);vol.addEventListener("input",()=>{au.volume=vol.value;savePos(1)});au.volume=.85;
   const pp=h("button",{class:"btn pri",onclick:()=>{if(ti<0&&albums[ai])playTrack(order[0]);else au.paused?au.play():au.pause()}},ic("play"));
-  au.addEventListener("play",()=>{wire();pp.replaceChildren(ic("pause"))});au.addEventListener("pause",()=>pp.replaceChildren(ic("play")));
+  au.addEventListener("play",()=>{wire();pp.replaceChildren(ic("pause"))});au.addEventListener("pause",()=>{savePos(1);pp.replaceChildren(ic("play"))});
   function wire(){if(wired||noViz||!au.crossOrigin)return;try{actx=new (window.AudioContext||window.webkitAudioContext)();an=actx.createAnalyser();an.fftSize=128;actx.createMediaElementSource(au).connect(an);an.connect(actx.destination);wired=true}catch(e){noViz=true}if(actx&&actx.state==="suspended")actx.resume()}
   const loop=()=>{raf=requestAnimationFrame(loop);if(win.dead||win.min||OS.lpSkip())return;const c=viz.getContext("2d"),W=viz.width=viz.clientWidth,H=viz.height=viz.clientHeight;c.clearRect(0,0,W,H);const n=56,bw=W/n,t=performance.now()/1000;let d=null;if(an&&wired&&!noViz){d=new Uint8Array(an.frequencyBinCount);an.getByteFrequencyData(d)}const real=d&&d.some(x=>x);
    for(let i=0;i<n;i++){let m=real?(d[Math.floor(i*d.length/n*.8)]||0)/255:au.paused?.04:(.3+.25*Math.sin(t*3+i*.45)+.2*Math.sin(t*5.1+i*1.2))*(.55+.45*Math.sin(t*50/60*6.283));m=Math.max(.03,Math.min(1,m));c.fillStyle=i%2?css("ac2"):css("ac");c.globalAlpha=.85;c.fillRect(i*bw+1,H-m*H,bw-2,m*H)}c.globalAlpha=1};
@@ -2082,9 +2083,9 @@ defApp("music",{needs:()=>hasDir("/archive/Atheden"),name:"Music",icon:"disc",ca
   const bar=h("div",{style:"border-top:1px solid var(--bd);background:var(--pn2);padding:8px 12px;display:flex;flex-direction:column;gap:6px;flex:none"},h("div",{},npT,npF),h("div",{class:"mm-ctl",style:"display:flex;gap:8px;align-items:center"},bt("prev","Previous",()=>step(-1)),pp,bt("next","Next",()=>step(1)),seek,tm,ic("music"),vol));
   b.append(h("div",{class:"mm-row",style:"display:flex;flex:1;min-height:0"},side,h("div",{style:"flex:1;min-width:0;display:flex;flex-direction:column"},head,tl)),bar);
   au.style.display="none";b.append(au);b.tabIndex=0;b.addEventListener("keydown",e=>{if(e.target.tagName==="INPUT")return;if(e.key===" "){e.preventDefault();pp.click()}else if(e.key==="ArrowRight")step(1);else if(e.key==="ArrowLeft")step(-1)});
-  win.on.close=()=>{cancelAnimationFrame(raf);au.pause();au.removeAttribute("src");actx&&actx.close&&actx.close()};
+  win.on.close=()=>{savePos(1);cancelAnimationFrame(raf);au.pause();au.removeAttribute("src");actx&&actx.close&&actx.close()};
   scan(root);if(!albums.length){tl.append(h("div",{class:"pad dim"},root?"No albums found in /archive/Atheden.":"The Atheden folder is not in the mounted archive (/archive/Atheden). Load a manifest in Settings > Archive, or choose another folder of albums."));drawSide();cover.style.display="none"}
-  else{drawSide();const sv=LS.get("tvos_music",null);openAlbum(sv&&albums[sv.ai]?sv.ai:0);mkOrder()}
+  else{drawSide();const sv=LS.get("tvos_music",null),ok=sv&&albums[sv.ai];openAlbum(ok?sv.ai:0);mkOrder();if(ok&&typeof sv.vol==="number"){au.volume=sv.vol;vol.value=sv.vol}if(ok&&sv.ti>=0&&sv.ti<albums[sv.ai].files.length){playTrack(sv.ti,sv.t>3?sv.t:0,true)}}
   loop()}});
 
 /* --- Books: e-reader for the text files in /archive/Books --- */
@@ -2525,14 +2526,14 @@ defApp("school",{needs:scHas,name:"School",icon:"school",cat:"Media",w:980,h:640
   const drawList=()=>{list.innerHTML="";eps.forEach((f,j)=>{const e=scEp(f,metaCur),k=V.kind(f);list.append(h("div",{class:"si"+(j===ei?" sel":""),"data-j":j,title:f.name,style:"align-items:flex-start",onclick:()=>play(j)},h("span",{class:"dim",style:"min-width:26px;text-align:right"},e.no||j+1),h("span",{style:"flex:1;overflow-wrap:anywhere;line-height:1.3"},e.title,k!=="video"?h("span",{class:"dim"},"  ["+(k==="audio"?"audio":"image")+"]"):""),h("small",{class:"ac",id:"scb"+j},badge(f)),h("small",{},fmtBytes(f.size))))})};
   function openSeries(i,keep){si=i;const s=series[i];metaCur=s.meta;eps=s.n;drawSide();ttl.textContent=s.meta.name;const vids=eps.filter(f=>V.kind(f)==="video").length;sub.textContent=(s.meta.year?s.meta.year+" · ":"")+"Series "+(s.meta.no||i+1)+" · "+eps.length+" items ("+vids+" videos) · "+fmtBytes(eps.reduce((a,f)=>a+(f.size||0),0));if(!keep)ei=-1;drawList()}
   const playable=f=>{const k=V.kind(f);return k==="video"||k==="audio"};
-  async function play(j,auto){const f=eps[j];if(!f)return;ei=j;$$(".si",list).forEach(x=>x.classList.toggle("sel",+x.dataset.j===j));const row=$(".si.sel",list);if(row){const t=row.offsetTop,bt=t+row.offsetHeight;if(t<list.scrollTop)list.scrollTop=t;else if(bt>list.scrollTop+list.clientHeight)list.scrollTop=bt-list.clientHeight}
+  async function play(j,auto,hold){const f=eps[j];if(!f)return;ei=j;$$(".si",list).forEach(x=>x.classList.toggle("sel",+x.dataset.j===j));const row=$(".si.sel",list);if(row){const t=row.offsetTop,bt=t+row.offsetHeight;if(t<list.scrollTop)list.scrollTop=t;else if(bt>list.scrollTop+list.clientHeight)list.scrollTop=bt-list.clientHeight}
    const e=scEp(f,metaCur),k=V.kind(f);npT.textContent=e.title+"  ·  "+metaCur.name;npF.textContent=f.name;OS.title(win,"School - "+e.title);LS.set("tvos_sc_last",{s:series[si].n0.name,f:f.name});
    let url=f.url;if(!url)try{url=await V.read(f,"url")}catch(er){return toast(er.message,1)}
    if(k==="image"){vd.pause();vd.removeAttribute("src");vd.style.visibility="hidden";aud.style.display="none";img.style.display="block";img.src=url;img.onerror=()=>{if(f.alt&&img.src!==f.alt)img.src=f.alt};return}
    img.style.display="none";vd.style.visibility="visible";
    if(k==="audio"){aud.innerHTML="";aud.append(h("div",{style:"width:64px;height:64px"},ic("music")),h("div",{style:"font-size:18px;font-weight:700"},e.title),h("div",{class:"dim"},metaCur.name));aud.style.display="flex"}else aud.style.display="none";
    const p=prog[vkey(f)],t0=p&&p[1]&&p[0]>5&&p[0]<p[1]-10?p[0]:0;let tried=0;
-   const go=u=>{vd.src=u;vd.playbackRate=spd;vd.onloadedmetadata=()=>{if(t0)vd.currentTime=t0};vd.play().catch(()=>{})};
+   const go=u=>{vd.src=u;vd.playbackRate=spd;vd.onloadedmetadata=()=>{if(t0)vd.currentTime=t0};if(!hold)vd.play().catch(()=>{})};
    vd.onerror=()=>{if(!tried&&f.alt&&url!==f.alt){tried=1;url=f.alt;go(url)}else toast("Cannot play "+f.name,1)};go(url);
    if("mediaSession"in navigator){try{navigator.mediaSession.metadata=new MediaMetadata({title:e.title,artist:"School",album:metaCur.name});navigator.mediaSession.setActionHandler("nexttrack",()=>step(1));navigator.mediaSession.setActionHandler("previoustrack",()=>step(-1))}catch(er){}}}
   const step=d=>{let j=ei+d;while(j>=0&&j<eps.length&&!playable(eps[j]))j+=d;if(j>=0&&j<eps.length)play(j,1)};
@@ -2560,7 +2561,7 @@ defApp("school",{needs:scHas,name:"School",icon:"school",cat:"Media",w:980,h:640
   win.on.close=()=>{save(1);try{win.on.ro&&win.on.ro.disconnect()}catch(e){}OS.off("manifest",mf);vd.pause();vd.removeAttribute("src");if(document.fullscreenElement)document.exitFullscreen().catch(()=>{})};
   if(!series.length){list.append(h("div",{class:"pad dim"},"No numbered series folders (01-..., 02-...) were found in the mounted archive. Load a manifest in Settings > Archive."));drawSide()}
   else{drawSide();const lv=LS.get("tvos_sc_last",null);let i=0;if(typeof arg==="string"){const q=series.findIndex(s=>V.path(s.n0)===arg);if(q>=0)i=q}else if(lv){const q=series.findIndex(s=>s.n0.name===lv.s);if(q>=0)i=q}openSeries(i);
-   if(lv&&series[i]&&series[i].n0.name===lv.s){const j=eps.findIndex(f=>f.name===lv.f);if(j>=0){const e=scEp(eps[j],metaCur);cont.style.display="";cont.textContent="Continue: "+e.title.slice(0,28);cont.onclick=()=>play(j)}}}
+   if(lv&&series[i]&&series[i].n0.name===lv.s){const j=eps.findIndex(f=>f.name===lv.f);if(j>=0){const e=scEp(eps[j],metaCur);cont.style.display="";cont.textContent="Continue: "+e.title.slice(0,28);cont.onclick=()=>{ei===j&&vd.src?vd.play().catch(()=>{}):play(j)};play(j,0,true)}}}
  }});
 
 /* ===================== RECORDING: audio (WAV) + camera/screen video, saved to your device ===================== */
