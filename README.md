@@ -2,17 +2,590 @@
 🖥️✨ Terminal Velocity OS: a whole desktop in one HTML file that boots into the retro CRT strategy RPG Terminal Velocity. Terminal, files, notepad with export, media player, 17 themes, bring your own manifest.json. No dependencies, no images, CC0. 🌐📜🛡️
 
 =====================================================================
-  🖥️  TERMINAL VELOCITY  ✨
-  A retro CRT terminal strategy RPG about flat-files, tears and the
-  indestructible CC0 floor.
+  TERMINAL VELOCITY OS
+  A complete desktop in one file. No server. No tracking. Yours.
 =====================================================================
 
-📟 WHAT IS IT?
+CONTENTS
 
-Terminal Velocity OS is a complete desktop that runs entirely in your
-browser, in ONE file (terminal-velocity-os.html) with no dependencies,
-no build step, no server and no tracking. It boots straight into its first
-app, the game Terminal Velocity: a turn-based terminal strategy RPG.
+   1. What it is
+   2. Quick start and hosting
+   3. The desktop
+   4. The apps (36)
+   5. Your data: saving, Backup, Cleaner, reboot
+   6. Your own archive (manifest.json)
+   7. Links, the Browser and the OS
+   8. Speed, memory and Low power mode
+   9. Honest limits
+  10. The Mythocratic Calendar
+  11. The game: Terminal Velocity
+  12. Credits and licence
+
+
+=====================================================================
+1. WHAT IT IS
+=====================================================================
+
+Terminal Velocity OS is a complete desktop that runs entirely inside a
+web browser, from ONE file (terminal-velocity-os.html, about 620 KB).
+No images, no libraries, no install, no build step, no server, no
+accounts and no tracking. Everything you make stays in your browser until
+you choose to export it.
+
+It starts with a long, chatty boot log that says what it is doing (the
+checks are real, not decoration), then gives you a desktop with windows,
+a taskbar, a Start menu, a file system, a terminal and 36 apps. The first
+of those apps is the game Terminal Velocity, which lives inside the OS
+(section 11).
+
+It is built for a small, low-cost computer. A $75 Chromebook with 4 GB of
+RAM is the target, and the Benchmark app (section 8) shows you exactly
+how much of the machine the OS uses.
+
+
+=====================================================================
+2. QUICK START AND HOSTING
+=====================================================================
+
+  1. Download terminal-velocity-os.html.
+  2. Double-click it. It opens in any modern browser and works offline.
+  3. Press Ctrl+Space and type the name of anything you want to open.
+
+To host it, upload the file to any web host that serves static pages
+(your own server, GitHub Pages, an archive site). After uploading a new
+version, use Start > Reboot: it fetches the newest copy by itself
+(section 5). On a phone you can wrap it as an app, for example with
+Appilix, which is a plain web view around the page.
+
+Useful addresses (add them after the file name):
+  ?nogame                       boot without starting the game, and
+                                without restoring your windows
+  ?manifest=https://.../manifest.json
+                                mount someone's archive (section 6)
+
+Files delivered:
+  terminal-velocity-os.html     the OS, with the game inside it
+  README.txt                    this file
+  (generate-manifest.js is built into the OS: Manifest Maker has it.)
+
+
+=====================================================================
+3. THE DESKTOP
+=====================================================================
+
+BOOT
+  Boot takes about 7 seconds so you can read it. Settings > Boot has
+  Slow (about 14 s), Normal, Fast and Instant, and a switch for the
+  verbose log. Press any key during boot to skip the delays. A dedication
+  line, "Welcome Home Ivory!", shows on the boot screen.
+  On the very first boot the game starts minimised in the taskbar so the
+  desktop comes first. Settings > Boot changes that.
+
+WINDOWS
+  Drag title bars to move, drag edges to resize, drag to a screen edge to
+  snap. Windows cannot be lost off-screen: if one ever ends up out of
+  reach, it is pulled back automatically. On phones every window is
+  full-screen.
+
+THE TASKBAR AND START MENU
+  Each open window has a taskbar button. Click to focus or minimise,
+  right-click for a menu, and DRAG a button left or right to arrange the
+  taskbar. The order is remembered. The Start menu (the TV-OS button, or
+  the Windows/Meta key) lists every app, plus Save OS, Theme and Reboot.
+  The tray shows the date and clock in Mythocratic time (hover for both),
+  an eye button to cycle themes, and the archive status.
+
+DRAGGABLE TABS
+  In Notepad and Browser, drag any tab left or right to reorder it. This
+  works with a mouse; on touch screens the tab strip scrolls instead
+  (the taskbar works the same way). Tab rows inside apps like Clock,
+  Toolbox and Benchmark are fixed sections and do not move.
+
+KEYS
+  Ctrl+Space   Spotlight: apps, archive files and quick maths
+  Alt+T        Terminal        Alt+F  Files
+  Alt+N        Notepad         Alt+G  the game
+  Alt+W        close           Alt+M  minimise
+  Alt+Enter    maximise        Alt+Tab  next window
+
+THEMES AND LOOK  (Settings > Appearance)
+  17 "X environments": Phosphor Green, Amber Terminal, Cyan Relay,
+  Sovereign Gold, Agape Pink, Queen Ivory (light), Hearth Ember, Owrbit
+  Violet, Deep Freeze, CC0 Rug, Plushie Pastel (light), Zero Port, Blue
+  Screen, Combine Steel, Triage Red, Zookeeper Moss, Plain Paper (light).
+  Change a theme in Settings, with the tray eye, or in the terminal:
+  theme NAME.
+  Wallpapers are drawn on canvas, with no image files: stars, 50 BPM
+  rings, grid, rain, flow, plain, none.
+  Options: CRT scan lines (off by default, so pictures and video are
+  never tinted), vignette, window animations, text size, sound, Low power
+  mode, "Calendar & dates" (Mythocratic first or Gregorian first), and
+  "Show Music, Books, Comics, Audiobooks and Archive even when their files
+  are not mounted".
+
+SESSION RESTORE
+  The OS remembers which windows were open, where they were, their size,
+  maximised or minimised state, their order in the taskbar and which one
+  had focus. Reboot or refresh and they come back. To start fresh, close
+  every window and reboot. Settings > Boot > "Reopen my windows..." turns
+  this off. Apps also remember their own places: Notepad drafts, the last
+  song, book, comic, audiobook and episode, and your Browser tabs.
+
+
+=====================================================================
+4. THE APPS (36)
+=====================================================================
+
+Every app has a desktop icon, a Start menu entry and a Spotlight entry,
+and every icon is different.
+
+--- SYSTEM -----------------------------------------------------------
+
+Terminal
+  A real shell: ls -lahs, cd, cat, grep, find, tree, mkdir, cp, mv, rm,
+  head, tail, wc, sort, pipes |, redirects > >>, globs *, Tab complete,
+  history. Also open, edit, play, view, theme, wallpaper, neofetch,
+  reboot, saveos. Type "help".
+
+Files
+  The file manager. The whole archive is at /archive (read-only), your
+  files at /home/user, plus /tmp and /system. Grid or list view.
+
+Settings
+  Appearance, Boot, Archive (load a manifest from a file or URL),
+  Storage (how much you use, protect storage, erase home) and About.
+
+Task Manager
+  Open windows, frames per second, memory and storage, with Close.
+
+Benchmark
+  How much of the computer the OS really uses (section 8).
+
+Cleaner
+  See everything this OS has saved in your browser, and clear what you no
+  longer want (section 5).
+
+Welcome
+  A short tour, with the dedication.
+
+--- ACCESSORIES ------------------------------------------------------
+
+Notepad
+  Tabs, find and replace, Markdown preview and autosaved drafts. Real
+  export: Download, Save to computer (file picker), Export all as ZIP,
+  Tabs ZIP. Drag tabs to reorder them.
+
+Diary
+  A pretty paper diary. It opens as a closed rose-coloured book; tap the
+  heart clasp. One page per day, with ruled lines, a margin line, hole
+  punches and washi tape. Pick a mood, tap stickers to drop them into
+  your writing, flip days with the arrows, jump to any date, see the
+  month with a heart on every day you wrote, and search every page.
+  Dates show in the Mythocratic Calendar with the Gregorian date under
+  them (follows your Settings choice). The gear button changes the cover
+  colour (rose, lilac, peach, mint, sky), ink colour, handwriting style
+  and cover title, sets an optional PIN, saves your pages as .txt or
+  .json, adds pages from a .json, and tears out a page.
+  About the PIN: it keeps casual snoopers out. It does NOT encrypt.
+  Anyone who can read this browser's stored data can read the pages.
+  The handwriting style uses fonts already on your device, so it looks
+  best on Windows, Mac, iOS and Android.
+
+Calendar
+  A month view with notes (Mythocratic month header, Gregorian second).
+
+Clock
+  Clock, a Mythocratic converter tab, timer, stopwatch and world times.
+
+Metronome
+  50 BPM by default, with sound.
+
+Calculator
+  Scientific, with its own expression parser (no eval).
+
+Tasks
+  A simple to-do list.
+
+--- MEDIA ------------------------------------------------------------
+
+Media Player
+  Audio and video, playlists, shuffle and repeat, speed, a visualiser.
+
+Image Viewer
+  Zoom, pan, rotate, slideshow.
+
+Reader
+  Comfortable Markdown and text reading. Remembers your place.
+
+Paint
+  An expression board.
+  - Camera: opens your webcam. Take a photo (optional 3 or 5 second
+    timer, Mirror, Switch camera) and it becomes the picture, ready to
+    draw all over. Your drawing sits on its own layer above the photo,
+    so "Clear drawing" rubs out everything you drew and keeps the photo.
+  - Tools: Brush, Soft, Spray, Rainbow, Sparkle, Eraser, Line, Box,
+    Circle, Heart, Star, Fill (with an adjustable range), Pick
+    (eyedropper), Text (four fonts), Stamp (24 faces, hearts, stars, a
+    crown and more) and Hand (pan).
+  - Size and opacity sliders, 20 colours plus any colour you like, and
+    pen pressure on tablets and styluses.
+  - Symmetry: Mirror, or Mandala 4, 6 and 8 for kaleidoscope drawing.
+  - New (six canvas sizes, five paper colours), Open from this computer
+    or from the OS files, Undo and Redo (40 steps), zoom (Ctrl+wheel),
+    Flip, Save as PNG or JPG (to Downloads or the OS Pictures folder)
+    and Copy to the clipboard.
+  - Keys: B brush, E eraser, G fill, I pick, L line, R box, O circle,
+    T text, S stamp, H hand, [ and ] for size, Ctrl+Z / Ctrl+Y.
+  - Photos and opened files are shrunk to 1600 pixels on the long side
+    to keep cheap computers happy. Undo history is stored as small
+    compressed images, so it stays light on memory.
+
+Sequencer
+  A drum machine and loop recorder.
+  - Eight synthesized drum sounds (kick, snare, closed hat, open hat,
+    clap, tom, rim, cowbell). No sample files.
+  - Tap a square once for a normal hit, twice for an accent, a third
+    time to turn it off. Mouse users can drag to paint.
+  - 8, 16 or 32 steps, tempo 40 to 240 BPM (the "50" button sets the
+    heartbeat tempo), tap tempo, swing, four patterns A to D (switching
+    while playing waits for the end of the loop), mute, solo and volume
+    for each track, and six starter beats.
+  - Keys A S D F G H J K play the sounds, Space starts and stops. With
+    Live hits on, your key taps are added to the pattern while it plays.
+  - Loop recorder: two slots. Press Record; the app waits for the next
+    loop start, then records the microphone for 1, 2 or 4 loops and plays
+    it back in time. Use headphones, or the beat leaks into the mic. If
+    a recording sounds late, raise "Fix lateness". Loops are kept only
+    while the app is open.
+  - Save as WAV renders the pattern plus your loops to a stereo 16-bit
+    file, using the same save location as the Recorder.
+  - Patterns are saved with the rest of your data and included in Backup.
+
+Recorder
+  Records real WAV (16-bit PCM, mono or stereo, at your device's sample
+  rate), or compressed m4a, webm or ogg where the browser supports it.
+  Choose the microphone, optional voice clean-up (off by default for
+  archive quality), pause and resume, a level meter, and "start a new
+  file every N minutes".
+
+Camera
+  Webcam or screen recording (desktop), photos (JPG), pause, countdown,
+  resolution 480p to 4K, frame rate, format (MP4 where supported, else
+  WebM), quality, mic select and mute, mirror, and front/back flip on
+  phones. Source "Screen + webcam corner" draws your camera into a corner
+  of a screen recording (choose the corner, size, circle or rectangle;
+  mirror applies to the bubble). System audio, if you share it, and your
+  mic are mixed. Desktop browsers only for screen recording.
+
+  Where recordings go (Recorder, Camera, Sequencer WAV): "A folder on
+  this device" streams straight to a real folder (Chrome, Edge, Opera on
+  desktop, and Chrome on Android); long takes are split into parts that
+  appear as each part finishes. Firefox and Safari download the file when
+  you press Stop. "Inside this OS" saves to /home/user/Recordings in
+  browser storage (export it with Backup). Not available in the Appilix
+  APK, whose web view blocks the camera, mic and folders: use a browser.
+  Chrome's WebM files may not seek smoothly in some players; choose MP4
+  if offered.
+
+Music, Books, Comics, Audiobooks, School, Archive
+  These read an archive (section 6) and appear only when their folders
+  exist.
+  - Music: opens /archive/Atheden. Pick an album and play it as a
+    playlist (full track names, shuffle, repeat, visualiser). Remembers
+    your place.
+  - Books: an e-reader for /archive/Books. Library with search and
+    progress, chapter list, page or scroll mode, font, size, spacing and
+    margins, Paper, Sepia and Night themes, in-book search, and
+    bookmarks that remember where you stopped.
+  - Comics: reads /archive/Republicka-Comic (368 pages) or any folder of
+    images. Single page, two-page spread or vertical scroll; fit page,
+    width or height; zoom; right-to-left (manga) order; page grid;
+    fullscreen; arrow keys, tap or swipe. Remembers your page.
+  - Audiobooks: the 24 books in /archive/Audiobooks. Remembers where
+    you stopped in each, +/-15 s and 60 s skips, speed 0.75x to 2.5x,
+    sleep timer, bookmarks, and "Read the text" jumps to the matching book
+    in Books. Keys: Space, arrows, B, [ ].
+  - School: reads every folder in /archive whose name starts with a
+    number (01-..., 02-...). Left: the series (number, name, years).
+    Right: the player, controls and item list. mp4 plays in the window,
+    mp3 plays with a title card, jpg shows full size. Keys: Space play or
+    pause, Left/Right +-10 s, N/P next or previous, F full screen, Up/Down
+    volume. Position is remembered per file, finished items get a check
+    mark, and "Continue" jumps back to what you last watched.
+  - Archive: search every file name in the manifest.
+
+--- INTERNET ---------------------------------------------------------
+
+Browser
+  A basic browser for the free web, meaning sites that allow themselves
+  to be shown inside another page.
+  - Tabs, address bar, back, forward, reload, bookmarks (right-click a
+    bookmark to rename or remove it; Export and Import are on the start
+    page). republicka.life and kkk.education are bookmarked by default.
+  - Open tabs are remembered: close the Browser or reboot and the same
+    tabs come back, with the same one selected. Only the selected tab
+    loads straight away; the others load when you click them.
+  - It is honest about its limits: Google, Facebook, GitHub, most news
+    sites and anything with a login refuse to be framed. The OS says so
+    and offers "Open in new tab". Plain http:// pages cannot be shown.
+  - Typed words are searched with Marginalia (default), Wikipedia or the
+    Internet Archive; pick on the start page. YouTube and Vimeo watch
+    links become embeds. A list of sites that usually work is on the
+    start page (including Project Gutenberg, Wikipedia, Wikibooks,
+    Wikisource, Commons, Internet Archive, OpenStreetMap, Odysee and
+    BitChute).
+  - Pages are sandboxed and sent no referrer.
+  - Space: on phones the Browser shows one slim bar (Back, address,
+    Reload, menu). The menu has Forward, Start page, bookmarks, tabs,
+    "Paste link and go" and "About this browser". On desktop, the expand
+    button hides the tab and bookmark bars, and the "i" button shows the
+    free-web explanation.
+
+--- TOOLS ------------------------------------------------------------
+
+Backup
+  One-click ZIP of your files, settings, app data and game save, and
+  restore (section 5).
+
+Manifest Maker
+  Turn any folder into manifest.json, try it in the OS, get a share link
+  (section 6). Has a Guide tab.
+
+BookBinder
+  Bind many .txt books into one file (dividers, file-name headings) or
+  split them into chunk ZIPs for NotebookLM and other AI tools. Add
+  files from your computer or a whole archive folder.
+
+Toolbox
+  Base64, URL, SHA hashes, JSON, regex, colour, time, UUID, text and
+  random tools.
+
+App Runner
+  Runs pasted or opened HTML in a sandbox.
+
+--- GAMES ------------------------------------------------------------
+
+Terminal Velocity (the game, section 11), Snake and Minesweeper.
+
+
+=====================================================================
+5. YOUR DATA: SAVING, BACKUP, CLEANER, REBOOT
+=====================================================================
+
+WHERE THINGS LIVE
+  Everything is stored in your browser, on your device. There is no
+  account and no server copy.
+  - Settings, app data, the Diary, Sequencer patterns, bookmarks, Browser
+    tabs, reading positions and the game save are in the browser's
+    localStorage.
+  - Your files in /home/user, and a few app items (Notepad drafts, the
+    recorder folder permission, a saved manifest), are in the browser's
+    IndexedDB.
+  - The game save is shared with the standalone game when both run on the
+    same web address.
+  Saves are per browser and per web address. Clearing the site's data
+  deletes them, so keep a Backup.
+
+BACKUP  (Start > Backup)
+  Create backup ZIP holds: your /home/user files, your settings and app
+  data (books, comics, audiobooks, music, tasks, calendar notes, Diary,
+  Sequencer, bookmarks and more) and the Terminal Velocity game save.
+  It is a plain ZIP; any unzip tool opens it. To move to another browser,
+  device or newer build: open the new OS, Backup > Choose backup ZIP,
+  pick what to restore, Merge or Replace. The OS restarts when it is
+  done. A safety backup of the current state downloads first unless you
+  untick it.
+  Not included: /archive (it streams from the web), folders mounted under
+  /mnt, Notepad drafts, and a few housekeeping items (Cleaner lists
+  exactly which).
+  "Protect storage" (in the Backup app, and a similar button in Cleaner) asks the browser
+  not to clear this OS's data. Backups are still the real safety net.
+
+CLEANER  (System > Cleaner)
+  Shows everything this site has saved in your browser, so nothing feels
+  like magic, and lets you clear what you no longer want.
+  - Overview: how much is saved, what a Backup ZIP will and will not
+    contain, the browser's own storage estimate, your last backup time,
+    and a button to ask the browser to keep your data safe.
+  - Settings and data: every item in localStorage, grouped (your writing
+    and creations, settings, progress and saved places, app preferences,
+    game, housekeeping). Each item has a plain-English name, its real
+    key, its size, and a badge saying "in Backup" or "not in Backup".
+    View shows the exact contents. Anything this OS did not create is
+    listed too, as "Saved by something else".
+  - Your files: everything in /home/user, biggest first.
+  - Other storage: Notepad drafts, the recorder folder permission, other
+    browser databases, caches and cookies. None of this is in a Backup.
+  - Tick what you want gone and press Delete. You see a list first, with
+    extra warnings for writing and game saves. Undo puts deleted settings
+    and data back until you close Cleaner. Deleted files cannot be
+    undone. Some apps notice a clean only after a reboot, so a "Reboot to
+    apply" button appears.
+  Clean first, then back up, and your export holds only what you want.
+
+SAVE THE OS ITSELF
+  Start menu > Save OS (also in Backup, Settings > About, or the terminal
+  command saveos) downloads this whole OS as one .html file. In Chromium
+  browsers you choose where to save it. If a browser blocks a page from
+  reading itself (for example when opened from disk), use Ctrl+S, "HTML
+  only".
+
+REBOOT  (Start > Reboot, or the terminal command reboot)
+  Reboot always fetches the newest copy of the page, ignoring the browser
+  cache (like Ctrl+Shift+R), then reloads. After you upload a new version
+  of the file, Reboot picks it up. A cache outside the browser, such as a
+  CDN like Cloudflare or the Appilix app's own cache, can still serve an
+  old copy until it expires or is purged.
+
+
+=====================================================================
+6. YOUR OWN ARCHIVE (MANIFEST.JSON)
+=====================================================================
+
+When the page can reach a manifest.json, your archive mounts at /archive
+and the data apps (section 4) light up. Files stream from their web
+addresses; nothing is copied.
+
+  Default order tried: republicka.life/files/manifest.json, then
+  files/manifest.json, then manifest.json beside the page.
+  Your own: Settings > Archive (load from a file or URL), or boot with
+  ?manifest=https://example.org/files/manifest.json
+  Format: {generated, webPrefix, stats, items:[{name, type:"folder"|
+  "file", children, path (URL), size}]}. Anyone can bring their own
+  archive.
+
+SHARE YOUR OWN ARCHIVE (Manifest Maker)
+  1. Upload your folder of files to any web host.
+  2. Start > Manifest Maker: type that web address, choose the folder,
+     download manifest.json.
+  3. Upload manifest.json into the same online folder.
+  4. Share the link it gives you, which looks like:
+     terminal-velocity-os.html?manifest=https://yoursite.org/files/manifest.json
+  generate-manifest.js is the command line version:
+     node generate-manifest.js ./files https://yoursite.org/files
+  If the OS and your files are on different websites, the files server
+  must send Access-Control-Allow-Origin: * (at least for manifest.json).
+
+APPS THAT NEED AN ARCHIVE
+  Music, Books, Comics, Audiobooks and School show on the desktop, Start
+  menu and search only when their folders exist: /archive/Atheden,
+  /archive/Books, /archive/Republicka-Comic, /archive/Audiobooks, and
+  numbered folders such as /archive/01-Name-2012 for School. Archive
+  search shows whenever any manifest is loaded. If someone points the OS
+  at their own manifest, those apps disappear. Settings > Appearance has
+  a switch to show them anyway (useful when you pick your own folders
+  inside them). Apps can still be opened by name.
+
+
+=====================================================================
+7. LINKS, THE BROWSER AND THE OS
+=====================================================================
+
+Links inside the OS itself (Notepad, Reader, Welcome and so on) open as
+a tab in the Browser instead of leaving the OS.
+
+Links inside a framed website are controlled by that website, and the OS
+cannot see them. By default a target="_blank" link in a framed page
+opens a normal browser tab.
+  - Pages on the same site as the OS (for example republicka.life when the
+    OS runs from republicka.life) are wired up automatically: their
+    new-window links and window.open() calls become Browser tabs.
+  - For pages on another site that YOU control (kkk.education, say), add
+    this snippet and those links will open as a new tab in the OS Browser.
+    Outside the OS it does nothing, so it is safe on every page:
+
+<script>
+if(window.parent!==window){document.addEventListener("click",function(e){var a=e.target.closest&&e.target.closest("a[href]");if(!a)return;var t=a.getAttribute("target");if(t==="_blank"||t==="_new"){e.preventDefault();parent.postMessage({tvos:"open",url:a.href},"*")}},true)}
+</script>
+
+  - Anyone else's pages can only be handled by copying the link and using
+    the Browser's "Paste & go" button (desktop toolbar, or "Paste link
+    and go" in the phone menu).
+
+
+=====================================================================
+8. SPEED, MEMORY AND LOW POWER MODE
+=====================================================================
+
+BENCHMARK  (System > Benchmark)
+  Shows how much of the computer the OS really uses.
+  - Live: frame budget used (the share of each 16.7 ms frame the OS
+    needs), frames per second, stutters, JavaScript memory, page
+    elements and long freezes, with a plain verdict: Plenty of headroom,
+    Comfortable, Busy or Struggling.
+  - Windows: a rough weight estimate of every open window, with Focus and
+    Close.
+  - Benchmark: eight short speed tests plus a storage test, then it opens
+    six real apps in a row and reports the slowest frame and open times.
+    Results are saved with a device name and can be copied or downloaded
+    as text.
+  - Guide: a plain-language explanation of every number.
+  The speed score is relative to a reference machine (1.00): a modest
+  cloud-server core. There is no official "top score" table; the
+  verdict thresholds are this project's own. Browsers do not let a page
+  read real CPU % or total RAM, so frame budget and JavaScript memory are
+  the honest substitutes.
+
+LOW POWER MODE  (Settings > Appearance, or the Benchmark app)
+  Auto, On or Off. It turns off animations, glow, shadows, the vignette
+  and the moving wallpaper, and slows the music visualisers. Auto turns
+  it on for devices with 2 CPU cores or fewer, or 2 GB of memory or less.
+  New apps follow it automatically.
+
+WHAT KEEPS IT LIGHT
+  Plain HTML, CSS and JavaScript. Audio is synthesized with Web Audio
+  (no sound files), wallpapers and visualisers are drawn on canvas, and
+  recordings can stream to disk instead of being held in memory. Undo in
+  Paint is stored as small compressed images. Only the selected Browser
+  tab loads at start.
+
+
+=====================================================================
+9. HONEST LIMITS
+=====================================================================
+
+  - Archive files stream from their web addresses; nothing is copied.
+    Reading them as text, or downloading them, can be blocked by the
+    host's cross-site rules. Playing and viewing work.
+  - Mounting a folder from your computer needs Chrome or Edge.
+  - The Browser can only show sites that allow framing. Nothing in an app
+    can override a website's own refusal.
+  - The Diary PIN is not encryption.
+  - Sequencer loops are not saved; export a WAV to keep them.
+  - Dragging to reorder tabs and taskbar buttons works with a mouse, not
+    by touch.
+  - Screen recording needs a desktop browser. The Appilix app cannot use
+    the camera, microphone or folders.
+  - Tested in desktop Chromium and phone emulation. Real Safari, iOS and
+    Firefox behaviour has had less testing than Chrome.
+  - The game's mission text says the manifest came from republicka.life
+    even if you loaded a different one. Cosmetic.
+
+
+=====================================================================
+10. THE MYTHOCRATIC CALENDAR (MC)
+=====================================================================
+
+The whole OS runs on Mythocratic time, with Gregorian (CE) as the
+secondary date.
+  2025 CE = 0001 MC.   2024 CE = -0001 PMC (Pre-Mythocratic Calendar;
+  negative years keep the minus sign).   There is no year 0000.
+  2026 CE = 0002 MC.   Months and days follow the Gregorian pattern.
+Shown in: the tray (date and clock, hover for both), the Clock app (the
+MC tab converts years and dates), the Calendar header, the Diary, the
+terminal "date", file dates (ls -l, stat, Files) and the boot log.
+Settings > Appearance > "Calendar & dates" switches to Gregorian first.
+
+
+=====================================================================
+11. THE GAME: TERMINAL VELOCITY
+=====================================================================
+
+Terminal Velocity is a retro CRT terminal strategy RPG about flat-files,
+tears and the indestructible CC0 floor. It is the OS's first app: open it
+from the desktop, press Alt+G, or boot normally and it starts minimised
+in the taskbar. Press [?] inside it for the in-game HELP & TUTORIAL.
+The game also runs on its own as a single page.
 
 You run a tiny network at a calm 50 BPM. You turn raw video into
 permanent .txt flat-files, spread them across Hydra Mirror nodes to earn
@@ -22,17 +595,6 @@ factions that would rather it did not exist.
 It is built on the Republicka universe: E = L (emotion and logic are two
 phase states of one signal), the 50 BPM clock, the CC0 Rug, Queen Ivory,
 and the Mythocratic Republic University.
-
-
-🚀 QUICK START
-
-  1. Download terminal-velocity-os.html (rename it index.html if you like).
-  2. Double-click it. It opens in any modern browser.
-  3. In the game, press [?] for the in-game HELP & TUTORIAL.
-
-That is all. To host it, upload the file anywhere that serves static
-pages (GitHub Pages, your own server, an archive site).
-
 
 🎮 THE GAME LOOP
 
@@ -344,7 +906,7 @@ Browsing menus is free. Actions, event choices and waiting cost 1 turn.
   - Saves from older game versions are not compatible.
 
 
-🛠️ TECH
+🛠️ GAME TECH
 
   - One file: HTML + CSS + vanilla JavaScript.
   - No external libraries, fonts, images or network requests.
@@ -354,339 +916,25 @@ Browsing menus is free. Actions, event choices and waiting cost 1 turn.
     pink = lore.
 
 
-🤝 CREDITS
+=====================================================================
+12. CREDITS AND LICENCE
+=====================================================================
 
-  Created by Wendell Charles NeSmith (BardPresident).
-  Game design co-developed with Sage and Claude (Anthropic).
-  Part of the Republicka / KKK.EDUCATION CC0 archive.
+  Created by Wendell Charles NeSmith (BardPresident), Canberra,
+  Australia. Game and OS design co-developed with Sage and Claude
+  (Anthropic). Part of the Republicka / KKK.EDUCATION CC0 archive.
 
-
-📜 LICENSE
-
-  CC0 1.0 Universal (Public Domain Dedication).
-  Free forever. Copy it, remix it, host it, sell it, rewrite it.
-  No permission needed.
+  CC0 1.0 Universal (Public Domain Dedication). Free forever. Copy it,
+  remix it, host it, sell it, rewrite it. No permission needed.
   https://creativecommons.org/publicdomain/zero/1.0/
-
-=====================================================================
-  E = L  |  50 BPM  |  The floor holds.  ☕🌸
-=====================================================================
-
-
-
-=====================================================================
-TERMINAL VELOCITY OS   (terminal-velocity-os.html)
-=====================================================================
-You asked for a game. It is now an operating system that contains the game.
-Sorry. Not sorry.
-
-WHAT IT IS
-One HTML file (~300 KB). No images, no libraries, no install, no server needed.
-It boots with a long, chatty log (it tells you everything it is doing, with
-real checks, not fake ones), then launches Terminal Velocity in a window.
-CC0, like everything else you make. Copy it, host it, put it on a USB stick.
-
-THE FILES
-  terminal-velocity-os.html  the OS, with the game embedded inside it
-  README.txt                 this
-  (There is one version now. The game is the OS's first app.)
-
-HOW TO RUN IT
-  Open terminal-velocity-os.html in a browser, or upload it to
-  republicka.life next to the game. Hard-refresh after uploading.
-  Add ?nogame to the address to boot without auto-starting the game.
-  Boot takes about 7 seconds so you can read it. Settings > Boot: Slow / Normal / Fast / Instant.
-  Press any key during boot to skip the delays.
-
-THE APPS (27) - every one has a desktop icon
-  Terminal Velocity   the game, starts at boot minimised in the taskbar (desktop first;
-                      Settings > Boot changes this)
-  Terminal            real shell: ls -lahs, cd, cat, grep, find, tree, mkdir,
-                      cp, mv, rm, head, tail, wc, sort, pipes |, redirects >
-                      >>, globs *, Tab complete, history. Type "help".
-                      Also: open, edit, play, view, theme, wallpaper, neofetch
-  Files               file manager. Whole archive at /archive (read-only),
-                      your files at /home/user, plus /tmp and /system
-  Notepad             tabs, find/replace, Markdown preview, autosave drafts.
-                      REAL EXPORT: Download, Save to computer (file picker),
-                      Export all as ZIP, Tabs ZIP
-  Music               opens /archive/Atheden: pick an album, play it as a playlist
-                      (full track names, shuffle/repeat, visualizer, remembers
-                      your place)
-  Books               e-reader for /archive/Books: library with search and
-                      progress, chapter list, page or scroll mode, font/size/
-                      spacing/margins, Paper/Sepia/Night themes, in-book search,
-                      bookmarks that remember where you stopped
-  Manifest Maker      turn any folder into manifest.json, try it in the OS, get a share link;
-                      has a Guide tab and the generate-manifest.js script
-  School              the numbered video series (01-..., 02-...): mp4 video, mp3 audio, jpg stills;
-                      episode list, resume, watched marks, speed, next/prev, full screen
-  Backup              one-click ZIP of your files, settings, app data and game save;
-                      restore into any other copy of the OS (merge or replace)
-  BookBinder          bind many .txt books into one file (dividers, file-name
-                      headings) or split them into chunk ZIPs for NotebookLM
-                      and other AI tools. Add files from your computer or a
-                      whole archive folder
-  Audiobooks          the 24 books in /archive/Audiobooks: remembers where you
-                      stopped in each, +/-15s and 60s skips, speed 0.75x-2.5x,
-                      sleep timer, bookmarks, "Read the text" jumps to the
-                      matching book in Books. Space, arrows, B, [ ] keys
-  Comics              reads /archive/Republicka-Comic (368 pages) or any folder of
-                      images: single page, two-page spread or vertical scroll;
-                      fit page/width/height, zoom, right-to-left (manga) order,
-                      page grid, fullscreen, arrow keys/tap/swipe, remembers
-                      your page
-  Media Player        audio + video, playlists, shuffle/repeat, speed, visualizer
-                      (long file names now wrap instead of being cut off)
-  Image Viewer        zoom, pan, rotate, slideshow
-  Reader              comfortable Markdown/text reading, remembers your place
-  Archive             search every file name in the manifest
-  Calculator          scientific, own expression parser (no eval)
-  Paint               draw, fill, undo, save PNG
-  Clock               clock, MC converter tab, timer, stopwatch, world times
-  Calendar            month view with notes (MC month header, CE secondary)
-  Metronome           50 BPM by default
-  Task Manager        windows, FPS, memory, storage
-  Toolbox             base64, URL, SHA hashes, JSON, regex, colour, time, UUID
-  App Runner          runs pasted/opened HTML in a sandbox
-  Recorder            microphone to /home/user/Media
-  Snake, Minesweeper, Tasks, Settings, Welcome
-
-THEMES (17 X environments)
-  Phosphor Green, Amber Terminal, Cyan Relay, Sovereign Gold, Agape Pink,
-  Queen Ivory (light), Hearth Ember, Owrbit Violet, Deep Freeze, CC0 Rug,
-  Plushie Pastel (light), Zero Port, Blue Screen, Combine Steel, Triage Red,
-  Zookeeper Moss, Plain Paper (light).
-  Change in Settings > Appearance, the tray eye icon, or: theme <name>
-  Wallpapers (all drawn on canvas): stars, 50 BPM rings, grid, rain, flow,
-  plain, none.
-
-YOUR OWN MANIFEST.JSON
-  Settings > Archive: load one from a file or a URL, or boot with
-  ?manifest=https://example.org/files/manifest.json
-  Format: {generated, webPrefix, stats, items:[{name, type:"folder"|"file",
-  children, path (URL), size}]}. Anyone can bring their own archive.
-  Default tries: republicka.life/files/manifest.json, then files/manifest.json,
-  then manifest.json.
-
-KEYS
-  Ctrl+Space Spotlight (apps, archive files, quick maths)
-  Alt+T Terminal, Alt+F Files, Alt+N Notepad, Alt+G the game
-  Alt+W close, Alt+M minimise, Alt+Enter maximise, Alt+Tab next window
-  Drag title bars to move, drag edges to resize, drag to screen edge to snap.
-  On phones every window is full-screen.
-
-SAVES
-  Game saves live in the same browser storage as the standalone game, so the
-  two share one save. Your notes and files in /home/user live in this
-  browser's IndexedDB. Use Notepad "Export all (ZIP)" or Settings > Storage
-  to back up.
-
-HONEST LIMITS
-  - Archive files stream from their web addresses; nothing is copied. Reading
-    them as text or downloading them can be blocked by the host's cross-site
-    rules. Playing and viewing work.
-  - Mounting a folder from your computer needs Chrome or Edge.
-  - The OS tray shows your Standing next to the clock once the game has run.
-  - The game's mission text says the manifest came from republicka.life even
-    if you loaded a different one. Cosmetic.
-
-
-MYTHOCRATIC CALENDAR (MC)
-  The whole OS runs on Mythocratic time, with Gregorian (CE) as the secondary date.
-  2025 CE = 0001 MC.  2024 CE = -0001 PMC (Pre-Mythocratic Calendar, negative years keep the minus sign).  There is no year 0000.  2026 CE = 0002 MC.
-  Months and days follow the Gregorian pattern.
-  Shown in: tray (date + clock, hover for both), Clock app (MC tab converts years and dates),
-  Calendar header, terminal "date", file dates (ls -l, stat, Files), boot log.
-  Settings > Appearance > "Calendar & dates" switches to Gregorian-first if wanted.
-
-BACKUP AND MIGRATION
-  Start > Backup > Create backup ZIP. The ZIP holds /home/user files, settings and app data
-  (books, comics, audiobooks, music, tasks, calendar notes) and the Terminal Velocity save.
-  To move to another browser, device or newer build: open the new OS, Backup > Choose backup ZIP,
-  pick what to restore, Merge or Replace. The OS restarts when it finishes.
-  A safety backup of the current state downloads first unless you untick it.
-  Not included: /archive (streams from the web) and real folders mounted under /mnt.
-  "Protect storage" asks the browser not to clear this OS's data; backups are still the real safety net.
-
-SAVE THE OS ITSELF
-  Start menu > Save OS (also Backup app, Settings > About, or the terminal command "saveos")
-  downloads this whole OS as one .html file. In Chromium browsers you choose where to save it.
-  If a browser blocks a page from reading itself (e.g. opened from disk), use Ctrl+S, HTML only.
-
-SHARE YOUR OWN ARCHIVE (MANIFEST MAKER)
-  Start > Manifest Maker (or Settings > Archive > Manifest Maker...).
-  1. Upload your folder of files to any web host.  2. In Manifest Maker type that web address,
-  choose the folder, download manifest.json.  3. Upload manifest.json into the same online folder.
-  4. Share the link it gives you:  terminal-velocity.html?manifest=https://yoursite.org/files/manifest.json
-  generate-manifest.js is the command line version:  node generate-manifest.js ./files https://yoursite.org/files  
-  If the OS and your files are on different websites, the files server must send
-  Access-Control-Allow-Origin: *  (at least for manifest.json).
-
-APPS THAT NEED A DATA ARCHIVE
-  Music, Books, Comics, Audiobooks and School only show on the desktop, Start menu and search when
-  /archive/Atheden, /archive/Books, /archive/Republicka-Comic and /archive/Audiobooks exist
-  (School needs numbered folders such as /archive/01-Name-2012)
-  (Archive search shows when any manifest is loaded). If someone points the OS at their own
-  manifest, those apps disappear. Settings > Appearance has a switch to show them anyway
-  (useful if you pick your own folders inside them). Apps can still be opened by name.
-
-SCHOOL
-  Reads every folder in /archive whose name starts with a number. Left: the series (number, name,
-  years; MC years such as 0002 MC are shown as written). Right: player, controls and the item list.
-  Videos play in the window; mp3 plays with a title card; jpg shows full size. Keys: Space play/pause,
-  Left/Right +-10s, N/P next/previous, F full screen, Up/Down volume. Position is remembered per
-  file, finished items get a check mark, and "Continue" jumps back to what you last watched.
-  On a phone, tap Series to switch.
-
-SESSION RESTORE (REBOOT KEEPS YOUR WORK SPACE)
-  The OS remembers which windows are open, where they are, their size, maximised/minimised state
-  and which one had focus. Reboot or refresh and they come back. First boot ever: Terminal Velocity
-  starts minimised in the taskbar. To start fresh, close every window and reboot.
-  Settings > Boot: "Reopen my windows..." turns this off (then the first-boot behaviour repeats each time).
-  Also remembered by their own apps: notes drafts, last song/book/comic/audiobook/series and positions.
-
-
-RECORDING: AUDIO (WAV) AND CAMERA
----------------------------------
-Recorder app: records real WAV (16-bit PCM, mono or stereo, at your device's sample rate).
-  Also offers compressed formats (m4a/webm/ogg) if your browser supports them.
-  Choose microphone, optional voice clean-up (off by default for archive quality),
-  pause/resume, level meter, and "start a new file every N minutes".
-Camera app: webcam or screen recording (desktop), photos (JPG), pause, countdown,
-  resolution 480p-4K, frame rate, format (MP4 where supported, else WebM), quality,
-  mic select/mute, mirror, front/back flip on phones.
-Saving: pick "A folder on this device" and recordings stream straight to a real folder
-  (Chrome/Edge/Opera desktop and Android Chrome). The file appears when each part finishes,
-  so long takes are split into parts. Other browsers (Firefox, Safari) download the file when
-  you press Stop. "Inside this OS" saves to /home/user/Recordings (browser storage; export it).
-Not available in the Appilix APK (its WebView blocks camera/mic/folders). Use a browser.
-Chrome's WebM files may not seek smoothly in some players; choose MP4 if offered.
-
-Screen + webcam: in the Camera app choose Source "Screen + webcam corner". Your camera is drawn
-  into a corner of the screen recording (choose corner, size, circle or rectangle; mirror applies
-  to the bubble). Desktop browsers only. System audio (if you share it) and your mic are mixed.
-
-BROWSER (THE FREE WEB)
-----------------------
-Browser app: tabs, address bar, back/forward, reload, bookmarks (right-click a bookmark to rename
-or remove; Export/Import on the start page; included in Backup). republicka.life and kkk.education
-are bookmarked by default. It only shows sites that allow being embedded in other pages (the "free web").
-Google, Facebook, GitHub, most news sites and logins refuse; the OS says so and offers
-"Open in new tab". Typed words are searched with Marginalia (default), Wikipedia or Internet Archive; pick on the start page. YouTube/Vimeo watch links are converted to embeds.
-Plain http:// pages cannot be shown. Pages are sandboxed and sent no referrer.
-Browser space: on phones the Browser shows one slim bar (Back, address, Reload, menu). The menu has Forward, Start page,
-bookmarks, tabs and "About this browser" (the free-web explanation). On desktop, the expand button hides the tabs and
-bookmarks bars and the "i" button shows the explanation.
-
-LINKS INSIDE THE OS
--------------------
-Links in the OS itself (Notepad, Reader, Welcome, etc.) open as a tab in the Browser instead of leaving the OS.
-Links INSIDE a framed website are controlled by that website; the OS cannot see them. By default a
-target="_blank" link in a framed page opens a normal browser tab. For pages YOU control (republicka.life,
-kkk.education), add this snippet to your pages and those links will open as a new tab in the OS Browser
-(outside the OS it does nothing, so it is safe on every page):
-
-<script>
-if(window.parent!==window){document.addEventListener("click",function(e){var a=e.target.closest&&e.target.closest("a[href]");if(!a)return;var t=a.getAttribute("target");if(t==="_blank"||t==="_new"){e.preventDefault();parent.postMessage({tvos:"open",url:a.href},"*")}},true)}
-</script>
-
-UPDATE: pages on the same site as the OS (e.g. republicka.life when the OS runs from republicka.life) are
-wired up automatically: their new-window links and window.open() calls become Browser tabs, with no snippet needed.
-Other sites (kkk.education, anyone else's) can only do this with the snippet above, or you can copy the link and use
-the Browser's "Paste & go" button (desktop toolbar / phone menu: "Paste link and go").
-
-TASKBAR
--------
-Drag a taskbar button left or right to arrange the taskbar. The order is remembered with the session.
-
-BENCHMARK AND LOW POWER MODE
-----------------------------
-Benchmark app (System): shows how much of the computer the OS really uses.
-  Live: frame budget used (the share of each 16.7 ms frame the OS needs), frames per second, stutters,
-        JS memory, page elements, long freezes. A plain verdict (Plenty of headroom / Comfortable / Busy / Struggling).
-  Windows: rough weight estimate of every open window, with Focus and Close.
-  Benchmark: eight short speed tests plus a storage test, then opens six real apps in a row and reports the
-        slowest frame and open times. Results are saved with a device name, and can be copied or downloaded as text.
-  Guide: plain-language explanation of every number.
-  The speed score is relative to a reference machine (1.00): a modest cloud-server core. Browsers do not allow a page to
-  read real CPU % or total RAM, so frame budget and JS memory are the honest substitutes.
-Low power mode (Settings > Appearance, or the Benchmark app): Auto / On / Off. Turns off animations, glow, shadows,
-  the vignette and the moving wallpaper, and slows the music visualisers. Auto switches it on for devices with 2 cores
-  or fewer, or 2 GB of memory or less.
-
-Diary app (Accessories): a pretty paper diary.
-  Opens as a closed rose-coloured book; tap the heart clasp to open it. One page per day, with ruled lines,
-  a margin, hole punches and washi tape. Pick a mood, tap stickers to drop them into your writing, flip days
-  with the arrows, jump to any date, see the month with a heart on every day you wrote, and search all pages.
-  Dates show in the Mythocratic Calendar with the Gregorian date underneath (follows your Settings choice).
-  Gear button: cover colour (rose, lilac, peach, mint, sky), ink colour, handwriting style, cover title,
-  optional PIN, save as .txt or .json, add pages from a .json, tear out a page.
-  A PIN keeps casual snoopers out. It does NOT encrypt: anyone who can read this browser's stored data can
-  read the pages. Data is stored under the key tvos_diary, so the Backup app includes it.
-  The handwriting style uses fonts already on the device (it looks best on Windows, Mac, iOS and Android).
-
-Sequencer app (Media): drum machine and loop recorder.
-  Eight synthesized drum sounds (kick, snare, closed hat, open hat, clap, tom, rim, cowbell), no sample files.
-  Tap a square once for a normal hit, twice for an accent, a third time to turn it off. Mouse users can drag
-  to paint. 8, 16 or 32 steps, tempo 40 to 240 BPM (button "50" sets the heartbeat tempo), tap tempo, swing,
-  four patterns A to D (switching while playing waits for the end of the loop), mute, solo and volume per
-  track, six starter beats. Keys A S D F G H J K play the sounds, Space starts and stops.
-  Live hits: while playing, your key taps are added into the pattern.
-  Loop recorder: two slots. Press Record, the app waits for the next loop start, then records from the
-  microphone for 1, 2 or 4 loops and plays it back in time. Use headphones. If a recording sounds late, raise
-  "Fix lateness". Loops are kept only while the app is open.
-  Save as WAV renders the pattern plus your loops to a stereo 16-bit file (uses the same save location as the
-  Recorder). Patterns are stored under tvos_seq and included in Backup.
-
-Paint (Media), rebuilt as an expression board.
-  Camera: opens your webcam, Take photo (optional 3 or 5 second timer, Mirror, Switch camera), and the photo
-  becomes the picture, ready to draw all over. Your drawing sits on its own layer above the photo, so
-  "Clear drawing" rubs out everything you drew and keeps the photo.
-  Tools: Brush, Soft, Spray, Rainbow, Sparkle, Eraser, Line, Box, Circle, Heart, Star, Fill (with range),
-  Pick (eyedropper), Text (four fonts), Stamp (24 faces, hearts, stars, crown and more) and Hand (pan).
-  Size and opacity sliders, 20 colours plus any colour you like, pen pressure on tablets and styluses.
-  Symmetry: Mirror, or Mandala 4, 6 and 8 for kaleidoscope drawing.
-  Also: New (six canvas sizes, five paper colours), Open from this computer or from the OS files, Undo and
-  Redo (40 steps, Ctrl+Z / Ctrl+Y), zoom (Ctrl+wheel), Flip, Save as PNG or JPG (to Downloads or the OS
-  Pictures folder) and Copy to the clipboard.
-  Keys: B brush, E eraser, G fill, I pick, L line, R box, O circle, T text, S stamp, H hand, [ and ] for size.
-  Photos and files you open are shrunk to at most 1600 pixels on the long side to keep cheap computers happy.
-  Undo history is stored as small compressed images, so it stays light on memory.
-
-Reordering tabs: in Notepad and Browser you can drag a tab left or right to change its order (mouse; on touch
-screens the tab strip scrolls instead). The taskbar works the same way. The fixed section tabs inside apps such
-as Clock, Toolbox and Benchmark stay in place, since they are not tabs you open and close.
-
-Reboot now fetches the newest copy: Start menu > Reboot, the "reboot" terminal command and the end of a
-Backup restore all bypass the browser cache, like Ctrl+Shift+R, then reload. After you upload a new
-terminal-velocity.html, Reboot picks it up. Caches outside the browser (a CDN such as Cloudflare, or the
-Appilix app's own cache) can still serve an old copy until they expire or are purged.
-
-Cleaner app (System): see everything this OS has saved, and clear what you no longer want.
-  Overview: how much is saved, what a Backup ZIP will and will not contain, the browser's own storage estimate,
-  the time of your last backup, and a button to ask the browser to keep your data safe.
-  Settings and data: every item saved in the browser's localStorage, grouped (your writing and creations,
-  settings, progress and saved places, app preferences, game, housekeeping). Each item shows a plain-English
-  name, the real key, its size and a badge saying whether Backup includes it. View shows the exact contents.
-  Anything this OS did not create is listed too, as "Saved by something else", with a "not in Backup" badge.
-  Your files: everything in /home/user, biggest first, with a Show button.
-  Other storage: Notepad drafts, the recorder folder permission, any other databases, caches and cookies.
-  Tick what you want gone and press Delete. You are shown a list first and warned about writing, game saves
-  and anything else that matters. Undo puts deleted settings and data back until you close Cleaner. Deleted
-  files cannot be undone. Some apps notice a clean only after a reboot, so a Reboot to apply button appears.
-  Cleaner never hides anything: if the site saved it, it is listed.
 
 ---------------------------------------------------------------------
   TERMINAL VELOCITY OS
   One file. No server. No tracking. Yours to keep.
 
-  Everything here is released under CC0: free forever, no rights
-  reserved. Copy it, change it, share it, host it anywhere.
-
   republicka.life  ·  kkk.education  ·  wendell@republicka.life
 
-  Built by Wendell NeSmith (BardPresident), Canberra, Australia.
+  E = L  |  50 BPM  |  The floor holds.
   Welcome Home Ivory!
 ---------------------------------------------------------------------
 
