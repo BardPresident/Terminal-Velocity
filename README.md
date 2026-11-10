@@ -292,7 +292,8 @@ Music, Books, Comics, Audiobooks, School, Archive
   exist.
   - Music: opens /archive/Atheden. Pick an album and play it as a
     playlist (full track names, shuffle, repeat, visualiser). Remembers
-    your place.
+    the album, the track, the exact second and the volume, and reopens
+    paused right where you stopped.
   - Books: an e-reader for /archive/Books. Library with search and
     progress, chapter list, page or scroll mode, font, size, spacing and
     margins, Paper, Sepia and Night themes, in-book search, and
@@ -311,7 +312,8 @@ Music, Books, Comics, Audiobooks, School, Archive
     mp3 plays with a title card, jpg shows full size. Keys: Space play or
     pause, Left/Right +-10 s, N/P next or previous, F full screen, Up/Down
     volume. Position is remembered per file, finished items get a check
-    mark, and "Continue" jumps back to what you last watched.
+    mark. When you reopen School it loads the last thing you watched,
+    paused at the second you left, and "Continue" plays it.
   - Archive: search every file name in the manifest.
 
 --- INTERNET ---------------------------------------------------------
