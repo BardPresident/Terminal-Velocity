@@ -663,6 +663,33 @@ Backup restore all bypass the browser cache, like Ctrl+Shift+R, then reload. Aft
 terminal-velocity.html, Reboot picks it up. Caches outside the browser (a CDN such as Cloudflare, or the
 Appilix app's own cache) can still serve an old copy until they expire or are purged.
 
+Cleaner app (System): see everything this OS has saved, and clear what you no longer want.
+  Overview: how much is saved, what a Backup ZIP will and will not contain, the browser's own storage estimate,
+  the time of your last backup, and a button to ask the browser to keep your data safe.
+  Settings and data: every item saved in the browser's localStorage, grouped (your writing and creations,
+  settings, progress and saved places, app preferences, game, housekeeping). Each item shows a plain-English
+  name, the real key, its size and a badge saying whether Backup includes it. View shows the exact contents.
+  Anything this OS did not create is listed too, as "Saved by something else", with a "not in Backup" badge.
+  Your files: everything in /home/user, biggest first, with a Show button.
+  Other storage: Notepad drafts, the recorder folder permission, any other databases, caches and cookies.
+  Tick what you want gone and press Delete. You are shown a list first and warned about writing, game saves
+  and anything else that matters. Undo puts deleted settings and data back until you close Cleaner. Deleted
+  files cannot be undone. Some apps notice a clean only after a reboot, so a Reboot to apply button appears.
+  Cleaner never hides anything: if the site saved it, it is listed.
+
+---------------------------------------------------------------------
+  TERMINAL VELOCITY OS
+  One file. No server. No tracking. Yours to keep.
+
+  Everything here is released under CC0: free forever, no rights
+  reserved. Copy it, change it, share it, host it anywhere.
+
+  republicka.life  ·  kkk.education  ·  wendell@republicka.life
+
+  Built by Wendell NeSmith (BardPresident), Canberra, Australia.
+  Welcome Home Ivory!
+---------------------------------------------------------------------
+
 https://github.com/BardPresident https://republicka.life https://kkk.education https://archive.org/details/@bardpresident https://www.youtube.com/@BardPresident https://odysee.com/@BardPresident:0 https://www.bitchute.com/channel/P9QR7Z6nmVtm
 
 ☯ THE CORE PHILOSOPHY ☯ EMOTION = LOGIC · THE HINATA TRAP · MASTER = FLOOR
