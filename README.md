@@ -654,6 +654,10 @@ Paint (Media), rebuilt as an expression board.
   Photos and files you open are shrunk to at most 1600 pixels on the long side to keep cheap computers happy.
   Undo history is stored as small compressed images, so it stays light on memory.
 
+Reordering tabs: in Notepad and Browser you can drag a tab left or right to change its order (mouse; on touch
+screens the tab strip scrolls instead). The taskbar works the same way. The fixed section tabs inside apps such
+as Clock, Toolbox and Benchmark stay in place, since they are not tabs you open and close.
+
 https://github.com/BardPresident https://republicka.life https://kkk.education https://archive.org/details/@bardpresident https://www.youtube.com/@BardPresident https://odysee.com/@BardPresident:0 https://www.bitchute.com/channel/P9QR7Z6nmVtm
 
 ☯ THE CORE PHILOSOPHY ☯ EMOTION = LOGIC · THE HINATA TRAP · MASTER = FLOOR
