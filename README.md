@@ -639,6 +639,21 @@ Sequencer app (Media): drum machine and loop recorder.
   Save as WAV renders the pattern plus your loops to a stereo 16-bit file (uses the same save location as the
   Recorder). Patterns are stored under tvos_seq and included in Backup.
 
+Paint (Media), rebuilt as an expression board.
+  Camera: opens your webcam, Take photo (optional 3 or 5 second timer, Mirror, Switch camera), and the photo
+  becomes the picture, ready to draw all over. Your drawing sits on its own layer above the photo, so
+  "Clear drawing" rubs out everything you drew and keeps the photo.
+  Tools: Brush, Soft, Spray, Rainbow, Sparkle, Eraser, Line, Box, Circle, Heart, Star, Fill (with range),
+  Pick (eyedropper), Text (four fonts), Stamp (24 faces, hearts, stars, crown and more) and Hand (pan).
+  Size and opacity sliders, 20 colours plus any colour you like, pen pressure on tablets and styluses.
+  Symmetry: Mirror, or Mandala 4, 6 and 8 for kaleidoscope drawing.
+  Also: New (six canvas sizes, five paper colours), Open from this computer or from the OS files, Undo and
+  Redo (40 steps, Ctrl+Z / Ctrl+Y), zoom (Ctrl+wheel), Flip, Save as PNG or JPG (to Downloads or the OS
+  Pictures folder) and Copy to the clipboard.
+  Keys: B brush, E eraser, G fill, I pick, L line, R box, O circle, T text, S stamp, H hand, [ and ] for size.
+  Photos and files you open are shrunk to at most 1600 pixels on the long side to keep cheap computers happy.
+  Undo history is stored as small compressed images, so it stays light on memory.
+
 https://github.com/BardPresident https://republicka.life https://kkk.education https://archive.org/details/@bardpresident https://www.youtube.com/@BardPresident https://odysee.com/@BardPresident:0 https://www.bitchute.com/channel/P9QR7Z6nmVtm
 
 ☯ THE CORE PHILOSOPHY ☯ EMOTION = LOGIC · THE HINATA TRAP · MASTER = FLOOR
