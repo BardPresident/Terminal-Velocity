@@ -1256,7 +1256,7 @@ const fmtDate=t=>{const d=new Date(t),hm=" "+pad(d.getHours())+":"+pad(d.getMinu
 const sleep=ms=>new Promise(r=>setTimeout(r,ms));
 const LS={get(k,d){try{const v=localStorage.getItem(k);return v==null?d:JSON.parse(v)}catch(e){return d}},set(k,v){try{localStorage.setItem(k,JSON.stringify(v));return true}catch(e){return false}}};
 const fmtUp=s=>{s=Math.max(0,Math.round(s));const d=Math.floor(s/86400),hr=Math.floor(s%86400/3600),m=Math.floor(s%3600/60),sc=s%60;if(d)return d+" d "+hr+" h";if(hr)return hr+" h "+m+" min";if(m)return m+" min "+sc+" s";return sc+" s"};
-const OS={apps:{},wins:[],z:10,bus:{},boot:performance.now(),ver:"1.0 build 1110-1239"};
+const OS={apps:{},wins:[],z:10,bus:{},boot:performance.now(),ver:"1.0 build 1110-1320"};
 OS.on=(ev,f)=>{(OS.bus[ev]=OS.bus[ev]||[]).push(f);return f};
 OS.off=(ev,f)=>{OS.bus[ev]=(OS.bus[ev]||[]).filter(x=>x!==f)};
 /* reboot that always fetches the newest copy of this page (like Ctrl+Shift+R), then reloads */
@@ -3675,51 +3675,6 @@ defApp("cleaner",{name:"Cleaner",icon:"broom",cat:"System",w:820,h:640,single:tr
    if(tab==="Overview")overview();else if(tab==="Settings and data")lsTab();else if(tab==="Your files")filesTab();else otherTab();paintAct();body.scrollTop=keep}
   root.append(tabsEl,body,act);b.append(root);draw();scan().then(draw);
   const onFs=()=>{if(win.dead||win.min)return};OS.on("fs",onFs);win.on.close=()=>OS.off("fs",onFs);
- }});
-
-/* ===================== CRYPT: text to Republicka text and back (a simple letter shift) ===================== */
-IP.crypt="M3 6h18v12H3z M3 6l9 7 9-7 M15.5 16.5h5v4h-5z M16.5 16.5V15a1.5 1.5 0 013 0v1.5";
-const CR={
- N:10,/* shift = the 10 letters of "Republicka" */
- shift(t,k){return t.replace(/[a-z]/gi,c=>{const b=c<"a"?65:97;return String.fromCharCode((c.charCodeAt(0)-b+k+26)%26+b)}).replace(/[0-9]/g,c=>String((+c+(k>0?5:5))%10))},
- encode(t){return CR.shift(t,CR.N)},
- decode(t){return CR.shift(t,-CR.N)},
- css(){if(document.getElementById("crcss"))return;const s=document.createElement("style");s.id="crcss";s.textContent=`
-.cr{position:absolute;inset:0;display:flex;flex-direction:column;gap:8px;padding:10px;overflow:auto}
-.cr .row2{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
-.cr textarea.t{flex:none;height:120px;min-height:80px;resize:vertical;font-family:inherit;line-height:1.45;box-sizing:border-box;width:100%}
-.cr .pane{display:flex;flex-direction:column;gap:4px;flex:none}
-.cr>*{flex-shrink:0}
-.cr details summary{cursor:pointer;font-size:12px;opacity:.8}
-.cr .small{font-size:12px;opacity:.78;line-height:1.45}
-.cr .btn.on{background:var(--ac);color:var(--bg);border-color:var(--ac);font-weight:700}
-.cr .bad{color:var(--wn)}.cr .good{color:var(--ac)}
-`;document.head.append(s)}
-};
-defApp("crypt",{name:"Crypt",icon:"crypt",cat:"Tools",w:700,h:600,single:true,desc:"turn text into Republicka text and back again",kw:"crypt encode decode republicka text convert cipher secret message translate",
- init(win,b){
-  CR.css();
-  let mode="encode";
-  const root=h("div",{class:"cr"});
-  const inp=h("textarea",{class:"t",spellcheck:"false",oninput:()=>run()}),out=h("textarea",{class:"t",readonly:"",spellcheck:"false"}),stat=h("div",{class:"small"}),
-   inL=h("b",{}),outL=h("b",{});
-  const mb={encode:h("button",{class:"btn",onclick:()=>setMode("encode")},"Encode"),decode:h("button",{class:"btn",onclick:()=>setMode("decode")},"Decode")};
-  function setMode(m){mode=m;mb.encode.classList.toggle("on",m==="encode");mb.decode.classList.toggle("on",m==="decode");
-   inL.textContent=m==="encode"?"Your text":"Republicka text";outL.textContent=m==="encode"?"Republicka text":"Your text";
-   inp.placeholder=m==="encode"?"Type or paste the message you want to turn into Republicka text...":"Paste Republicka text here to read it...";run(false)}
-  function run(){const t=inp.value;stat.className="small";
-   if(!t){out.value="";stat.textContent="";return}
-   out.value=mode==="encode"?CR.encode(t):CR.decode(t);stat.textContent=t.length.toLocaleString()+" characters in, "+out.value.length.toLocaleString()+" out"}
-  const copy=async()=>{if(!out.value)return toast("Nothing to copy yet.",1);try{await navigator.clipboard.writeText(out.value);toast("Copied")}catch(e){out.select();toast("Press Ctrl+C to copy.",1)}};
-  root.append(
-   h("div",{class:"row2"},mb.encode,mb.decode,h("span",{style:"flex:1"}),h("button",{class:"btn sm",title:"Use the result as the new input and switch direction",onclick:()=>{if(!out.value)return;const v=out.value;inp.value=v;setMode(mode==="encode"?"decode":"encode")}},"Swap")),
-   h("div",{class:"pane"},inL,inp),stat,h("div",{class:"pane"},outL,out),
-   h("div",{class:"row2"},h("button",{class:"btn pri",onclick:copy},"Copy result"),
-    h("button",{class:"btn",onclick:async()=>{try{inp.value=await navigator.clipboard.readText();run()}catch(e){toast("Press Ctrl+V in the box instead.",1);inp.focus()}}},"Paste"),
-    h("button",{class:"btn",onclick:()=>{if(!out.value)return toast("Nothing to save yet.",1);download(mode==="encode"?"republicka-text.txt":"decoded.txt",out.value+"\n","text/plain")}},"Save .txt"),
-    h("button",{class:"btn",onclick:()=>{inp.value="";out.value="";stat.textContent=""}},"Clear")),
-   h("details",{},h("summary",{},"How it works"),h("div",{class:"small"}," every letter moves 10 places along the alphabet and every digit moves 5, so \"Hello 2026\" becomes \"Rovvy 7571\". Capitals, spaces, punctuation, emoji and other languages stay as they are, and the text stays exactly the same length. Decode moves everything back. This is a simple scramble, not a lock: anyone who knows the trick, or reads this open-source OS, can undo it in seconds. It only makes a message unreadable at a glance.")));
-  b.append(root);setMode("encode");if(!isMob())inp.focus();
  }});
 
 /* ===================== BOOT ===================== */
