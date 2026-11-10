@@ -1256,7 +1256,7 @@ const fmtDate=t=>{const d=new Date(t),hm=" "+pad(d.getHours())+":"+pad(d.getMinu
 const sleep=ms=>new Promise(r=>setTimeout(r,ms));
 const LS={get(k,d){try{const v=localStorage.getItem(k);return v==null?d:JSON.parse(v)}catch(e){return d}},set(k,v){try{localStorage.setItem(k,JSON.stringify(v));return true}catch(e){return false}}};
 const fmtUp=s=>{s=Math.max(0,Math.round(s));const d=Math.floor(s/86400),hr=Math.floor(s%86400/3600),m=Math.floor(s%3600/60),sc=s%60;if(d)return d+" d "+hr+" h";if(hr)return hr+" h "+m+" min";if(m)return m+" min "+sc+" s";return sc+" s"};
-const OS={apps:{},wins:[],z:10,bus:{},boot:performance.now(),ver:"1.0 build 1110-0611"};
+const OS={apps:{},wins:[],z:10,bus:{},boot:performance.now(),ver:"1.0 build 1110-0635"};
 OS.on=(ev,f)=>{(OS.bus[ev]=OS.bus[ev]||[]).push(f);return f};
 OS.off=(ev,f)=>{OS.bus[ev]=(OS.bus[ev]||[]).filter(x=>x!==f)};
 OS.emit=(ev,a)=>{(OS.bus[ev]||[]).slice().forEach(f=>{try{f(a)}catch(e){console.error(e)}})};
@@ -2941,6 +2941,396 @@ defApp("benchmark",{name:"Benchmark",icon:"gauge",cat:"System",w:780,h:640,singl
   b.append(h("div",{style:"display:flex;flex-direction:column;height:100%;min-height:0"},tbar,head,panel));paintLP();show(tabs.includes(tab)?tab:"Live");
   raf=requestAnimationFrame(loop);tmr=setInterval(tick,1000);
   win.on.close=()=>{cancelAnimationFrame(raf);clearInterval(tmr);if(po)po.disconnect()}}});
+
+/* ===================== DIARY: a pretty paper diary ===================== */
+IP.diary="M6 3h11a2 2 0 012 2v14a2 2 0 01-2 2H6z M6 3v18 M9 3v18 M14 9.2c-.9-1.3-3-.8-3 .9 0 1.4 1.8 2.3 3 3.4 1.2-1.1 3-2 3-3.4 0-1.7-2.1-2.2-3-.9z";
+const DY={
+ covers:{rose:["Rose","#f48fb1","#d9577f"],lilac:["Lilac","#c3a4ee","#8f6bd0"],peach:["Peach","#ffb592","#e5855a"],mint:["Mint","#9fdcc4","#5fb698"],sky:["Sky","#9fd0f2","#5b9fd1"]},
+ inks:[["Plum","#7b2d5b"],["Ink blue","#33449a"],["Berry","#c2185b"],["Forest","#2f6f5a"],["Soft black","#3b2f3a"]],
+ fonts:{script:["Handwriting",'"Segoe Script","Bradley Hand","Snell Roundhand","Lucida Handwriting","Apple Chancery","Comic Sans MS","Chalkboard SE",cursive'],round:["Round and cute",'"Comic Sans MS","Chalkboard SE","Marker Felt","Trebuchet MS",sans-serif'],type:["Typewriter",'"Courier New","Courier",monospace']},
+ moods:[["♡","lovely"],["☼","happy"],["✦","excited"],["☁","meh"],["☾","tired"],["☂","sad"]],
+ stickers:["♡","♥","✿","❀","★","☆","☾","☼","☁","♪","♫","✧","❁","✦","☺","✂","✉"],
+ key:d=>d.getFullYear()+"-"+pad(d.getMonth()+1)+"-"+pad(d.getDate()),
+ parse:k=>{const p=k.split("-");return new Date(+p[0],+p[1]-1,+p[2])},
+ load(){const d=LS.get("tvos_diary",null);const o=d&&typeof d==="object"&&d.e?d:{v:1,cover:"rose",ink:"#7b2d5b",font:"script",title:"My Diary",pin:null,e:{}};o.e=o.e||{};return o},
+ save(o){LS.set("tvos_diary",o)},
+ words:t=>{const m=(t||"").trim().match(/\S+/g);return m?m.length:0},
+ async hash(pin,salt){const b=new TextEncoder().encode(salt+":"+pin),d=await crypto.subtle.digest("SHA-256",b);return Array.from(new Uint8Array(d)).map(x=>x.toString(16).padStart(2,"0")).join("")},
+ css(){if(document.getElementById("dycss"))return;const s=document.createElement("style");s.id="dycss";s.textContent=`
+.dy{position:absolute;inset:0;display:flex;flex-direction:column;overflow:hidden;color:var(--ink);font-family:var(--ff);background:#f6d9e2;--ff:${DY.fonts.script[1]}}
+.dy.f-round{--ff:${DY.fonts.round[1]}}.dy.f-type{--ff:${DY.fonts.type[1]}}
+.dy button,.dy input,.dy select{font-family:inherit}
+.dy .desk{flex:1;min-height:0;display:flex;padding:10px;gap:0;background:radial-gradient(circle at 20% 10%,#fff2f6 0,transparent 55%),#f3cddb}
+.dy .book{flex:1;min-width:0;display:flex;border-radius:6px 14px 14px 6px;background:var(--dc);padding:7px 7px 7px 12px;box-shadow:0 3px 10px rgba(120,40,70,.35),inset 3px 0 0 var(--dc2),inset 6px 0 6px -3px rgba(0,0,0,.25);position:relative}
+.dy .pg{flex:1;min-width:0;min-height:0;position:relative;display:flex;flex-direction:column;background:#fffaf5;overflow:hidden}
+.dy .pg.l{border-radius:3px 0 0 3px;box-shadow:inset -14px 0 14px -12px rgba(120,60,80,.28)}
+.dy .pg.r{border-radius:0 3px 3px 0;box-shadow:inset 14px 0 14px -12px rgba(120,60,80,.28)}
+.dy.nar .pg{border-radius:3px;box-shadow:none}
+.dy .pg.l{flex:0 0 40%;max-width:340px}
+.dy.nar .pg.l{flex:1;max-width:none}
+.dy .holes{position:absolute;left:8px;top:0;bottom:0;width:14px;display:flex;flex-direction:column;justify-content:space-around;padding:30px 0;pointer-events:none;z-index:2}
+.dy .holes i{width:12px;height:12px;border-radius:50%;background:var(--dc);box-shadow:inset 1px 1px 3px rgba(0,0,0,.35)}
+.dy .tape{position:absolute;top:-6px;right:34px;width:96px;height:26px;transform:rotate(3deg);opacity:.85;z-index:3;pointer-events:none;background:repeating-linear-gradient(45deg,#ffd1e0 0 6px,#fff0f5 6px 12px);box-shadow:0 1px 3px rgba(0,0,0,.18);clip-path:polygon(2% 0,98% 6%,100% 100%,0 92%)}
+.dy .tape.b{left:40px;right:auto;transform:rotate(-4deg);background:repeating-linear-gradient(-45deg,#d9ecff 0 6px,#f3f9ff 6px 12px)}
+.dy .hd{padding:12px 16px 4px 40px;position:relative;z-index:1}
+.dy .day{font-size:15px;opacity:.75;letter-spacing:.5px}
+.dy .date{font-size:25px;line-height:1.15;font-weight:700;color:var(--ink)}
+.dy .alt{font-size:12px;opacity:.6;margin-top:1px}
+.dy .nav{display:flex;gap:6px;align-items:center;padding:4px 14px 6px 40px;flex-wrap:wrap}
+.dy .sb{display:inline-flex;align-items:center;justify-content:center;min-width:30px;min-height:30px;padding:2px 10px;border:1.5px solid #e9a9c0;background:#fff;color:#b04a72;border-radius:16px;cursor:pointer;font-size:15px}
+.dy .sb:hover{background:#ffeef4;border-color:#d9577f}.dy .sb.on{background:#ffd9e6;border-color:#d9577f;color:#8d1d49}
+.dy .moods{display:flex;gap:4px;padding:0 14px 4px 40px;flex-wrap:wrap;align-items:center}
+.dy .moods .lab{font-size:13px;opacity:.7;margin-right:2px}
+.dy .sheet{flex:1;min-height:0;position:relative}
+.dy .margin{position:absolute;left:34px;top:0;bottom:0;width:0;border-left:2px solid #f3a1ba;z-index:1;pointer-events:none}
+.dy textarea.tx{position:absolute;inset:0;width:100%;height:100%;box-sizing:border-box;border:0;outline:0;resize:none;background-color:transparent;background-image:repeating-linear-gradient(transparent 0 31px,#efc3d3 31px 32px);background-attachment:local;background-position:0 4px;color:var(--ink);font:inherit;font-size:20px;line-height:32px;padding:4px 14px 40px 44px;tab-size:4}
+.dy.f-type textarea.tx{font-size:16px}
+.dy.nar textarea.tx{font-size:18px}
+.dy .ft{position:absolute;left:0;right:0;bottom:0;display:flex;gap:10px;align-items:center;padding:3px 14px 3px 40px;font-size:12px;color:#a35d78;background:linear-gradient(transparent,#fffaf5 60%);z-index:2;pointer-events:none}
+.dy .ft b{pointer-events:auto}
+.dy .lp-top{padding:12px 14px 4px 34px;display:flex;flex-direction:column;gap:6px}
+.dy .mh{display:flex;align-items:center;justify-content:space-between;gap:6px}
+.dy .mt{font-size:18px;font-weight:700;text-align:center;flex:1}
+.dy .grid{display:grid;grid-template-columns:repeat(7,1fr);gap:2px;text-align:center}
+.dy .grid .dn{font-size:11px;opacity:.6}
+.dy .c{position:relative;aspect-ratio:1/1;max-height:44px;border:0;background:transparent;border-radius:50%;cursor:pointer;color:var(--ink);font-size:14px;padding:0;display:flex;align-items:center;justify-content:center}
+.dy .c:hover{background:#ffe3ec}.dy .c.sel{background:#ffc8da;font-weight:700}.dy .c.today{outline:2px dotted #d9577f}
+.dy .c .m{position:absolute;right:2px;top:-1px;font-size:11px;color:#e0467f;line-height:1}
+.dy .c.oth{opacity:.3}
+.dy .st{font-size:13px;color:#a35d78;line-height:1.5}
+.dy .srch{border:1.5px solid #e9a9c0;border-radius:16px;padding:5px 12px;background:#fff;color:var(--ink);width:100%;box-sizing:border-box;outline:0;font-size:14px}
+.dy .lst{flex:1;min-height:0;overflow:auto;padding:2px 14px 12px 34px;display:flex;flex-direction:column;gap:2px}
+.dy .it{display:block;text-align:left;width:100%;border:0;border-bottom:1px dashed #efc3d3;background:transparent;padding:6px 4px;cursor:pointer;color:var(--ink);font-size:14px}
+.dy .it:hover{background:#ffeef4}.dy .it small{display:block;opacity:.65;font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.dy .tray{display:flex;gap:2px;flex-wrap:wrap;padding:0 14px 4px 40px}
+.dy .tray button{border:0;background:transparent;cursor:pointer;font-size:20px;line-height:1;padding:3px 4px;border-radius:6px;color:#d9577f}
+.dy .tray button:hover{background:#ffe3ec}
+.dy .cover{position:absolute;inset:0;z-index:20;display:flex;align-items:center;justify-content:center;padding:14px;background:radial-gradient(circle at 30% 20%,rgba(255,255,255,.35),transparent 55%),var(--dc);transform-origin:left center;transition:transform .8s ease,opacity .8s ease;backface-visibility:hidden}
+.dy .cover.open{transform:perspective(1200px) rotateY(-100deg);opacity:0;pointer-events:none}
+.dy .cover:before{content:"";position:absolute;inset:12px 12px 12px 26px;border:2px dashed rgba(255,255,255,.7);border-radius:8px;pointer-events:none}
+.dy .cover:after{content:"";position:absolute;left:0;top:0;bottom:0;width:20px;background:linear-gradient(90deg,var(--dc2),transparent)}
+.dy .band{position:absolute;right:46px;top:0;bottom:0;width:14px;background:var(--dc2);opacity:.75;box-shadow:0 0 4px rgba(0,0,0,.3)}
+.dy .label{position:relative;z-index:2;background:#fffaf2;border:2px solid #fff;outline:2px solid var(--dc2);border-radius:14px;padding:20px 24px 16px;text-align:center;max-width:min(78%,360px);box-shadow:0 4px 10px rgba(0,0,0,.25);display:flex;flex-direction:column;gap:8px;align-items:center;color:#7b2d5b;margin-right:30px}
+.dy .label .tt{font-size:30px;font-weight:700;line-height:1.1;word-break:break-word}
+.dy .label .fl{font-size:22px;color:#e0467f;letter-spacing:6px}
+.dy .label .sm{font-size:13px;opacity:.75}
+.dy .label input{border:1.5px solid #e9a9c0;border-radius:16px;padding:6px 12px;text-align:center;width:150px;font-size:15px;outline:0}
+.dy .clasp{border:0;border-radius:50%;width:54px;height:54px;background:radial-gradient(circle at 35% 30%,#fff3b8,#e0b94a 60%,#b88a1c);color:#a2174b;font-size:26px;cursor:pointer;box-shadow:0 2px 6px rgba(0,0,0,.4)}
+.dy .clasp:active{transform:scale(.94)}
+.dy .pop{position:absolute;right:14px;top:14px;z-index:30;width:min(320px,calc(100% - 28px));max-height:calc(100% - 28px);overflow:auto;background:#fffaf5;border:2px solid #e9a9c0;border-radius:14px;padding:12px 14px;box-shadow:0 6px 18px rgba(80,20,50,.35);display:flex;flex-direction:column;gap:10px;color:var(--ink)}
+.dy .pop h4{margin:0;font-size:18px;color:#8d1d49}.dy .pop .rw{display:flex;gap:6px;align-items:center;flex-wrap:wrap;font-size:14px}
+.dy .sw{width:26px;height:26px;border-radius:50%;border:2px solid #fff;outline:2px solid transparent;cursor:pointer;padding:0}.dy .sw.on{outline-color:#8d1d49}
+.dy .pop .note{font-size:12px;opacity:.7;line-height:1.35}
+.dy .tabs{display:none}
+.dy.nar .tabs{display:flex;gap:6px;padding:6px 8px;justify-content:center;background:#f3cddb}
+.dy .empty{opacity:.55;font-size:14px;padding:6px 4px}
+.dy select{border:1.5px solid #e9a9c0;border-radius:14px;padding:3px 8px;background:#fff;color:var(--ink);font-size:14px}
+`;document.head.append(s)}
+};
+defApp("diary",{name:"Diary",icon:"diary",cat:"Accessories",w:900,h:620,single:true,desc:"a pretty paper diary: pages by date, moods, stickers, ruled lines, optional PIN",kw:"diary journal write dear diary private notes days feelings mood stickers cute girly paper",
+ init(win,b){
+  DY.css();
+  let D=DY.load(),cur=new Date(),view=new Date(cur.getFullYear(),cur.getMonth(),1),pane="write",q="",unlocked=false,timer=0,dirty=false,pop=null,nar=false;
+  const root=h("div",{class:"dy"}),desk=h("div",{class:"desk"}),book=h("div",{class:"book"});
+  const L=h("div",{class:"pg l"}),R=h("div",{class:"pg r"}),tabs=h("div",{class:"tabs"});
+  const ta=h("textarea",{class:"tx",spellcheck:"true",placeholder:"Dear Diary,\n",oninput:()=>{touch()}});
+  const dayEl=h("div",{class:"day"}),dateEl=h("div",{class:"date"}),altEl=h("div",{class:"alt"});
+  const moodRow=h("div",{class:"moods"}),tray=h("div",{class:"tray"});
+  const stat=h("span",{}),words=h("span",{}),
+   saved=h("span",{});
+  let cover=null;
+  const colors=()=>{const c=DY.covers[D.cover]||DY.covers.rose;root.style.setProperty("--dc",c[1]);root.style.setProperty("--dc2",c[2]);root.style.setProperty("--ink",D.ink||"#7b2d5b");root.classList.remove("f-script","f-round","f-type");root.classList.add("f-"+(DY.fonts[D.font]?D.font:"script"))};
+  const ent=k=>D.e[k]||null;
+  const curKey=()=>DY.key(cur);
+  /* ---------- saving ---------- */
+  function flush(){clearTimeout(timer);timer=0;if(!dirty)return;dirty=false;const k=curKey(),t=ta.value;const e=D.e[k]||{};
+   if(!t.trim()&&!e.mood){delete D.e[k]}else{e.t=t;e.ts=Date.now();D.e[k]=e}
+   DY.save(D);saved.textContent="saved ♡";paintSide()}
+  function touch(){dirty=true;saved.textContent="writing...";clearTimeout(timer);timer=setTimeout(flush,700);words.textContent=DY.words(ta.value)+" words"}
+  /* ---------- page header ---------- */
+  const DAYS=["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"];
+  function paintDate(){dayEl.textContent=DAYS[cur.getDay()];dateEl.textContent=MC.on()?MC.long(cur):MC.ceLong(cur);altEl.textContent=MC.on()?MC.ceLong(cur):MC.long(cur);
+   const e=ent(curKey());ta.value=e?e.t||"":"";words.textContent=DY.words(ta.value)+" words";saved.textContent=e?"saved ♡":"a fresh page";paintMood()}
+  function paintMood(){moodRow.innerHTML="";const e=ent(curKey()),m=e&&e.mood;moodRow.append(h("span",{class:"lab"},"Today I feel:"));
+   for(const [s,n] of DY.moods)moodRow.append(h("button",{class:"sb"+(m===s?" on":""),title:n,onclick:()=>{flush();const k=curKey();const e2=D.e[k]||(D.e[k]={t:ta.value,ts:Date.now()});e2.mood=e2.mood===s?"":s;if(!e2.mood&&!(e2.t||"").trim())delete D.e[k];DY.save(D);paintMood();paintSide()}},s))}
+  function go(d){flush();cur=new Date(d.getFullYear(),d.getMonth(),d.getDate());view=new Date(cur.getFullYear(),cur.getMonth(),1);paintDate();paintSide();if(nar){pane="write";paneShow()}}
+  function insertAt(s){const a=ta.selectionStart==null?ta.value.length:ta.selectionStart,e=ta.selectionEnd==null?a:ta.selectionEnd;ta.value=ta.value.slice(0,a)+s+ta.value.slice(e);ta.focus();ta.selectionStart=ta.selectionEnd=a+s.length;touch()}
+  for(const s of [...new Set(DY.stickers)])tray.append(h("button",{title:"Add "+s,onclick:()=>insertAt(s)},s));
+  const bar=h("div",{class:"nav"},
+   h("button",{class:"sb",title:"Yesterday",onclick:()=>go(new Date(cur.getFullYear(),cur.getMonth(),cur.getDate()-1))},"‹"),
+   h("button",{class:"sb",title:"Tomorrow",onclick:()=>go(new Date(cur.getFullYear(),cur.getMonth(),cur.getDate()+1))},"›"),
+   h("button",{class:"sb",onclick:()=>go(new Date())},"Today"),
+   h("button",{class:"sb",title:"Jump to a date",onclick:()=>{const i=h("input",{type:"date",style:"position:fixed;opacity:0;pointer-events:none"});root.append(i);i.value=curKey();i.addEventListener("change",()=>{if(i.value)go(DY.parse(i.value));i.remove()});i.addEventListener("blur",()=>setTimeout(()=>i.remove(),300));try{i.showPicker()}catch(e){i.style.opacity=1;i.style.pointerEvents="auto"}}},"❖ Jump"),
+   h("span",{style:"flex:1"}),
+   h("button",{class:"sb",title:"Colours, ink, PIN, export",onclick:()=>openPop()},"⚙"),
+   h("button",{class:"sb",title:"Close the diary",onclick:()=>lock()},"Close ♡"));
+  /* ---------- left page: month, search, recent ---------- */
+  const mTitle=h("div",{class:"mt"}),mGrid=h("div",{class:"grid"}),sInp=h("input",{class:"srch",placeholder:"Search my pages...",oninput:e=>{q=e.target.value;paintList()}}),stEl=h("div",{class:"st"}),lst=h("div",{class:"lst"});
+  const topL=h("div",{class:"lp-top"},
+   h("div",{class:"mh"},h("button",{class:"sb",onclick:()=>{view=new Date(view.getFullYear(),view.getMonth()-1,1);paintMonth()}},"‹"),mTitle,h("button",{class:"sb",onclick:()=>{view=new Date(view.getFullYear(),view.getMonth()+1,1);paintMonth()}},"›")),
+   mGrid,stEl,sInp);
+  function paintMonth(){mTitle.textContent=MC.on()?MC.mon(view):MC.ceMon(view);mGrid.innerHTML="";
+   for(const n of ["S","M","T","W","T","F","S"])mGrid.append(h("div",{class:"dn"},n));
+   const first=new Date(view.getFullYear(),view.getMonth(),1),start=first.getDay(),nd=new Date(view.getFullYear(),view.getMonth()+1,0).getDate(),tk=DY.key(new Date()),ck=curKey();
+   for(let i=0;i<start;i++)mGrid.append(h("div",{}));
+   for(let d=1;d<=nd;d++){const dt=new Date(view.getFullYear(),view.getMonth(),d),k=DY.key(dt),e=ent(k),has=e&&((e.t||"").trim()||e.mood);
+    mGrid.append(h("button",{class:"c"+(k===ck?" sel":"")+(k===tk?" today":""),onclick:()=>go(dt),title:has?"Read this page":"Write this day"},String(d),has?h("span",{class:"m"},e.mood||"♥"):null))}}
+  function streak(){let n=0;const d=new Date();let k=DY.key(d);if(!(D.e[k]&&(D.e[k].t||"").trim())){d.setDate(d.getDate()-1)}
+   for(;;){const e=D.e[DY.key(d)];if(e&&(e.t||"").trim()){n++;d.setDate(d.getDate()-1)}else break}return n}
+  function paintList(){lst.innerHTML="";const keys=Object.keys(D.e).sort().reverse();let rows=keys.filter(k=>(D.e[k].t||"").trim()||D.e[k].mood);
+   const qq=q.trim().toLowerCase();if(qq)rows=rows.filter(k=>(D.e[k].t||"").toLowerCase().includes(qq)||(MC.long(DY.parse(k))).toLowerCase().includes(qq));else rows=rows.slice(0,12);
+   if(!rows.length){lst.append(h("div",{class:"empty"},qq?"No pages match that.":"Your pages will show up here."));return}
+   if(!qq)lst.append(h("div",{class:"st"},"Latest pages"));
+   for(const k of rows){const e=D.e[k],dt=DY.parse(k),tx=(e.t||"").replace(/\s+/g," ").trim();let sn=tx.slice(0,90);if(qq){const i=tx.toLowerCase().indexOf(qq);if(i>30)sn="..."+tx.slice(i-25,i+65)}
+    lst.append(h("button",{class:"it",onclick:()=>go(dt)},(e.mood?e.mood+" ":"")+(MC.on()?MC.short(dt):dt.getDate()+" "+MONTHS[dt.getMonth()].slice(0,3)+" "+dt.getFullYear()),h("small",{},sn||"(no words yet)")))}}
+  function paintSide(){paintMonth();const ks=Object.keys(D.e).filter(k=>(D.e[k].t||"").trim());let w=0;for(const k of ks)w+=DY.words(D.e[k].t);
+   const s=streak();stEl.textContent=ks.length+(ks.length===1?" page":" pages")+" · "+w.toLocaleString()+" words"+(s>1?" · "+s+" days in a row ♥":"");paintList()}
+  /* ---------- layout ---------- */
+  const holesL=h("div",{class:"holes"},...[0,1,2,3,4].map(()=>h("i"))),holesR=h("div",{class:"holes"},...[0,1,2,3,4].map(()=>h("i")));
+  L.append(holesL,topL,lst);
+  const sheet=h("div",{class:"sheet"},h("div",{class:"margin"}),ta,h("div",{class:"ft"},saved,words,h("span",{style:"flex:1"}),stat));
+  R.append(holesR,h("div",{class:"tape"}),h("div",{class:"hd"},dayEl,dateEl,altEl),bar,moodRow,tray,sheet);
+  book.append(L,R);desk.append(book);
+  const tbW=h("button",{class:"sb on",onclick:()=>{pane="write";paneShow()}},"✎ Write"),tbM=h("button",{class:"sb",onclick:()=>{pane="pages";paneShow()}},"▦ Pages");tabs.append(tbW,tbM);
+  function paneShow(){if(!nar){L.style.display=R.style.display="";return}L.style.display=pane==="pages"?"":"none";R.style.display=pane==="write"?"":"none";tbW.classList.toggle("on",pane==="write");tbM.classList.toggle("on",pane==="pages")}
+  const ro=new ResizeObserver(()=>{const n=b.clientWidth<640;if(n!==nar){nar=n;root.classList.toggle("nar",nar);paneShow()}});
+  /* ---------- settings popover ---------- */
+  function closePop(){if(pop){pop.remove();pop=null}}
+  function openPop(){if(pop){closePop();return}
+   const sw=(map,get,set)=>h("div",{class:"rw"},...Object.keys(map).map(k=>h("button",{class:"sw"+(get()===k?" on":""),title:map[k][0],style:"background:"+map[k][1],onclick:()=>{set(k);DY.save(D);colors();closePop();openPop()}})));
+   const inks=h("div",{class:"rw"},...DY.inks.map(x=>h("button",{class:"sw"+(D.ink===x[1]?" on":""),title:x[0],style:"background:"+x[1],onclick:()=>{D.ink=x[1];DY.save(D);colors();closePop();openPop()}})));
+   const fs=h("select",{onchange:e=>{D.font=e.target.value;DY.save(D);colors()}},...Object.keys(DY.fonts).map(k=>h("option",{value:k,selected:D.font===k},DY.fonts[k][0])));
+   const hasPin=!!D.pin,canPin=!!(window.crypto&&crypto.subtle);
+   pop=h("div",{class:"pop"},h("h4",{},"My diary ♡"),
+    h("div",{},h("div",{class:"rw"},"Cover colour"),sw(DY.covers,()=>D.cover,k=>D.cover=k)),
+    h("div",{},h("div",{class:"rw"},"Ink colour"),inks),
+    h("div",{class:"rw"},"Writing style",fs),
+    h("div",{class:"rw"},h("button",{class:"sb",onclick:async()=>{const v=await dlgPrompt("What should the cover say?",D.title||"My Diary","Cover title");if(v!=null&&v.trim()){D.title=v.trim().slice(0,40);DY.save(D);paintCover()}}},"Change the cover title")),
+    h("div",{},h("div",{class:"rw"},h("button",{class:"sb",disabled:!canPin,onclick:async()=>{
+      if(hasPin){if(await dlgConfirm("Remove the PIN? Anyone who opens the diary will be able to read it.","Remove PIN","Remove")){D.pin=null;DY.save(D);toast("PIN removed");closePop();openPop()}return}
+      const p=await dlgPrompt("Choose a PIN (4 or more characters). Don't forget it: there is no way to reset it except erasing the diary.","","Set a PIN");if(p==null)return;if(p.length<4){toast("Use at least 4 characters.",1);return}
+      const salt=Array.from(crypto.getRandomValues(new Uint8Array(8))).map(x=>x.toString(16).padStart(2,"0")).join("");D.pin={salt,hash:await DY.hash(p,salt)};DY.save(D);toast("PIN set. It asks next time you open the diary.");closePop();openPop()}},hasPin?"Remove my PIN":"Lock with a PIN")),
+     h("div",{class:"note"},canPin?"A PIN keeps casual snoopers out. It does not encrypt your writing: anyone who can read this browser's stored data can still read the pages.":"A PIN needs a secure (https) page, so it is off here.")),
+    h("div",{},h("div",{class:"rw"},h("button",{class:"sb",onclick:()=>{flush();exportTxt()}},"Save as .txt"),h("button",{class:"sb",onclick:()=>{flush();download("diary-"+MC.iso(new Date())+".json",JSON.stringify(D,null,1),"application/json")}},"Save as .json")),
+     h("div",{class:"note"},"Your diary lives only in this browser. The Backup app saves it with everything else.")),
+    h("div",{class:"rw"},h("button",{class:"sb",onclick:async()=>{const f=await new Promise(res=>{const i=h("input",{type:"file",accept:".json,application/json",onchange:()=>res(i.files[0])});i.click()});if(!f)return;try{const o=JSON.parse(await f.text());if(!o||typeof o.e!=="object")throw 0;let n=0;for(const k of Object.keys(o.e)){if(!D.e[k]){D.e[k]=o.e[k];n++}}DY.save(D);paintSide();toast(n+" pages added (existing pages kept)")}catch(e){toast("That isn't a diary file.",1)}}},"Add pages from a .json")),
+    (ent(curKey())?h("div",{class:"rw"},h("button",{class:"sb",onclick:async()=>{if(await dlgConfirm("Tear out this page for good?","Tear out","Tear out")){dirty=false;clearTimeout(timer);delete D.e[curKey()];DY.save(D);paintDate();paintSide();closePop()}}},"Tear out this page")):null),
+    h("div",{class:"rw"},h("button",{class:"sb on",onclick:closePop},"Done")));
+   root.append(pop)}
+  function exportTxt(){const ks=Object.keys(D.e).sort().filter(k=>(D.e[k].t||"").trim()||D.e[k].mood);if(!ks.length)return toast("There are no pages yet.");
+   const out=[D.title||"My Diary","=".repeat((D.title||"My Diary").length),""];for(const k of ks){const dt=DY.parse(k),e=D.e[k];out.push(DAYS[dt.getDay()]+", "+MC.dual(dt)+(e.mood?"   ["+e.mood+" "+(DY.moods.find(m=>m[0]===e.mood)||["",""])[1]+"]":""),"-".repeat(40),(e.t||"").trim(),"","")}
+   download("diary-"+MC.iso(new Date())+".txt",out.join("\n"),"text/plain")}
+  /* ---------- cover ---------- */
+  const pin=h("input",{type:"password",placeholder:"PIN",autocomplete:"off",onkeydown:e=>{if(e.key==="Enter")tryOpen()}}),tt=h("div",{class:"tt"}),clasp=h("button",{class:"clasp",title:"Open the diary",onclick:()=>tryOpen()},"♥"),pinMsg=h("div",{class:"sm"});
+  function paintCover(){tt.textContent=D.title||"My Diary";pin.style.display=D.pin?"":"none";pinMsg.textContent=D.pin?"Enter your PIN, then tap the heart":"Tap the heart to open";}
+  async function tryOpen(){
+   if(D.pin){const hs=await DY.hash(pin.value,D.pin.salt);if(hs!==D.pin.hash){pinMsg.textContent="That's not it. Try again ♡";pin.value="";pin.focus();return}}
+   unlocked=true;pin.value="";cover.classList.add("open");setTimeout(()=>{if(cover)cover.style.display="none"},850);setTimeout(()=>{if(!nar&&!isMob())ta.focus()},900)}
+  function lock(){flush();closePop();unlocked=false;cover.style.display="";void cover.offsetWidth;cover.classList.remove("open");paintCover()}
+  cover=h("div",{class:"cover"},h("div",{class:"band"}),h("div",{class:"label"},h("div",{class:"fl"},"✿ ♡ ✿"),tt,h("div",{class:"fl"},"❀ ★ ❀"),h("div",{class:"sm"},"private · keep out ♥"),pin,pinMsg,clasp));
+  book.append(cover);
+  root.append(desk,tabs);b.append(root);
+  colors();paintCover();paintDate();paintSide();ro.observe(b);nar=b.clientWidth<640;root.classList.toggle("nar",nar);paneShow();
+  const onVis=()=>{if(document.hidden)flush()};document.addEventListener("visibilitychange",onVis);
+  const onKey=e=>{if(win.min||!root.isConnected)return;if(e.key==="Escape"&&pop)closePop()};root.addEventListener("keydown",onKey);
+  win.on.close=()=>{flush();ro.disconnect();document.removeEventListener("visibilitychange",onVis)};
+  win.diary={flush,go:d=>go(d),get data(){return D}};
+ }});
+
+/* ===================== SEQUENCER: drum machine + loop recorder ===================== */
+IP.seq="M3 5h18v14H3z M7.5 9v6 M12 9v6 M16.5 9v6 M3 12h18";
+const SQ={
+ names:["Kick","Snare","Closed hat","Open hat","Clap","Tom","Rim","Cowbell"],
+ keys:["a","s","d","f","g","h","j","k"],
+ col:["#e8665f","#eba645","#d9d94f","#80d65f","#4fcdb5","#4fa6e6","#a082e6","#e664bc"],
+ noise(c){if(!SQ._n)SQ._n=new WeakMap();let b=SQ._n.get(c);if(!b){b=c.createBuffer(1,c.sampleRate,c.sampleRate);const d=b.getChannelData(0);for(let i=0;i<d.length;i++)d[i]=Math.random()*2-1;SQ._n.set(c,b)}return b},
+ nz(c,dest,t,dur,type,f,q,g,dec){const s=c.createBufferSource();s.buffer=SQ.noise(c);const fl=c.createBiquadFilter();fl.type=type;fl.frequency.value=f;fl.Q.value=q||.7;const a=c.createGain();a.gain.setValueAtTime(g,t);a.gain.exponentialRampToValueAtTime(.0008,t+(dec||dur));s.connect(fl);fl.connect(a);a.connect(dest);s.start(t,Math.random()*.5);s.stop(t+dur+.02)},
+ osc(c,dest,t,type,f0,f1,dur,g,dec){const o=c.createOscillator();o.type=type;o.frequency.setValueAtTime(f0,t);if(f1!==f0)o.frequency.exponentialRampToValueAtTime(f1,t+(dec||dur)*.6);const a=c.createGain();a.gain.setValueAtTime(g,t);a.gain.exponentialRampToValueAtTime(.0008,t+(dec||dur));o.connect(a);a.connect(dest);o.start(t);o.stop(t+dur+.02)},
+ v:[
+  (c,d,t,v)=>{SQ.osc(c,d,t,"sine",160,42,.5,v,.45);SQ.osc(c,d,t,"triangle",320,60,.05,v*.35,.04)},
+  (c,d,t,v)=>{SQ.osc(c,d,t,"triangle",200,150,.14,v*.55,.12);SQ.nz(c,d,t,.25,"highpass",1500,.7,v*.7,.2)},
+  (c,d,t,v)=>{SQ.nz(c,d,t,.07,"highpass",7500,.9,v*.5,.045)},
+  (c,d,t,v)=>{SQ.nz(c,d,t,.45,"highpass",7000,.9,v*.45,.38)},
+  (c,d,t,v)=>{for(let k=0;k<3;k++)SQ.nz(c,d,t+k*.011,.03,"bandpass",1400,1.2,v*.7,.025);SQ.nz(c,d,t+.033,.22,"bandpass",1400,1.2,v*.7,.2)},
+  (c,d,t,v)=>{SQ.osc(c,d,t,"sine",230,95,.4,v*.9,.35);SQ.nz(c,d,t,.04,"bandpass",900,1,v*.15,.03)},
+  (c,d,t,v)=>{SQ.osc(c,d,t,"square",1750,1650,.03,v*.25,.025);SQ.nz(c,d,t,.04,"bandpass",3200,3,v*.5,.03)},
+  (c,d,t,v)=>{const f=c.createBiquadFilter();f.type="bandpass";f.frequency.value=900;f.Q.value=1.2;f.connect(d);SQ.osc(c,f,t,"square",562,562,.4,v*.5,.28);SQ.osc(c,f,t,"square",845,845,.4,v*.5,.28)}
+ ],
+ pre:{
+  "Four on the floor":{bpm:124,t:["x...x...x...x...","....x.......x...","..x...x...x...x.",".............x..","....x.......x...","................","................","................"]},
+  "Boom bap":{bpm:90,t:["X..x..x...x.....","....X.......X...","x.x.x.x.x.x.x.x.","..............x.","................","...........x....","................","................"]},
+  "Heartbeat (50 BPM)":{bpm:50,t:["X.x.....X.x.....","................","................","................","................","................","................","................"]},
+  "Trap":{bpm:140,t:["X.....x...x.....","........X.......","x.x.xxx.x.x.xxxx","......x.......x.","........x.......","..............x.","................","................"]},
+  "Funk":{bpm:104,t:["X..x..X...x..x..","....X..x.x..X...","xxxxxxxxxxxxxxxx","................","................","................","..x...........x.","................"]},
+  "Reggae one drop":{bpm:78,t:["........X.......","........X.......","x.x.x.x.x.x.x.x.","................","................","................","..x.....x.....x.","................"]}
+ },
+ empty(){return Array.from({length:8},()=>new Array(32).fill(0))},
+ def(){return{bpm:120,swing:0,steps:16,bank:0,banks:[SQ.empty(),SQ.empty(),SQ.empty(),SQ.empty()],vol:[.9,.8,.5,.5,.7,.7,.6,.5],mute:new Array(8).fill(0),solo:new Array(8).fill(0),master:.85,off:[0,0]}},
+ load(){const o=LS.get("tvos_seq",null),d=SQ.def();if(!o||typeof o!=="object")return d;for(const k of Object.keys(d))if(o[k]!=null)d[k]=o[k];
+  if(!Array.isArray(d.banks)||d.banks.length!==4||!d.banks.every(b=>Array.isArray(b)&&b.length===8&&b.every(r=>Array.isArray(r)&&r.length===32)))d.banks=SQ.def().banks;return d},
+ /* build the audio graph: master -> compressor -> out, with one gain per track */
+ chain(c,S){const m=c.createGain();m.gain.value=S.master;const cp=c.createDynamicsCompressor();cp.threshold.value=-10;cp.knee.value=12;cp.ratio.value=4;m.connect(cp);cp.connect(c.destination);const tg=[];for(let i=0;i<8;i++){const g=c.createGain();g.gain.value=S.vol[i];g.connect(m);tg.push(g)}return{m,tg}},
+ audible(S,i){const any=S.solo.some(x=>x);return any?!!S.solo[i]:!S.mute[i]},
+ sd:S=>60/S.bpm/4,
+ /* play everything on one step. used live and by the WAV export */
+ step(c,ch,S,si,t,bank,vel){for(let i=0;i<8;i++){const v=S.banks[bank][i][si];if(v&&SQ.audible(S,i))SQ.v[i](c,ch.tg[i],t,v===2?1:.62)}},
+ wav(buf){const n=buf.length,ch=Math.min(2,buf.numberOfChannels),sr=buf.sampleRate,out=new Int16Array(n*ch),d=[];for(let k=0;k<ch;k++)d.push(buf.getChannelData(k));
+  let pk=0;for(let k=0;k<ch;k++)for(let i=0;i<n;i++){const a=Math.abs(d[k][i]);if(a>pk)pk=a}const g=pk>.98?.98/pk:1;
+  for(let i=0;i<n;i++)for(let k=0;k<ch;k++){const s=Math.max(-1,Math.min(1,d[k][i]*g));out[i*ch+k]=s<0?s*32768:s*32767}
+  return new Blob([REC.wavHeader(sr,ch,out.byteLength),out],{type:"audio/wav"})},
+ css(){if(document.getElementById("sqcss"))return;const s=document.createElement("style");s.id="sqcss";s.textContent=`
+.sq{position:absolute;inset:0;display:flex;flex-direction:column;overflow:auto;outline:0;user-select:none;-webkit-user-select:none}
+.sq .bar{display:flex;gap:8px;align-items:center;flex-wrap:wrap;padding:8px;border-bottom:1px solid var(--bd);flex:none}
+.sq .grp{display:flex;gap:6px;align-items:center}
+.sq .big{min-width:92px;justify-content:center;font-size:16px;font-weight:700}
+.sq .bpm{width:62px;text-align:center;font-size:18px;color:var(--ac)}
+.sq .bk.on{background:var(--ac);color:var(--bg);border-color:var(--ac);font-weight:700}
+.sq .tr{display:grid;grid-template-columns:104px 1fr;gap:6px;padding:3px 8px;align-items:center}
+.sq.nar .tr{grid-template-columns:70px 1fr}
+.sq .lb{display:flex;flex-direction:column;gap:3px;min-width:0}
+.sq .lb .nm{border:1px solid var(--bd);background:var(--pn2);color:var(--fg);border-radius:5px;padding:3px 6px;text-align:left;cursor:pointer;font-size:12px;border-left:5px solid var(--c);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.sq .lb .nm:active{filter:brightness(1.4)}
+.sq .lb .ms{display:flex;gap:3px;align-items:center}
+.sq .lb .ms button{flex:none;width:22px;height:20px;padding:0;border:1px solid var(--bd);background:var(--bg);color:var(--fg);border-radius:4px;cursor:pointer;font-size:11px}
+.sq .lb .ms button.on{background:var(--c);color:#000;border-color:var(--c)}
+.sq .lb .ms input{flex:1;min-width:0;width:100%;height:14px;accent-color:var(--c)}
+.sq .cells{display:grid;gap:3px;touch-action:pan-y}
+.sq .sc{height:30px;border:1px solid var(--bd);border-radius:4px;background:var(--bg);cursor:pointer;position:relative;touch-action:pan-y}
+.sq.nar .sc{height:24px}
+.sq .sc.b{background:var(--pn2)}
+.sq .sc.o1{background:var(--c);opacity:.62;border-color:var(--c)}
+.sq .sc.o2{background:var(--c);border-color:#fff;box-shadow:inset 0 0 0 2px rgba(255,255,255,.55)}
+.sq .sc.ph{outline:2px solid var(--ac);outline-offset:1px;z-index:1}
+.sq .lps{display:flex;gap:10px;flex-wrap:wrap;padding:8px;border-top:1px solid var(--bd);margin-top:4px}
+.sq .lp{flex:1;min-width:250px;border:1px solid var(--bd);border-radius:8px;padding:8px;display:flex;flex-direction:column;gap:6px;background:var(--pn2)}
+.sq .lp.rec{border-color:var(--er);box-shadow:0 0 0 1px var(--er)}
+.sq .lp .st{font-size:12px;opacity:.85}
+.sq .rw{display:flex;gap:6px;align-items:center;flex-wrap:wrap}
+.sq input[type=range]{accent-color:var(--ac)}
+.sq .nt{font-size:12px;opacity:.7;padding:4px 10px 12px;line-height:1.4}
+`;document.head.append(s)}
+};
+defApp("sequencer",{name:"Sequencer",icon:"seq",cat:"Media",w:880,h:640,single:true,desc:"drum machine and loop recorder: 8 drum sounds, 4 patterns, record your own loops, export to WAV",kw:"drum machine beat sequencer loop looper record music rhythm step bpm pattern 808 drums sampler",
+ init(win,b){
+  SQ.css();
+  const S=SQ.load();let ctx=null,ch=null,run=false,step=0,pass=0,gridT=0,tm=0,raf=0,queue=[],bankQ=-1,curStep=-1,curT=0,nar=false,hitRec=false,showMix=true,taps=[],mic=null,cap=null,srcs=[];
+  const slots=[0,1].map(i=>({i,state:"empty",passes:1,vol:.9,buf:null,minPass:0,rec:null}));
+  const sv=()=>LS.set("tvos_seq",S);
+  const root=h("div",{class:"sq",tabindex:"0"});
+  /* ---------- audio ---------- */
+  async function ensure(){if(!ctx){ctx=new (window.AudioContext||window.webkitAudioContext)({latencyHint:"interactive"});ch=SQ.chain(ctx,S)}if(ctx.state!=="running")try{await ctx.resume()}catch(e){}return ctx}
+  function loopStart(c,dst,sl,t,sd){if(!sl.buf)return null;const s=c.createBufferSource();s.buffer=sl.buf;const g=c.createGain();g.gain.value=sl.vol;s.connect(g);g.connect(dst);const off=Math.max(0,(S.off[sl.i]||0)/1000),dur=sl.passes*S.steps*sd;s.start(t,Math.min(off,sl.buf.duration-.01));s.stop(t+dur);return s}
+  function schedStep(si,t){
+   const sd=SQ.sd(S);
+   if(si===0){/* loops and recording start on the first step of a pass */
+    for(const sl of slots){
+     if(sl.state==="armed"&&pass>=sl.minPass&&pass%sl.passes===0){sl.state="rec";sl.rec={T0:t,len:Math.round(sl.passes*S.steps*sd*ctx.sampleRate),buf:null,end:pass+sl.passes};sl.rec.buf=new Float32Array(sl.rec.len);sl.rec.have=0;paintSlots()}
+     else if(sl.state==="rec"&&pass>=sl.rec.end&&sl.rec.done){/* already finalised */}
+     if(sl.state==="loop"&&sl.buf&&pass%sl.passes===0){const s=loopStart(ctx,ch.m,sl,t,sd);if(s){srcs.push(s);s.onended=()=>{srcs=srcs.filter(x=>x!==s)}}}}
+   }
+   SQ.step(ctx,ch,S,si,t,S.bank);queue.push({s:si,t,p:pass})}
+  function tick(){if(!run)return;const sd=SQ.sd(S);while(gridT<ctx.currentTime+.16){const sw=step%2?S.swing/100*sd*.5:0;schedStep(step,gridT+sw);gridT+=sd;step++;if(step>=S.steps){step=0;pass++;if(bankQ>=0){S.bank=bankQ;bankQ=-1;paintBanks();paintGrid();sv()}}}}
+  async function play(){if(run)return;await ensure();run=true;step=0;pass=0;gridT=ctx.currentTime+.06;tick();tm=setInterval(tick,25);raf=requestAnimationFrame(ui);paintPlay()}
+  function stop(){if(!run)return;run=false;clearInterval(tm);cancelAnimationFrame(raf);for(const s of srcs){try{s.stop()}catch(e){}}srcs=[];queue=[];
+   for(const sl of slots){if(sl.state==="armed"||sl.state==="rec"){sl.state=sl.buf?"loop":"empty";sl.rec=null}}
+   clearPh();step=0;pass=0;bankQ=-1;paintPlay();paintSlots();const c=ctx;setTimeout(()=>{if(!run&&c&&c.state==="running")c.suspend().catch(()=>{})},1800)}
+  let lastPh=-1;
+  function clearPh(){for(const r of cells)for(const c of r)c.classList.remove("ph");lastPh=-1}
+  function ui(){if(!run)return;raf=requestAnimationFrame(ui);const now=ctx.currentTime;let last=null;while(queue.length&&queue[0].t<=now){last=queue.shift()}
+   if(last){curStep=last.s;curT=last.t;if(!win.min&&!OS.lpSkip()&&last.s!==lastPh){if(lastPh>=0)for(const r of cells)r[lastPh]&&r[lastPh].classList.remove("ph");for(const r of cells)r[last.s]&&r[last.s].classList.add("ph");lastPh=last.s}}
+   for(const sl of slots)if(sl.state==="rec"&&sl.rec&&!win.min){const el=sl.el&&sl.el.st;if(el){const p=Math.max(0,Math.min(1,(now-sl.rec.T0)/(sl.passes*S.steps*SQ.sd(S))));el.textContent="Recording... "+Math.round(p*100)+"%"}}}
+  async function hit(i,v){await ensure();SQ.v[i](ctx,ch.tg[i],ctx.currentTime+.005,v||.8);
+   if(hitRec&&run){const sd=SQ.sd(S);let s=curStep<0?0:curStep;if(ctx.currentTime-curT>sd/2)s=(s+1)%S.steps;if(S.banks[S.bank][i][s]===0){S.banks[S.bank][i][s]=1;paintCell(i,s);sv()}}}
+  /* ---------- microphone loop capture ---------- */
+  async function initMic(){if(mic)return true;await ensure();try{const st=await navigator.mediaDevices.getUserMedia({audio:{echoCancellation:false,noiseSuppression:false,autoGainControl:false}});
+    const src=ctx.createMediaStreamSource(st),z=ctx.createGain();z.gain.value=0;z.connect(ctx.destination);let node=null;
+    if(ctx.audioWorklet&&window.AudioWorkletNode){try{const code='class C extends AudioWorkletProcessor{constructor(){super();this.b=[];this.n=0;this.t=0}process(i){const c=i[0];if(c&&c[0]){if(!this.n)this.t=currentTime;this.b.push(c[0].slice());this.n+=c[0].length;if(this.n>=2048){const o=new Float32Array(this.n);let p=0;for(const x of this.b){o.set(x,p);p+=x.length}this.port.postMessage({t:this.t,d:o},[o.buffer]);this.b=[];this.n=0}}return true}}registerProcessor("seqcap",C);';
+      const u=URL.createObjectURL(new Blob([code],{type:"text/javascript"}));await ctx.audioWorklet.addModule(u);URL.revokeObjectURL(u);node=new AudioWorkletNode(ctx,"seqcap",{numberOfInputs:1,numberOfOutputs:1,channelCount:1,channelCountMode:"explicit",outputChannelCount:[1]});node.port.onmessage=e=>onChunk(e.data.t,e.data.d);src.connect(node);node.connect(z)}catch(e){node=null}}
+    if(!node){const sp=ctx.createScriptProcessor(2048,1,1);sp.onaudioprocess=e=>{onChunk((e.playbackTime||ctx.currentTime)-2048/ctx.sampleRate,new Float32Array(e.inputBuffer.getChannelData(0)))};src.connect(sp);sp.connect(z)}
+    mic={st,src};return true}catch(e){toast("Could not use the microphone: "+(e.message||e.name),1);return false}}
+  function onChunk(t,d){const sr=ctx.sampleRate;for(const sl of slots){const r=sl.rec;if(sl.state!=="rec"||!r)continue;
+    const a=Math.round((t-r.T0)*sr);let from=0,to=d.length;if(a<0)from=-a;if(a+to>r.len)to=r.len-a;if(to>from)r.buf.set(d.subarray(from,to),a+from);
+    if(a+d.length>=r.len){const ab=ctx.createBuffer(1,r.len,sr);ab.copyToChannel(r.buf,0);sl.buf=ab;sl.state="loop";sl.rec=null;paintSlots();if(slots.every(x=>x.state!=="rec"))toast("Loop "+(sl.i+1)+" recorded")}}}
+  async function armSlot(sl){if(sl.state==="armed"||sl.state==="rec"){sl.state=sl.buf?"loop":"empty";sl.rec=null;paintSlots();return}
+   if(!(await initMic()))return;const was=run;if(!was)await play();sl.state="armed";sl.minPass=was?pass+1:1;paintSlots()}
+  /* ---------- UI: top bar ---------- */
+  const playBtn=h("button",{class:"btn pri big",onclick:()=>run?stop():play()},"▶ Play");
+  const bpmIn=h("input",{class:"t bpm",type:"number",min:40,max:240,value:S.bpm,onchange:e=>setBpm(+e.target.value)});
+  const bpmSl=h("input",{type:"range",min:40,max:240,value:S.bpm,style:"width:130px",oninput:e=>setBpm(+e.target.value)});
+  function setBpm(v){v=Math.max(40,Math.min(240,Math.round(v)||120));if(run&&v!==S.bpm){/* keep position: only future steps change */}S.bpm=v;bpmIn.value=v;bpmSl.value=v;sv()}
+  const swIn=h("input",{type:"range",min:0,max:100,value:S.swing,style:"width:90px",title:"Swing",oninput:e=>{S.swing=+e.target.value;swLab.textContent=S.swing+"%";sv()}}),swLab=h("span",{class:"dim"},S.swing+"%");
+  const stSel=h("select",{class:"t",onchange:e=>{S.steps=+e.target.value;if(step>=S.steps)step=0;sv();buildGrid();paintGrid()}},...[8,16,32].map(n=>h("option",{value:n,selected:S.steps===n},n+" steps")));
+  const bankBtns=["A","B","C","D"].map((n,i)=>h("button",{class:"btn sm bk",title:"Pattern "+n+(run?" (switches at the end of the loop)":""),onclick:()=>{if(run&&i!==S.bank){bankQ=i;paintBanks()}else{S.bank=i;bankQ=-1;paintBanks();paintGrid();sv()}}},n));
+  function paintBanks(){bankBtns.forEach((e,i)=>{e.classList.toggle("on",i===S.bank);e.style.outline=i===bankQ?"2px dashed var(--ac)":""})}
+  function paintPlay(){playBtn.textContent=run?"■ Stop":"▶ Play";playBtn.classList.toggle("pri",!run)}
+  const preSel=h("select",{class:"t",onchange:e=>{const k=e.target.value;e.target.value="";if(!k)return;const p=SQ.pre[k];for(let i=0;i<8;i++){const row=S.banks[S.bank][i].fill(0);for(let s=0;s<16;s++){const c=p.t[i][s];row[s]=c==="X"?2:c==="x"?1:0}}
+    setBpm(p.bpm);if(S.steps===8){S.steps=16;stSel.value=16;buildGrid()}paintGrid();sv();toast("Loaded: "+k)}},h("option",{value:""},"Starter beats..."),...Object.keys(SQ.pre).map(k=>h("option",{value:k},k)));
+  const tapBtn=h("button",{class:"btn sm",title:"Tap this button in time to set the tempo",onclick:()=>{const n=performance.now();if(taps.length&&n-taps[taps.length-1]>2000)taps=[];taps.push(n);if(taps.length>6)taps.shift();if(taps.length>=2){const iv=(taps[taps.length-1]-taps[0])/(taps.length-1);setBpm(60000/iv)}}},"Tap");
+  const hitBtn=h("button",{class:"btn sm",title:"While playing, tap the keys A S D F G H J K (or the instrument names) to add hits into the pattern",onclick:()=>{hitRec=!hitRec;hitBtn.classList.toggle("pri",hitRec);toast(hitRec?"Live recording on: your hits are added to the pattern while it plays":"Live recording off")}},"● Live hits");
+  const mixBtn=h("button",{class:"btn sm",onclick:()=>{showMix=!showMix;paintMix()}},"Mixer");
+  const bar1=h("div",{class:"bar"},playBtn,
+   h("div",{class:"grp"},h("button",{class:"btn sm",onclick:()=>setBpm(S.bpm-1)},"−"),bpmIn,h("button",{class:"btn sm",onclick:()=>setBpm(S.bpm+1)},"+"),h("span",{class:"dim"},"BPM"),bpmSl,tapBtn,h("button",{class:"btn sm",title:"The Republicka heartbeat",onclick:()=>setBpm(50)},"50")),
+   h("div",{class:"grp"},h("span",{class:"dim"},"Swing"),swIn,swLab));
+  const bar2=h("div",{class:"bar"},h("div",{class:"grp"},h("span",{class:"dim"},"Pattern"),...bankBtns),stSel,preSel,hitBtn,mixBtn,
+   h("button",{class:"btn sm",onclick:async()=>{if(await dlgConfirm("Clear pattern "+"ABCD"[S.bank]+"?","Clear","Clear")){for(const r of S.banks[S.bank])r.fill(0);paintGrid();sv()}}},"Clear"),
+   h("span",{style:"flex:1"}),
+   h("button",{class:"btn",onclick:()=>exportWav()},"Save as WAV"));
+  /* ---------- UI: grid ---------- */
+  let cells=[],cellsEl=[],mutB=[],solB=[],volS=[],paintMode=null;
+  const grid=h("div",{});
+  function buildGrid(){grid.innerHTML="";cells=[];cellsEl=[];mutB=[];solB=[];volS=[];const cols=Math.min(16,S.steps);
+   for(let i=0;i<8;i++){const row=[];const cw=h("div",{class:"cells",style:"grid-template-columns:repeat("+cols+",1fr)"});
+    for(let s=0;s<S.steps;s++){const c=h("div",{class:"sc"+(s%4===0?" b":""),role:"button","data-t":i,"data-s":s});row.push(c);cw.append(c)}
+    cells.push(row);
+    const mb=h("button",{title:"Mute",onclick:()=>{S.mute[i]=S.mute[i]?0:1;paintMS();sv()}},"M"),sb=h("button",{title:"Solo",onclick:()=>{S.solo[i]=S.solo[i]?0:1;paintMS();sv()}},"S"),
+     vs=h("input",{type:"range",min:0,max:1,step:.02,value:S.vol[i],title:"Volume",oninput:e=>{S.vol[i]=+e.target.value;if(ch)ch.tg[i].gain.value=S.vol[i];sv()}});
+    mutB.push(mb);solB.push(sb);volS.push(vs);
+    const nm=h("button",{class:"nm",title:"Tap to hear it (key "+SQ.keys[i].toUpperCase()+")",onpointerdown:e=>{e.preventDefault();hit(i,.85)}},SQ.names[i]);
+    grid.append(h("div",{class:"tr",style:"--c:"+SQ.col[i]},h("div",{class:"lb"},nm,h("div",{class:"ms"},mb,sb)),cw));
+    grid.lastChild.querySelector(".lb").append(vs)}
+   paintMS();paintMix()}
+  function paintMS(){for(let i=0;i<8;i++){mutB[i].classList.toggle("on",!!S.mute[i]);solB[i].classList.toggle("on",!!S.solo[i])}}
+  function paintMix(){for(const v of volS)v.style.display=showMix?"":"none";mixBtn.classList.toggle("pri",showMix)}
+  function paintCell(i,s){const c=cells[i]&&cells[i][s];if(!c)return;const v=S.banks[S.bank][i][s];c.classList.toggle("o1",v===1);c.classList.toggle("o2",v===2)}
+  function paintGrid(){for(let i=0;i<8;i++)for(let s=0;s<S.steps;s++)paintCell(i,s)}
+  grid.addEventListener("pointerdown",e=>{const c=e.target.closest(".sc");if(!c)return;const i=+c.dataset.t,s=+c.dataset.s,cur=S.banks[S.bank][i][s],nv=(cur+1)%3;S.banks[S.bank][i][s]=nv;paintCell(i,s);if(nv&&!run)hit(i,nv===2?1:.62);
+   if(e.pointerType==="mouse"){paintMode=nv;try{grid.setPointerCapture(e.pointerId)}catch(x){}}});
+  grid.addEventListener("pointermove",e=>{if(paintMode==null||e.pointerType!=="mouse")return;const el=document.elementFromPoint(e.clientX,e.clientY),c=el&&el.closest&&el.closest(".sc");if(!c)return;const i=+c.dataset.t,s=+c.dataset.s;if(S.banks[S.bank][i][s]!==paintMode){S.banks[S.bank][i][s]=paintMode;paintCell(i,s)}});
+  const endPaint=()=>{if(paintMode!=null){paintMode=null;sv()}else sv()};grid.addEventListener("pointerup",endPaint);grid.addEventListener("pointercancel",endPaint);
+  /* ---------- UI: loop recorder ---------- */
+  const lpsEl=h("div",{class:"lps"});
+  function buildSlots(){lpsEl.innerHTML="";for(const sl of slots){const st=h("div",{class:"st"}),rb=h("button",{class:"btn sm"},""),cb=h("button",{class:"btn sm",onclick:()=>{if(sl.state==="armed"||sl.state==="rec"){sl.rec=null}sl.buf=null;sl.state="empty";paintSlots()}},"Clear"),
+     ps=h("select",{class:"t",title:"How many pattern loops long the recording is",onchange:e=>{sl.passes=+e.target.value;if(sl.buf){sl.buf=null;sl.state="empty"}paintSlots()}},...[1,2,4].map(n=>h("option",{value:n,selected:sl.passes===n},n+(n===1?" loop long":" loops long")))),
+     vol=h("input",{type:"range",min:0,max:1.5,step:.05,value:sl.vol,style:"width:90px",title:"Loop volume",oninput:e=>sl.vol=+e.target.value}),
+     off=h("input",{type:"range",min:0,max:250,step:5,value:S.off[sl.i]||0,style:"width:110px",title:"If your recording sounds late, raise this",oninput:e=>{S.off[sl.i]=+e.target.value;ol.textContent=S.off[sl.i]+" ms";sv()}}),ol=h("span",{class:"dim"},(S.off[sl.i]||0)+" ms");
+     rb.onclick=()=>armSlot(sl);sl.el={st,rb,cb,ps,box:null};
+     const box=h("div",{class:"lp"},h("div",{class:"rw"},h("b",{},"Loop "+(sl.i+1)),rb,cb,ps),st,h("div",{class:"rw"},h("span",{class:"dim"},"Volume"),vol,h("span",{class:"dim"},"Fix lateness"),off,ol));sl.el.box=box;lpsEl.append(box)}paintSlots()}
+  function paintSlots(){for(const sl of slots){const e=sl.el;if(!e)continue;e.box.classList.toggle("rec",sl.state==="rec");
+    e.rb.textContent=sl.state==="armed"?"■ Cancel":sl.state==="rec"?"■ Stop":"● Record";e.rb.classList.toggle("pri",sl.state==="empty");e.ps.disabled=sl.state==="armed"||sl.state==="rec";
+    e.st.textContent=sl.state==="empty"?"Empty. Press Record, then play or sing in time with the beat.":sl.state==="armed"?"Get ready... recording starts at the start of the next loop"+(sl.passes>1?" (waiting for a multiple of "+sl.passes+")":"")+".":sl.state==="rec"?"Recording...":"Playing back every "+sl.passes+(sl.passes===1?" loop.":" loops.")}}
+  /* ---------- export ---------- */
+  async function exportWav(){if(!window.OfflineAudioContext)return toast("This browser can't render audio files.",1);
+   const n=await dlg((bx,d)=>{const sel=h("select",{class:"t"},...[1,2,4,8,16].map(v=>h("option",{value:v,selected:v===4},v+(v===1?" time through":" times through"))));
+     bx.append(h("h3",{},"Save as WAV"),h("div",{},"Pattern "+"ABCD"[S.bank]+" at "+S.bpm+" BPM, plus your recorded loops. How long?"),sel,h("div",{class:"dim",style:"font-size:12px"},"Mutes and solos are respected."),h("div",{class:"acts"},h("button",{class:"btn",onclick:()=>d(0)},"Cancel"),h("button",{class:"btn pri",onclick:()=>d(+sel.value)},"Save")))});
+   if(!n)return;const sr=44100,sd=SQ.sd(S),total=n*S.steps*sd+1.6;let wasRun=false;
+   try{toast("Rendering...");const oc=new OfflineAudioContext(2,Math.ceil(total*sr),sr),och=SQ.chain(oc,S);let t=0.05;
+    for(let p=0;p<n;p++){for(const sl of slots)if(sl.buf&&sl.state==="loop"&&p%sl.passes===0){const bf=oc.createBuffer(1,sl.buf.length,sl.buf.sampleRate);bf.copyToChannel(sl.buf.getChannelData(0),0);loopStart(oc,och.m,Object.assign({},sl,{buf:bf}),t,sd)}
+     for(let s=0;s<S.steps;s++){SQ.step(oc,och,S,s,t+(s%2?S.swing/100*sd*.5:0),S.bank);t+=sd}}
+    const out=await oc.startRendering(),bl=SQ.wav(out),name=REC.name("beat","wav");
+    const sink=await REC.open(name,"audio/wav");await sink.write(bl);const r=await sink.close();toast("Saved "+r.where)}
+   catch(e){toast("Could not save: "+(e&&e.message||e),1)}}
+  /* ---------- keyboard + layout ---------- */
+  root.addEventListener("keydown",e=>{if(e.target.tagName==="INPUT"||e.target.tagName==="SELECT"||e.ctrlKey||e.metaKey||e.altKey||e.repeat)return;
+   if(e.key===" "){e.preventDefault();run?stop():play();return}
+   const i=SQ.keys.indexOf(e.key.toLowerCase());if(i>=0){e.preventDefault();hit(i,e.shiftKey?1:.8)}});
+  root.addEventListener("pointerdown",e=>{if(!e.target.closest("input,select,textarea"))root.focus({preventScroll:true})});
+  const ro=new ResizeObserver(()=>{const n=b.clientWidth<640;if(n!==nar){nar=n;root.classList.toggle("nar",nar)}});
+  const note=h("div",{class:"nt"},"Tap a square to turn it on (once = normal, twice = accent, again = off). Keys A S D F G H J K play the eight sounds, and Space starts or stops. Recorded loops are kept only while this app is open: save a WAV to keep them. For loop recording use headphones, or the beat will leak into the microphone.");
+  root.append(bar1,bar2,grid,lpsEl,note);b.append(root);
+  buildGrid();paintGrid();paintBanks();paintPlay();buildSlots();ro.observe(b);nar=b.clientWidth<640;root.classList.toggle("nar",nar);showMix=!nar;paintMix();
+  win.on.close=()=>{try{stop()}catch(e){}ro.disconnect();clearInterval(tm);cancelAnimationFrame(raf);if(mic){try{mic.st.getTracks().forEach(t=>t.stop())}catch(e){}}if(ctx){try{ctx.close()}catch(e){}}sv()};
+  win.seq={S,slots,play,stop,hit,get ctx(){return ctx},get run(){return run},exportWav,arm:armSlot};
+ }});
 
 /* ===================== BOOT ===================== */
 const LOGO=`
