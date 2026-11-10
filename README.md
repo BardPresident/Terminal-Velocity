@@ -600,6 +600,21 @@ TASKBAR
 -------
 Drag a taskbar button left or right to arrange the taskbar. The order is remembered with the session.
 
+BENCHMARK AND LOW POWER MODE
+----------------------------
+Benchmark app (System): shows how much of the computer the OS really uses.
+  Live: frame budget used (the share of each 16.7 ms frame the OS needs), frames per second, stutters,
+        JS memory, page elements, long freezes. A plain verdict (Plenty of headroom / Comfortable / Busy / Struggling).
+  Windows: rough weight estimate of every open window, with Focus and Close.
+  Benchmark: eight short speed tests plus a storage test, then opens six real apps in a row and reports the
+        slowest frame and open times. Results are saved with a device name, and can be copied or downloaded as text.
+  Guide: plain-language explanation of every number.
+  The speed score is relative to a reference machine (1.00): a modest cloud-server core. Browsers do not allow a page to
+  read real CPU % or total RAM, so frame budget and JS memory are the honest substitutes.
+Low power mode (Settings > Appearance, or the Benchmark app): Auto / On / Off. Turns off animations, glow, shadows,
+  the vignette and the moving wallpaper, and slows the music visualisers. Auto switches it on for devices with 2 cores
+  or fewer, or 2 GB of memory or less.
+
 https://github.com/BardPresident https://republicka.life https://kkk.education https://archive.org/details/@bardpresident https://www.youtube.com/@BardPresident https://odysee.com/@BardPresident:0 https://www.bitchute.com/channel/P9QR7Z6nmVtm
 
 ☯ THE CORE PHILOSOPHY ☯ EMOTION = LOGIC · THE HINATA TRAP · MASTER = FLOOR
