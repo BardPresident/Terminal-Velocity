@@ -1256,7 +1256,7 @@ const fmtDate=t=>{const d=new Date(t),hm=" "+pad(d.getHours())+":"+pad(d.getMinu
 const sleep=ms=>new Promise(r=>setTimeout(r,ms));
 const LS={get(k,d){try{const v=localStorage.getItem(k);return v==null?d:JSON.parse(v)}catch(e){return d}},set(k,v){try{localStorage.setItem(k,JSON.stringify(v));return true}catch(e){return false}}};
 const fmtUp=s=>{s=Math.max(0,Math.round(s));const d=Math.floor(s/86400),hr=Math.floor(s%86400/3600),m=Math.floor(s%3600/60),sc=s%60;if(d)return d+" d "+hr+" h";if(hr)return hr+" h "+m+" min";if(m)return m+" min "+sc+" s";return sc+" s"};
-const OS={apps:{},wins:[],z:10,bus:{},boot:performance.now(),ver:"1.0 build 1110-0553"};
+const OS={apps:{},wins:[],z:10,bus:{},boot:performance.now(),ver:"1.0 build 1110-0611"};
 OS.on=(ev,f)=>{(OS.bus[ev]=OS.bus[ev]||[]).push(f);return f};
 OS.off=(ev,f)=>{OS.bus[ev]=(OS.bus[ev]||[]).filter(x=>x!==f)};
 OS.emit=(ev,a)=>{(OS.bus[ev]||[]).slice().forEach(f=>{try{f(a)}catch(e){console.error(e)}})};
@@ -1368,6 +1368,8 @@ function md(src){const L=src.replace(/\r/g,"").split("\n"),o=[];let inC=0,list=0
   else if(/^---+$/.test(l)){fp();fl();o.push("<hr>")}
   else if(!l.trim()){fp();fl()}else para.push(l)}
  fp();fl();if(inC)o.push("</pre>");return o.join("\n")}
+
+IP.gauge="M3.5 17a8.5 8.5 0 1117 0 M12 17l4.5-5.5 M12 17h.01 M5 14l1 .5 M7.5 9.5l.8.8 M12 7v1.2 M16.5 9.5l-.8.8 M19 14l-1 .5";IP.binder="M7 3h10a2 2 0 012 2v14a2 2 0 01-2 2H7z M7 3v18 M10.5 8h5 M10.5 12h5 M3 7h4 M3 12h4 M3 17h4";
 
 /* ===================== VFS ===================== */
 /* One tree. /archive (read-only manifest) /home/user (writable, IndexedDB) /system (virtual) /tmp (memory) /mnt/<x> (local folder, optional) */
@@ -2308,7 +2310,7 @@ defApp("audiobooks",{needs:()=>hasDir("/archive/Audiobooks"),name:"Audiobooks",i
  onArg(w,a){typeof a==="string"&&w.openPath&&w.openPath(a)}});
 
 /* --- BookBinder: bind many .txt books into one file, or split into chunk ZIPs --- */
-defApp("bookbinder",{name:"BookBinder",icon:"books",cat:"Tools",w:780,h:660,single:true,desc:"bind many .txt books into one file, or split them into chunks",kw:"bind combine merge join concatenate txt books chunks zip notebooklm sources",
+defApp("bookbinder",{name:"BookBinder",icon:"binder",cat:"Tools",w:780,h:660,single:true,desc:"bind many .txt books into one file, or split them into chunks",kw:"bind combine merge join concatenate txt books chunks zip notebooklm sources",
  init(win,b,arg){
   let items=[],busy=false;const enc=new TextEncoder();
   const T=(a,c)=>h("input",Object.assign({class:"t"},a),c),num=(v,mn,mx)=>T({type:"number",value:v,min:mn,max:mx,style:"width:80px"});
@@ -2865,7 +2867,7 @@ const BN={
  fmt(v){return v>=100?v.toFixed(0):v>=10?v.toFixed(1):v.toFixed(2)}
 };
 
-defApp("benchmark",{name:"Benchmark",icon:"mon",cat:"System",w:780,h:640,single:true,desc:"how much of your computer this OS really uses: live load, memory, speed tests, low power mode",kw:"benchmark performance speed ram memory cpu fps low power battery test resources",
+defApp("benchmark",{name:"Benchmark",icon:"gauge",cat:"System",w:780,h:640,single:true,desc:"how much of your computer this OS really uses: live load, memory, speed tests, low power mode",kw:"benchmark performance speed ram memory cpu fps low power battery test resources",
  init(win,b){
   let tab=localStorage.getItem("tvos_bench_tab")||"Live";const tabs=["Live","Windows","Benchmark","Guide"];
   const S={fps:0,budget:0,jank:0,worst:0,lt:0,heap:null,nodes:0,h:{fps:[],budget:[],heap:[],nodes:[]},ready:false};
