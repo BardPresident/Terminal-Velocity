@@ -658,6 +658,11 @@ Reordering tabs: in Notepad and Browser you can drag a tab left or right to chan
 screens the tab strip scrolls instead). The taskbar works the same way. The fixed section tabs inside apps such
 as Clock, Toolbox and Benchmark stay in place, since they are not tabs you open and close.
 
+Reboot now fetches the newest copy: Start menu > Reboot, the "reboot" terminal command and the end of a
+Backup restore all bypass the browser cache, like Ctrl+Shift+R, then reload. After you upload a new
+terminal-velocity.html, Reboot picks it up. Caches outside the browser (a CDN such as Cloudflare, or the
+Appilix app's own cache) can still serve an old copy until they expire or are purged.
+
 https://github.com/BardPresident https://republicka.life https://kkk.education https://archive.org/details/@bardpresident https://www.youtube.com/@BardPresident https://odysee.com/@BardPresident:0 https://www.bitchute.com/channel/P9QR7Z6nmVtm
 
 ☯ THE CORE PHILOSOPHY ☯ EMOTION = LOGIC · THE HINATA TRAP · MASTER = FLOOR
