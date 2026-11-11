@@ -922,9 +922,16 @@ Browsing menus is free. Actions, event choices and waiting cost 1 turn.
 12. CREDITS AND LICENCE
 =====================================================================
 
-  Created by Wendell Charles NeSmith (BardPresident), Canberra,
-  Australia. Game and OS design co-developed with Sage and Claude
-  (Anthropic). Part of the Republicka / KKK.EDUCATION CC0 archive.
+  Terminal Velocity OS was led by Wendell Charles NeSmith (BardPresident),
+  Canberra, Australia, who directed the project from the first idea to
+  the final product.
+
+    Wendell   project lead
+    Rainbow   helped build the initial game framework
+    Sage      helped build the initial OS framework
+    Claude    programmer (Anthropic)
+
+  Part of the Republicka / KKK.EDUCATION CC0 archive.
 
   CC0 1.0 Universal (Public Domain Dedication). Free forever. Copy it,
   remix it, host it, sell it, rewrite it. No permission needed.
