@@ -323,7 +323,7 @@ Browser
   to be shown inside another page.
   - Tabs, address bar, back, forward, reload, bookmarks (right-click a
     bookmark to rename or remove it; Export and Import are on the start
-    page). republicka.life and kkk.education are bookmarked by default.
+    page). republicka.life is bookmarked by default.
   - Open tabs are remembered: close the Browser or reboot and the same
     tabs come back, with the same one selected. Only the selected tab
     loads straight away; the others load when you click them.
@@ -494,7 +494,7 @@ opens a normal browser tab.
   - Pages on the same site as the OS (for example republicka.life when the
     OS runs from republicka.life) are wired up automatically: their
     new-window links and window.open() calls become Browser tabs.
-  - For pages on another site that YOU control (kkk.education, say), add
+  - For pages on another site that YOU control, add
     this snippet and those links will open as a new tab in the OS Browser.
     Outside the OS it does nothing, so it is safe on every page:
 
@@ -933,7 +933,7 @@ Browsing menus is free. Actions, event choices and waiting cost 1 turn.
     Sage      helped build the initial OS framework
     Claude    programmer (Anthropic)
 
-  Part of the Republicka / KKK.EDUCATION CC0 archive.
+  Part of the Republicka CC0 archive.
 
   CC0 1.0 Universal (Public Domain Dedication). Free forever. Copy it,
   remix it, host it, sell it, rewrite it. No permission needed.
@@ -943,7 +943,7 @@ Browsing menus is free. Actions, event choices and waiting cost 1 turn.
   TERMINAL VELOCITY OS
   One file. No server. No tracking. Yours to keep.
 
-  republicka.life  ·  kkk.education  ·  wendell@republicka.life
+  republicka.life  ·  wendell@republicka.life
 
   E = L  |  50 BPM  |  The floor holds.
   Welcome Home Ivory!
