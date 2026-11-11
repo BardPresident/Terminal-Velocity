@@ -1256,7 +1256,7 @@ const fmtDate=t=>{const d=new Date(t),hm=" "+pad(d.getHours())+":"+pad(d.getMinu
 const sleep=ms=>new Promise(r=>setTimeout(r,ms));
 const LS={get(k,d){try{const v=localStorage.getItem(k);return v==null?d:JSON.parse(v)}catch(e){return d}},set(k,v){try{localStorage.setItem(k,JSON.stringify(v));return true}catch(e){return false}}};
 const fmtUp=s=>{s=Math.max(0,Math.round(s));const d=Math.floor(s/86400),hr=Math.floor(s%86400/3600),m=Math.floor(s%3600/60),sc=s%60;if(d)return d+" d "+hr+" h";if(hr)return hr+" h "+m+" min";if(m)return m+" min "+sc+" s";return sc+" s"};
-const OS={apps:{},wins:[],z:10,bus:{},boot:performance.now(),ver:"1.0 build 1111-0133"};
+const OS={apps:{},wins:[],z:10,bus:{},boot:performance.now(),ver:"1.0 build 1111-0616"};
 OS.on=(ev,f)=>{(OS.bus[ev]=OS.bus[ev]||[]).push(f);return f};
 OS.off=(ev,f)=>{OS.bus[ev]=(OS.bus[ev]||[]).filter(x=>x!==f)};
 /* reboot that always fetches the newest copy of this page (like Ctrl+Shift+R), then reloads */
@@ -1437,7 +1437,6 @@ V.loadHome=async()=>{const rows=await DB.all("files");rows.sort((a,b)=>a.path.le
 /* ---- manifest ---- */
 const MAN={json:null,src:"",files:0,size:0,tried:[],gen:"",prefix:""};
 function absUrl(u,prefix){if(!u)return"";if(/^https?:|^data:|^blob:/i.test(u))return u;if(prefix)return prefix.replace(/\/+$/,"")+"/"+u.replace(/^\/+/,"");return u}
-function rebase(u){const b=(typeof SET!=="undefined"&&SET.fileBase)||"https://republicka.life/files/";return u.replace(/^https?:\/\/files\.kkk\.education\//i,b.replace(/\/*$/,"/"))}
 function buildArchive(j,src){/* tolerant: {items:[{name,type,children,path,size}]} | [..] | {files:[..]} | flat paths */
  V.arch.kids=new Map();let items=Array.isArray(j)?j:j&&(j.items||j.files||j.tree||j.children);if(!Array.isArray(items))throw new Error("no items[] in manifest");
  const prefix=(j&&j.webPrefix)||"";let files=0,size=0;
@@ -1445,7 +1444,7 @@ function buildArchive(j,src){/* tolerant: {items:[{name,type,children,path,size}
   if(!name&&n.path)name=String(n.path).split("/").filter(Boolean).pop();if(!name)return;
   if(!isDir&&/[\\/]/.test(name)&&!n.name){}
   const node=mkNode(name,isDir,"arch",{ro:1,size:+n.size||0,mt:n.mtime?+new Date(n.mtime):V.arch.mt});
-  if(!isDir){node.url=absUrl(n.path||n.url||"",prefix);if(!node.url&&prefix)node.url=absUrl(V.path(parent)+"/"+name,prefix);node.alt=node.url;node.url=rebase(node.url);files++;size+=node.size}
+  if(!isDir){node.url=absUrl(n.path||n.url||"",prefix);if(!node.url&&prefix)node.url=absUrl(V.path(parent)+"/"+name,prefix);node.alt=node.url;files++;size+=node.size}
   addKid(parent,node);if(isDir)for(const c of n.children||[])put(node,c)};
  if(items.length&&items.every(x=>typeof x==="string"||(x&&!x.children&&!x.type&&x.path&&String(x.path).includes("/")))){/* flat list of paths */
   for(const x of items){const p=(typeof x==="string"?x:x.path).replace(/^https?:\/\/[^/]+\//,"").split("/").filter(Boolean);let cur=V.arch;for(let i=0;i<p.length;i++){const last=i===p.length-1;let k=cur.kids.get(p[i]);if(!k){k=addKid(cur,mkNode(p[i],!last,"arch",{ro:1}));if(last){k.url=absUrl(typeof x==="string"?x:x.path,prefix);k.size=+x.size||0;files++;size+=k.size}}cur=k}}}
@@ -2906,11 +2905,11 @@ defApp("paint",{name:"Paint",icon:"paint",cat:"Media",w:980,h:680,desc:"expressi
 /* ===================== BROWSER: the free web (sites that allow being embedded) ===================== */
 IP.home="M3 11l9-8 9 8 M5 10v10h14V10";
 const BR={
- seed:[{t:"Republicka",u:"https://republicka.life"},{t:"KKK Education",u:"https://kkk.education"}],
+ seed:[{t:"Republicka",u:"https://republicka.life"}],
  sugg:[["Marginalia Search","https://marginalia-search.com"],["Wikipedia","https://en.wikipedia.org"],["Wikibooks","https://en.wikibooks.org"],["Wikisource","https://en.wikisource.org"],["Wikimedia Commons","https://commons.wikimedia.org"],["Internet Archive","https://archive.org"],["Odysee","https://odysee.com/"],["BitChute","https://www.bitchute.com/"],["Project Gutenberg","https://www.gutenberg.org"],["Bible Gateway","https://www.biblegateway.com/"],["OpenStreetMap","https://www.openstreetmap.org"]],
  /* hosts that are known to refuse embedding; we say so instead of showing an empty frame */
  blocked:["google.com","bing.com","duckduckgo.com","facebook.com","instagram.com","twitter.com","x.com","linkedin.com","github.com","reddit.com","amazon.com","netflix.com","paypal.com","apple.com","microsoft.com","live.com","office.com","tiktok.com","pinterest.com","twitch.tv","spotify.com","whatsapp.com","telegram.org","discord.com","stackoverflow.com","medium.com","nytimes.com","cnn.com","bbc.com","bbc.co.uk","theguardian.com","ebay.com"],
- bm(){let b=LS.get("tvos_bm",null);if(!Array.isArray(b)){b=BR.seed.map(x=>({...x}));LS.set("tvos_bm",b);LS.set("tvos_bm_seed3",1);LS.set("tvos_bm_seed4",1);LS.set("tvos_bm_seed5",1);LS.set("tvos_bm_seed6",1)}else if(!LS.get("tvos_bm_seed3",0)){LS.set("tvos_bm_seed3",1);const n=b.filter(x=>!(x.u==="https://republicka.life/chat"&&x.t==="Live Chamber"));if(n.length!==b.length){b=n;LS.set("tvos_bm",b)}}if(!LS.get("tvos_bm_seed4",0)){LS.set("tvos_bm_seed4",1);let ch=0;for(const m of BR.seed.slice(2))if(!b.some(x=>x.u===m.u)){b.push({...m});ch=1}if(ch)LS.set("tvos_bm",b)}if(!LS.get("tvos_bm_seed5",0)){LS.set("tvos_bm_seed5",1);let c2=0;for(const m of b)if(m.u==="https://odysee.com/@BardPresident:0"){m.u="https://odysee.com/";c2=1}if(c2)LS.set("tvos_bm",b)}if(!LS.get("tvos_bm_seed6",0)){LS.set("tvos_bm_seed6",1);const gone=["https://odysee.com/@BardPresident:0","https://odysee.com/","https://www.bitchute.com/channel/P9QR7Z6nmVtm"],n2=b.filter(m=>!(gone.includes(m.u)&&(m.t==="Odysee"||m.t==="BitChute")));if(n2.length!==b.length){b=n2;LS.set("tvos_bm",b)}}return b},
+ bm(){let b=LS.get("tvos_bm",null);if(!Array.isArray(b)){b=BR.seed.map(x=>({...x}));LS.set("tvos_bm",b);LS.set("tvos_bm_seed3",1);LS.set("tvos_bm_seed4",1);LS.set("tvos_bm_seed5",1);LS.set("tvos_bm_seed6",1);LS.set("tvos_bm_seed7",1)}else if(!LS.get("tvos_bm_seed3",0)){LS.set("tvos_bm_seed3",1);const n=b.filter(x=>!(x.u==="https://republicka.life/chat"&&x.t==="Live Chamber"));if(n.length!==b.length){b=n;LS.set("tvos_bm",b)}}if(!LS.get("tvos_bm_seed4",0)){LS.set("tvos_bm_seed4",1);let ch=0;for(const m of BR.seed.slice(2))if(!b.some(x=>x.u===m.u)){b.push({...m});ch=1}if(ch)LS.set("tvos_bm",b)}if(!LS.get("tvos_bm_seed5",0)){LS.set("tvos_bm_seed5",1);let c2=0;for(const m of b)if(m.u==="https://odysee.com/@BardPresident:0"){m.u="https://odysee.com/";c2=1}if(c2)LS.set("tvos_bm",b)}if(!LS.get("tvos_bm_seed6",0)){LS.set("tvos_bm_seed6",1);const gone=["https://odysee.com/@BardPresident:0","https://odysee.com/","https://www.bitchute.com/channel/P9QR7Z6nmVtm"],n2=b.filter(m=>!(gone.includes(m.u)&&(m.t==="Odysee"||m.t==="BitChute")));if(n2.length!==b.length){b=n2;LS.set("tvos_bm",b)}}if(!LS.get("tvos_bm_seed7",0)){LS.set("tvos_bm_seed7",1);const gone7=u=>/(^|\.)kkk\.education$/i.test(BR.host(u));const n3=b.filter(m=>!gone7(m.u));if(n3.length!==b.length){b=n3;LS.set("tvos_bm",b)}const hs=LS.get("tvos_bm_hist",[]);if(Array.isArray(hs)){const h3=hs.filter(x=>!gone7(x.u));if(h3.length!==hs.length)LS.set("tvos_bm_hist",h3)}const tb=LS.get("tvos_bm_tabs",null);if(tb&&Array.isArray(tb.u)){const k=tb.u.filter(u=>!gone7(u));if(k.length!==tb.u.length)LS.set("tvos_bm_tabs",{u:k,a:Math.min(tb.a||0,Math.max(0,k.length-1))})}}return b},
  setBm(b){LS.set("tvos_bm",b)},
  hist(){const h2=LS.get("tvos_bm_hist",[]);return Array.isArray(h2)?h2:[]},
  addHist(u,t){let a=BR.hist().filter(x=>x.u!==u);a.unshift({u,t:t||u,d:Date.now()});LS.set("tvos_bm_hist",a.slice(0,60))},
