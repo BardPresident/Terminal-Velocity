@@ -330,12 +330,14 @@ Browser
   - It is honest about its limits: Google, Facebook, GitHub, most news
     sites and anything with a login refuse to be framed. The OS says so
     and offers "Open in new tab". Plain http:// pages cannot be shown.
-  - Typed words are searched with Marginalia (default), Wikipedia or the
-    Internet Archive; pick on the start page. YouTube and Vimeo watch
-    links become embeds. A list of sites that usually work is on the
-    start page (including Project Gutenberg, Wikipedia, Wikibooks,
-    Wikisource, Commons, Internet Archive, OpenStreetMap, Odysee and
-    BitChute).
+  - Typed words are searched with Marginalia (default), Wikipedia, the
+    Internet Archive or Bible Gateway (KJV); pick on the start page. With
+    Bible Gateway chosen, type a verse ("John 3:16"), a chapter
+    ("Romans 8") or words ("love your enemies") in the address bar.
+    YouTube and Vimeo watch links become embeds. A list of sites that
+    usually work is on the start page (including Project Gutenberg,
+    Wikipedia, Wikibooks, Wikisource, Commons, Internet Archive,
+    OpenStreetMap, Bible Gateway, Odysee and BitChute).
   - Pages are sandboxed and sent no referrer.
   - Space: on phones the Browser shows one slim bar (Back, address,
     Reload, menu). The menu has Forward, Start page, bookmarks, tabs,
