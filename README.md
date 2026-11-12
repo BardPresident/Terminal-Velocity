@@ -361,14 +361,27 @@ Chat
   a 400-character limit. The server only relays messages for 5 minutes,
   so you see what is said while you are in the room; your own copy of
   everything you receive is kept on this device (the last 1,000
-  messages). "Clear" wipes that copy; "Log out" leaves the room. History
-  and your name are in Backup. Your name is yours: the first browser to
-  use a name owns it, so nobody else can pretend to be you. The proof is
-  a secret key stored in this browser. It IS in Backup, so to chat as the
-  same person on another device you just back up and restore there.
-  Anyone who holds the key can speak as you, so keep backups private.
-  Cleaner lists it as "Chat identity key"; if you delete it, those names
-  are locked until the chat admin releases them.
+  messages). "Clear" wipes that copy; "Log out" leaves the room.
+
+  How your name is saved (also explained in the app: the "?" button in
+  the chat, or "How is my name saved?" on the join screen):
+  - The name you last used is remembered on this device and filled in
+    next time.
+  - Your name is yours. The first browser to use a name owns it, so
+    nobody else can pretend to be you. The proof is a secret identity
+    key that the OS makes and keeps in this browser. The chat server
+    never sees the key itself, only a scrambled fingerprint of it,
+    stored next to your name. A name nobody uses for 90 days is freed.
+  - Three things sit in your save data: your name, your chat history and
+    your identity key. All three are in Backup, so to chat as the same
+    person on another device you just back up and restore there.
+  - Anyone who holds the key can speak as you, so keep backups private.
+  - Cleaner lists all three ("Chat identity key" is the key). If you
+    delete the key, or clear the browser's data, that name stays locked
+    to the old key until the chat admin releases it.
+  - Each browser has its own key. A different browser, or the Android
+    app, is not recognised until you restore a Backup there.
+
   Chat works when the OS is served from republicka.life (or the Android
   app made from it). From any other address the chat server refuses the
   connection, and Chat says so. Moderation (kick, ban, delete, release a
