@@ -1256,7 +1256,7 @@ const fmtDate=t=>{const d=new Date(t),hm=" "+pad(d.getHours())+":"+pad(d.getMinu
 const sleep=ms=>new Promise(r=>setTimeout(r,ms));
 const LS={get(k,d){try{const v=localStorage.getItem(k);return v==null?d:JSON.parse(v)}catch(e){return d}},set(k,v){try{localStorage.setItem(k,JSON.stringify(v));return true}catch(e){return false}}};
 const fmtUp=s=>{s=Math.max(0,Math.round(s));const d=Math.floor(s/86400),hr=Math.floor(s%86400/3600),m=Math.floor(s%3600/60),sc=s%60;if(d)return d+" d "+hr+" h";if(hr)return hr+" h "+m+" min";if(m)return m+" min "+sc+" s";return sc+" s"};
-const OS={apps:{},wins:[],z:10,bus:{},boot:performance.now(),ver:"1.0 build 1112-1655"};
+const OS={apps:{},wins:[],z:10,bus:{},boot:performance.now(),ver:"1.0 build 1112-1713"};
 OS.on=(ev,f)=>{(OS.bus[ev]=OS.bus[ev]||[]).push(f);return f};
 OS.off=(ev,f)=>{OS.bus[ev]=(OS.bus[ev]||[]).filter(x=>x!==f)};
 /* reboot that always fetches the newest copy of this page (like Ctrl+Shift+R), then reloads */
@@ -2374,7 +2374,7 @@ async function bkMake(inc,onProg){const enc=new TextEncoder(),now=new Date(),fil
  if(inc.files){const all=bkHome();let i=0;for(const n of all){const p=V.path(n);if(n.dir){man.files.push({p,dir:1,mt:n.mt});continue}
    let bytes,str=0;const d=n.data;if(typeof d==="string"){str=1;bytes=enc.encode(d)}else if(d instanceof Blob)bytes=new Uint8Array(await d.arrayBuffer());else if(d&&d.byteLength!=null)bytes=new Uint8Array(d);else bytes=new Uint8Array(0);
    man.files.push({p,str,mime:n.mime||"",mt:n.mt});files.push({name:"files"+p,data:bytes,mt:n.mt});if(onProg&&++i%20===0){onProg("packing files "+i+" / "+all.length);await new Promise(r=>setTimeout(r))}}}
- const ls={};if(inc.settings)for(const k of bkKeys("tvos"))ls[k]=localStorage.getItem(k);if(inc.game)for(const k of bkKeys("game"))ls[k]=localStorage.getItem(k);
+ const ls={};if(inc.settings){for(const k of bkKeys("tvos"))ls[k]=localStorage.getItem(k);const ck=localStorage.getItem("rk_chat_tok");if(ck)ls.rk_chat_tok=ck}if(inc.game)for(const k of bkKeys("game"))ls[k]=localStorage.getItem(k);
  man.keys=Object.keys(ls).length;
  files.unshift({name:"README.txt",data:enc.encode("Terminal Velocity OS backup\nCreated: "+MC.dual(now)+"\nBuild: "+OS.ver+"\n\nTo restore: open Terminal Velocity OS > Backup > Restore from a backup ZIP.\nfiles/ holds your /home/user files. localstorage.json holds settings, app data and the game save.\nThe ZIP is plain: you can open it with any unzip tool.\n"),mt:+now});
  files.unshift({name:"backup.json",data:enc.encode(JSON.stringify(man,null,1)),mt:+now});
@@ -2408,7 +2408,7 @@ defApp("backup",{name:"Backup",icon:"save",cat:"Tools",w:560,h:640,single:true,d
     h("div",{class:"dim",style:"font-size:12px"},"Not included: /archive (it streams from the web and is the same everywhere), and real folders you mounted under /mnt (they stay on your computer)."))};
   async function restoreFrom(file){let z,man,ls={};
    try{z=await bkZipRead(file);const mb=z.get("backup.json");if(!mb)throw new Error("no backup.json: this is not a Terminal Velocity OS backup");man=JSON.parse(new TextDecoder().decode(await bkBytes(mb)));if(man.format!==BK_FMT)throw new Error("unknown backup format");const lb=z.get("localstorage.json");if(lb)ls=JSON.parse(new TextDecoder().decode(await bkBytes(lb)))}catch(e){return toast("Cannot read backup: "+e.message,1)}
-   const nF=man.files.filter(f=>!f.dir).length,sKeys=Object.keys(ls).filter(k=>k.startsWith("tvos_")),gKeys=Object.keys(ls).filter(k=>k.startsWith("terminal_velocity"));
+   const nF=man.files.filter(f=>!f.dir).length,sKeys=Object.keys(ls).filter(k=>k.startsWith("tvos_")||k==="rk_chat_tok"),gKeys=Object.keys(ls).filter(k=>k.startsWith("terminal_velocity"));
    const rc={},mkr=(id,txt,on)=>{const c=h("input",{type:"checkbox"});c.checked=on;rc[id]=c;return h("label",{class:"row",style:"border:0;padding:0;gap:8px;cursor:pointer"},c,txt)};
    const mode=h("select",{class:"t"},h("option",{value:"merge"},"Merge (keep what is here, overwrite matching names)"),h("option",{value:"replace"},"Replace (make this OS match the backup)")),safe=h("input",{type:"checkbox"});safe.checked=true;const msg=h("div",{class:"dim"});
    root.innerHTML="";root.append(h("h3",{class:"ac",style:"margin:0"},"Restore preview"),h("div",{class:"dim"},file.name),
@@ -3525,7 +3525,7 @@ const CL={
   tvos_cal:["Calendar data","What the Calendar app has saved.","Your writing and creations","Deleting it removes anything you saved in the Calendar."],
   tvos_bm_tabs:["Browser open tabs","The pages that were open in the Browser, brought back next time you open it.","Progress and saved places"],
   tvos_bm_hist:["Browser history","Pages you opened in the Browser app.","Progress and saved places"],
-  rk_chat_tok:["Chat identity key","A secret that proves the Live Chamber names you use are yours. If you delete it, those names become free for anyone, and you must pick new ones.","Settings"],
+  rk_chat_tok:["Chat identity key","A secret that proves the Live Chamber names you use are yours. It is in your Backup, so restoring a backup on another device gives you your names back. Anyone who has it can speak as you, so keep backups private. If you delete it, those names are locked until the chat admin releases them.","Settings"],
   tvos_chat_hist:["Chat history","Messages you received in the Live Chamber. Kept only on this device (the server forgets them after 5 minutes).","Progress and saved places"],
   tvos_chat_name:["Chat name","The name you use in the Live Chamber.","App preferences"],
   tvos_media_auto:["Media Player: auto-next","Whether the Media Player moves on to the next file by itself.","App preferences"],
@@ -3567,7 +3567,7 @@ const CL={
   if(k.startsWith("tvos_"))return{name:"Other OS data",desc:"Saved by Terminal Velocity OS. This build does not have a friendlier label for it.",cat:"Other OS data",warn:""};
   if(k.startsWith("terminal_velocity"))return{name:"Game data",desc:"Saved by the Terminal Velocity game.",cat:"Game",warn:"This may be part of your game save."};
   return{name:"Saved by something else",desc:"Another page on this website (or a browser extension) saved this. Terminal Velocity OS does not use it and Backup does not include it.",cat:"Not part of this OS",warn:""}},
- inBackup:k=>(k.startsWith("tvos_")&&k!=="tvos_backup_last")||k.startsWith("terminal_velocity"),
+ inBackup:k=>(k.startsWith("tvos_")&&k!=="tvos_backup_last")||k.startsWith("terminal_velocity")||k==="rk_chat_tok",
  sz(v){try{if(v==null)return 0;if(typeof v==="string")return v.length*2;if(v instanceof Blob)return v.size;if(v.byteLength!=null)return v.byteLength;if(typeof FileSystemHandle!=="undefined"&&v instanceof FileSystemHandle)return 0;return JSON.stringify(v).length*2}catch(e){return 0}},
  metaInfo:{np_session:["Notepad drafts","Unsaved Notepad tabs, kept so they survive a restart."],rec_dir:["Recorder save folder","Permission to the folder you chose for recordings. Deleting it means you will be asked to choose again."],manifest:["Saved archive manifest","The archive manifest you loaded in Settings."]},
  async meta(){return new Promise(res=>{if(!DB.db)return res([]);const o=[];const r=DB.db.transaction("meta").objectStore("meta").openCursor();r.onsuccess=()=>{const c=r.result;if(c){o.push({k:String(c.key),v:c.value});c.continue()}else res(o)};r.onerror=()=>res(o)})},
