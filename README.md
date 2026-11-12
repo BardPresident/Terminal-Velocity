@@ -11,7 +11,7 @@ CONTENTS
    1. What it is
    2. Quick start and hosting
    3. The desktop
-   4. The apps (36)
+   4. The apps (37)
    5. Your data: saving, Backup, Cleaner, reboot
    6. Your own archive (manifest.json)
    7. Links, the Browser and the OS
@@ -27,14 +27,14 @@ CONTENTS
 =====================================================================
 
 Terminal Velocity OS is a complete desktop that runs entirely inside a
-web browser, from ONE file (terminal-velocity-os.html, about 615 KB).
+web browser, from ONE file (terminal-velocity-os.html, about 620 KB).
 No images, no libraries, no install, no build step, no server, no
 accounts and no tracking. Everything you make stays in your browser until
 you choose to export it.
 
 It starts with a long, chatty boot log that says what it is doing (the
 checks are real, not decoration), then gives you a desktop with windows,
-a taskbar, a Start menu, a file system, a terminal and 36 apps. The first
+a taskbar, a Start menu, a file system, a terminal and 37 apps. The first
 of those apps is the game Terminal Velocity, which lives inside the OS
 (section 11).
 
@@ -133,7 +133,7 @@ SESSION RESTORE
 
 
 =====================================================================
-4. THE APPS (36)
+4. THE APPS (37)
 =====================================================================
 
 Every app has a desktop icon, a Start menu entry and a Spotlight entry,
@@ -347,6 +347,19 @@ Browser
     "Paste link and go" and "About this browser". On desktop, the expand
     button hides the tab and bookmark bars, and the "i" button shows the
     free-web explanation.
+
+Chat
+  The Republicka Live Chamber, built into the OS (no web page needed).
+  Enter a name and talk with whoever else is in the chamber: coloured
+  names, links you can click, a People list showing who is online, and
+  a 400-character limit. The server only relays messages for 5 minutes,
+  so you see what is said while you are in the room; your own copy of
+  everything you receive is kept on this device (the last 1,000
+  messages). "Clear" wipes that copy; "Log out" leaves the room. History
+  and your name are in Backup. Chat works when the OS is served from
+  republicka.life (or the Android app made from it). From any other
+  address the chat server refuses the connection, and Chat says so.
+  Moderation (kick, ban, delete) stays on the web page's admin panel.
 
 --- TOOLS ------------------------------------------------------------
 
