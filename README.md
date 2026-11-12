@@ -210,6 +210,9 @@ Tasks
 
 Media Player
   Audio and video, playlists, shuffle and repeat, speed, a visualiser.
+  Each file plays once and stops. Turn on "Auto-next" to move on to the
+  next file in the playlist by itself (off by default; the choice is
+  remembered). The Next and Previous buttons always work.
 
 Image Viewer
   Zoom, pan, rotate, slideshow.
