@@ -1256,7 +1256,7 @@ const fmtDate=t=>{const d=new Date(t),hm=" "+pad(d.getHours())+":"+pad(d.getMinu
 const sleep=ms=>new Promise(r=>setTimeout(r,ms));
 const LS={get(k,d){try{const v=localStorage.getItem(k);return v==null?d:JSON.parse(v)}catch(e){return d}},set(k,v){try{localStorage.setItem(k,JSON.stringify(v));return true}catch(e){return false}}};
 const fmtUp=s=>{s=Math.max(0,Math.round(s));const d=Math.floor(s/86400),hr=Math.floor(s%86400/3600),m=Math.floor(s%3600/60),sc=s%60;if(d)return d+" d "+hr+" h";if(hr)return hr+" h "+m+" min";if(m)return m+" min "+sc+" s";return sc+" s"};
-const OS={apps:{},wins:[],z:10,bus:{},boot:performance.now(),ver:"1.0 build 1112-1713"};
+const OS={apps:{},wins:[],z:10,bus:{},boot:performance.now(),ver:"1.0 build 1112-1725"};
 OS.on=(ev,f)=>{(OS.bus[ev]=OS.bus[ev]||[]).push(f);return f};
 OS.off=(ev,f)=>{OS.bus[ev]=(OS.bus[ev]||[]).filter(x=>x!==f)};
 /* reboot that always fetches the newest copy of this page (like Ctrl+Shift+R), then reloads */
@@ -3686,6 +3686,27 @@ defApp("cleaner",{name:"Cleaner",icon:"broom",cat:"System",w:820,h:640,single:tr
 IP.people="M9 11a3 3 0 100-6 3 3 0 000 6z M3 20c0-3.3 2.7-6 6-6s6 2.7 6 6 M17 11a2.5 2.5 0 100-5 2.5 2.5 0 000 5z M16.5 14.2c2.6.4 4.5 2.4 4.5 5.8";
 const CH={
  base:"https://republicka.life/chat/",
+ about:`YOUR NAME
+Chat remembers the name you last used on this device, so it is filled in next time.
+
+WHO OWNS A NAME
+The first browser to use a name owns it, so nobody else can pretend to be you. The proof is a secret identity key that this OS makes and keeps in this browser. The chat server never sees the key itself, only a scrambled fingerprint of it, stored next to your name. If nobody uses a name for 90 days, the server frees it.
+
+IN YOUR SAVE DATA
+Three things are saved on this device:
+- your name
+- your chat history (the last 1,000 messages you received)
+- your identity key
+All three are included in Backup. Restore a backup on another device and you chat there as the same person, with the same name.
+
+KEEP BACKUPS PRIVATE
+Anyone who holds your identity key can speak as you. Do not share a Backup ZIP.
+
+IN CLEANER
+Cleaner lists all three. Clear chat history there or in the app with the Clear button. If you delete the identity key, or clear your browser's data, your name stays locked to the old key until the chat admin releases it.
+
+DIFFERENT BROWSERS
+Each browser has its own key. A different browser or the Android app will not be recognised unless you restore a Backup there.`,
  ok:null,/* null = not checked yet, true = server reachable, false = not. The app only shows while true. */
  async look(){const c=new AbortController(),t=setTimeout(()=>c.abort(),6000);try{const r=await fetch(CH.base+"?api=poll&since=99999999999999&u=",{signal:c.signal,headers:{"X-Chat-Token":CH.tok()}});const d=await r.json();return d&&d.ok?d:null}catch(e){return null}finally{clearTimeout(t)}},
  async probe(){const d=await CH.look();CH.ok=!!d;if(d&&d.online)CH.n=d.online.length;try{buildDesk()}catch(e){}},
@@ -3750,7 +3771,7 @@ defApp("chat",{needs:()=>CH.ok===true,name:"Chat",icon:"people",cat:"Internet",w
   async function enter(name){
    try{const d=await CH.api("enter",{name});if(!d.ok){toast(d.err||"Could not join",1);return}}catch(e){toast(e instanceof TypeError?"Cannot reach the chamber from this site. The chat server only answers pages on republicka.life.":"Chat problem: "+(e&&e.message||e),1);return}
    me=name;LS.set("tvos_chat_name",me);root.innerHTML="";
-   const strip=h("div",{class:"strip"},nm,cnt,h("button",{class:"btn sm",onclick:()=>ppl.classList.toggle("open")},ic("people")," People"),h("button",{class:"btn sm",onclick:async()=>{if(await dlgConfirm("Wipes your saved chat messages from this device. This cannot be undone.","Clear history","Clear")){LS.set("tvos_chat_hist",[]);seen.clear();lastDay="";log.innerHTML="";cursor=Date.now();toast("History cleared")}}},"Clear"),h("button",{class:"btn sm",onclick:async()=>{if(await dlgConfirm("Leave the chamber? Your local history stays.","Log out","Log out"))leave(true)}},"Log out"));
+   const strip=h("div",{class:"strip"},nm,cnt,h("button",{class:"btn sm",onclick:()=>ppl.classList.toggle("open")},ic("people")," People"),h("button",{class:"btn sm",title:"How your name and chat data are saved",onclick:()=>dlgAlert(CH.about,"Your name and chat data")},"?"),h("button",{class:"btn sm",onclick:async()=>{if(await dlgConfirm("Wipes your saved chat messages from this device. This cannot be undone.","Clear history","Clear")){LS.set("tvos_chat_hist",[]);seen.clear();lastDay="";log.innerHTML="";cursor=Date.now();toast("History cleared")}}},"Clear"),h("button",{class:"btn sm",onclick:async()=>{if(await dlgConfirm("Leave the chamber? Your local history stays.","Log out","Log out"))leave(true)}},"Log out"));
    nm.textContent="⚜ "+me;root.append(strip,ppl,log,st,h("div",{class:"comp"},ta,cch,sendB));
    const hs=CH.hist();if(hs.length){log.append(h("div",{class:"dv",style:"border-top:0;margin-top:0"},"Stored history"));hs.forEach(m=>render(m,true));lastDay=""}bottom(1);
    joined=true;try{const s=await CH.api("poll&since=99999999999999&u=");cursor=s.t||Date.now()}catch(e){cursor=Date.now();err(e)}
@@ -3759,7 +3780,7 @@ defApp("chat",{needs:()=>CH.ok===true,name:"Chat",icon:"people",cat:"Internet",w
   const txt=n=>n?n+(n===1?" person is":" people are")+" in the chamber right now.":"The chamber is quiet right now. Be the first.";
   function join(){root.innerHTML="";const who=h("div",{style:"font-size:13px;color:var(--ac);min-height:18px"},CH.n!=null?txt(CH.n):"");const inp=h("input",{class:"t",placeholder:"Your name",maxlength:24,value:me,spellcheck:"false",autocomplete:"off",onkeydown:e=>{if(e.key==="Enter")go()}});
    const go=()=>{const v=inp.value.trim();if(!v)return toast("Enter a name first.",1);enter(v)};
-   root.append(h("div",{class:"join"},h("div",{class:"big"},"⚜"),h("div",{style:"letter-spacing:.2em;text-transform:uppercase;font-size:13px"},"Republicka Live Chamber"),h("div",{style:"font-size:13px;max-width:380px;line-height:1.5"},"One chat room shared by everyone who uses this OS, the Android app and the republicka.life/chat page. Anyone in the room right now can read what you write, so keep it public."),who,h("div",{class:"dim",style:"font-size:12px;max-width:380px;line-height:1.45"},"The server forgets messages after 5 minutes; your own copy stays only on this device. Your name is yours: nobody else can use it once you have."),inp,h("button",{class:"btn pri",onclick:go},"Enter the Chamber")));CH.look().then(d=>{if(d&&d.online&&!win.dead){CH.n=d.online.length;who.textContent=txt(CH.n)}});if(!isMob())inp.focus()}
+   root.append(h("div",{class:"join"},h("div",{class:"big"},"⚜"),h("div",{style:"letter-spacing:.2em;text-transform:uppercase;font-size:13px"},"Republicka Live Chamber"),h("div",{style:"font-size:13px;max-width:380px;line-height:1.5"},"One chat room shared by everyone who uses this OS, the Android app and the republicka.life/chat page. Anyone in the room right now can read what you write, so keep it public."),who,h("div",{class:"dim",style:"font-size:12px;max-width:380px;line-height:1.45"},"The server forgets messages after 5 minutes; your own copy stays only on this device. Your name is yours: nobody else can use it once you have."),inp,h("button",{class:"btn pri",onclick:go},"Enter the Chamber"),h("button",{class:"btn sm",style:"opacity:.85",onclick:()=>dlgAlert(CH.about,"Your name and chat data")},"How is my name saved?")));CH.look().then(d=>{if(d&&d.online&&!win.dead){CH.n=d.online.length;who.textContent=txt(CH.n)}});if(!isMob())inp.focus()}
   win.on.close=()=>{const was=joined;joined=false;clearTimeout(timer);if(was){try{CH.api("leave",{name:me},true).catch(()=>{})}catch(e){}}};
   join();
  }});
