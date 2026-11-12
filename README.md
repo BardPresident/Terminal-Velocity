@@ -1,5 +1,5 @@
 # Terminal-Velocity
-🖥️✨ Terminal Velocity OS: a whole desktop in one HTML file that boots into the retro CRT strategy RPG Terminal Velocity. Terminal, files, notepad with export, media player, 17 themes, bring your own manifest.json. No dependencies, no images, CC0. 🌐📜🛡️
+🖥️ A complete desktop operating system in a single HTML file. Windows, taskbar, file system, terminal, and a growing set of apps: Paint with webcam, Diary, drum-machine Sequencer, Browser, live Chat, Media Player, Backup and more. Works offline, no dependencies, installs as an Android app. Includes the retro RPG Terminal Velocity. CC0.
 
 =====================================================================
   TERMINAL VELOCITY OS
