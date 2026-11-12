@@ -952,7 +952,7 @@ Browsing menus is free. Actions, event choices and waiting cost 1 turn.
   Welcome Home Ivory!
 ---------------------------------------------------------------------
 
-https://github.com/BardPresident https://republicka.life https://kkk.education https://archive.org/details/@bardpresident https://www.youtube.com/@BardPresident https://odysee.com/@BardPresident:0 https://www.bitchute.com/channel/P9QR7Z6nmVtm
+https://github.com/BardPresident https://republicka.life https://archive.org/details/@bardpresident https://www.youtube.com/@BardPresident https://odysee.com/@BardPresident:0 https://www.bitchute.com/channel/P9QR7Z6nmVtm
 
 ☯ THE CORE PHILOSOPHY ☯ EMOTION = LOGIC · THE HINATA TRAP · MASTER = FLOOR
 
