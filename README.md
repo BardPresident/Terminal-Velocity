@@ -349,17 +349,27 @@ Browser
     free-web explanation.
 
 Chat
-  The Republicka Live Chamber, built into the OS (no web page needed).
+  The Republicka Live Chamber, built into the OS (no web page needed). It
+  is ONE room shared by everyone who uses the OS, the Android app and the
+  republicka.life/chat page: anyone in the room can read what you write.
+  The join screen says so and shows how many people are there right now.
+  Chat only appears on the desktop when the chat server can be reached;
+  offline, or on a site other than republicka.life, it is hidden like the
+  archive apps (Settings > show all apps reveals it anyway).
   Enter a name and talk with whoever else is in the chamber: coloured
   names, links you can click, a People list showing who is online, and
   a 400-character limit. The server only relays messages for 5 minutes,
   so you see what is said while you are in the room; your own copy of
   everything you receive is kept on this device (the last 1,000
   messages). "Clear" wipes that copy; "Log out" leaves the room. History
-  and your name are in Backup. Chat works when the OS is served from
-  republicka.life (or the Android app made from it). From any other
-  address the chat server refuses the connection, and Chat says so.
-  Moderation (kick, ban, delete) stays on the web page's admin panel.
+  and your name are in Backup. Your name is yours: the first browser to
+  use a name owns it, so nobody else can pretend to be you. The proof is
+  a secret key stored in this browser (it is not in Backup; Cleaner lists
+  it as "Chat identity key"; delete it and your names become free).
+  Chat works when the OS is served from republicka.life (or the Android
+  app made from it). From any other address the chat server refuses the
+  connection, and Chat says so. Moderation (kick, ban, delete, release a
+  name) stays on the chat web page's admin panel.
 
 --- TOOLS ------------------------------------------------------------
 
