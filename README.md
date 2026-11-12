@@ -364,8 +364,11 @@ Chat
   messages). "Clear" wipes that copy; "Log out" leaves the room. History
   and your name are in Backup. Your name is yours: the first browser to
   use a name owns it, so nobody else can pretend to be you. The proof is
-  a secret key stored in this browser (it is not in Backup; Cleaner lists
-  it as "Chat identity key"; delete it and your names become free).
+  a secret key stored in this browser. It IS in Backup, so to chat as the
+  same person on another device you just back up and restore there.
+  Anyone who holds the key can speak as you, so keep backups private.
+  Cleaner lists it as "Chat identity key"; if you delete it, those names
+  are locked until the chat admin releases them.
   Chat works when the OS is served from republicka.life (or the Android
   app made from it). From any other address the chat server refuses the
   connection, and Chat says so. Moderation (kick, ban, delete, release a
@@ -419,8 +422,8 @@ WHERE THINGS LIVE
 BACKUP  (Start > Backup)
   Create backup ZIP holds: your /home/user files, your settings and app
   data (books, comics, audiobooks, music, tasks, calendar notes, Diary,
-  Sequencer, bookmarks, and more) and the Terminal Velocity game save.
-  It is a plain ZIP; any unzip tool opens it. To move to another browser,
+  Sequencer, bookmarks, your Chat identity key, and more) and the
+  Terminal Velocity game save. It is a plain ZIP; any unzip tool opens it. To move to another browser,
   device or newer build: open the new OS, Backup > Choose backup ZIP,
   pick what to restore, Merge or Replace. The OS restarts when it is
   done. A safety backup of the current state downloads first unless you
