@@ -1256,7 +1256,7 @@ const fmtDate=t=>{const d=new Date(t),hm=" "+pad(d.getHours())+":"+pad(d.getMinu
 const sleep=ms=>new Promise(r=>setTimeout(r,ms));
 const LS={get(k,d){try{const v=localStorage.getItem(k);return v==null?d:JSON.parse(v)}catch(e){return d}},set(k,v){try{localStorage.setItem(k,JSON.stringify(v));return true}catch(e){return false}}};
 const fmtUp=s=>{s=Math.max(0,Math.round(s));const d=Math.floor(s/86400),hr=Math.floor(s%86400/3600),m=Math.floor(s%3600/60),sc=s%60;if(d)return d+" d "+hr+" h";if(hr)return hr+" h "+m+" min";if(m)return m+" min "+sc+" s";return sc+" s"};
-const OS={apps:{},wins:[],z:10,bus:{},boot:performance.now(),ver:"1.0 build 1112-1536"};
+const OS={apps:{},wins:[],z:10,bus:{},boot:performance.now(),ver:"1.0 build 1112-1655"};
 OS.on=(ev,f)=>{(OS.bus[ev]=OS.bus[ev]||[]).push(f);return f};
 OS.off=(ev,f)=>{OS.bus[ev]=(OS.bus[ev]||[]).filter(x=>x!==f)};
 /* reboot that always fetches the newest copy of this page (like Ctrl+Shift+R), then reloads */
@@ -3525,6 +3525,7 @@ const CL={
   tvos_cal:["Calendar data","What the Calendar app has saved.","Your writing and creations","Deleting it removes anything you saved in the Calendar."],
   tvos_bm_tabs:["Browser open tabs","The pages that were open in the Browser, brought back next time you open it.","Progress and saved places"],
   tvos_bm_hist:["Browser history","Pages you opened in the Browser app.","Progress and saved places"],
+  rk_chat_tok:["Chat identity key","A secret that proves the Live Chamber names you use are yours. If you delete it, those names become free for anyone, and you must pick new ones.","Settings"],
   tvos_chat_hist:["Chat history","Messages you received in the Live Chamber. Kept only on this device (the server forgets them after 5 minutes).","Progress and saved places"],
   tvos_chat_name:["Chat name","The name you use in the Live Chamber.","App preferences"],
   tvos_media_auto:["Media Player: auto-next","Whether the Media Player moves on to the next file by itself.","App preferences"],
@@ -3685,10 +3686,14 @@ defApp("cleaner",{name:"Cleaner",icon:"broom",cat:"System",w:820,h:640,single:tr
 IP.people="M9 11a3 3 0 100-6 3 3 0 000 6z M3 20c0-3.3 2.7-6 6-6s6 2.7 6 6 M17 11a2.5 2.5 0 100-5 2.5 2.5 0 000 5z M16.5 14.2c2.6.4 4.5 2.4 4.5 5.8";
 const CH={
  base:"https://republicka.life/chat/",
+ ok:null,/* null = not checked yet, true = server reachable, false = not. The app only shows while true. */
+ async look(){const c=new AbortController(),t=setTimeout(()=>c.abort(),6000);try{const r=await fetch(CH.base+"?api=poll&since=99999999999999&u=",{signal:c.signal,headers:{"X-Chat-Token":CH.tok()}});const d=await r.json();return d&&d.ok?d:null}catch(e){return null}finally{clearTimeout(t)}},
+ async probe(){const d=await CH.look();CH.ok=!!d;if(d&&d.online)CH.n=d.online.length;try{buildDesk()}catch(e){}},
  max:400,keep:1000,
  cols:["#5b9bd5","#56b87a","#d4706a","#c97fd4","#d4a44c","#4cc9c9","#d47a4c","#7a9bd4","#b8d45b","#d45b9b","#5bd4a4","#d4c44c"],
  col(n,me){if(me)return"var(--ac)";let x=0;for(let i=0;i<n.length;i++)x=(x*31+n.charCodeAt(i))>>>0;return CH.cols[x%CH.cols.length]},
- async api(q,body){const o=body?{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(body)}:{};const r=await fetch(CH.base+"?api="+q,o);return r.json()},
+ tok(){let t="";try{t=localStorage.getItem("rk_chat_tok")||""}catch(e){}if(!/^[A-Za-z0-9_-]{16,64}$/.test(t)){const a=new Uint8Array(24);crypto.getRandomValues(a);t=[...a].map(x=>x.toString(16).padStart(2,"0")).join("");try{localStorage.setItem("rk_chat_tok",t)}catch(e){}}return t},
+ async api(q,body,keep){const hd={"X-Chat-Token":CH.tok()};const o={headers:hd};if(body){o.method="POST";hd["Content-Type"]="application/json";o.body=JSON.stringify(body)}if(keep)o.keepalive=true;const r=await fetch(CH.base+"?api="+q,o);return r.json()},
  hist(){const a=LS.get("tvos_chat_hist",null);if(Array.isArray(a))return a;let b=[];try{const o=JSON.parse(localStorage.getItem("rk_chat_history")||"[]");if(Array.isArray(o))b=o.filter(m=>m&&m.t&&m.n&&m.m).slice(-CH.keep)}catch(e){}LS.set("tvos_chat_hist",b);return b},
  add(m){const a=CH.hist();if(a.some(x=>x.t===m.t&&x.n===m.n))return;a.push({t:m.t,n:m.n,m:m.m});LS.set("tvos_chat_hist",a.length>CH.keep?a.slice(-CH.keep):a)},
  css(){if(document.getElementById("chcss"))return;const s=document.createElement("style");s.id="chcss";s.textContent=`
@@ -3710,12 +3715,13 @@ const CH={
 .ch .comp textarea{flex:1;min-height:40px;max-height:110px;resize:none;font-family:inherit;box-sizing:border-box}
 .ch .st{font-size:11px;opacity:.75;padding:0 10px 4px;flex:none;min-height:15px}
 .ch .st.bad{color:var(--wn);opacity:1}
-.ch .join{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;padding:20px;text-align:center}
+.ch .join{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;gap:12px;padding:20px;text-align:center;overflow:auto}
+.ch .join>:first-child{margin-top:auto}.ch .join>:last-child{margin-bottom:auto;flex:none}.ch .join>*{flex:none}
 .ch .join input{width:min(320px,100%);box-sizing:border-box}
 .ch .join .big{font-size:56px;line-height:1;color:var(--ac)}
 `;document.head.append(s)}
 };
-defApp("chat",{name:"Chat",icon:"people",cat:"Internet",w:640,h:600,single:true,desc:"the Republicka Live Chamber, built in",kw:"chat chamber live talk message people online republicka room",
+defApp("chat",{needs:()=>CH.ok===true,name:"Chat",icon:"people",cat:"Internet",w:640,h:600,single:true,desc:"the Republicka Live Chamber, built in",kw:"chat chamber live talk message people online republicka room",
  init(win,b){
   CH.css();
   let me=LS.get("tvos_chat_name",""),cursor=0,timer=0,seen=new Set(),joined=false,fails=0,lastDay="";
@@ -3741,19 +3747,27 @@ defApp("chat",{name:"Chat",icon:"people",cat:"Internet",w:640,h:600,single:true,
    if(win.dead||!joined)return;const slow=win.min||document.hidden;timer=setTimeout(poll,slow?10000:2500)}
   async function send(){const t=ta.value.trim();if(!t||t.length>CH.max||!joined)return;sendB.disabled=true;ta.value="";cc();
    try{const d=await CH.api("post",{name:me,text:t});if(!d.ok){toast(d.err||"Could not send",1);ta.value=t;cc()}else{clearTimeout(timer);poll()}}catch(e){err(e);ta.value=t;cc()}finally{sendB.disabled=false;if(!isMob())ta.focus()}}
-  async function enter(name){me=name;LS.set("tvos_chat_name",me);root.innerHTML="";
+  async function enter(name){
+   try{const d=await CH.api("enter",{name});if(!d.ok){toast(d.err||"Could not join",1);return}}catch(e){toast(e instanceof TypeError?"Cannot reach the chamber from this site. The chat server only answers pages on republicka.life.":"Chat problem: "+(e&&e.message||e),1);return}
+   me=name;LS.set("tvos_chat_name",me);root.innerHTML="";
    const strip=h("div",{class:"strip"},nm,cnt,h("button",{class:"btn sm",onclick:()=>ppl.classList.toggle("open")},ic("people")," People"),h("button",{class:"btn sm",onclick:async()=>{if(await dlgConfirm("Wipes your saved chat messages from this device. This cannot be undone.","Clear history","Clear")){LS.set("tvos_chat_hist",[]);seen.clear();lastDay="";log.innerHTML="";cursor=Date.now();toast("History cleared")}}},"Clear"),h("button",{class:"btn sm",onclick:async()=>{if(await dlgConfirm("Leave the chamber? Your local history stays.","Log out","Log out"))leave(true)}},"Log out"));
    nm.textContent="⚜ "+me;root.append(strip,ppl,log,st,h("div",{class:"comp"},ta,cch,sendB));
    const hs=CH.hist();if(hs.length){log.append(h("div",{class:"dv",style:"border-top:0;margin-top:0"},"Stored history"));hs.forEach(m=>render(m,true));lastDay=""}bottom(1);
    joined=true;try{const s=await CH.api("poll&since=99999999999999&u=");cursor=s.t||Date.now()}catch(e){cursor=Date.now();err(e)}
-   CH.api("post",{name:"__system__",text:me+" has entered the chamber"}).catch(()=>{});poll();if(!isMob())ta.focus()}
-  function leave(say){joined=false;clearTimeout(timer);const n=me;const p=say?CH.api("post",{name:"__system__",text:n+" has left the chamber"}).catch(()=>{}):Promise.resolve();p.finally(()=>{try{fetch(CH.base+"?api=leave&u="+encodeURIComponent(n),{keepalive:true}).catch(()=>{})}catch(e){}});if(say){seen.clear();lastDay="";log.innerHTML="";join()}}
-  function join(){root.innerHTML="";const inp=h("input",{class:"t",placeholder:"Your name",maxlength:24,value:me,spellcheck:"false",autocomplete:"off",onkeydown:e=>{if(e.key==="Enter")go()}});
+   poll();if(!isMob())ta.focus()}
+  function leave(say){joined=false;clearTimeout(timer);const n=me;CH.api("leave",{name:n,say:say?1:0},true).catch(()=>{});if(say){seen.clear();lastDay="";log.innerHTML="";join()}}
+  const txt=n=>n?n+(n===1?" person is":" people are")+" in the chamber right now.":"The chamber is quiet right now. Be the first.";
+  function join(){root.innerHTML="";const who=h("div",{style:"font-size:13px;color:var(--ac);min-height:18px"},CH.n!=null?txt(CH.n):"");const inp=h("input",{class:"t",placeholder:"Your name",maxlength:24,value:me,spellcheck:"false",autocomplete:"off",onkeydown:e=>{if(e.key==="Enter")go()}});
    const go=()=>{const v=inp.value.trim();if(!v)return toast("Enter a name first.",1);enter(v)};
-   root.append(h("div",{class:"join"},h("div",{class:"big"},"⚜"),h("div",{style:"letter-spacing:.2em;text-transform:uppercase;font-size:13px"},"Republicka Live Chamber"),h("div",{class:"dim",style:"font-size:12px;max-width:340px;line-height:1.45"},"Messages are relayed for 5 minutes. Your history is kept only on this device."),inp,h("button",{class:"btn pri",onclick:go},"Enter the Chamber")));if(!isMob())inp.focus()}
-  win.on.close=()=>{const was=joined;joined=false;clearTimeout(timer);if(was){try{fetch(CH.base+"?api=leave&u="+encodeURIComponent(me),{keepalive:true}).catch(()=>{})}catch(e){}}};
+   root.append(h("div",{class:"join"},h("div",{class:"big"},"⚜"),h("div",{style:"letter-spacing:.2em;text-transform:uppercase;font-size:13px"},"Republicka Live Chamber"),h("div",{style:"font-size:13px;max-width:380px;line-height:1.5"},"One chat room shared by everyone who uses this OS, the Android app and the republicka.life/chat page. Anyone in the room right now can read what you write, so keep it public."),who,h("div",{class:"dim",style:"font-size:12px;max-width:380px;line-height:1.45"},"The server forgets messages after 5 minutes; your own copy stays only on this device. Your name is yours: nobody else can use it once you have."),inp,h("button",{class:"btn pri",onclick:go},"Enter the Chamber")));CH.look().then(d=>{if(d&&d.online&&!win.dead){CH.n=d.online.length;who.textContent=txt(CH.n)}});if(!isMob())inp.focus()}
+  win.on.close=()=>{const was=joined;joined=false;clearTimeout(timer);if(was){try{CH.api("leave",{name:me},true).catch(()=>{})}catch(e){}}};
   join();
  }});
+
+/* Check the chat server once the desktop is up, and again whenever the network changes. */
+setTimeout(()=>CH.probe(),1500);
+addEventListener("online",()=>CH.probe());
+addEventListener("offline",()=>{CH.ok=false;try{buildDesk()}catch(e){}});
 
 /* ===================== BOOT ===================== */
 const LOGO=`
