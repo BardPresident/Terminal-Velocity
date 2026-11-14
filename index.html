@@ -1258,7 +1258,7 @@ const fmtDate=t=>{const d=new Date(t),hm=" "+pad(d.getHours())+":"+pad(d.getMinu
 const sleep=ms=>new Promise(r=>setTimeout(r,ms));
 const LS={get(k,d){try{const v=localStorage.getItem(k);return v==null?d:JSON.parse(v)}catch(e){return d}},set(k,v){try{localStorage.setItem(k,JSON.stringify(v));return true}catch(e){return false}}};
 const fmtUp=s=>{s=Math.max(0,Math.round(s));const d=Math.floor(s/86400),hr=Math.floor(s%86400/3600),m=Math.floor(s%3600/60),sc=s%60;if(d)return d+" d "+hr+" h";if(hr)return hr+" h "+m+" min";if(m)return m+" min "+sc+" s";return sc+" s"};
-const OS={apps:{},wins:[],z:10,bus:{},boot:performance.now(),ver:"1.0 build 1114-1159"};
+const OS={apps:{},wins:[],z:10,bus:{},boot:performance.now(),ver:"1.0 build 1114-1213"};
 OS.on=(ev,f)=>{(OS.bus[ev]=OS.bus[ev]||[]).push(f);return f};
 OS.off=(ev,f)=>{OS.bus[ev]=(OS.bus[ev]||[]).filter(x=>x!==f)};
 /* reboot that always fetches the newest copy of this page (like Ctrl+Shift+R), then reloads */
@@ -3885,7 +3885,7 @@ const TH=(()=>{
  const NOUN=["Harbor","Static","Garden","Signal","Tide","Relay","Orbit","Lantern","Canyon","Archive","Meridian","Cipher","Bloom","Vault","Drift","Beacon"];
  const HARM=["Neighbours","Opposites","Triad","Split"],RAR=["Common","Uncommon","Rare","Epic","Legendary"],RCOL=["#9aa3a0","#4cd27a","#4aa3ff","#b66dff","#ffc83d"],TIER=[8.3,9.5,10.9,12.2];
  const PH=[.4,.3,.15,.15],PG=[.3,.3,.25,.15],LOCKF={hue:["hue"],wall:["wall"],font:["font"],mood:["light"]};
- const cnt=(a,v)=>a.filter(x=>x===v).length;
+ const cnt=(a,v)=>a.filter(x=>x===v).length,WTI=w=>{const i=WT.indexOf(w);return i<0?14:i};
  const enc=g=>{let b="";for(const[k,n]of F)b+=(g[k]&((1<<n)-1)).toString(2).padStart(n,"0");let s="";for(let i=0;i<8;i++)s+=AL[parseInt(b.slice(i*5,i*5+5),2)];return"V1-"+s.slice(0,4)+"-"+s.slice(4)};
  const dec=str=>{let s=String(str||"").toUpperCase().replace(/[^0-9A-Z]/g,"").replace(/O/g,"0").replace(/[IL]/g,"1");if(s.length===10&&s.startsWith("V1"))s=s.slice(2);if(s.length!==8||[...s].some(c=>AL.indexOf(c)<0))return null;let b="";for(const c of s)b+=AL.indexOf(c).toString(2).padStart(5,"0");const g={};let p=0;for(const[k,n]of F){g[k]=parseInt(b.slice(p,p+n),2);p+=n}return g};
  const hex=(h,s,l)=>{h=((h%360)+360)%360;const a=s*Math.min(l,1-l),f=n=>{const k=(n+h/30)%12;return l-a*Math.max(-1,Math.min(k-3,9-k,1))};return"#"+[f(0),f(8),f(4)].map(v=>pad2(Math.round(v*255))).join("")};
@@ -3902,8 +3902,10 @@ const TH=(()=>{
   roll(rng,base,lock){rng=rng||Math.random;const wp=w=>{const r=rng();let a=0;for(let i=0;i<w.length;i++){a+=w[i];if(r<a)return i}return w.length-1};
    const g={hue:rng()*256|0,harm:wp(PH),bgs:rng()*8|0,bgh:rng()*16|0,acs:rng()*8|0,acl:rng()*4|0,wall:rng()*16|0,font:rng()*4|0,glow:wp(PG),light:rng()<.12?1:0,dim:rng()*8|0,pan:rng()*4|0,rad:rng()*4|0,a2s:rng()*4|0};
    if(base&&lock)for(const k in lock)if(lock[k])for(const f of LOCKF[k])g[f]=base[f];return g},
-  mutate(g){const n=Object.assign({},g);const ks=F.filter(x=>x[0]!=="light"),pick=[];while(pick.length<3){const k=ks[Math.random()*ks.length|0];if(!pick.includes(k))pick.push(k)}
-   for(const[k,b]of pick){if(k==="hue")n.hue=(n.hue+(Math.random()<.5?-1:1)*(1+(Math.random()*14|0))+256)%256;else n[k]=Math.random()*(1<<b)|0}return n},
+  mutate(g){const vis=["harm","bgh","bgs","acl","wall","font","glow","a2s","pan"];let n;for(let t=0;t<9;t++){n=Object.assign({},g);const ks=vis.slice().sort(()=>Math.random()-.5).slice(0,2+(Math.random()*2|0));
+    if(Math.random()<.75)n.hue=(n.hue+(Math.random()<.5?-1:1)*(8+(Math.random()*22|0))+256)%256;
+    for(const k of ks){const bits=F.find(x=>x[0]===k)[1];n[k]=Math.random()*(1<<bits)|0}
+    if(enc(n)!==enc(g))break}return n},
   breed(a,b){const n={};for(const[k,bits]of F){n[k]=Math.random()<.5?a[k]:b[k];if(k!=="light"&&Math.random()<.1)n[k]=Math.random()*(1<<bits)|0}return n},
   name(g){const NS=(g.bgh*3+g.pan+g.dim+g.acs)%16;return(g.light?"Pale ":"")+HF[T0.fam(g)]+" "+NOUN[NS]},
   build(g){const H=g.hue*360/256,H2=(H+[35,180,120,150][g.harm])%360,light=!!g.light,bgH=(H+(g.bgh-8)*7+360)%360;let bg,pn,pn2,fg,dim,ac,ac2;
@@ -3912,6 +3914,13 @@ const TH=(()=>{
    return T(T0.name(g),"A theme from Ex Nihilo ("+enc(g)+").",bg,pn,pn2,fg,dim,ac,ac2,{l:light?1:undefined,ff:FONTS[g.font],w:WT[g.wall],glow:light?"0px":GL[g.glow],rad:RAD[g.rad]})},
   /* make the theme exist in THEMES (only the one in use is kept) and return its id */
   reg(g){const id="g:"+enc(g);for(const k of Object.keys(THEMES))if(k.startsWith("g:")&&k!==id&&k!==SET.theme)delete THEMES[k];if(!THEMES[id])THEMES[id]=T0.build(g);return id},
+  /* a built-in theme has no seed, so work one out from its colours, wallpaper, typeface and mood. It is a close cousin, not an exact copy. */
+  approx(t){const v=t.v,rg=c=>{c=c.replace("#","");if(c.length===3)c=c.replace(/./g,"$&$&");const[r,g,b]=[0,2,4].map(i=>parseInt(c.substr(i,2),16)/255),mx=Math.max(r,g,b),mn=Math.min(r,g,b),l=(mx+mn)/2,d=mx-mn;let h=0,s=0;if(d){s=d/(1-Math.abs(2*l-1));h=mx===r?((g-b)/d+(g<b?6:0)):mx===g?(b-r)/d+2:(r-g)/d+4;h*=60}return[h,s,l]};
+   const cl=(x,n)=>Math.max(0,Math.min(n,Math.round(x))),dh=(a,b)=>{let d=Math.abs(a-b)%360;return d>180?360-d:d};
+   const light=!!t.l,A=rg(v.ac),A2=rg(v.ac2),B=rg(v.bg),D=rg(v.dim),H=A[0],hd=dh(A2[0],H);let harm=0,best=1e9;[35,180,120,150].forEach((x,i)=>{const e=Math.abs(hd-x);if(e<best){best=e;harm=i}});
+   let bd=(B[0]-H+540)%360-180;const px=s=>parseFloat(s)||0,near=(arr,x)=>arr.reduce((bi,y,i)=>Math.abs(y-x)<Math.abs(arr[bi]-x)?i:bi,0);
+   const wi=WTI(t.w);
+   return{hue:cl(H/360*256,255),harm,bgs:cl(light?(B[1]-.22)/.04:(B[1]-.12)/.05,7),bgh:cl(bd/7+8,15),acs:cl(light?(A[1]-.55)/.05:(A[1]-.7)/.043,7),acl:cl(light?(.38-A[2])/.03:(A[2]-.52)/.07,3),wall:wi,font:v.ff===SERIF?2:v.ff===SANS?1:0,glow:near([0,4,8,14],px(v.glow)),light:light?1:0,dim:cl((D[2]-.5)/.035,7),pan:cl(light?(.9-B[2])/.02:(B[2]-.04)/.012,3),rad:near([2,4,6,10],px(v.rad)),a2s:cl(light?(A2[1]-.55)/.1:(A2[1]-.7)/.1,3)}},
   cur(){return SET.theme&&SET.theme.startsWith("g:")?T0.dec(SET.theme.slice(2)):null},
   facts(g){return T0.HF[T0.fam(g)]+" · "+HARM[g.harm]+" · "+(g.light?"Light":"Dark")+" · "+WT[g.wall]+" wallpaper · "+FN[g.font]+" · glow "+GL[g.glow]}
  };
@@ -3935,12 +3944,12 @@ defApp("themes",{name:"Themes",icon:"swatch",cat:"System",w:800,h:700,single:tru
   const S=THS.load();while(S.q.length<3)S.q.push(THS.newQ());
   let tab=LS.get("tvos_themes_tab","Workshop"),hist=[],hi=-1,par=[];const locks={hue:0,wall:0,font:0,mood:0};
   const root=h("div",{tabindex:"-1",style:"display:flex;flex-direction:column;flex:1;min-height:0;outline:none"});b.append(root);b.style.cssText+=";display:flex;flex-direction:column";
-  const cg=()=>TH.cur();
+  const cg=()=>TH.cur(),base=()=>cg()||TH.approx(THEMES[SET.theme]);
   const lv=()=>THS.lvl(S.xp),xp=(n,why)=>{if(n<=0)return;const a=lv();S.xp+=n;THS.save();if(lv()>a)toast("Level "+lv()+": "+THS.titles[Math.min(lv()-1,THS.titles.length-1)]+"!")};
   const see=g=>{let n=0;const mk=(k,v)=>{if(!S.seen[k][v]){S.seen[k][v]=1;n++}};mk("h",TH.fam(g));mk("w",TH.WT[g.wall]);mk("f",TH.FN[g.font]);mk("m",g.harm);mk("r",TH.rar(g));if(n){xp(3*n);const nw=Date.now();if(nw-(see.t||0)>1500){see.t=nw;toast("Codex: "+n+" new discover"+(n>1?"ies":"y")+" (+"+3*n+" XP)")}}};
   const codexN=()=>Object.values(S.seen).reduce((a,o)=>a+Object.keys(o).length,0),CODEXT=12+7+3+4+5;
   const use=(g,fromHist)=>{const id=TH.reg(g);applyTheme(id);if(!fromHist){hist=hist.slice(0,hi+1);hist.push(TH.enc(g));if(hist.length>60)hist.shift();hi=hist.length-1}see(g);S.rolls++;THS.save();draw()};
-  const roll=()=>{use(TH.roll(Math.random,cg(),locks));xp(1)};
+  const roll=()=>{use(TH.roll(Math.random,base(),locks));xp(1)};
   const rarB=g=>{const r=TH.rar(g);return h("b",{style:"color:"+TH.RCOL[r]+";border:1px solid "+TH.RCOL[r]+";border-radius:4px;padding:0 6px"},TH.RAR[r])};
   const bar=v=>h("div",{class:"bar",style:"background:"+v.bg+";height:34px;border-radius:5px;display:flex;overflow:hidden"},...["bg","pn","pn2","ac","ac2","fg","dim"].map(k=>h("i",{style:"flex:1;background:"+v[k]})));
   const seedOf=()=>{const g=cg();return g?TH.enc(g):null};
@@ -3959,12 +3968,12 @@ defApp("themes",{name:"Themes",icon:"swatch",cat:"System",w:800,h:700,single:tru
   const workshop=()=>{const g=cg(),sd=seedOf();const lk=(k,l)=>h("label",{style:"display:flex;gap:5px;align-items:center;cursor:pointer"},h("input",{type:"checkbox",checked:!!locks[k],onchange:e=>locks[k]=e.target.checked?1:0}),l);
    const t=THEMES[SET.theme];const card=h("div",{style:"border:1px solid var(--bd);border-radius:8px;padding:10px;display:flex;flex-direction:column;gap:8px"},
     h("div",{style:"display:flex;justify-content:space-between;align-items:baseline;gap:8px;flex-wrap:wrap"},h("b",{style:"font-size:17px"},t.n),g?rarB(g):h("span",{class:"dim"},"built-in theme")),
-    bar(t.v),g?h("div",{class:"dim",style:"overflow-wrap:anywhere"},TH.facts(g)):h("div",{class:"dim"},"You are using a built-in theme. Roll to make something new."),
+    bar(t.v),g?h("div",{class:"dim",style:"overflow-wrap:anywhere"},TH.facts(g)):h("div",{class:"dim"},"You are using a built-in theme. Roll to make something new, or press More like this for a close relative of it."),
     h("div",{style:"display:flex;gap:8px;align-items:center;flex-wrap:wrap"},sd?h("button",{class:"btn sm",title:"Copy this seed",onclick:()=>copy(sd)},sd):null,sd?h("span",{class:"dim"},"the same seed gives the same theme on any device"):null));
    const acts=h("div",{class:"row",style:"flex-wrap:wrap;gap:6px;border:0;padding:0"},
     h("button",{class:"btn pri",style:"font-size:15px;padding:8px 18px",onclick:roll},ic("swatch")," Roll"),
     h("button",{class:"btn",disabled:hi<=0,onclick:()=>{hi--;use(TH.dec(hist[hi]),true)}},"◀ Back"),h("button",{class:"btn",disabled:hi>=hist.length-1,onclick:()=>{hi++;use(TH.dec(hist[hi]),true)}},"Forward ▶"),
-    h("button",{class:"btn",disabled:!g,title:"Roll a close relative of this theme",onclick:()=>{if(g){use(TH.mutate(g));xp(1)}}},"More like this"),
+    h("button",{class:"btn",title:"Roll a close relative of this theme. Works on built-in themes too.",onclick:()=>{use(TH.mutate(base()));xp(1)}},"More like this"),
     h("button",{class:"btn",disabled:!g,onclick:save},ic("save")," Save"),h("button",{class:"btn",onclick:go},"Enter a seed"));
    const locksR=h("div",{style:"display:flex;gap:12px;flex-wrap:wrap;align-items:center"},h("span",{class:"dim"},"Keep when rolling:"),lk("hue","Colour"),lk("wall","Wallpaper"),lk("font","Typeface"),lk("mood","Light/dark"));
    const wallNote=SET.wall!=="auto"?h("div",{class:"row",style:"border:0;padding:0;gap:8px;flex-wrap:wrap"},h("span",{class:"dim"},"Settings is forcing the \""+SET.wall+"\" wallpaper, so themes cannot change it."),h("button",{class:"btn sm",onclick:()=>{SET.wall="auto";saveSet();setWall();draw()}},"Let themes choose")):null;
