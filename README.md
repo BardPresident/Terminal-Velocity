@@ -109,40 +109,39 @@ KEYS
   Alt+Enter    maximise        Alt+Tab  next window
 
 THEMES AND LOOK  (the Themes app; wallpaper and other looks in Settings > Appearance)
-  Themes is its own app now, and it is a small game about finding the
-  perfect desktop. Three tabs:
-  Workshop  Press Roll (or Space or R) and the whole OS becomes a brand
-            new theme made from rules, so text is always readable. Back
-            and Forward walk through what you rolled. "More like this"
-            rolls a close relative, and works on the built-in
-            themes too (they are approximated from their colours, so the
-            result is a cousin, not an exact copy). Under "Freeze", tick Colour, Wallpaper, Typeface
-            or Light/dark (each shows its current value) and Roll changes
-            everything except those. To keep a theme's pink and its light
-            mood, tick Colour and Light. Every
-            theme has a short seed like V2-K7QM-3F9A: the same seed
-            makes the same theme on any device, so you can share one by
-            typing it in with "Enter a seed". Save keeps a theme (only its
-            seed is stored) under "Your themes".
-  Collection  Your saved themes with star ratings, rename and delete,
-            plus the built-in ones. Pick two saved themes as Parents and
-            Breed them: the child inherits traits from each, with the odd
-            mutation.
-  Codex     Fills in as you discover colours, wallpapers, typefaces,
-            colour schemes and rarities.
-  The game: every theme has a rarity (Common to Legendary, about 1 roll
-  in 60 is Legendary) based on how unusual its traits are. You earn XP for
-  rolling, saving, discovering, breeding, claiming the Theme of the Day
-  (the same for everyone, with a daily streak) and delivering
-  Commissions (clients who want, say, a Jade theme with the grid
-  wallpaper). Roll one yourself for full XP, or press "Roll for it" to let
-  the OS search up to 300 rolls for a match (half XP). XP raises your level and title, up to Ex Nihilo.
-  Seeds start with V1 or V2, the version of the recipe, so a seed keeps
-  making the same theme even when the recipe is improved. V2 (current)
-  has more vivid accent colours, so hot pinks stay hot; V1 seeds still
-  make exactly the themes they always did. Saved
-  themes and progress are in Backup. A forced wallpaper in Settings
-  overrides a theme's wallpaper; the Workshop offers to switch that off.
+  Themes is its own app, and it is a monster-collecting game for desktops:
+  find themes you love, keep them, and breed them together. A theme is
+  only worth what it looks like to you, so there is no rarity and no
+  score. Four tabs:
+  Meadow    Wild themes wander in, six at a time. "Try it on" puts one on
+            your whole desktop. "Catch" keeps it in your Den. "Search
+            again" brings six new ones (or press Space or R). "Look for"
+            narrows the search to a colour (for example Rose) and to light
+            or dark. There is also a Wanderer of the day, the same for
+            everyone, and "Enter a seed" for a theme a friend gave you.
+  Den       Everything you have caught, with star ratings, rename, copy
+            seed and release, plus the 17 built-in themes as "Founders".
+            Founders can be bred too. Press Parent on any two creatures.
+  Nursery   Pick Parent A and Parent B (any creatures, Plushie Pastel
+            included) and press Breed to hatch a clutch of four children.
+            Each child takes its traits from one parent or the other, and
+            colour can blend between them, with the odd small surprise.
+            "Children take after" leans the clutch toward A or B. Try
+            them on, and Keep the ones you love. Kept children are
+            numbered by generation and remember their parents. Breed
+            children with each other to steer toward a look you want.
+  Dex       Which colours, wallpapers, typefaces and moods you have caught
+            or bred so far, so you can see what your Den is missing.
+  Every theme has a short seed like V2-K7QM-3F9A. The same seed makes the
+  same theme on any device, so you can share one by typing it in. Seeds
+  start with V1 or V2, the version of the recipe, so a seed keeps making
+  the same theme even when the recipe is improved. V2 (current) has more
+  vivid accent colours, so hot pinks stay hot; V1 seeds still make
+  exactly the themes they always did. A built-in theme has no seed, so
+  when you breed one the OS works out a close match from its colours,
+  wallpaper, typeface and mood. Only seeds are stored, so your Den costs
+  almost nothing and is in Backup. A forced wallpaper in Settings
+  overrides a theme's wallpaper (change it in Settings > Appearance).
   The 17 built-in "X environments" are still here: Phosphor Green, Amber Terminal, Cyan Relay,
   Sovereign Gold, Agape Pink, Queen Ivory (light), Hearth Ember, Owrbit
   Violet, Deep Freeze, CC0 Rug, Plushie Pastel (light), Zero Port, Blue
@@ -196,8 +195,8 @@ Benchmark
   How much of the computer the OS really uses (section 8).
 
 Themes
-  Roll, collect, breed and save procedurally generated themes, as a
-  small game (see "Themes and look" in section 3).
+  A monster-collecting game for desktops: find themes, keep them and
+  breed them (see "Themes and look" in section 3).
 
 Quine
   The OS reads its own file and runs a copy of itself in a window. That
