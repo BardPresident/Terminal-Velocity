@@ -108,12 +108,39 @@ KEYS
   Alt+W        close           Alt+M  minimise
   Alt+Enter    maximise        Alt+Tab  next window
 
-THEMES AND LOOK  (Settings > Appearance)
-  17 "X environments": Phosphor Green, Amber Terminal, Cyan Relay,
+THEMES AND LOOK  (the Themes app; wallpaper and other looks in Settings > Appearance)
+  Themes is its own app now, and it is a small game about finding the
+  perfect desktop. Three tabs:
+  Workshop  Press Roll (or Space or R) and the whole OS becomes a brand
+            new theme made from rules, so text is always readable. Back
+            and Forward walk through what you rolled. "More like this"
+            rolls a close relative. Tick Colour, Wallpaper, Typeface or
+            Light/dark to keep that part while you roll the rest. Every
+            theme has a short seed like V1-K7QM-3F9A: the same seed
+            makes the same theme on any device, so you can share one by
+            typing it in with "Enter a seed". Save keeps a theme (only its
+            seed is stored) under "Your themes".
+  Collection  Your saved themes with star ratings, rename and delete,
+            plus the built-in ones. Pick two saved themes as Parents and
+            Breed them: the child inherits traits from each, with the odd
+            mutation.
+  Codex     Fills in as you discover colours, wallpapers, typefaces,
+            colour schemes and rarities.
+  The game: every theme has a rarity (Common to Legendary, about 1 roll
+  in 60 is Legendary) based on how unusual its traits are. You earn XP for
+  rolling, saving, discovering, breeding, claiming the Theme of the Day
+  (the same for everyone, with a daily streak) and delivering
+  Commissions (clients who want, say, a Jade theme with the grid
+  wallpaper). XP raises your level and title, up to Ex Nihilo.
+  Seeds start with V1, the version of the recipe, so a seed will keep
+  making the same theme even if the recipe is ever improved. Saved
+  themes and progress are in Backup. A forced wallpaper in Settings
+  overrides a theme's wallpaper; the Workshop offers to switch that off.
+  The 17 built-in "X environments" are still here: Phosphor Green, Amber Terminal, Cyan Relay,
   Sovereign Gold, Agape Pink, Queen Ivory (light), Hearth Ember, Owrbit
   Violet, Deep Freeze, CC0 Rug, Plushie Pastel (light), Zero Port, Blue
   Screen, Combine Steel, Triage Red, Zookeeper Moss, Plain Paper (light).
-  Change a theme in Settings, with the tray eye, or in the terminal:
+  Change a theme in the Themes app, with the tray eye, or in the terminal:
   theme NAME.
   Wallpapers are drawn on canvas, with no image files: stars, 50 BPM
   rings, grid, rain, flow, plain, none.
@@ -161,6 +188,10 @@ Task Manager
 Benchmark
   How much of the computer the OS really uses (section 8).
 
+Themes
+  Roll, collect, breed and save procedurally generated themes, as a
+  small game (see "Themes and look" in section 3).
+
 Quine
   The OS reads its own file and runs a copy of itself in a window. That
   copy can open Quine and run another copy, and so on, up to a limit the
@@ -171,8 +202,12 @@ Quine
   web address, because a page can't read itself from a file. All layers
   share your saves (so a change in a copy is a change to your real data),
   but copies never save or restore your open windows and stay out of
-  Chat. Each copy starts with Quine minimised in its taskbar so you see a
-  full desktop; click it there to go a layer deeper. Closing the Quine
+  Chat. Stack and benchmark draws a hall of mirrors: every layer is a
+  glowing, tagged screen inside the one before, with its own taskbar
+  showing, and the colours turn a little more with each layer (Low power
+  mode turns the glow and colour off). Each copy starts with Quine
+  minimised in its taskbar so you see a full desktop; click it there to go
+  a layer deeper. Closing the Quine
   window closes the copies.
 
 Cleaner
@@ -588,8 +623,13 @@ BENCHMARK  (System > Benchmark)
 
 LOW POWER MODE  (Settings > Appearance, or the Benchmark app)
   Auto, On or Off. It turns off animations, glow, shadows, the vignette
-  and the moving wallpaper, and slows the music visualisers. Auto turns
-  it on for devices with 2 CPU cores or fewer, or 2 GB of memory or less.
+  and the moving wallpaper, and slows the music visualisers. Auto does not
+  guess from the hardware. It starts everything moving, watches how
+  smoothly the screen really draws for about four seconds after start-up,
+  and only turns Low power on if the device cannot keep up (below about
+  22 frames per second), with a message saying so. A small, slow computer
+  that copes keeps its moving wallpaper; weaker ones just draw it a little
+  less often. Choose On or Off to override.
   New apps follow it automatically.
 
 WHAT KEEPS IT LIGHT
