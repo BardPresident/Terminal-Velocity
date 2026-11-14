@@ -1258,7 +1258,7 @@ const fmtDate=t=>{const d=new Date(t),hm=" "+pad(d.getHours())+":"+pad(d.getMinu
 const sleep=ms=>new Promise(r=>setTimeout(r,ms));
 const LS={get(k,d){try{const v=localStorage.getItem(k);return v==null?d:JSON.parse(v)}catch(e){return d}},set(k,v){try{localStorage.setItem(k,JSON.stringify(v));return true}catch(e){return false}}};
 const fmtUp=s=>{s=Math.max(0,Math.round(s));const d=Math.floor(s/86400),hr=Math.floor(s%86400/3600),m=Math.floor(s%3600/60),sc=s%60;if(d)return d+" d "+hr+" h";if(hr)return hr+" h "+m+" min";if(m)return m+" min "+sc+" s";return sc+" s"};
-const OS={apps:{},wins:[],z:10,bus:{},boot:performance.now(),ver:"1.0 build 1114-1234"};
+const OS={apps:{},wins:[],z:10,bus:{},boot:performance.now(),ver:"1.0 build 1114-1246"};
 OS.on=(ev,f)=>{(OS.bus[ev]=OS.bus[ev]||[]).push(f);return f};
 OS.off=(ev,f)=>{OS.bus[ev]=(OS.bus[ev]||[]).filter(x=>x!==f)};
 /* reboot that always fetches the newest copy of this page (like Ctrl+Shift+R), then reloads */
@@ -3553,8 +3553,8 @@ const CL={
   tvos_ab_set:["Audiobooks settings","Audiobook player choices.","App preferences"],
   tvos_rec_set:["Recorder settings","Format, channels and other Recorder choices.","App preferences"],
   tvos_rec_dest:["Where recordings save","Downloads, a folder, or inside the OS.","App preferences"],
-  tvos_themes:["Themes: saved themes and progress","Your saved Ex Nihilo themes (just their short seeds), star ratings, level, Codex, daily streak and commissions.","Your writing and creations","Deleting it removes your saved themes, level and Codex. A theme can be recreated from its seed."],
-  tvos_themes_tab:["Themes: last tab","Which tab you left open in the Themes app.","App preferences"],
+  tvos_themes:["Themes: your Den","Your Den of caught and bred themes (just their short seeds), with names, star ratings and family trees.","Your writing and creations","Deleting it empties your Den. A theme can be caught again from its seed."],
+  tvos_themes_tab:["Themes: last tab","Which tab you left open in the Themes app (Meadow, Den, Nursery or Dex).","App preferences"],
   tvos_cam_set:["Camera settings","Resolution, format and other Camera choices.","App preferences"],
   tvos_paint_to:["Where Paint saves","Downloads or inside the OS.","App preferences"],
   tvos_fview:["Files view","Grid or list in the Files app.","App preferences"],
@@ -3906,7 +3906,9 @@ const TH=(()=>{
     if(Math.random()<.75)n.hue=(n.hue+(Math.random()<.5?-1:1)*(8+(Math.random()*22|0))+256)%256;
     for(const k of ks){const bits=F.find(x=>x[0]===k)[1];n[k]=Math.random()*(1<<bits)|0}
     if(enc(n)!==enc(g))break}return n},
-  breed(a,b){const n={v:2};for(const[k,bits]of F){n[k]=Math.random()<.5?a[k]:b[k];if(k==="hue"){if(Math.random()<.5)n.hue=(((a.hue+b.hue)/2|0)+(Math.random()*9|0)-4+256)%256}else if(k!=="light"&&Math.random()<.08)n[k]=Math.random()*(1<<bits)|0}return n},
+  breed(a,b,lean){lean=lean==null?.5:lean;const n={v:2},pick=Math.random;for(const[k,bits]of F){const fromA=pick()<lean;n[k]=fromA?a[k]:b[k];
+    if(k==="hue"){const d=((b.hue-a.hue+384)%256)-128;n.hue=pick()<.4?(Math.round(a.hue+d*(1-lean))+256)%256:n.hue;n.hue=(n.hue+(pick()<.3?(Math.random()*7|0)-3:0)+256)%256}
+    else if(k!=="light"&&pick()<.06)n[k]=Math.random()*(1<<bits)|0}return n},
   name(g){const NS=(g.bgh*3+g.pan+g.dim+g.acs)%16;return(g.light?"Pale ":"")+HF[T0.fam(g)]+" "+NOUN[NS]},
   build(g){const H=g.hue*360/256,H2=(H+[35,180,120,150][g.harm])%360,light=!!g.light,bgH=(H+(g.bgh-8)*7+360)%360;let bg,pn,pn2,fg,dim,ac,ac2;
    if(!light){const bs=.12+g.bgs*.05,bl=.04+g.pan*.012;bg=hex(bgH,bs,bl);pn=hex(bgH,bs,bl+.035);pn2=hex(bgH,bs,bl+.07);fg=fit(H,.55,.88,bg,9,1);dim=fit(H,.2,.5+g.dim*.035,pn,4.5,1);if(g.v===1){ac=fit(H,.7+g.acs*.043,.52+g.acl*.07,bg,5,1);ac2=fit(H2,.7+g.a2s*.1,.62,bg,4.5,1)}else{ac=fit(H,.82+g.acs*.025,.55+g.acl*.06,bg,4.5,1);ac2=fit(H2,.8+g.a2s*.06,.62,bg,4.5,1)}}
@@ -3928,83 +3930,90 @@ const TH=(()=>{
 if(SET.theme&&SET.theme.startsWith("g:")){const g=TH.dec(SET.theme.slice(2));if(g)TH.reg(g);else SET.theme="phosphor"}
 const THS={
  st:null,
- load(){const s=Object.assign({saved:[],xp:0,rolls:0,seen:{},daily:{},q:[],del:0},LS.get("tvos_themes",{}));s.seen=Object.assign({h:{},w:{},f:{},m:{},r:{}},s.seen);if(!Array.isArray(s.saved))s.saved=[];if(!Array.isArray(s.q))s.q=[];return THS.st=s},
+ load(){const s=Object.assign({saved:[]},LS.get("tvos_themes",{}));if(!Array.isArray(s.saved))s.saved=[];return THS.st=s},
  save(){LS.set("tvos_themes",THS.st)},
- lvl(xp){return 1+Math.floor(Math.sqrt(xp/12))},
- titles:["Apprentice","Painter","Colourist","Curator","Art Director","Master of Hues","Architect of Worlds","Ex Nihilo"],
- day(o){return new Date(Date.now()+(o||0)*864e5).toISOString().slice(0,10)},
- newQ(){const fam=Math.random()*12|0,r=Math.random()*9|0;let c;
-  if(r<3)c={k:"wall",v:["stars","rings","grid","flow","rain"][Math.random()*5|0]};else if(r<4)c={k:"font",v:Math.random()<.5?"Sans":"Serif"};else if(r<6)c={k:"harm",v:1+(Math.random()*3|0)};else if(r<8)c={k:"rar",v:1};else c={k:"light",v:1};
-  return{fam,c}},
- qOk(q,g){if(!g||TH.fam(g)!==q.fam)return false;const c=q.c;return c.k==="wall"?TH.WT[g.wall]===c.v:c.k==="font"?TH.FN[g.font]===c.v:c.k==="harm"?g.harm===c.v:c.k==="rar"?TH.rar(g)>=c.v:!!g.light},
- qText(q){const c=q.c,f=TH.HF[q.fam];return"A client wants a "+f+" theme"+(c.k==="wall"?" with the "+c.v+" wallpaper.":c.k==="font"?" in a "+c.v+" typeface.":c.k==="harm"?" using "+TH.HARM[c.v]+" colours.":c.k==="rar"?" that is Uncommon or better.":" in light mode.")}
+ day(){return new Date().toISOString().slice(0,10)}
 };
-defApp("themes",{name:"Themes",icon:"swatch",cat:"System",w:800,h:700,single:true,desc:"find the perfect desktop: roll, collect, breed and save procedurally generated themes",kw:"themes theme colour color wallpaper appearance generate random seed roll ex nihilo game collect breed",
+/* Themes: a monster-collecting game. Find themes you love in the Meadow, keep them in your Den, and breed any two (the built-in themes too) in the Nursery. */
+defApp("themes",{name:"Themes",icon:"swatch",cat:"System",w:820,h:720,single:true,desc:"collect and breed desktop themes: find wild ones, keep the ones you love, breed them together",kw:"themes theme colour color wallpaper appearance generate random seed breed collect catch den nursery meadow pokemon game",
  init(win,b){
-  const S=THS.load();while(S.q.length<3)S.q.push(THS.newQ());
-  let tab=LS.get("tvos_themes_tab","Workshop"),hist=[],hi=-1,par=[];const locks={hue:0,wall:0,font:0,mood:0};
+  const S=THS.load();let tab=LS.get("tvos_themes_tab","Meadow");if(!["Meadow","Den","Nursery","Dex"].includes(tab))tab="Meadow";
+  let wild=null,filt={fam:-1,mood:0},pa=null,pb=null,lean=.5,kids=[];
   const root=h("div",{tabindex:"-1",style:"display:flex;flex-direction:column;flex:1;min-height:0;outline:none"});b.append(root);b.style.cssText+=";display:flex;flex-direction:column";
-  const cg=()=>TH.cur(),base=()=>cg()||TH.approx(THEMES[SET.theme]);
-  const lv=()=>THS.lvl(S.xp),xp=(n,why)=>{if(n<=0)return;const a=lv();S.xp+=n;THS.save();if(lv()>a)toast("Level "+lv()+": "+THS.titles[Math.min(lv()-1,THS.titles.length-1)]+"!")};
-  const see=g=>{let n=0;const mk=(k,v)=>{if(!S.seen[k][v]){S.seen[k][v]=1;n++}};mk("h",TH.fam(g));mk("w",TH.WT[g.wall]);mk("f",TH.FN[g.font]);mk("m",g.harm);mk("r",TH.rar(g));if(n){xp(3*n);const nw=Date.now();if(nw-(see.t||0)>1500){see.t=nw;toast("Codex: "+n+" new discover"+(n>1?"ies":"y")+" (+"+3*n+" XP)")}}};
-  const codexN=()=>Object.values(S.seen).reduce((a,o)=>a+Object.keys(o).length,0),CODEXT=12+7+3+4+5;
-  const use=(g,fromHist)=>{const id=TH.reg(g);applyTheme(id);if(!fromHist){hist=hist.slice(0,hi+1);hist.push(TH.enc(g));if(hist.length>60)hist.shift();hi=hist.length-1}see(g);S.rolls++;THS.save();draw()};
-  const roll=()=>{use(TH.roll(Math.random,base(),locks));xp(1)};
-  const rarB=g=>{const r=TH.rar(g);return h("b",{style:"color:"+TH.RCOL[r]+";border:1px solid "+TH.RCOL[r]+";border-radius:4px;padding:0 6px"},TH.RAR[r])};
+  const WALLN=["stars","rings","grid","rain","flow","plain","none"];
+  /* ---- creatures: the built-in themes (founders) and your caught ones ---- */
+  const founders=()=>THEME_ORDER.map(k=>({id:"b:"+k,key:k,name:THEMES[k].n,g:TH.approx(THEMES[k]),gen:0,founder:1,v:THEMES[k].v}));
+  const mine=()=>S.saved.map(s=>{const g=TH.dec(s.seed);return g?{id:"s:"+s.seed,s,name:s.name,g,gen:s.gen||1,v:TH.build(g).v}:null}).filter(Boolean);
+  const all=()=>founders().concat(mine()),byId=id=>all().find(c=>c.id===id);
+  const worn=()=>SET.theme,wornIsMine=()=>S.saved.some(s=>"g:"+s.seed===SET.theme);
+  const traits=g=>TH.HF[TH.fam(g)]+" · "+(g.light?"Light":"Dark")+" · "+TH.WT[g.wall]+" · "+TH.FN[g.font];
   const bar=v=>h("div",{class:"bar",style:"background:"+v.bg+";height:34px;border-radius:5px;display:flex;overflow:hidden"},...["bg","pn","pn2","ac","ac2","fg","dim"].map(k=>h("i",{style:"flex:1;background:"+v[k]})));
-  const seedOf=()=>{const g=cg();return g?TH.enc(g):null};
   const copy=async t=>{try{await navigator.clipboard.writeText(t);toast("Copied "+t)}catch(e){toast("Copy failed. Select the seed and copy it by hand.",1)}};
-  const save=async()=>{const g=cg();if(!g)return toast("Roll a theme first",1);const sd=TH.enc(g);if(S.saved.some(x=>x.seed===sd))return toast("Already saved");const nm=await dlgPrompt("Name this theme:",TH.name(g),"Save theme");if(nm==null)return;S.saved.push({seed:sd,name:(nm.trim()||TH.name(g)).slice(0,40),stars:0,t:Date.now()});xp(3+[0,2,5,10,25][TH.rar(g)]);THS.save();toast("Saved to Collection");draw()};
-  const go=async()=>{const v=await dlgPrompt("Type or paste a seed (like V1-K7QM-3F9A):","","Enter a seed");if(v==null)return;const g=TH.dec(v);if(!g)return toast("That is not a valid seed. It is 8 letters and digits, like V1-K7QM-3F9A.",1);use(g)};
-  const daily=()=>TH.roll(TH.rngFrom("tvos-daily-"+THS.day()));
-  const tryDaily=()=>{const g=daily();use(g);const d=S.daily;if(d.day!==THS.day()){d.streak=d.last===THS.day(-1)?(d.streak||0)+1:1;d.day=THS.day();d.last=THS.day();xp(10+Math.min(10,d.streak*2));toast("Today's theme claimed. Streak: "+d.streak+" day"+(d.streak>1?"s":""));THS.save();draw()}};
-  const deliver=i=>{const q=S.q[i];if(!THS.qOk(q,cg()))return;xp(Math.round((12+(q.c.k==="rar"?8:4))*(q.auto?.5:1)));S.del++;S.q[i]=THS.newQ();THS.save();toast("Delivered! The client loves it.");draw()};
-  const find=i=>{const q=S.q[i];for(let n=1;n<=300;n++){const g=TH.roll(Math.random,base(),locks);if(THS.qOk(q,g)){q.auto=1;use(g);toast("Found a match after "+n+" rolls. Press Deliver (half XP, since the OS rolled for you).");return}}toast("No match in 300 rolls. Try again, or tick Colour to keep a colour you like.",1)};
-  /* ---- pieces ---- */
-  const head=()=>{const a=lv(),base=12*(a-1)*(a-1),nx=12*a*a,pc=Math.max(2,Math.min(100,(S.xp-base)/(nx-base)*100));
-   return h("div",{style:"flex:none;padding:8px 10px;border-bottom:1px solid var(--bd);display:flex;flex-direction:column;gap:5px"},
-    h("div",{style:"display:flex;gap:10px;align-items:baseline;flex-wrap:wrap"},h("b",{class:"ac"},"Level "+a+" · "+THS.titles[Math.min(a-1,THS.titles.length-1)]),h("span",{class:"dim"},S.xp+" XP"),h("span",{class:"dim"},S.rolls+" rolls"),h("span",{class:"dim"},"Codex "+codexN()+"/"+CODEXT),h("span",{class:"dim"},"Streak "+(S.daily.last===THS.day()||S.daily.last===THS.day(-1)?S.daily.streak||0:0)+" d"),h("span",{class:"dim"},S.del+" delivered")),
-    h("div",{style:"height:7px;background:var(--bg);border:1px solid var(--bd);border-radius:4px;overflow:hidden"},h("div",{style:"height:100%;width:"+pc+"%;background:var(--ac)"})),
-    h("div",{class:"row",style:"flex-wrap:wrap;gap:4px;border:0;padding:0"},...["Workshop","Collection","Codex"].map(t=>h("button",{class:"btn"+(tab===t?" pri":""),onclick:()=>{tab=t;LS.set("tvos_themes_tab",t);draw()}},t))))};
-  const workshop=()=>{const g=cg(),sd=seedOf(),bs=base();const lk=(k,l)=>h("label",{style:"display:flex;gap:5px;align-items:center;cursor:pointer"},h("input",{type:"checkbox",checked:!!locks[k],onchange:e=>locks[k]=e.target.checked?1:0}),l);
-   const t=THEMES[SET.theme];const card=h("div",{style:"border:1px solid var(--bd);border-radius:8px;padding:10px;display:flex;flex-direction:column;gap:8px"},
-    h("div",{style:"display:flex;justify-content:space-between;align-items:baseline;gap:8px;flex-wrap:wrap"},h("b",{style:"font-size:17px"},t.n),g?rarB(g):h("span",{class:"dim"},"built-in theme")),
-    bar(t.v),g?h("div",{class:"dim",style:"overflow-wrap:anywhere"},TH.facts(g)):h("div",{class:"dim"},"You are using a built-in theme. Roll to make something new, or press More like this for a close relative of it."),
-    h("div",{style:"display:flex;gap:8px;align-items:center;flex-wrap:wrap"},sd?h("button",{class:"btn sm",title:"Copy this seed",onclick:()=>copy(sd)},sd):null,sd?h("span",{class:"dim"},"the same seed gives the same theme on any device"):null));
-   const acts=h("div",{class:"row",style:"flex-wrap:wrap;gap:6px;border:0;padding:0"},
-    h("button",{class:"btn pri",style:"font-size:15px;padding:8px 18px",onclick:roll},ic("swatch")," Roll"),
-    h("button",{class:"btn",disabled:hi<=0,onclick:()=>{hi--;use(TH.dec(hist[hi]),true)}},"◀ Back"),h("button",{class:"btn",disabled:hi>=hist.length-1,onclick:()=>{hi++;use(TH.dec(hist[hi]),true)}},"Forward ▶"),
-    h("button",{class:"btn",title:"Roll a close relative of this theme. Works on built-in themes too.",onclick:()=>{use(TH.mutate(base()));xp(1)}},"More like this"),
-    h("button",{class:"btn",disabled:!g,onclick:save},ic("save")," Save"),h("button",{class:"btn",onclick:go},"Enter a seed"));
-   const locksR=h("div",{style:"display:flex;gap:12px;flex-wrap:wrap;align-items:center"},h("span",{class:"dim"},"Freeze:"),lk("hue","Colour: "+TH.HF[TH.fam(bs)]),lk("wall","Wallpaper: "+TH.WT[bs.wall]),lk("font","Typeface: "+TH.FN[bs.font]),lk("mood",bs.light?"Light":"Dark"));
-   const wallNote=SET.wall!=="auto"?h("div",{class:"row",style:"border:0;padding:0;gap:8px;flex-wrap:wrap"},h("span",{class:"dim"},"Settings is forcing the \""+SET.wall+"\" wallpaper, so themes cannot change it."),h("button",{class:"btn sm",onclick:()=>{SET.wall="auto";saveSet();setWall();draw()}},"Let themes choose")):null;
-   const dg=daily(),dd=S.daily.day===THS.day();
-   const dcard=h("div",{style:"border:1px solid var(--bd);border-radius:8px;padding:10px;display:flex;flex-direction:column;gap:6px"},h("div",{style:"display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap"},h("b",{},"Theme of the day"),rarB(dg)),bar(TH.build(dg).v),h("div",{class:"dim"},TH.name(dg)+" · "+TH.facts(dg)),h("div",{},h("button",{class:"btn",onclick:tryDaily},dd?"Wear it again":"Try it and claim XP")));
-   const qc=h("div",{style:"display:flex;flex-direction:column;gap:6px"},h("b",{},"Commissions"),...S.q.map((q,i)=>{const ok=THS.qOk(q,g);return h("div",{style:"border:1px solid "+(ok?"var(--ac)":"var(--bd)")+";border-radius:8px;padding:8px 10px;display:flex;gap:8px;align-items:center;justify-content:space-between;flex-wrap:wrap"},h("span",{},THS.qText(q)),h("span",{style:"display:flex;gap:6px"},h("button",{class:"btn sm",title:"Swap for another client",onclick:()=>{S.q[i]=THS.newQ();THS.save();draw()}},"Skip"),ok?h("button",{class:"btn sm pri",onclick:()=>deliver(i)},"Deliver"):h("button",{class:"btn sm",title:"Rolls up to 300 times for you and stops on a match. Pays half XP. For full XP, roll it yourself.",onclick:()=>find(i)},"Roll for it")))}));
-   return h("div",{class:"pad",style:"display:flex;flex-direction:column;gap:10px"},card,acts,locksR,wallNote,h("div",{class:"dim",style:"font-size:12px;line-height:1.5"},"Freeze: tick a box and Roll will change everything except that part. For example, tick Colour and Light to keep the same colour and mood while the wallpaper, typeface and shades change. "),h("div",{class:"dim",style:"font-size:12px;line-height:1.5"},"How to play: press Roll (or Space or R) until a theme feels right, and Save the ones you love. Each theme has a rarity, and finding new colours, wallpapers and typefaces fills your Codex. Commissions below are client requests: when your current theme matches one, press Deliver for XP. Roll them yourself for full XP, or press \"Roll for it\" to let the OS search (half XP)."),dcard,qc)};
-  const collection=()=>{const mk=(nm,v,on,click,extra)=>h("div",{class:"swc"+(on?" on":""),onclick:click},bar(v),h("b",{},nm),...(extra||[]));
-   const built=h("div",{class:"sw"},...THEME_ORDER.map(k=>mk(THEMES[k].n,THEMES[k].v,SET.theme===k,()=>{applyTheme(k);draw()},[h("div",{class:"dim",style:"font-size:11px"},THEMES[k].d)])));
-   const mine=S.saved.map((s,i)=>{const g=TH.dec(s.seed);if(!g)return null;const th=TH.build(g),on=SET.theme==="g:"+s.seed,pk=par.includes(i);
-    return h("div",{class:"swc"+(on?" on":""),onclick:()=>use(g)},bar(th.v),h("div",{style:"display:flex;justify-content:space-between;gap:6px;align-items:baseline"},h("b",{style:"overflow-wrap:anywhere"},s.name),rarB(g)),
-     h("div",{class:"dim",style:"font-size:11px"},s.seed),
-     h("div",{style:"display:flex;gap:2px;align-items:center;flex-wrap:wrap",onclick:e=>e.stopPropagation()},...[1,2,3,4,5].map(n=>h("span",{style:"cursor:pointer;font-size:16px;color:"+(n<=s.stars?"var(--ac)":"var(--dim)"),onclick:()=>{s.stars=s.stars===n?0:n;THS.save();draw()}},n<=s.stars?"★":"☆"))),
-     h("div",{style:"display:flex;gap:4px;flex-wrap:wrap",onclick:e=>e.stopPropagation()},h("button",{class:"btn sm"+(pk?" pri":""),onclick:()=>{par=pk?par.filter(x=>x!==i):[...par,i].slice(-2);draw()}},pk?"Parent ✓":"Parent"),h("button",{class:"btn sm",onclick:()=>copy(s.seed)},"Copy"),h("button",{class:"btn sm",onclick:async()=>{const n=await dlgPrompt("New name:",s.name,"Rename");if(n!=null&&n.trim()){s.name=n.trim().slice(0,40);THS.save();draw()}}},"Rename"),h("button",{class:"btn sm",onclick:async()=>{if(await dlgConfirm("Delete "+s.name+"? You can always get it back by entering its seed "+s.seed+".","Delete theme","Delete")){S.saved.splice(i,1);par=[];THS.save();draw()}}},"Delete")))}).filter(Boolean);
-   const breed=par.length===2?h("button",{class:"btn pri",onclick:()=>{const a=TH.dec(S.saved[par[0]].seed),c=TH.dec(S.saved[par[1]].seed);par=[];tab="Workshop";use(TH.breed(a,c));xp(5);toast("A child of two themes. Save it if you like it.")}},ic("swatch")," Breed the two parents"):h("span",{class:"dim"},S.saved.length<2?"Save two themes to breed them.":"Pick two Parents to breed a child theme.");
-   return h("div",{class:"pad",style:"display:flex;flex-direction:column;gap:10px"},h("b",{class:"ac"},"Your themes ("+S.saved.length+")"),S.saved.length?h("div",{class:"sw"},...mine):h("div",{class:"dim"},"Nothing saved yet. Roll in the Workshop and press Save on one you love."),breed,h("b",{class:"ac"},"Built-in themes"),built)};
-  const codex=()=>{const chip=(on,t,c)=>h("span",{style:"border:1px solid "+(on?(c||"var(--ac)"):"var(--bd)")+";color:"+(on?(c||"var(--ac)"):"var(--dim)")+";border-radius:5px;padding:2px 8px;font-size:12px"},(on?"✓ ":"")+t);
+  const wearG=g=>{applyTheme(TH.reg(g));draw()},wearC=c=>{if(c.founder){applyTheme(c.key);draw()}else wearG(c.g)};
+  const owned=g=>S.saved.some(s=>s.seed===TH.enc(g));
+  const catchG=(g,origin,parents,gen,quiet)=>{const sd=TH.enc(g);if(S.saved.some(x=>x.seed===sd)){toast("You already have that one");return false}
+   S.saved.push({seed:sd,name:TH.name(g),stars:0,t:Date.now(),gen:gen||1,parents:parents||null,origin:origin||"wild"});THS.save();if(!quiet)toast("Caught "+TH.name(g)+"!");return true};
+  const wornCard=()=>{const t=THEMES[SET.theme]||THEMES.phosphor,g=TH.cur(),mineW=wornIsMine();
+   return h("div",{style:"flex:none;padding:6px 10px;border-bottom:1px solid var(--bd);display:flex;gap:8px;align-items:center;flex-wrap:wrap"},h("span",{class:"dim"},"Wearing:"),h("b",{},t.n),
+    g&&!mineW?h("button",{class:"btn sm pri",onclick:()=>{catchG(g,"wild",null,1);draw()}},"Catch this one"):null,g?h("button",{class:"btn sm",onclick:()=>copy(TH.enc(g))},TH.enc(g)):null)};
+  const head=()=>{const m=mine(),gen=m.reduce((a,c)=>Math.max(a,c.gen),0);
+   return h("div",{style:"flex:none;padding:8px 10px;border-bottom:1px solid var(--bd);display:flex;flex-direction:column;gap:6px"},
+    h("div",{style:"display:flex;gap:12px;flex-wrap:wrap;align-items:baseline"},h("b",{class:"ac"},"Themes"),h("span",{class:"dim"},m.length+" caught"),h("span",{class:"dim"},"deepest generation "+gen),h("span",{class:"dim"},"Dex "+dexN()+"/"+DEXT)),
+    h("div",{class:"row",style:"flex-wrap:wrap;gap:4px;border:0;padding:0"},...["Meadow","Den","Nursery","Dex"].map(t=>h("button",{class:"btn"+(tab===t?" pri":""),onclick:()=>{tab=t;LS.set("tvos_themes_tab",t);draw()}},t))))};
+  /* ---- the Dex: traits you have caught or bred ---- */
+  const have=()=>{const o={h:{},w:{},f:{},m:{}};for(const c of mine()){o.h[TH.fam(c.g)]=1;o.w[TH.WT[c.g.wall]]=1;o.f[TH.FN[c.g.font]]=1;o.m[c.g.light?1:0]=1}return o};
+  const DEXT=12+7+3+2,dexN=()=>{const o=have();return Object.values(o).reduce((a,x)=>a+Object.keys(x).length,0)};
+  /* ---- a creature card ---- */
+  const card=(c,btns,sub)=>h("div",{class:"swc"+(worn()==="g:"+(c.s?c.s.seed:"")||worn()===c.key?" on":""),style:"cursor:default"},bar(c.v),
+   h("div",{style:"display:flex;justify-content:space-between;gap:6px;align-items:baseline"},h("b",{style:"overflow-wrap:anywhere"},c.name),h("span",{class:"dim",style:"font-size:11px;white-space:nowrap"},c.founder?"Founder":"Gen "+c.gen)),
+   h("div",{class:"dim",style:"font-size:11px;overflow-wrap:anywhere"},traits(c.g)),sub?h("div",{class:"dim",style:"font-size:11px"},sub):null,
+   h("div",{style:"display:flex;gap:4px;flex-wrap:wrap;margin-top:4px"},...btns.filter(Boolean)));
+  const wildCard=(g,label)=>{const c={name:TH.name(g),g,v:TH.build(g).v,gen:1};const have=owned(g);
+   return card(c,[h("button",{class:"btn sm",onclick:()=>wearG(g)},"Try it on"),h("button",{class:"btn sm"+(have?"":" pri"),disabled:have,onclick:()=>{catchG(g,"wild",null,1);draw()}},have?"Caught":"Catch")],label)};
+  /* ---- Meadow ---- */
+  const newWild=()=>{wild=[];for(let i=0;i<6;i++){const g=TH.roll();if(filt.fam>=0)g.hue=Math.round((filt.fam*30+Math.random()*30-15+360)%360*256/360)%256;if(filt.mood)g.light=filt.mood===1?1:0;wild.push(g)}};
+  const meadow=()=>{if(!wild)newWild();
+   const fs=h("select",{class:"t",onchange:e=>{filt.fam=+e.target.value}},h("option",{value:-1},"Any colour"),...TH.HF.map((n,i)=>h("option",{value:i,selected:filt.fam===i},n)));
+   const ms=h("select",{class:"t",onchange:e=>{filt.mood=+e.target.value}},...[["Light or dark",0],["Light only",1],["Dark only",2]].map(([n,v])=>h("option",{value:v,selected:filt.mood===v},n)));
+   const wg=TH.roll(TH.rngFrom("tvos-daily-"+THS.day()));
+   return h("div",{class:"pad",style:"display:flex;flex-direction:column;gap:10px"},
+    h("div",{},"Wild themes wander in. Try one on to see it on your whole desktop, and Catch the ones you love. Rarity does not matter here, only whether you like the look."),
+    h("div",{class:"row",style:"flex-wrap:wrap;gap:8px;border:0;padding:0;align-items:center"},h("span",{class:"dim"},"Look for:"),fs,ms,h("button",{class:"btn pri",onclick:()=>{newWild();draw()}},ic("swatch")," Search again"),h("button",{class:"btn",onclick:async()=>{const v=await dlgPrompt("Type or paste a seed (like V2-K7QM-3F9A):","","Enter a seed");if(v==null)return;const g=TH.dec(v);if(!g)return toast("That is not a valid seed. It is 8 letters and digits, like V2-K7QM-3F9A.",1);wild=[g,...wild.slice(0,5)];draw();wearG(g)}},"Enter a seed")),
+    h("div",{class:"sw"},...wild.map(g=>wildCard(g))),
+    h("b",{},"Wanderer of the day"),h("div",{class:"dim",style:"font-size:12px"},"The same visitor for everyone today."),h("div",{class:"sw"},wildCard(wg)))};
+  /* ---- Den ---- */
+  const den=()=>{const m=mine();
+   const parentBtn=c=>h("button",{class:"btn sm"+(pa===c.id||pb===c.id?" pri":""),onclick:()=>{if(pa===c.id||pb===c.id){if(pa===c.id)pa=null;else pb=null}else if(!pa)pa=c.id;else if(!pb)pb=c.id;else{pa=pb;pb=c.id}if(pa&&pb){tab="Nursery";LS.set("tvos_themes_tab",tab);toast("Two parents chosen. Breed them in the Nursery.")}draw()}},pa===c.id?"Parent A":pb===c.id?"Parent B":"Parent");
+   const mcard=c=>card(c,[h("button",{class:"btn sm",onclick:()=>wearC(c)},"Wear"),parentBtn(c),h("button",{class:"btn sm",onclick:()=>copy(c.s.seed)},"Seed"),h("button",{class:"btn sm",onclick:async()=>{const n=await dlgPrompt("New name:",c.s.name,"Rename");if(n!=null&&n.trim()){c.s.name=n.trim().slice(0,40);THS.save();draw()}}},"Rename"),
+     h("button",{class:"btn sm",onclick:async()=>{if(await dlgConfirm("Release "+c.s.name+"? You can always catch it again from its seed "+c.s.seed+".","Release theme","Release")){S.saved=S.saved.filter(x=>x!==c.s);if(pa===c.id)pa=null;if(pb===c.id)pb=null;THS.save();draw()}}},"Release")],
+     (c.s.parents?"Child of "+c.s.parents.join(" × "):"Found wild")+" · "+c.s.seed);
+   const stars=c=>h("div",{style:"display:flex;gap:2px"},...[1,2,3,4,5].map(n=>h("span",{style:"cursor:pointer;font-size:15px;color:"+(n<=c.s.stars?"var(--ac)":"var(--dim)"),onclick:()=>{c.s.stars=c.s.stars===n?0:n;THS.save();draw()}},n<=c.s.stars?"★":"☆")));
+   return h("div",{class:"pad",style:"display:flex;flex-direction:column;gap:10px"},
+    h("div",{},"Your Den. Pick any two creatures with Parent (founders too) and breed them in the Nursery."),
+    h("b",{class:"ac"},"Caught ("+m.length+")"),m.length?h("div",{class:"sw"},...m.map(c=>{const d=mcard(c);d.insertBefore(stars(c),d.children[2]);return d})):h("div",{class:"dim"},"Nothing caught yet. Visit the Meadow, or breed two founders below."),
+    h("b",{class:"ac"},"Founders (the built-in themes)"),h("div",{class:"sw"},...founders().map(c=>card(c,[h("button",{class:"btn sm",onclick:()=>wearC(c)},"Wear"),parentBtn(c)]))))};
+  /* ---- Nursery ---- */
+  const slot=(label,id,set)=>{const c=id?byId(id):null,list=all();
+   const sel=h("select",{class:"t",onchange:e=>{set(e.target.value||null);kids=[];draw()}},h("option",{value:""},"Choose a parent..."),h("optgroup",{label:"Your creatures"},...list.filter(x=>!x.founder).map(x=>h("option",{value:x.id,selected:x.id===id},x.name))),h("optgroup",{label:"Founders"},...list.filter(x=>x.founder).map(x=>h("option",{value:x.id,selected:x.id===id},x.name))));
+   return h("div",{style:"flex:1 1 240px;display:flex;flex-direction:column;gap:6px;min-width:0"},h("b",{},label),sel,c?card(c,[h("button",{class:"btn sm",onclick:()=>wearC(c)},"Wear")]):h("div",{class:"dim",style:"border:2px dashed var(--bd);border-radius:8px;padding:20px;text-align:center"},"Empty"))};
+  const hatch=()=>{const A=byId(pa),B=byId(pb);if(!A||!B||A.id===B.id)return toast("Choose two different parents",1);const sig=g=>{const v=TH.build(g);return Object.values(v.v).join("")+v.w},seen=new Set([sig(A.g),sig(B.g)]);kids=[];let t=0;while(kids.length<4&&t++<120){const g=TH.breed(A.g,B.g,lean);const e=sig(g);if(seen.has(e))continue;seen.add(e);kids.push(g)}draw();toast("A clutch of "+kids.length+" hatched!")};
+  const nursery=()=>{const A=pa?byId(pa):null,B=pb?byId(pb):null;
+   const leanS=h("select",{class:"t",onchange:e=>{lean=+e.target.value}},...[["Mostly A",.8],["Even mix",.5],["Mostly B",.2]].map(([n,v])=>h("option",{value:v,selected:lean===v},n)));
+   const kc=g=>{const c={name:TH.name(g),g,v:TH.build(g).v,gen:Math.max(A?A.gen:0,B?B.gen:0)+1};const have=owned(g);
+    return card(c,[h("button",{class:"btn sm",onclick:()=>wearG(g)},"Try it on"),h("button",{class:"btn sm"+(have?"":" pri"),disabled:have,onclick:()=>{catchG(g,"bred",[A.name,B.name],c.gen);draw()}},have?"Kept":"Keep")],"Child of "+(A?A.name:"?")+" × "+(B?B.name:"?"))};
+   return h("div",{class:"pad",style:"display:flex;flex-direction:column;gap:10px"},
+    h("div",{},"Choose two parents and hatch a clutch of four children. Each child takes its traits from one parent or the other (colour can blend), with the odd surprise. Keep the ones you love. Keep breeding children with each other to steer toward the look you want."),
+    h("div",{style:"display:flex;gap:10px;flex-wrap:wrap"},slot("Parent A",pa,v=>pa=v),slot("Parent B",pb,v=>pb=v)),
+    h("div",{class:"row",style:"flex-wrap:wrap;gap:8px;border:0;padding:0;align-items:center"},h("span",{class:"dim"},"Children take after:"),leanS,h("button",{class:"btn pri",disabled:!A||!B||pa===pb,onclick:hatch},ic("swatch")," "+(kids.length?"Breed again":"Breed"))),
+    kids.length?h("div",{class:"sw"},...kids.map(kc)):h("div",{class:"dim"},A&&B?"Press Breed.":"Pick two parents, or press Parent on two creatures in the Den."))};
+  /* ---- Dex ---- */
+  const dex=()=>{const o=have();const chip=(on,t)=>h("span",{style:"border:1px solid "+(on?"var(--ac)":"var(--bd)")+";color:"+(on?"var(--ac)":"var(--dim)")+";border-radius:5px;padding:2px 8px;font-size:12px"},(on?"✓ ":"")+t);
    const sec=(t,items)=>h("div",{style:"display:flex;flex-direction:column;gap:5px"},h("b",{},t),h("div",{style:"display:flex;gap:5px;flex-wrap:wrap"},...items));
-   const done=codexN()===CODEXT;
-   return h("div",{class:"pad",style:"display:flex;flex-direction:column;gap:12px"},h("div",{},"The Codex fills in as you roll. Every first discovery is worth 3 XP."+(done?" You found everything. You are Ex Nihilo.":"")),
-    sec("Colours ("+Object.keys(S.seen.h).length+"/12)",TH.HF.map((n,i)=>chip(S.seen.h[i],n))),
-    sec("Wallpapers",["stars","rings","grid","rain","flow","plain","none"].map(n=>chip(S.seen.w[n],n))),
-    sec("Typefaces",["Mono","Sans","Serif"].map(n=>chip(S.seen.f[n],n))),
-    sec("Colour schemes",TH.HARM.map((n,i)=>chip(S.seen.m[i],n))),
-    sec("Rarities",TH.RAR.map((n,i)=>chip(S.seen.r[i],n,TH.RCOL[i]))),
-    h("div",{class:"dim",style:"font-size:12px"},"Rarity comes from how unusual the traits are: light mode, rarer colour schemes, strong glow, and less common wallpapers and typefaces. Roughly 1 roll in 60 is Legendary."))};
-  function draw(){if(win.dead)return;root.replaceChildren(head(),h("div",{class:"scr",style:"flex:1;min-height:0;overflow-y:auto"},tab==="Collection"?collection():tab==="Codex"?codex():workshop()))}
-  root.addEventListener("keydown",e=>{if(e.target.closest("input,textarea,select"))return;if(e.key===" "||e.key==="r"||e.key==="R"){e.preventDefault();if(tab==="Workshop")roll()}});
-  const un=OS.on("theme",()=>{if(!win.dead)setTimeout(draw,0)});
-  win.on.close=()=>{try{typeof un==="function"&&un()}catch(e){}};
+   return h("div",{class:"pad",style:"display:flex;flex-direction:column;gap:12px"},h("div",{},"The Dex lists what you have caught or bred, so it shows what is still missing from your Den. Founders do not count. Try to fill it."),
+    sec("Colours ("+Object.keys(o.h).length+"/12)",TH.HF.map((n,i)=>chip(o.h[i],n))),sec("Wallpapers",WALLN.map(n=>chip(o.w[n],n))),sec("Typefaces",["Mono","Sans","Serif"].map(n=>chip(o.f[n],n))),sec("Mood",[chip(o.m[0],"Dark"),chip(o.m[1],"Light")]))};
+  function draw(){if(win.dead)return;root.replaceChildren(head(),wornCard(),h("div",{class:"scr",style:"flex:1;min-height:0;overflow-y:auto"},tab==="Den"?den():tab==="Nursery"?nursery():tab==="Dex"?dex():meadow()))}
+  root.addEventListener("keydown",e=>{if(e.target.closest("input,textarea,select"))return;if((e.key===" "||e.key==="r"||e.key==="R")&&tab==="Meadow"){e.preventDefault();newWild();draw()}});
+  OS.on("theme",()=>{if(!win.dead)setTimeout(draw,0)});
   draw()}});
 
 /* ===================== BOOT ===================== */
