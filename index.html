@@ -1237,6 +1237,8 @@ CON.lastU=mfU();msnTick();render();mfLoad();
 </script>
 <script>
 "use strict";
+/* When the Quine app runs a copy of this OS inside itself, that copy is named "tvq:DEPTH". Copies share the same saves but stay quiet: no session saving, no chat. */
+const NEST=/^tvq:(\d+)$/.exec(window.name||"");
 /* ===================== CORE ===================== */
 const $=(s,r=document)=>r.querySelector(s),$$=(s,r=document)=>[...r.querySelectorAll(s)];
 function h(tag,a,...kids){const e=document.createElement(tag);for(const k in a||{}){const v=a[k];if(k==="class")e.className=v;else if(k==="style")e.style.cssText=v;else if(k.slice(0,2)==="on")e.addEventListener(k.slice(2),v);else if(v!==false&&v!=null)e.setAttribute(k,v===true?"":v)}for(const c of kids.flat(9))if(c!=null&&c!==false)e.append(c.nodeType?c:document.createTextNode(String(c)));return e}
@@ -1256,7 +1258,7 @@ const fmtDate=t=>{const d=new Date(t),hm=" "+pad(d.getHours())+":"+pad(d.getMinu
 const sleep=ms=>new Promise(r=>setTimeout(r,ms));
 const LS={get(k,d){try{const v=localStorage.getItem(k);return v==null?d:JSON.parse(v)}catch(e){return d}},set(k,v){try{localStorage.setItem(k,JSON.stringify(v));return true}catch(e){return false}}};
 const fmtUp=s=>{s=Math.max(0,Math.round(s));const d=Math.floor(s/86400),hr=Math.floor(s%86400/3600),m=Math.floor(s%3600/60),sc=s%60;if(d)return d+" d "+hr+" h";if(hr)return hr+" h "+m+" min";if(m)return m+" min "+sc+" s";return sc+" s"};
-const OS={apps:{},wins:[],z:10,bus:{},boot:performance.now(),ver:"1.0 build 1114-0528"};
+const OS={apps:{},wins:[],z:10,bus:{},boot:performance.now(),ver:"1.0 build 1114-1110"};
 OS.on=(ev,f)=>{(OS.bus[ev]=OS.bus[ev]||[]).push(f);return f};
 OS.off=(ev,f)=>{OS.bus[ev]=(OS.bus[ev]||[]).filter(x=>x!==f)};
 /* reboot that always fetches the newest copy of this page (like Ctrl+Shift+R), then reloads */
@@ -1560,7 +1562,7 @@ function buildStart(){$("#sbtn").append(ic("logo"),h("span",{},"TV·OS"));$("#sb
 const SESS_KEY="tvos_session";let sessLast="";
 const sessSnap=()=>{const ws=[...OS.wins].filter(w=>!w.dead&&OS.apps[w.app]&&!OS.apps[w.app].hidden).sort((a,b)=>(+a.el.style.zIndex||0)-(+b.el.style.zIndex||0));
  return{v:1,cur:OS.cur&&!OS.cur.dead?ws.indexOf(OS.cur):-1,w:ws.map(w=>{const o={t:OS.wins.indexOf(w),a:w.app,x:Math.round(w.x),y:Math.round(w.y),w:Math.round(w.w),h:Math.round(w.h)};if(w.max){o.max=1;if(w.prev)o.p=[w.prev.x,w.prev.y,w.prev.w,w.prev.h].map(Math.round)}if(w.min)o.min=1;if(typeof w.arg==="string"||typeof w.arg==="number")o.arg=w.arg;return o})}};
-function sessSave(){if(!OS.sessReady)return;try{const s=JSON.stringify(sessSnap());if(s!==sessLast){sessLast=s;localStorage.setItem(SESS_KEY,s)}}catch(e){}}
+function sessSave(){if(!OS.sessReady||NEST)return;try{const s=JSON.stringify(sessSnap());if(s!==sessLast){sessLast=s;localStorage.setItem(SESS_KEY,s)}}catch(e){}}
 function sessLoad(){try{const s=JSON.parse(localStorage.getItem(SESS_KEY)||"null");return s&&Array.isArray(s.w)?s:null}catch(e){return null}}
 function sessRestore(sess){const d=$("#desk"),dw=d.clientWidth,dh=d.clientHeight;let fw=null,n=0;const made=[];
  sess.w.forEach((o,i)=>{const app=OS.apps[o.a];if(!app||app.hidden||!appVisible(app))return;let w=null;try{w=OS.open(o.a,o.arg)}catch(e){}if(!w)return;n++;made.push([w,o.t]);
@@ -3786,9 +3788,79 @@ defApp("chat",{needs:()=>CH.ok===true,name:"Chat",icon:"people",cat:"Internet",w
  }});
 
 /* Check the chat server once the desktop is up, and again whenever the network changes. */
-setTimeout(()=>CH.probe(),1500);
-addEventListener("online",()=>CH.probe());
+if(!NEST)setTimeout(()=>CH.probe(),1500);
+if(!NEST)addEventListener("online",()=>CH.probe());
 addEventListener("offline",()=>{CH.ok=false;try{buildDesk()}catch(e){}});
+
+/* ===================== QUINE: the OS runs a copy of itself, which can run a copy of itself ===================== */
+IP.quine="M12 12c-2-3-4-4.5-6-4.5a4.5 4.5 0 000 9c2 0 4-1.5 6-4.5s4-4.5 6-4.5a4.5 4.5 0 010 9c-2 0-4-1.5-6-4.5z";
+const QN={
+ depth:NEST?+NEST[1]:0,src:null,
+ max(){return(/Mobi|Android|iPhone|iPad/.test(navigator.userAgent)||Math.min(screen.width,screen.height)<=700)?2:((navigator.deviceMemory||8)<=4?3:5)},
+ sleep:ms=>new Promise(r=>setTimeout(r,ms)),
+ async getSrc(){
+  if(QN.src)return QN.src;
+  if(NEST){try{const p=parent.eval("QN.src");if(p)return QN.src=p}catch(e){}}
+  let src;const u=location.href.split("#")[0].split("?")[0];
+  try{const r=await fetch(u,{cache:"no-cache"});if(!r.ok)throw new Error("HTTP "+r.status);src=await r.text()}
+  catch(e){try{src=await new Promise((ok,no)=>{const x=new XMLHttpRequest();x.open("GET",u);x.onload=()=>ok(x.responseText);x.onerror=()=>no(new Error("blocked"));x.send()})}catch(e2){throw new Error("The browser will not let this page read itself here. Open the OS from a web address (https://) instead of from a file.")}}
+  if(!src||src.length<50000||src.indexOf('id="tvgame"')<0)throw new Error("Could not get a complete copy of the page.");
+  return QN.src=src},
+ /* put a copy of this OS in an iframe inside host. Resolves {frame, ms} when the copy's desktop is ready */
+ async mount(host,depth,css){
+  const src=await QN.getSrc(),url=URL.createObjectURL(new Blob([src],{type:"text/html"})),d=host.ownerDocument,f=d.createElement("iframe");
+  f.name="tvq:"+depth;f.style.cssText=css||"position:absolute;inset:0;width:100%;height:100%;border:0;background:#000";f._url=url;
+  const t0=performance.now();
+  const ready=new Promise((ok,no)=>{const iv=setInterval(()=>{let up=false;try{up=f.contentWindow.eval("typeof OS!=='undefined'&&OS.sessReady===true")}catch(e){}
+   if(up){clearInterval(iv);ok(performance.now()-t0)}else if(performance.now()-t0>40000){clearInterval(iv);no(new Error("The copy did not finish starting within 40 seconds."))}},40)});
+  f.src=url;host.append(f);
+  try{const ms=await ready;return{frame:f,ms}}catch(e){QN.drop(f);throw e}},
+ drop(f){try{const u=f._url;f.remove();u&&setTimeout(()=>URL.revokeObjectURL(u),500)}catch(e){}},
+ heap(){const m=performance.memory;return m?m.usedJSHeapSize/1048576:null},
+ heapFull(){const m=performance.memory;return m?m.usedJSHeapSize/m.jsHeapSizeLimit:0},
+ async fps(ms){return new Promise(r=>{let n=0,t0=0;const f=t=>{if(!t0)t0=t;n++;if(t-t0>=ms)r(n*1000/(t-t0));else requestAnimationFrame(f)};requestAnimationFrame(f)})},
+ /* run two of the Benchmark app's own tests inside the given window (a copy of the OS), so the copy measures itself */
+ async measure(w){const BNx=w.eval("BN"),out={};for(const id of["int","dom"]){await BNx.tests.find(x=>x.id===id).run()}/* warm-up pass so every layer is measured the same way */for(const id of["int","dom"]){const t=BNx.tests.find(x=>x.id===id);const r=await t.run();out[id]=typeof r==="number"?r:(r&&r.v)||0}return out}
+};
+defApp("quine",{name:"Quine",icon:"quine",cat:"System",w:820,h:700,single:true,desc:"the OS runs a copy of itself, which can run a copy of itself, and measures the cost",kw:"quine self recursion inception nested itself copy benchmark bootstrap ouroboros",
+ init(win,b){
+  const depthTxt=QN.depth?"You are inside a copy of the OS, "+QN.depth+(QN.depth===1?" layer":" layers")+" down.":"This is the real OS (layer 0).";
+  const stage=h("div",{style:"position:relative;flex:1 1 0;min-height:220px;background:#000;border:1px solid var(--bd);border-radius:8px;overflow:hidden"},h("div",{class:"dim",style:"position:absolute;inset:0;display:flex;align-items:center;justify-content:center;text-align:center;padding:20px"},"The copy will appear here."));
+  const msg=h("div",{class:"dim",style:"min-height:18px;overflow-wrap:anywhere"}),res=h("div",{style:"display:flex;flex-direction:column;gap:4px"});
+  let root=null,busy=false;
+  const bRun=h("button",{class:"btn pri"},ic("quine")," Run a copy of this OS here"),bClose=h("button",{class:"btn"},"Close the copy"),bBench=h("button",{class:"btn"},ic("gauge")," Stack and benchmark");
+  const nSel=h("select",{class:"t"},...Array.from({length:Math.max(1,Math.min(QN.max(),QN.max()-QN.depth))},(_,i)=>h("option",{value:i+1},(i+1)+(i?" layers":" layer"))));
+  const left=()=>Math.max(0,QN.max()-QN.depth);
+  const paint=()=>{bClose.style.display=root?"":"none";bRun.style.display=root?"none":"";[bRun,bClose,bBench,nSel].forEach(e=>e.disabled=busy);if(left()<=0){bRun.disabled=true;bBench.disabled=true;nSel.disabled=true}};
+  const clearStage=()=>{if(root){QN.drop(root);root=null}stage.replaceChildren(h("div",{class:"dim",style:"position:absolute;inset:0;display:flex;align-items:center;justify-content:center;text-align:center;padding:20px"},"The copy will appear here."))};
+  const guard=()=>{if(left()<=0){msg.textContent="Depth limit reached ("+QN.max()+" layers on this device). Going deeper risks the tab running out of memory.";return false}if(QN.heapFull()>.7){msg.textContent="Memory is already above 70% of what this tab may use. Close a copy first.";return false}return true};
+  bRun.onclick=async()=>{if(busy||!guard())return;busy=true;paint();msg.textContent="Reading this page's own source and booting a copy...";stage.replaceChildren();
+   try{const r=await QN.mount(stage,QN.depth+1);root=r.frame;msg.textContent="A copy booted in "+Math.round(r.ms)+" ms. It is running the same file you are. Open Quine in it to go deeper."}catch(e){msg.textContent=e.message;clearStage()}busy=false;paint()};
+  bClose.onclick=()=>{clearStage();msg.textContent="Copy closed.";paint()};
+  bBench.onclick=async()=>{if(busy||!guard())return;const n=+nSel.value;busy=true;paint();clearStage();res.replaceChildren();msg.textContent="Measuring layer 0 (this OS)...";
+   const rows=[];const T=(el,txt)=>el.textContent=txt;
+   try{
+    const base=await QN.measure(window);rows.push({d:QN.depth,boot:0,int:base.int,dom:base.dom,fps:await QN.fps(1200),heap:QN.heap()});drawRes(rows);
+    let cur=window,host=stage;
+    for(let k=1;k<=n;k++){
+     if(win.dead)return;if(QN.heapFull()>.75){msg.textContent="Stopped early: memory is above 75% of this tab's limit.";break}
+     msg.textContent="Booting layer "+(QN.depth+k)+" inside layer "+(QN.depth+k-1)+"...";
+     const Q=cur===window?QN:cur.eval("QN"),css=k===1?undefined:"position:fixed;inset:10px;width:calc(100% - 20px);height:calc(100% - 20px);border:2px solid var(--ac);border-radius:6px;background:#000;z-index:99999";
+     const r=await Q.mount(k===1?stage:cur.document.body,QN.depth+k,css);if(k===1)root=r.frame;cur=r.frame.contentWindow;
+     await QN.sleep(900);msg.textContent="Benchmarking layer "+(QN.depth+k)+" from inside it...";
+     const m=await QN.measure(cur);rows.push({d:QN.depth+k,boot:r.ms,int:m.int,dom:m.dom,fps:await QN.fps(1200),heap:QN.heap()});drawRes(rows)}
+    msg.textContent="Done. Each layer ran its own copy of the Benchmark tests inside itself. The copies are still running; close them when you are finished."}
+   catch(e){msg.textContent="Stopped: "+e.message}
+   busy=false;paint()};
+  function drawRes(rows){res.replaceChildren();const g="display:grid;grid-template-columns:.7fr 1fr 1.1fr 1.1fr 1fr 1fr;gap:6px;font-size:12px;font-variant-numeric:tabular-nums;";
+   res.append(h("div",{class:"dim",style:g+"font-weight:600"},...["Layer","Boot","Maths speed","Window speed","Page fps","Memory"].map(t=>h("div",{},t))));
+   const b0=rows[0];rows.forEach((r,i)=>{const pc=(v,b)=>b>0?Math.round(v/b*100)+"%":"-";res.append(h("div",{style:g+"padding:3px 0;border-top:1px solid var(--bd)"},h("div",{},r.d+(i===0?" (real)":"")),h("div",{},i?Math.round(r.boot)+" ms":"-"),h("div",{},pc(r.int,b0.int)),h("div",{},pc(r.dom,b0.dom)),h("div",{},Math.round(r.fps)),h("div",{},r.heap!=null?r.heap.toFixed(0)+" MB":"n/a")))});
+   if(rows.length>1)res.append(h("div",{class:"dim",style:"font-size:12px;margin-top:4px"},"Speeds are shown against layer 0 (100%). Each layer ran the Benchmark app's own integer and page-building tests inside itself. Page fps is how smoothly the whole tab draws while all layers are alive. Memory is rough: browsers round it."))}
+  b.style.cssText+=";display:flex;flex-direction:column;gap:8px;padding:10px;overflow-y:auto";
+  b.append(h("div",{style:"overflow-wrap:anywhere"},h("b",{},"Quine. "),"This OS is one file that can read itself, so it can start a copy of itself in a window, and that copy can do the same. All layers share your saves, so a change in a copy is a change to your real data. Copies do not touch your open windows and stay out of the chat."),
+   h("div",{class:"dim"},depthTxt+" This device allows "+QN.max()+" layers, "+left()+" more from here."),
+   h("div",{class:"row",style:"flex-wrap:wrap;gap:6px;border:0;padding:0"},bRun,bClose,bBench,nSel),stage,msg,res);
+  win.on.close=()=>{clearStage()};paint()}});
 
 /* ===================== BOOT ===================== */
 const LOGO=`
@@ -3805,8 +3877,8 @@ async function boot(){
  L.forEach((ln,i)=>{const t=document.createElementNS(NS,"text"),xs=[];let cs="";for(let k=0;k<ln.length;k++)if(ln[k]!==" "){xs.push(k*cw);cs+=ln[k]}t.setAttribute("x",xs.join(" "));t.setAttribute("y",(i+1)*lh-3);t.setAttribute("fill","currentColor");t.style.cssText="font:"+"17"+"px var(--ff),monospace";t.textContent=cs;sv.append(t)});
  lg.textContent="";lg.append(sv)}
  const mobB=innerWidth<720;
- let skip=false;const t0=performance.now();const sk=()=>{skip=true};addEventListener("keydown",sk);addEventListener("pointerdown",sk);
- const sp=({instant:0,fast:.3,normal:1,slow:2})[SET.bootSpeed||"normal"]??1;
+ let skip=!!NEST;const t0=performance.now();const sk=()=>{skip=true};addEventListener("keydown",sk);addEventListener("pointerdown",sk);
+ const sp=NEST?0:({instant:0,fast:.3,normal:1,slow:2})[SET.bootSpeed||"normal"]??1;
  const emit=(msg,cls)=>{if(!SET.verbose&&!/ok|er|wn/.test(cls||"")&&!/^(Terminal|desktop)/.test(msg))return;const ts=((performance.now()-t0)/1000).toFixed(mobB?3:6).padStart(mobB?7:10);bl.append(h("div",{class:cls||""},"["+ts+"] "+msg));bl.scrollTop=bl.scrollHeight;while(bl.children.length>120)bl.firstChild.remove()};
  const Q=[];let pumping=0;
  const pump=async()=>{if(pumping)return;pumping=1;while(Q.length){if(skip){while(Q.length)emit(...Q.shift());break}emit(...Q.shift());await sleep((30+Math.random()*60)*sp)}pumping=0};
@@ -3834,13 +3906,14 @@ async function boot(){
  await step("compositor: window manager, taskbar, tray, start menu, spotlight...",()=>{buildTray();buildStart();spBind();buildDesk();OS.renderTasks();const m=MAN.json;const a=$("#arc");a&&(a.textContent=m?"archive: "+MAN.files.toLocaleString()+" files":"archive: none")},90);
  await step("apps: registered "+Object.keys(OS.apps).length+" ("+Object.values(OS.apps).filter(a=>!a.hidden).map(a=>a.name).join(", ")+")",null,94);
  await step("notes: checking for unsaved drafts...",async()=>{const s=await DB.get("np_session");s&&s.tabs&&s.tabs.length?ok(s.tabs.length+" unsaved note(s) will be restored when Notepad opens"):line("  none","dm")},97);
- const nog=/[?&]nogame\b/.test(location.search),sess=sessLoad(),doRestore=!nog&&SET.restoreSession!==false&&sess;
+ const nog=/[?&]nogame\b/.test(location.search),sess=sessLoad(),doRestore=!NEST&&!nog&&SET.restoreSession!==false&&sess;
  await step("session: "+(doRestore?(sess.w.length?"restoring "+sess.w.length+" window"+(sess.w.length===1?"":"s")+" ("+sess.w.map(o=>(OS.apps[o.a]&&OS.apps[o.a].name)||o.a).join(", ")+")":"nothing was open - starting fresh"):nog?"test mode, no restore":sess?"restore is off in Settings":"first boot - Terminal Velocity will start minimised"),null,99);
  line("desktop ready in "+Math.round(performance.now()-t0)+" ms","ok");pb.style.width="100%";
  await drain();if(!skip&&sp&&SET.verbose)await sleep(900*sp);
  removeEventListener("keydown",sk);removeEventListener("pointerdown",sk);
  const bt=$("#boot");bt.style.transition="opacity .35s";bt.style.opacity="0";await sleep(skip?0:350);bt.remove();
  if(doRestore)sessRestore(sess);
+ else if(NEST){OS.open("quine")}
  else if(SET.autostart&&!nog){const w=OS.open("tv");if(w&&SET.autostartMin!==false)OS.minimize(w)}else OS.open("help");
  sessStart()}
 
