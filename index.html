@@ -1258,7 +1258,7 @@ const fmtDate=t=>{const d=new Date(t),hm=" "+pad(d.getHours())+":"+pad(d.getMinu
 const sleep=ms=>new Promise(r=>setTimeout(r,ms));
 const LS={get(k,d){try{const v=localStorage.getItem(k);return v==null?d:JSON.parse(v)}catch(e){return d}},set(k,v){try{localStorage.setItem(k,JSON.stringify(v));return true}catch(e){return false}}};
 const fmtUp=s=>{s=Math.max(0,Math.round(s));const d=Math.floor(s/86400),hr=Math.floor(s%86400/3600),m=Math.floor(s%3600/60),sc=s%60;if(d)return d+" d "+hr+" h";if(hr)return hr+" h "+m+" min";if(m)return m+" min "+sc+" s";return sc+" s"};
-const OS={apps:{},wins:[],z:10,bus:{},boot:performance.now(),ver:"1.0 build 1114-1126"};
+const OS={apps:{},wins:[],z:10,bus:{},boot:performance.now(),ver:"1.0 build 1114-1159"};
 OS.on=(ev,f)=>{(OS.bus[ev]=OS.bus[ev]||[]).push(f);return f};
 OS.off=(ev,f)=>{OS.bus[ev]=(OS.bus[ev]||[]).filter(x=>x!==f)};
 /* reboot that always fetches the newest copy of this page (like Ctrl+Shift+R), then reloads */
@@ -1322,7 +1322,12 @@ const DEF={theme:"phosphor",wall:"auto",scan:false,vig:true,anim:true,verbose:tr
 const SET=Object.assign({},DEF,LS.get("tvos_settings",{}));if(!SET.scanOff1){SET.scan=false;SET.scanOff1=true;try{LS.set("tvos_settings",SET)}catch(e){}}
 /* low power mode: Off / On / Auto (Auto switches on for weak devices: 2 cores or less, or 2 GB of memory or less) */
 function lpWeak(){return (navigator.hardwareConcurrency||8)<=2||(navigator.deviceMemory&&navigator.deviceMemory<=2)}
-function lpOn(){return SET.lowPower==="on"||(SET.lowPower!=="off"&&lpWeak())}
+/* Auto no longer guesses from the hardware. It starts everything moving and measures the real frame rate; only a machine that really cannot keep up (below about 22 fps) drops to Low power. */
+OS.lpSlow=false;
+function lpOn(){return SET.lowPower==="on"||(SET.lowPower!=="off"&&OS.lpSlow)}
+function lpWatch(){if(NEST||SET.lowPower==="on"||SET.lowPower==="off")return;OS.lpSlow=false;const go=()=>{if(SET.lowPower==="on"||SET.lowPower==="off")return;if(document.hidden){addEventListener("visibilitychange",function f(){if(!document.hidden){removeEventListener("visibilitychange",f);setTimeout(go,2000)}});return}
+  const d=[];let last=0,t0=performance.now(),vis=true;const f=t=>{if(document.hidden)vis=false;if(last)d.push(t-last);last=t;if(performance.now()-t0<4000)requestAnimationFrame(f);else{if(!vis||d.length<8){setTimeout(go,5000);return}const s=d.slice(2).sort((a,b)=>a-b),med=s[s.length>>1];if(med>45&&SET.lowPower!=="on"&&SET.lowPower!=="off"){OS.lpSlow=true;document.body.classList.toggle("lp",true);try{setWall()}catch(e){}try{toast("This device could not keep up (about "+Math.round(1000/med)+" frames per second), so Low power mode switched on. You can change it in Benchmark.")}catch(e){}}}};requestAnimationFrame(f)};
+ setTimeout(go,3500)}
 OS.lpN=0;OS.lpSkip=()=>lpOn()&&(OS.lpN=(OS.lpN+1)%4)!==0;
 function saveSet(){LS.set("tvos_settings",SET)}
 function hexA(c,a){c=c.replace("#","");if(c.length===3)c=c.replace(/./g,"$&$&");return`rgba(${parseInt(c.substr(0,2),16)},${parseInt(c.substr(2,2),16)},${parseInt(c.substr(4,2),16)},${a})`}
@@ -1570,7 +1575,7 @@ function sessRestore(sess){const d=$("#desk"),dw=d.clientWidth,dh=d.clientHeight
    if(o.max)OS.toggleMax(w,true)}
   if(o.min)OS.minimize(w);if(i===sess.cur)fw=w});
  if(made.length&&made.every(x=>typeof x[1]==="number")){const ord=made.slice().sort((a,b)=>a[1]-b[1]).map(x=>x[0]);OS.wins=ord.concat(OS.wins.filter(w=>!ord.includes(w)));OS.renderTasks()}if(fw&&!fw.min)OS.focus(fw);OS.rescue&&OS.rescue();return n}
-function sessStart(){OS.sessReady=true;sessSave();setInterval(sessSave,1500);addEventListener("pagehide",sessSave);addEventListener("beforeunload",sessSave);document.addEventListener("visibilitychange",()=>{if(document.hidden)sessSave()})}
+function sessStart(){OS.sessReady=true;try{lpWatch()}catch(e){}sessSave();setInterval(sessSave,1500);addEventListener("pagehide",sessSave);addEventListener("beforeunload",sessSave);document.addEventListener("visibilitychange",()=>{if(document.hidden)sessSave()})}
 /* ---- spotlight ---- */
 let spSel=0,spRes=[];
 function spot(on){const s=$("#spot");s.classList.toggle("on",on);if(on){$("#spi").value="";spRender("");if(!matchMedia("(pointer:coarse)").matches)setTimeout(()=>$("#spi").focus(),0)}else $("#spi").blur()}
@@ -1604,7 +1609,7 @@ function sizeWall(){const r=Math.min(devicePixelRatio||1,1.5);WW=WC.width=Math.c
 function css(v){return getComputedStyle(document.documentElement).getPropertyValue("--"+v).trim()}
 function setWall(){wstate={};wlast=0;cancelAnimationFrame(wraf);if(wallId()==="none"){wx.clearRect(0,0,WW,WH);WC.style.display="none";return}WC.style.display="block";if(lpOn()||matchMedia("(prefers-reduced-motion: reduce)").matches){drawWall(0,1);return}wraf=requestAnimationFrame(loopWall)}
 OS.on("theme",()=>setWall());
-function loopWall(t){wraf=requestAnimationFrame(loopWall);if(document.hidden||t-wlast<33)return;wlast=t;drawWall(t,0)}
+function loopWall(t){wraf=requestAnimationFrame(loopWall);if(document.hidden||t-wlast<(lpWeak()?48:33))return;wlast=t;drawWall(t,0)}
 function drawWall(t,once){const id=wallId(),bg=css("bg"),ac=css("ac"),a2=css("ac2"),L=THEMES[SET.theme].l;wx.globalAlpha=1;wx.fillStyle=bg;wx.fillRect(0,0,WW,WH);
  if(id==="plain"){const g=wx.createRadialGradient(WW/2,WH*.4,10,WW/2,WH/2,Math.max(WW,WH)*.7);g.addColorStop(0,hexA(ac,L?.1:.12));g.addColorStop(1,"transparent");wx.fillStyle=g;wx.fillRect(0,0,WW,WH);return}
  if(id==="stars"){const S=wstate.s||(wstate.s=Array.from({length:130},()=>({x:Math.random(),y:Math.random(),z:.2+Math.random()*.8})));wx.fillStyle=ac;for(const s of S){s.x-=s.z*.0004;if(s.x<0)s.x=1;wx.globalAlpha=.25+s.z*.6;const r=s.z*1.6+.4;wx.fillRect(s.x*WW,s.y*WH,r,r)}wx.globalAlpha=1;return}
@@ -1893,9 +1898,9 @@ defApp("settings",{name:"Settings",icon:"gear",cat:"System",w:700,h:520,single:t
  init(win,b,arg){const tabs=["Appearance","Boot","Archive","Storage","About"];let cur=(arg&&arg.tab)||"Appearance";const side=h("div",{class:"side"}),main=h("div",{class:"scr pad grow",style:"display:flex;flex-direction:column;gap:12px"});
   const chk=(k,label,fn)=>h("label",{style:"display:flex;gap:8px;align-items:center;cursor:pointer"},h("input",{type:"checkbox",checked:!!SET[k],onchange:e=>{SET[k]=e.target.checked;saveSet();fn&&fn()}}),label);
   const P={
-   Appearance(){const g=h("div",{class:"sw"});for(const k of THEME_ORDER){const t=THEMES[k],v=t.v;g.append(h("div",{class:"swc"+(SET.theme===k?" on":""),onclick:()=>{applyTheme(k);draw()}},h("div",{class:"bar",style:"background:"+v.bg},h("i",{style:"background:"+v.pn}),h("i",{style:"background:"+v.pn2}),h("i",{style:"background:"+v.ac}),h("i",{style:"background:"+v.ac2}),h("i",{style:"background:"+v.fg})),h("b",{},t.n),h("div",{class:"dim",style:"font-size:11px"},t.d)))}
+   Appearance(){
     const ws=h("select",{class:"t",onchange:e=>{SET.wall=e.target.value;saveSet();setWall()}},...["auto",...WALLS].map(w=>h("option",{value:w,selected:SET.wall===w},w==="auto"?"auto (theme default)":w)));
-    return[h("h3",{class:"ac",style:"margin:0"},"X environment (theme)"),g,h("div",{class:"row",style:"border:0;padding:0"},"Wallpaper (canvas, no images):",ws),h("div",{class:"row",style:"border:0;padding:0"},"Low power mode:",h("select",{class:"t",title:"Stops animations, glow and the moving wallpaper to save CPU and battery",onchange:e=>{SET.lowPower=e.target.value;saveSet();document.body.classList.toggle("lp",lpOn());setWall();toast("Low power mode: "+(lpOn()?"on":"off"))}},...[["auto","Auto (on for weak devices)"],["on","On"],["off","Off"]].map(x=>h("option",{value:x[0],selected:SET.lowPower===x[0]},x[1]))),h("span",{class:"dim",style:"font-size:12px"},lpOn()?"currently ON":"currently off")),h("div",{class:"row",style:"border:0;padding:0"},"Calendar & dates:",h("select",{class:"t",onchange:e=>{SET.dateMode=e.target.value;saveSet();tick()}},h("option",{value:"mc",selected:SET.dateMode!=="ce"},"Mythocratic first (Gregorian secondary)"),h("option",{value:"ce",selected:SET.dateMode==="ce"},"Gregorian first (MC secondary)"))),chk("scan","CRT scanlines",()=>applyTheme(SET.theme)),chk("vig","Vignette",()=>applyTheme(SET.theme)),chk("anim","Window animations"),chk("showDataApps","Show Music, Books, Comics, Audiobooks and Archive even when their files are not mounted",()=>{buildDesk()}),h("div",{class:"row",style:"border:0;padding:0"},"Text size",h("input",{type:"range",min:11,max:18,value:SET.fsize,oninput:e=>{SET.fsize=+e.target.value;applyTheme(SET.theme)}}),h("span",{class:"dim"},"light themes skip scanlines automatically"))]},
+    return[h("h3",{class:"ac",style:"margin:0"},"Appearance"),h("div",{class:"row",style:"border:0;padding:0;gap:8px;flex-wrap:wrap;align-items:center"},h("span",{},"Themes have their own app now: roll, collect, breed and save them."),h("button",{class:"btn pri",onclick:()=>OS.open("themes")},"Open Themes")),h("div",{class:"row",style:"border:0;padding:0"},"Wallpaper (canvas, no images):",ws),h("div",{class:"row",style:"border:0;padding:0"},"Low power mode:",h("select",{class:"t",title:"Stops animations, glow and the moving wallpaper to save CPU and battery",onchange:e=>{SET.lowPower=e.target.value;saveSet();OS.lpSlow=false;document.body.classList.toggle("lp",lpOn());setWall();lpWatch();toast("Low power mode: "+(lpOn()?"on":"off"))}},...[["auto","Auto (measured: on only if it cannot keep up)"],["on","On"],["off","Off"]].map(x=>h("option",{value:x[0],selected:SET.lowPower===x[0]},x[1]))),h("span",{class:"dim",style:"font-size:12px"},lpOn()?"currently ON":"currently off")),h("div",{class:"row",style:"border:0;padding:0"},"Calendar & dates:",h("select",{class:"t",onchange:e=>{SET.dateMode=e.target.value;saveSet();tick()}},h("option",{value:"mc",selected:SET.dateMode!=="ce"},"Mythocratic first (Gregorian secondary)"),h("option",{value:"ce",selected:SET.dateMode==="ce"},"Gregorian first (MC secondary)"))),chk("scan","CRT scanlines",()=>applyTheme(SET.theme)),chk("vig","Vignette",()=>applyTheme(SET.theme)),chk("anim","Window animations"),chk("showDataApps","Show Music, Books, Comics, Audiobooks and Archive even when their files are not mounted",()=>{buildDesk()}),h("div",{class:"row",style:"border:0;padding:0"},"Text size",h("input",{type:"range",min:11,max:18,value:SET.fsize,oninput:e=>{SET.fsize=+e.target.value;applyTheme(SET.theme)}}),h("span",{class:"dim"},"light themes skip scanlines automatically"))]},
    Boot(){return[h("h3",{class:"ac",style:"margin:0"},"Boot"),chk("verbose","Verbose boot log (say what it is doing at all times)"),h("label",{style:"display:flex;gap:8px;align-items:center"},"Boot speed",h("select",{class:"t",onchange:e=>{SET.bootSpeed=e.target.value;saveSet()}},...[["slow","Slow (about 14 s)"],["normal","Normal (about 7 s)"],["fast","Fast"],["instant","Instant"]].map(([v,l])=>h("option",{value:v,selected:(SET.bootSpeed||"normal")===v},l)))),chk("restoreSession","Reopen my windows, and where they were, after a reboot or refresh (close everything and reboot to start fresh)"),chk("autostart","First boot: start Terminal Velocity (the game) automatically"),chk("autostartMin","...and keep it minimised in the taskbar (desktop first)"),h("div",{class:"dim"},"Press any key or click during boot to skip the delays. The checks still run.")]},
    Archive(){const c=h("pre",{class:"out dim"},MAN.json?`Mounted: ${MAN.files.toLocaleString()} files · ${fmtBytes(MAN.size)}\nSource : ${MAN.src}\nFormat : {generated, webPrefix, items:[{name,type:"folder"|"file",children,path,size}]}`:"No manifest mounted.\n"+MAN.tried.map(t=>"  fail "+t.u+" ("+t.why+")").join("\n"));
     const u=h("input",{class:"t grow",placeholder:"https://example.org/files/manifest.json",value:SET.manifestUrl||""});
@@ -3063,7 +3068,7 @@ defApp("benchmark",{name:"Benchmark",icon:"gauge",cat:"System",w:780,h:640,singl
   const bar=(p,cls)=>h("div",{style:"height:10px;background:var(--bg);border:1px solid var(--bd);border-radius:5px;overflow:hidden"},h("div",{style:"height:100%;width:"+Math.max(1,Math.min(100,p))+"%;background:"+(cls==="er"?"var(--er)":cls==="wn"?"var(--wn)":"var(--ac)")}));
   const stat=(label,val,sub,sp)=>h("div",{style:"border:1px solid var(--bd);border-radius:8px;padding:8px 10px;display:flex;flex-direction:column;gap:3px;min-width:0"},h("div",{class:"dim",style:"font-size:12px"},label),h("div",{style:"font-size:22px;color:var(--ac)"},val),sub?h("div",{class:"dim",style:"font-size:12px"},sub):"",sp||"");
   const live=h("div",{class:"pad",style:"display:flex;flex-direction:column;gap:12px"}),wins=h("div",{class:"pad",style:"display:flex;flex-direction:column;gap:8px"}),bench=h("div",{class:"pad",style:"display:flex;flex-direction:column;gap:10px"}),guide=h("div",{class:"pad",style:"display:flex;flex-direction:column;gap:10px;line-height:1.55"});
-  const lpSel=h("select",{class:"t",onchange:e=>{SET.lowPower=e.target.value;saveSet();document.body.classList.toggle("lp",lpOn());setWall();paintLP();toast("Low power mode: "+(lpOn()?"on":"off"))}},...[["auto","Auto"],["on","On"],["off","Off"]].map(x=>h("option",{value:x[0]},x[1]))),lpLab=h("span",{class:"dim",style:"font-size:12px"});
+  const lpSel=h("select",{class:"t",onchange:e=>{SET.lowPower=e.target.value;saveSet();OS.lpSlow=false;document.body.classList.toggle("lp",lpOn());setWall();lpWatch();paintLP();toast("Low power mode: "+(lpOn()?"on":"off"))}},...[["auto","Auto"],["on","On"],["off","Off"]].map(x=>h("option",{value:x[0]},x[1]))),lpLab=h("span",{class:"dim",style:"font-size:12px"});
   const paintLP=()=>{lpSel.value=SET.lowPower||"auto";lpLab.textContent=lpOn()?"ON now: animations, glow and the moving wallpaper are off.":"off now.";};
   function drawLive(){live.innerHTML="";
    if(!S.ready){live.append(h("div",{class:"dim"},"Measuring..."));return}
@@ -3113,7 +3118,7 @@ defApp("benchmark",{name:"Benchmark",icon:"gauge",cat:"System",w:780,h:640,singl
    ...G("The Windows tab","Lists each open window with a rough weight estimate and lets you close heavy ones. The Browser app's framed websites are the heaviest things you can open, because each is a whole real website running inside."),
    ...G("The speed tests","Eight short tests (whole-number maths, decimal maths, sorting, hashing, data reading and writing, memory speed, drawing and building windows) each run about 0.7 seconds. A ninth test measures storage speed and is shown separately because it depends on the drive, not the processor. Results are in plain units such as million operations per second. The speed score is the average of the eight tests compared with a reference machine, so 1.00 means as fast as that machine and 0.25 means a quarter as fast."),
    ...G("The OS under load","After the speed tests the benchmark opens up to six real apps in a row and measures how the OS copes: average app open time, frames per second and the slowest frame. This is the test that answers 'is this OS smooth on this computer?'. Under 50 ms for the slowest frame is instant, over 120 ms is a visible hitch."),
-   ...G("Low power mode","Low power mode switches off animations, glow and shadow effects, the vignette, the moving wallpaper (it becomes a still picture) and slows the music visualisers to a quarter speed. It saves processor time and battery on weak devices. Set it to Auto and it turns itself on for computers with two or fewer cores or 2 GB of memory or less. You can force it on or off here or in Settings."),
+   ...G("Low power mode","Low power mode switches off animations, glow and shadow effects, the vignette, the moving wallpaper (it becomes a still picture) and slows the music visualisers to a quarter speed. It saves processor time and battery on weak devices. Set it to Auto and the OS starts everything moving, watches how smoothly the screen really draws for a few seconds, and only turns Low power on if the computer cannot keep up (under about 22 frames per second). Weaker computers also draw the wallpaper a little less often. You can force it on or off here or in Settings."),
    ...G("About the reference machine","The reference (1.00) is "+BENCH_REFLONG),
    ...G("Fair testing","Results change with battery saver, a hot computer, other tabs and whether the screen is on. Run it a couple of times, with other tabs closed. Compare devices with the saved results list, and use Copy report to keep a text record."));
   /* ---------- frame ---------- */
@@ -3548,6 +3553,8 @@ const CL={
   tvos_ab_set:["Audiobooks settings","Audiobook player choices.","App preferences"],
   tvos_rec_set:["Recorder settings","Format, channels and other Recorder choices.","App preferences"],
   tvos_rec_dest:["Where recordings save","Downloads, a folder, or inside the OS.","App preferences"],
+  tvos_themes:["Themes: saved themes and progress","Your saved Ex Nihilo themes (just their short seeds), star ratings, level, Codex, daily streak and commissions.","Your writing and creations","Deleting it removes your saved themes, level and Codex. A theme can be recreated from its seed."],
+  tvos_themes_tab:["Themes: last tab","Which tab you left open in the Themes app.","App preferences"],
   tvos_cam_set:["Camera settings","Resolution, format and other Camera choices.","App preferences"],
   tvos_paint_to:["Where Paint saves","Downloads or inside the OS.","App preferences"],
   tvos_fview:["Files view","Grid or list in the Files app.","App preferences"],
@@ -3807,15 +3814,18 @@ const QN={
   if(!src||src.length<50000||src.indexOf('id="tvgame"')<0)throw new Error("Could not get a complete copy of the page.");
   return QN.src=src},
  /* put a copy of this OS in an iframe inside host. Resolves {frame, ms} when the copy's desktop is ready */
- async mount(host,depth,css){
+ async mount(host,depth,css,hall){
   const src=await QN.getSrc(),url=URL.createObjectURL(new Blob([src],{type:"text/html"})),d=host.ownerDocument,f=d.createElement("iframe");
   f.name="tvq:"+depth;f.style.cssText=css||"position:absolute;inset:0;width:100%;height:100%;border:0;background:#000";f._url=url;
   const t0=performance.now();
   const ready=new Promise((ok,no)=>{const iv=setInterval(()=>{let up=false;try{up=f.contentWindow.eval("typeof OS!=='undefined'&&OS.sessReady===true")}catch(e){}
    if(up){clearInterval(iv);ok(performance.now()-t0)}else if(performance.now()-t0>40000){clearInterval(iv);no(new Error("The copy did not finish starting within 40 seconds."))}},40)});
+  if(hall){/* hall of mirrors: a glowing frame, a layer tag above it, and a small colour turn that compounds with every layer inside it */
+   f.style.cssText="position:absolute;inset:6%;width:88%;height:88%;border:1px solid var(--ac);border-radius:6px;background:#000;z-index:99999;box-shadow:0 0 22px var(--ac),0 0 60px rgba(0,0,0,.6);filter:hue-rotate(16deg)";
+   const tg=d.createElement("div");tg.textContent="LAYER "+depth;tg.style.cssText="position:absolute;left:6%;top:calc(6% - 17px);z-index:99999;font:700 11px/15px monospace;letter-spacing:.14em;padding:0 8px;border-radius:5px 5px 0 0;background:var(--ac);color:#000;pointer-events:none";host.append(tg);f._tag=tg}
   f.src=url;host.append(f);
   try{const ms=await ready;return{frame:f,ms}}catch(e){QN.drop(f);throw e}},
- drop(f){try{const u=f._url;f.remove();u&&setTimeout(()=>URL.revokeObjectURL(u),500)}catch(e){}},
+ drop(f){try{const u=f._url;f._tag&&f._tag.remove();f.remove();u&&setTimeout(()=>URL.revokeObjectURL(u),500)}catch(e){}},
  heap(){const m=performance.memory;return m?m.usedJSHeapSize/1048576:null},
  heapFull(){const m=performance.memory;return m?m.usedJSHeapSize/m.jsHeapSizeLimit:0},
  /* frame rate the same way the Benchmark Live tab does: gaps between frames, skipping the first few while the page settles, and the middle value so one stall cannot ruin it */
@@ -3823,11 +3833,11 @@ const QN={
  /* run two of the Benchmark app's own tests inside the given window (a copy of the OS), so the copy measures itself */
  async measure(w){const BNx=w.eval("BN"),out={};for(const id of["int","dom"]){await BNx.tests.find(x=>x.id===id).run()}/* warm-up pass so every layer is measured the same way */for(const id of["int","dom"]){const t=BNx.tests.find(x=>x.id===id);const r=await t.run();out[id]=typeof r==="number"?r:(r&&r.v)||0}return out}
 };
-defApp("quine",{name:"Quine",icon:"quine",cat:"System",w:820,h:700,single:true,desc:"the OS runs a copy of itself, which can run a copy of itself, and measures the cost",kw:"quine self recursion inception nested itself copy benchmark bootstrap ouroboros",
+defApp("quine",{name:"Quine",icon:"quine",cat:"System",w:860,h:780,single:true,desc:"the OS runs a copy of itself, which can run a copy of itself, and measures the cost",kw:"quine self recursion inception nested itself copy benchmark bootstrap ouroboros",
  init(win,b){
   const depthTxt=QN.depth?"You are inside a copy of the OS, "+QN.depth+(QN.depth===1?" layer":" layers")+" down.":"This is the real OS (layer 0).";
-  const stage=h("div",{style:"position:relative;flex:1 1 0;min-height:220px;background:#000;border:1px solid var(--bd);border-radius:8px;overflow:hidden"},h("div",{class:"dim",style:"position:absolute;inset:0;display:flex;align-items:center;justify-content:center;text-align:center;padding:20px"},"The copy will appear here."));
-  const msg=h("div",{class:"dim",style:"min-height:18px;overflow-wrap:anywhere"}),res=h("div",{style:"display:flex;flex-direction:column;gap:4px"});
+  const stage=h("div",{style:"position:relative;flex:1 0 340px;background:#000;border:1px solid var(--bd);border-radius:8px;overflow:hidden"},h("div",{class:"dim",style:"position:absolute;inset:0;display:flex;align-items:center;justify-content:center;text-align:center;padding:20px"},"The copy will appear here."));
+  const msg=h("div",{class:"dim",style:"flex:none;min-height:18px;overflow-wrap:anywhere"}),res=h("div",{style:"flex:none;display:flex;flex-direction:column;gap:4px"});
   let root=null,busy=false;
   const bRun=h("button",{class:"btn pri"},ic("quine")," Run a copy of this OS here"),bClose=h("button",{class:"btn"},"Close the copy"),bBench=h("button",{class:"btn"},ic("gauge")," Stack and benchmark");
   const nSel=h("select",{class:"t"},...Array.from({length:Math.max(1,Math.min(QN.max(),QN.max()-QN.depth))},(_,i)=>h("option",{value:i+1},(i+1)+(i?" layers":" layer"))));
@@ -3846,8 +3856,8 @@ defApp("quine",{name:"Quine",icon:"quine",cat:"System",w:820,h:700,single:true,d
     for(let k=1;k<=n;k++){
      if(win.dead)return;if(QN.heapFull()>.75){msg.textContent="Stopped early: memory is above 75% of this tab's limit.";break}
      msg.textContent="Booting layer "+(QN.depth+k)+" inside layer "+(QN.depth+k-1)+"...";
-     const Q=cur===window?QN:cur.eval("QN"),css=k===1?undefined:"position:fixed;inset:10px;width:calc(100% - 20px);height:calc(100% - 20px);border:2px solid var(--ac);border-radius:6px;background:#000;z-index:99999";
-     const r=await Q.mount(k===1?stage:cur.document.body,QN.depth+k,css);if(k===1)root=r.frame;cur=r.frame.contentWindow;
+     const Q=cur===window?QN:cur.eval("QN");
+     const r=await Q.mount(k===1?stage:cur.document.querySelector("#desk"),QN.depth+k,null,true);if(k===1)root=r.frame;cur=r.frame.contentWindow;
      await QN.sleep(900);msg.textContent="Benchmarking layer "+(QN.depth+k)+" from inside it...";
      const m=await QN.measure(cur);rows.push({d:QN.depth+k,boot:r.ms,int:m.int,dom:m.dom,fps:await QN.fps(1200),heap:QN.heap()});drawRes(rows)}
     msg.textContent="Done. Each layer ran its own copy of the Benchmark tests inside itself. The copies are still running; close them when you are finished."}
@@ -3858,10 +3868,134 @@ defApp("quine",{name:"Quine",icon:"quine",cat:"System",w:820,h:700,single:true,d
    const b0=rows[0];rows.forEach((r,i)=>{const pc=(v,b)=>b>0?Math.round(v/b*100)+"%":"-";res.append(h("div",{style:g+"padding:3px 0;border-top:1px solid var(--bd)"},h("div",{},r.d+(i===0?" (real)":"")),h("div",{},i?Math.round(r.boot)+" ms":"-"),h("div",{},pc(r.int,b0.int)),h("div",{},pc(r.dom,b0.dom)),h("div",{},Math.round(r.fps)),h("div",{},r.heap!=null?r.heap.toFixed(0)+" MB":"n/a")))});
    if(rows.length>1)res.append(h("div",{class:"dim",style:"font-size:12px;margin-top:4px"},"Speeds are shown against layer 0 (100%). Each layer ran the Benchmark app's own integer and page-building tests inside itself. Page fps is how smoothly the whole tab draws while all layers are alive. Memory is rough: browsers round it."))}
   b.style.cssText+=";display:flex;flex-direction:column;gap:8px;padding:10px;overflow-y:auto";
-  b.append(h("div",{style:"overflow-wrap:anywhere"},h("b",{},"Quine. "),"This OS is one file that can read itself, so it can start a copy of itself in a window, and that copy can do the same. All layers share your saves, so a change in a copy is a change to your real data. Copies do not touch your open windows and stay out of the chat."),
-   h("div",{class:"dim"},depthTxt+" This device allows "+QN.max()+" layers, "+left()+" more from here."),
-   h("div",{class:"row",style:"flex-wrap:wrap;gap:6px;border:0;padding:0"},bRun,bClose,bBench,nSel),stage,msg,res);
+  b.append(h("div",{style:"flex:none;overflow-wrap:anywhere"},h("b",{},"Quine. "),"This OS is one file that can read itself, so it can start a copy of itself in a window, and that copy can do the same. All layers share your saves, so a change in a copy is a change to your real data. Copies do not touch your open windows and stay out of the chat."),
+   h("div",{class:"dim",style:"flex:none"},depthTxt+" This device allows "+QN.max()+" layers, "+left()+" more from here."),
+   h("div",{class:"row",style:"flex:none;flex-wrap:wrap;gap:6px;border:0;padding:0"},bRun,bClose,bBench,nSel),stage,msg,res);
   win.on.close=()=>{clearStage()};paint()}});
+
+/* ===================== THEMES: the Themes app, a game about finding the perfect desktop ===================== */
+IP.swatch="M12 3a9 9 0 100 18c1.2 0 2-.8 2-1.8 0-1-.6-1.4-.6-2.2 0-.8.7-1.5 1.6-1.5H17a4 4 0 004-4c0-4.4-4-8.5-9-8.5z M7.5 11h.01 M10 7.5h.01 M14.5 7.5h.01";
+/* A theme made by Ex Nihilo is a pure function of a 40-bit "genome". The seed (V1-XXXX-XXXX) IS that genome written in 8 letters and digits, so the same seed makes the same theme on any device, forever. V1 is the version of the recipe: if the recipe ever changes it gets a new version letter, so old seeds keep working. */
+const TH=(()=>{
+ const AL="0123456789ABCDEFGHJKMNPQRSTVWXYZ";
+ const F=[["hue",8],["harm",2],["bgs",3],["bgh",4],["acs",3],["acl",2],["wall",4],["font",2],["glow",2],["light",1],["dim",3],["pan",2],["rad",2],["a2s",2]];
+ const WT=["stars","stars","stars","rings","rings","rings","grid","grid","grid","rain","rain","flow","flow","flow","plain","none"];
+ const FONTS=[MONO,SANS,SERIF,MONO],FN=["Mono","Sans","Serif","Mono"],GL=["0px","4px","8px","14px"],RAD=["2px","4px","6px","10px"];
+ const HF=["Ember","Amber","Citrine","Lime","Moss","Jade","Cyan","Azure","Indigo","Violet","Orchid","Rose"];
+ const NOUN=["Harbor","Static","Garden","Signal","Tide","Relay","Orbit","Lantern","Canyon","Archive","Meridian","Cipher","Bloom","Vault","Drift","Beacon"];
+ const HARM=["Neighbours","Opposites","Triad","Split"],RAR=["Common","Uncommon","Rare","Epic","Legendary"],RCOL=["#9aa3a0","#4cd27a","#4aa3ff","#b66dff","#ffc83d"],TIER=[8.3,9.5,10.9,12.2];
+ const PH=[.4,.3,.15,.15],PG=[.3,.3,.25,.15],LOCKF={hue:["hue"],wall:["wall"],font:["font"],mood:["light"]};
+ const cnt=(a,v)=>a.filter(x=>x===v).length;
+ const enc=g=>{let b="";for(const[k,n]of F)b+=(g[k]&((1<<n)-1)).toString(2).padStart(n,"0");let s="";for(let i=0;i<8;i++)s+=AL[parseInt(b.slice(i*5,i*5+5),2)];return"V1-"+s.slice(0,4)+"-"+s.slice(4)};
+ const dec=str=>{let s=String(str||"").toUpperCase().replace(/[^0-9A-Z]/g,"").replace(/O/g,"0").replace(/[IL]/g,"1");if(s.length===10&&s.startsWith("V1"))s=s.slice(2);if(s.length!==8||[...s].some(c=>AL.indexOf(c)<0))return null;let b="";for(const c of s)b+=AL.indexOf(c).toString(2).padStart(5,"0");const g={};let p=0;for(const[k,n]of F){g[k]=parseInt(b.slice(p,p+n),2);p+=n}return g};
+ const hex=(h,s,l)=>{h=((h%360)+360)%360;const a=s*Math.min(l,1-l),f=n=>{const k=(n+h/30)%12;return l-a*Math.max(-1,Math.min(k-3,9-k,1))};return"#"+[f(0),f(8),f(4)].map(v=>pad2(Math.round(v*255))).join("")};
+ const lum=c=>{c=c.replace("#","");const v=[0,2,4].map(i=>{const x=parseInt(c.substr(i,2),16)/255;return x<=.03928?x/12.92:Math.pow((x+.055)/1.055,2.4)});return .2126*v[0]+.7152*v[1]+.0722*v[2]};
+ const cr=(a,b)=>{const x=lum(a),y=lum(b);return(Math.max(x,y)+.05)/(Math.min(x,y)+.05)};
+ const fit=(h,s,l,bg,min,d)=>{let c=hex(h,s,l),n=0;while(cr(c,bg)<min&&n<45){l=Math.max(.02,Math.min(.98,l+d*.02));c=hex(h,s,l);n++}return c};
+ const hs=s=>{let h=1779033703^s.length;for(let i=0;i<s.length;i++){h=Math.imul(h^s.charCodeAt(i),3432918353);h=h<<13|h>>>19}return()=>{h=Math.imul(h^h>>>16,2246822507);h=Math.imul(h^h>>>13,3266489909);return(h^=h>>>16)>>>0}};
+ const mul=a=>()=>{a|=0;a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296};
+ const T0={
+  AL,F,WT,FN,HF,HARM,RAR,RCOL,enc,dec,
+  rngFrom:s=>mul(hs(s)()),
+  fam:g=>Math.floor((((g.hue*360/256)+15)%360)/30),
+  rar(g){const b=-Math.log2(PH[g.harm])-Math.log2(g.light?.12:.88)-Math.log2(PG[g.glow])-Math.log2(cnt(WT,WT[g.wall])/16)-Math.log2(cnt(FN,FN[g.font])/4);let r=0;for(const t of TIER)if(b>=t)r++;return r},
+  roll(rng,base,lock){rng=rng||Math.random;const wp=w=>{const r=rng();let a=0;for(let i=0;i<w.length;i++){a+=w[i];if(r<a)return i}return w.length-1};
+   const g={hue:rng()*256|0,harm:wp(PH),bgs:rng()*8|0,bgh:rng()*16|0,acs:rng()*8|0,acl:rng()*4|0,wall:rng()*16|0,font:rng()*4|0,glow:wp(PG),light:rng()<.12?1:0,dim:rng()*8|0,pan:rng()*4|0,rad:rng()*4|0,a2s:rng()*4|0};
+   if(base&&lock)for(const k in lock)if(lock[k])for(const f of LOCKF[k])g[f]=base[f];return g},
+  mutate(g){const n=Object.assign({},g);const ks=F.filter(x=>x[0]!=="light"),pick=[];while(pick.length<3){const k=ks[Math.random()*ks.length|0];if(!pick.includes(k))pick.push(k)}
+   for(const[k,b]of pick){if(k==="hue")n.hue=(n.hue+(Math.random()<.5?-1:1)*(1+(Math.random()*14|0))+256)%256;else n[k]=Math.random()*(1<<b)|0}return n},
+  breed(a,b){const n={};for(const[k,bits]of F){n[k]=Math.random()<.5?a[k]:b[k];if(k!=="light"&&Math.random()<.1)n[k]=Math.random()*(1<<bits)|0}return n},
+  name(g){const NS=(g.bgh*3+g.pan+g.dim+g.acs)%16;return(g.light?"Pale ":"")+HF[T0.fam(g)]+" "+NOUN[NS]},
+  build(g){const H=g.hue*360/256,H2=(H+[35,180,120,150][g.harm])%360,light=!!g.light,bgH=(H+(g.bgh-8)*7+360)%360;let bg,pn,pn2,fg,dim,ac,ac2;
+   if(!light){const bs=.12+g.bgs*.05,bl=.04+g.pan*.012;bg=hex(bgH,bs,bl);pn=hex(bgH,bs,bl+.035);pn2=hex(bgH,bs,bl+.07);fg=fit(H,.55,.88,bg,9,1);dim=fit(H,.2,.5+g.dim*.035,pn,4.5,1);ac=fit(H,.7+g.acs*.043,.52+g.acl*.07,bg,5,1);ac2=fit(H2,.7+g.a2s*.1,.62,bg,4.5,1)}
+   else{const bs=.22+g.bgs*.04;bg=hex(bgH,bs,.9-g.pan*.02);pn=hex(bgH,bs+.1,.965);pn2=hex(bgH,bs,.93-g.pan*.01);fg=fit(H,.35,.14,bg,9,-1);dim=fit(H,.15,.42,pn,4.5,-1);ac=fit(H,.55+g.acs*.05,.38-g.acl*.03,bg,5,-1);ac2=fit(H2,.55+g.a2s*.1,.36,bg,4.5,-1)}
+   return T(T0.name(g),"A theme from Ex Nihilo ("+enc(g)+").",bg,pn,pn2,fg,dim,ac,ac2,{l:light?1:undefined,ff:FONTS[g.font],w:WT[g.wall],glow:light?"0px":GL[g.glow],rad:RAD[g.rad]})},
+  /* make the theme exist in THEMES (only the one in use is kept) and return its id */
+  reg(g){const id="g:"+enc(g);for(const k of Object.keys(THEMES))if(k.startsWith("g:")&&k!==id&&k!==SET.theme)delete THEMES[k];if(!THEMES[id])THEMES[id]=T0.build(g);return id},
+  cur(){return SET.theme&&SET.theme.startsWith("g:")?T0.dec(SET.theme.slice(2)):null},
+  facts(g){return T0.HF[T0.fam(g)]+" · "+HARM[g.harm]+" · "+(g.light?"Light":"Dark")+" · "+WT[g.wall]+" wallpaper · "+FN[g.font]+" · glow "+GL[g.glow]}
+ };
+ return T0})();
+if(SET.theme&&SET.theme.startsWith("g:")){const g=TH.dec(SET.theme.slice(2));if(g)TH.reg(g);else SET.theme="phosphor"}
+const THS={
+ st:null,
+ load(){const s=Object.assign({saved:[],xp:0,rolls:0,seen:{},daily:{},q:[],del:0},LS.get("tvos_themes",{}));s.seen=Object.assign({h:{},w:{},f:{},m:{},r:{}},s.seen);if(!Array.isArray(s.saved))s.saved=[];if(!Array.isArray(s.q))s.q=[];return THS.st=s},
+ save(){LS.set("tvos_themes",THS.st)},
+ lvl(xp){return 1+Math.floor(Math.sqrt(xp/12))},
+ titles:["Apprentice","Painter","Colourist","Curator","Art Director","Master of Hues","Architect of Worlds","Ex Nihilo"],
+ day(o){return new Date(Date.now()+(o||0)*864e5).toISOString().slice(0,10)},
+ newQ(){const fam=Math.random()*12|0,r=Math.random()*9|0;let c;
+  if(r<3)c={k:"wall",v:["stars","rings","grid","flow","rain"][Math.random()*5|0]};else if(r<4)c={k:"font",v:Math.random()<.5?"Sans":"Serif"};else if(r<6)c={k:"harm",v:1+(Math.random()*3|0)};else if(r<8)c={k:"rar",v:1};else c={k:"light",v:1};
+  return{fam,c}},
+ qOk(q,g){if(!g||TH.fam(g)!==q.fam)return false;const c=q.c;return c.k==="wall"?TH.WT[g.wall]===c.v:c.k==="font"?TH.FN[g.font]===c.v:c.k==="harm"?g.harm===c.v:c.k==="rar"?TH.rar(g)>=c.v:!!g.light},
+ qText(q){const c=q.c,f=TH.HF[q.fam];return"A client wants a "+f+" theme"+(c.k==="wall"?" with the "+c.v+" wallpaper.":c.k==="font"?" in a "+c.v+" typeface.":c.k==="harm"?" using "+TH.HARM[c.v]+" colours.":c.k==="rar"?" that is Uncommon or better.":" in light mode.")}
+};
+defApp("themes",{name:"Themes",icon:"swatch",cat:"System",w:800,h:700,single:true,desc:"find the perfect desktop: roll, collect, breed and save procedurally generated themes",kw:"themes theme colour color wallpaper appearance generate random seed roll ex nihilo game collect breed",
+ init(win,b){
+  const S=THS.load();while(S.q.length<3)S.q.push(THS.newQ());
+  let tab=LS.get("tvos_themes_tab","Workshop"),hist=[],hi=-1,par=[];const locks={hue:0,wall:0,font:0,mood:0};
+  const root=h("div",{tabindex:"-1",style:"display:flex;flex-direction:column;flex:1;min-height:0;outline:none"});b.append(root);b.style.cssText+=";display:flex;flex-direction:column";
+  const cg=()=>TH.cur();
+  const lv=()=>THS.lvl(S.xp),xp=(n,why)=>{if(n<=0)return;const a=lv();S.xp+=n;THS.save();if(lv()>a)toast("Level "+lv()+": "+THS.titles[Math.min(lv()-1,THS.titles.length-1)]+"!")};
+  const see=g=>{let n=0;const mk=(k,v)=>{if(!S.seen[k][v]){S.seen[k][v]=1;n++}};mk("h",TH.fam(g));mk("w",TH.WT[g.wall]);mk("f",TH.FN[g.font]);mk("m",g.harm);mk("r",TH.rar(g));if(n){xp(3*n);const nw=Date.now();if(nw-(see.t||0)>1500){see.t=nw;toast("Codex: "+n+" new discover"+(n>1?"ies":"y")+" (+"+3*n+" XP)")}}};
+  const codexN=()=>Object.values(S.seen).reduce((a,o)=>a+Object.keys(o).length,0),CODEXT=12+7+3+4+5;
+  const use=(g,fromHist)=>{const id=TH.reg(g);applyTheme(id);if(!fromHist){hist=hist.slice(0,hi+1);hist.push(TH.enc(g));if(hist.length>60)hist.shift();hi=hist.length-1}see(g);S.rolls++;THS.save();draw()};
+  const roll=()=>{use(TH.roll(Math.random,cg(),locks));xp(1)};
+  const rarB=g=>{const r=TH.rar(g);return h("b",{style:"color:"+TH.RCOL[r]+";border:1px solid "+TH.RCOL[r]+";border-radius:4px;padding:0 6px"},TH.RAR[r])};
+  const bar=v=>h("div",{class:"bar",style:"background:"+v.bg+";height:34px;border-radius:5px;display:flex;overflow:hidden"},...["bg","pn","pn2","ac","ac2","fg","dim"].map(k=>h("i",{style:"flex:1;background:"+v[k]})));
+  const seedOf=()=>{const g=cg();return g?TH.enc(g):null};
+  const copy=async t=>{try{await navigator.clipboard.writeText(t);toast("Copied "+t)}catch(e){toast("Copy failed. Select the seed and copy it by hand.",1)}};
+  const save=async()=>{const g=cg();if(!g)return toast("Roll a theme first",1);const sd=TH.enc(g);if(S.saved.some(x=>x.seed===sd))return toast("Already saved");const nm=await dlgPrompt("Name this theme:",TH.name(g),"Save theme");if(nm==null)return;S.saved.push({seed:sd,name:(nm.trim()||TH.name(g)).slice(0,40),stars:0,t:Date.now()});xp(3+[0,2,5,10,25][TH.rar(g)]);THS.save();toast("Saved to Collection");draw()};
+  const go=async()=>{const v=await dlgPrompt("Type or paste a seed (like V1-K7QM-3F9A):","","Enter a seed");if(v==null)return;const g=TH.dec(v);if(!g)return toast("That is not a valid seed. It is 8 letters and digits, like V1-K7QM-3F9A.",1);use(g)};
+  const daily=()=>TH.roll(TH.rngFrom("tvos-daily-"+THS.day()));
+  const tryDaily=()=>{const g=daily();use(g);const d=S.daily;if(d.day!==THS.day()){d.streak=d.last===THS.day(-1)?(d.streak||0)+1:1;d.day=THS.day();d.last=THS.day();xp(10+Math.min(10,d.streak*2));toast("Today's theme claimed. Streak: "+d.streak+" day"+(d.streak>1?"s":""));THS.save();draw()}};
+  const deliver=i=>{const q=S.q[i];if(!THS.qOk(q,cg()))return;xp(12+(q.c.k==="rar"?8:4));S.del++;S.q[i]=THS.newQ();THS.save();toast("Delivered! The client loves it.");draw()};
+  /* ---- pieces ---- */
+  const head=()=>{const a=lv(),base=12*(a-1)*(a-1),nx=12*a*a,pc=Math.max(2,Math.min(100,(S.xp-base)/(nx-base)*100));
+   return h("div",{style:"flex:none;padding:8px 10px;border-bottom:1px solid var(--bd);display:flex;flex-direction:column;gap:5px"},
+    h("div",{style:"display:flex;gap:10px;align-items:baseline;flex-wrap:wrap"},h("b",{class:"ac"},"Level "+a+" · "+THS.titles[Math.min(a-1,THS.titles.length-1)]),h("span",{class:"dim"},S.xp+" XP"),h("span",{class:"dim"},S.rolls+" rolls"),h("span",{class:"dim"},"Codex "+codexN()+"/"+CODEXT),h("span",{class:"dim"},"Streak "+(S.daily.last===THS.day()||S.daily.last===THS.day(-1)?S.daily.streak||0:0)+" d"),h("span",{class:"dim"},S.del+" delivered")),
+    h("div",{style:"height:7px;background:var(--bg);border:1px solid var(--bd);border-radius:4px;overflow:hidden"},h("div",{style:"height:100%;width:"+pc+"%;background:var(--ac)"})),
+    h("div",{class:"row",style:"flex-wrap:wrap;gap:4px;border:0;padding:0"},...["Workshop","Collection","Codex"].map(t=>h("button",{class:"btn"+(tab===t?" pri":""),onclick:()=>{tab=t;LS.set("tvos_themes_tab",t);draw()}},t))))};
+  const workshop=()=>{const g=cg(),sd=seedOf();const lk=(k,l)=>h("label",{style:"display:flex;gap:5px;align-items:center;cursor:pointer"},h("input",{type:"checkbox",checked:!!locks[k],onchange:e=>locks[k]=e.target.checked?1:0}),l);
+   const t=THEMES[SET.theme];const card=h("div",{style:"border:1px solid var(--bd);border-radius:8px;padding:10px;display:flex;flex-direction:column;gap:8px"},
+    h("div",{style:"display:flex;justify-content:space-between;align-items:baseline;gap:8px;flex-wrap:wrap"},h("b",{style:"font-size:17px"},t.n),g?rarB(g):h("span",{class:"dim"},"built-in theme")),
+    bar(t.v),g?h("div",{class:"dim",style:"overflow-wrap:anywhere"},TH.facts(g)):h("div",{class:"dim"},"You are using a built-in theme. Roll to make something new."),
+    h("div",{style:"display:flex;gap:8px;align-items:center;flex-wrap:wrap"},sd?h("button",{class:"btn sm",title:"Copy this seed",onclick:()=>copy(sd)},sd):null,sd?h("span",{class:"dim"},"the same seed gives the same theme on any device"):null));
+   const acts=h("div",{class:"row",style:"flex-wrap:wrap;gap:6px;border:0;padding:0"},
+    h("button",{class:"btn pri",style:"font-size:15px;padding:8px 18px",onclick:roll},ic("swatch")," Roll"),
+    h("button",{class:"btn",disabled:hi<=0,onclick:()=>{hi--;use(TH.dec(hist[hi]),true)}},"◀ Back"),h("button",{class:"btn",disabled:hi>=hist.length-1,onclick:()=>{hi++;use(TH.dec(hist[hi]),true)}},"Forward ▶"),
+    h("button",{class:"btn",disabled:!g,title:"Roll a close relative of this theme",onclick:()=>{if(g){use(TH.mutate(g));xp(1)}}},"More like this"),
+    h("button",{class:"btn",disabled:!g,onclick:save},ic("save")," Save"),h("button",{class:"btn",onclick:go},"Enter a seed"));
+   const locksR=h("div",{style:"display:flex;gap:12px;flex-wrap:wrap;align-items:center"},h("span",{class:"dim"},"Keep when rolling:"),lk("hue","Colour"),lk("wall","Wallpaper"),lk("font","Typeface"),lk("mood","Light/dark"));
+   const wallNote=SET.wall!=="auto"?h("div",{class:"row",style:"border:0;padding:0;gap:8px;flex-wrap:wrap"},h("span",{class:"dim"},"Settings is forcing the \""+SET.wall+"\" wallpaper, so themes cannot change it."),h("button",{class:"btn sm",onclick:()=>{SET.wall="auto";saveSet();setWall();draw()}},"Let themes choose")):null;
+   const dg=daily(),dd=S.daily.day===THS.day();
+   const dcard=h("div",{style:"border:1px solid var(--bd);border-radius:8px;padding:10px;display:flex;flex-direction:column;gap:6px"},h("div",{style:"display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap"},h("b",{},"Theme of the day"),rarB(dg)),bar(TH.build(dg).v),h("div",{class:"dim"},TH.name(dg)+" · "+TH.facts(dg)),h("div",{},h("button",{class:"btn",onclick:tryDaily},dd?"Wear it again":"Try it and claim XP")));
+   const qc=h("div",{style:"display:flex;flex-direction:column;gap:6px"},h("b",{},"Commissions"),...S.q.map((q,i)=>{const ok=THS.qOk(q,g);return h("div",{style:"border:1px solid "+(ok?"var(--ac)":"var(--bd)")+";border-radius:8px;padding:8px 10px;display:flex;gap:8px;align-items:center;justify-content:space-between;flex-wrap:wrap"},h("span",{},THS.qText(q)),h("span",{style:"display:flex;gap:6px"},h("button",{class:"btn sm",title:"Swap for another client",onclick:()=>{S.q[i]=THS.newQ();THS.save();draw()}},"Skip"),h("button",{class:"btn sm"+(ok?" pri":""),disabled:!ok,onclick:()=>deliver(i)},ok?"Deliver":"Roll until it fits")))}));
+   return h("div",{class:"pad",style:"display:flex;flex-direction:column;gap:10px"},card,acts,locksR,wallNote,h("div",{class:"dim",style:"font-size:12px"},"Tip: press Space or R to roll. Lock a colour you like, then roll the rest."),dcard,qc)};
+  const collection=()=>{const mk=(nm,v,on,click,extra)=>h("div",{class:"swc"+(on?" on":""),onclick:click},bar(v),h("b",{},nm),...(extra||[]));
+   const built=h("div",{class:"sw"},...THEME_ORDER.map(k=>mk(THEMES[k].n,THEMES[k].v,SET.theme===k,()=>{applyTheme(k);draw()},[h("div",{class:"dim",style:"font-size:11px"},THEMES[k].d)])));
+   const mine=S.saved.map((s,i)=>{const g=TH.dec(s.seed);if(!g)return null;const th=TH.build(g),on=SET.theme==="g:"+s.seed,pk=par.includes(i);
+    return h("div",{class:"swc"+(on?" on":""),onclick:()=>use(g)},bar(th.v),h("div",{style:"display:flex;justify-content:space-between;gap:6px;align-items:baseline"},h("b",{style:"overflow-wrap:anywhere"},s.name),rarB(g)),
+     h("div",{class:"dim",style:"font-size:11px"},s.seed),
+     h("div",{style:"display:flex;gap:2px;align-items:center;flex-wrap:wrap",onclick:e=>e.stopPropagation()},...[1,2,3,4,5].map(n=>h("span",{style:"cursor:pointer;font-size:16px;color:"+(n<=s.stars?"var(--ac)":"var(--dim)"),onclick:()=>{s.stars=s.stars===n?0:n;THS.save();draw()}},n<=s.stars?"★":"☆"))),
+     h("div",{style:"display:flex;gap:4px;flex-wrap:wrap",onclick:e=>e.stopPropagation()},h("button",{class:"btn sm"+(pk?" pri":""),onclick:()=>{par=pk?par.filter(x=>x!==i):[...par,i].slice(-2);draw()}},pk?"Parent ✓":"Parent"),h("button",{class:"btn sm",onclick:()=>copy(s.seed)},"Copy"),h("button",{class:"btn sm",onclick:async()=>{const n=await dlgPrompt("New name:",s.name,"Rename");if(n!=null&&n.trim()){s.name=n.trim().slice(0,40);THS.save();draw()}}},"Rename"),h("button",{class:"btn sm",onclick:async()=>{if(await dlgConfirm("Delete "+s.name+"? You can always get it back by entering its seed "+s.seed+".","Delete theme","Delete")){S.saved.splice(i,1);par=[];THS.save();draw()}}},"Delete")))}).filter(Boolean);
+   const breed=par.length===2?h("button",{class:"btn pri",onclick:()=>{const a=TH.dec(S.saved[par[0]].seed),c=TH.dec(S.saved[par[1]].seed);par=[];tab="Workshop";use(TH.breed(a,c));xp(5);toast("A child of two themes. Save it if you like it.")}},ic("swatch")," Breed the two parents"):h("span",{class:"dim"},S.saved.length<2?"Save two themes to breed them.":"Pick two Parents to breed a child theme.");
+   return h("div",{class:"pad",style:"display:flex;flex-direction:column;gap:10px"},h("b",{class:"ac"},"Your themes ("+S.saved.length+")"),S.saved.length?h("div",{class:"sw"},...mine):h("div",{class:"dim"},"Nothing saved yet. Roll in the Workshop and press Save on one you love."),breed,h("b",{class:"ac"},"Built-in themes"),built)};
+  const codex=()=>{const chip=(on,t,c)=>h("span",{style:"border:1px solid "+(on?(c||"var(--ac)"):"var(--bd)")+";color:"+(on?(c||"var(--ac)"):"var(--dim)")+";border-radius:5px;padding:2px 8px;font-size:12px"},(on?"✓ ":"")+t);
+   const sec=(t,items)=>h("div",{style:"display:flex;flex-direction:column;gap:5px"},h("b",{},t),h("div",{style:"display:flex;gap:5px;flex-wrap:wrap"},...items));
+   const done=codexN()===CODEXT;
+   return h("div",{class:"pad",style:"display:flex;flex-direction:column;gap:12px"},h("div",{},"The Codex fills in as you roll. Every first discovery is worth 3 XP."+(done?" You found everything. You are Ex Nihilo.":"")),
+    sec("Colours ("+Object.keys(S.seen.h).length+"/12)",TH.HF.map((n,i)=>chip(S.seen.h[i],n))),
+    sec("Wallpapers",["stars","rings","grid","rain","flow","plain","none"].map(n=>chip(S.seen.w[n],n))),
+    sec("Typefaces",["Mono","Sans","Serif"].map(n=>chip(S.seen.f[n],n))),
+    sec("Colour schemes",TH.HARM.map((n,i)=>chip(S.seen.m[i],n))),
+    sec("Rarities",TH.RAR.map((n,i)=>chip(S.seen.r[i],n,TH.RCOL[i]))),
+    h("div",{class:"dim",style:"font-size:12px"},"Rarity comes from how unusual the traits are: light mode, rarer colour schemes, strong glow, and less common wallpapers and typefaces. Roughly 1 roll in 60 is Legendary."))};
+  function draw(){if(win.dead)return;root.replaceChildren(head(),h("div",{class:"scr",style:"flex:1;min-height:0;overflow-y:auto"},tab==="Collection"?collection():tab==="Codex"?codex():workshop()))}
+  root.addEventListener("keydown",e=>{if(e.target.closest("input,textarea,select"))return;if(e.key===" "||e.key==="r"||e.key==="R"){e.preventDefault();if(tab==="Workshop")roll()}});
+  const un=OS.on("theme",()=>{if(!win.dead)setTimeout(draw,0)});
+  win.on.close=()=>{try{typeof un==="function"&&un()}catch(e){}};
+  draw()}});
 
 /* ===================== BOOT ===================== */
 const LOGO=`
