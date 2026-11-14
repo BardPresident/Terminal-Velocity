@@ -11,7 +11,7 @@ CONTENTS
    1. What it is
    2. Quick start and hosting
    3. The desktop
-   4. The apps (37)
+   4. The apps
    5. Your data: saving, Backup, Cleaner, reboot
    6. Your own archive (manifest.json)
    7. Links, the Browser and the OS
@@ -34,7 +34,7 @@ you choose to export it.
 
 It starts with a long, chatty boot log that says what it is doing (the
 checks are real, not decoration), then gives you a desktop with windows,
-a taskbar, a Start menu, a file system, a terminal and 37 apps. The first
+a taskbar, a Start menu, a file system, a terminal and a full set of apps. The first
 of those apps is the game Terminal Velocity, which lives inside the OS
 (section 11).
 
@@ -133,7 +133,7 @@ SESSION RESTORE
 
 
 =====================================================================
-4. THE APPS (37)
+4. THE APPS
 =====================================================================
 
 Every app has a desktop icon, a Start menu entry and a Spotlight entry,
@@ -160,6 +160,18 @@ Task Manager
 
 Benchmark
   How much of the computer the OS really uses (section 8).
+
+Quine
+  The OS reads its own file and runs a copy of itself in a window. That
+  copy can open Quine and run another copy, and so on, up to a limit the
+  device can handle (fewer on phones and small machines). "Stack and
+  benchmark" builds the layers for you and runs the Benchmark app's own
+  tests inside each one, then shows boot time, speed against the real OS,
+  page smoothness and memory per layer. Needs the OS to be opened from a
+  web address, because a page can't read itself from a file. All layers
+  share your saves (so a change in a copy is a change to your real data),
+  but copies never save or restore your open windows and stay out of
+  Chat. Closing the Quine window closes the copies.
 
 Cleaner
   See everything this OS has saved in your browser, and clear what you no
