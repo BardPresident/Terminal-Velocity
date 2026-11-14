@@ -273,7 +273,7 @@ Recorder
 
 Camera
   Webcam or screen recording (desktop), photos (JPG), pause, countdown,
-  resolution 480p to 4K, frame rate, format (MP4 where supported, else
+  resolution (720p HD by default, for webcam and screen; 480p to 4K available), frame rate, format (MP4 where supported, else
   WebM), quality, mic select and mute, mirror, and front/back flip on
   phones. Source "Screen + webcam corner" draws your camera into a corner
   of a screen recording (choose the corner, size, circle or rectangle;
