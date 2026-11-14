@@ -171,7 +171,9 @@ Quine
   web address, because a page can't read itself from a file. All layers
   share your saves (so a change in a copy is a change to your real data),
   but copies never save or restore your open windows and stay out of
-  Chat. Closing the Quine window closes the copies.
+  Chat. Each copy starts with Quine minimised in its taskbar so you see a
+  full desktop; click it there to go a layer deeper. Closing the Quine
+  window closes the copies.
 
 Cleaner
   See everything this OS has saved in your browser, and clear what you no
