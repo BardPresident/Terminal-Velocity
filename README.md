@@ -116,8 +116,10 @@ THEMES AND LOOK  (the Themes app; wallpaper and other looks in Settings > Appear
             and Forward walk through what you rolled. "More like this"
             rolls a close relative, and works on the built-in
             themes too (they are approximated from their colours, so the
-            result is a cousin, not an exact copy). Tick Colour, Wallpaper, Typeface or
-            Light/dark to keep that part while you roll the rest. Every
+            result is a cousin, not an exact copy). Under "Freeze", tick Colour, Wallpaper, Typeface
+            or Light/dark (each shows its current value) and Roll changes
+            everything except those. To keep a theme's pink and its light
+            mood, tick Colour and Light. Every
             theme has a short seed like V1-K7QM-3F9A: the same seed
             makes the same theme on any device, so you can share one by
             typing it in with "Enter a seed". Save keeps a theme (only its
