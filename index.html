@@ -1258,7 +1258,7 @@ const fmtDate=t=>{const d=new Date(t),hm=" "+pad(d.getHours())+":"+pad(d.getMinu
 const sleep=ms=>new Promise(r=>setTimeout(r,ms));
 const LS={get(k,d){try{const v=localStorage.getItem(k);return v==null?d:JSON.parse(v)}catch(e){return d}},set(k,v){try{localStorage.setItem(k,JSON.stringify(v));return true}catch(e){return false}}};
 const fmtUp=s=>{s=Math.max(0,Math.round(s));const d=Math.floor(s/86400),hr=Math.floor(s%86400/3600),m=Math.floor(s%3600/60),sc=s%60;if(d)return d+" d "+hr+" h";if(hr)return hr+" h "+m+" min";if(m)return m+" min "+sc+" s";return sc+" s"};
-const OS={apps:{},wins:[],z:10,bus:{},boot:performance.now(),ver:"1.0 build 1114-1227"};
+const OS={apps:{},wins:[],z:10,bus:{},boot:performance.now(),ver:"1.0 build 1114-1234"};
 OS.on=(ev,f)=>{(OS.bus[ev]=OS.bus[ev]||[]).push(f);return f};
 OS.off=(ev,f)=>{OS.bus[ev]=(OS.bus[ev]||[]).filter(x=>x!==f)};
 /* reboot that always fetches the newest copy of this page (like Ctrl+Shift+R), then reloads */
@@ -3886,8 +3886,8 @@ const TH=(()=>{
  const HARM=["Neighbours","Opposites","Triad","Split"],RAR=["Common","Uncommon","Rare","Epic","Legendary"],RCOL=["#9aa3a0","#4cd27a","#4aa3ff","#b66dff","#ffc83d"],TIER=[8.3,9.5,10.9,12.2];
  const PH=[.4,.3,.15,.15],PG=[.3,.3,.25,.15],LOCKF={hue:["hue","bgh"],wall:["wall"],font:["font"],mood:["light"]};
  const cnt=(a,v)=>a.filter(x=>x===v).length,WTI=w=>{const i=WT.indexOf(w);return i<0?14:i};
- const enc=g=>{let b="";for(const[k,n]of F)b+=(g[k]&((1<<n)-1)).toString(2).padStart(n,"0");let s="";for(let i=0;i<8;i++)s+=AL[parseInt(b.slice(i*5,i*5+5),2)];return"V1-"+s.slice(0,4)+"-"+s.slice(4)};
- const dec=str=>{let s=String(str||"").toUpperCase().replace(/[^0-9A-Z]/g,"").replace(/O/g,"0").replace(/[IL]/g,"1");if(s.length===10&&s.startsWith("V1"))s=s.slice(2);if(s.length!==8||[...s].some(c=>AL.indexOf(c)<0))return null;let b="";for(const c of s)b+=AL.indexOf(c).toString(2).padStart(5,"0");const g={};let p=0;for(const[k,n]of F){g[k]=parseInt(b.slice(p,p+n),2);p+=n}return g};
+ const enc=g=>{let b="";for(const[k,n]of F)b+=(g[k]&((1<<n)-1)).toString(2).padStart(n,"0");let s="";for(let i=0;i<8;i++)s+=AL[parseInt(b.slice(i*5,i*5+5),2)];return"V"+(g.v||2)+"-"+s.slice(0,4)+"-"+s.slice(4)};
+ const dec=str=>{let s=String(str||"").toUpperCase().replace(/[^0-9A-Z]/g,"").replace(/O/g,"0").replace(/[IL]/g,"1");let v=2;if(s.length===10&&/^V[12]/.test(s)){v=+s[1];s=s.slice(2)}if(s.length!==8||[...s].some(c=>AL.indexOf(c)<0))return null;let b="";for(const c of s)b+=AL.indexOf(c).toString(2).padStart(5,"0");const g={v};let p=0;for(const[k,n]of F){g[k]=parseInt(b.slice(p,p+n),2);p+=n}return g};
  const hex=(h,s,l)=>{h=((h%360)+360)%360;const a=s*Math.min(l,1-l),f=n=>{const k=(n+h/30)%12;return l-a*Math.max(-1,Math.min(k-3,9-k,1))};return"#"+[f(0),f(8),f(4)].map(v=>pad2(Math.round(v*255))).join("")};
  const lum=c=>{c=c.replace("#","");const v=[0,2,4].map(i=>{const x=parseInt(c.substr(i,2),16)/255;return x<=.03928?x/12.92:Math.pow((x+.055)/1.055,2.4)});return .2126*v[0]+.7152*v[1]+.0722*v[2]};
  const cr=(a,b)=>{const x=lum(a),y=lum(b);return(Math.max(x,y)+.05)/(Math.min(x,y)+.05)};
@@ -3900,17 +3900,17 @@ const TH=(()=>{
   fam:g=>Math.floor((((g.hue*360/256)+15)%360)/30),
   rar(g){const b=-Math.log2(PH[g.harm])-Math.log2(g.light?.12:.88)-Math.log2(PG[g.glow])-Math.log2(cnt(WT,WT[g.wall])/16)-Math.log2(cnt(FN,FN[g.font])/4);let r=0;for(const t of TIER)if(b>=t)r++;return r},
   roll(rng,base,lock){rng=rng||Math.random;const wp=w=>{const r=rng();let a=0;for(let i=0;i<w.length;i++){a+=w[i];if(r<a)return i}return w.length-1};
-   const g={hue:rng()*256|0,harm:wp(PH),bgs:rng()*8|0,bgh:rng()*16|0,acs:rng()*8|0,acl:rng()*4|0,wall:rng()*16|0,font:rng()*4|0,glow:wp(PG),light:rng()<.12?1:0,dim:rng()*8|0,pan:rng()*4|0,rad:rng()*4|0,a2s:rng()*4|0};
+   const g={v:2,hue:rng()*256|0,harm:wp(PH),bgs:rng()*8|0,bgh:rng()*16|0,acs:rng()*8|0,acl:rng()*4|0,wall:rng()*16|0,font:rng()*4|0,glow:wp(PG),light:rng()<.12?1:0,dim:rng()*8|0,pan:rng()*4|0,rad:rng()*4|0,a2s:rng()*4|0};
    if(base&&lock)for(const k in lock)if(lock[k])for(const f of LOCKF[k])g[f]=base[f];return g},
-  mutate(g){const vis=["harm","bgh","bgs","acl","wall","font","glow","a2s","pan"];let n;for(let t=0;t<9;t++){n=Object.assign({},g);const ks=vis.slice().sort(()=>Math.random()-.5).slice(0,2+(Math.random()*2|0));
+  mutate(g){const vis=["harm","bgh","bgs","acl","wall","font","glow","a2s","pan"];let n;for(let t=0;t<9;t++){n=Object.assign({},g,{v:2});const ks=vis.slice().sort(()=>Math.random()-.5).slice(0,2+(Math.random()*2|0));
     if(Math.random()<.75)n.hue=(n.hue+(Math.random()<.5?-1:1)*(8+(Math.random()*22|0))+256)%256;
     for(const k of ks){const bits=F.find(x=>x[0]===k)[1];n[k]=Math.random()*(1<<bits)|0}
     if(enc(n)!==enc(g))break}return n},
-  breed(a,b){const n={};for(const[k,bits]of F){n[k]=Math.random()<.5?a[k]:b[k];if(k!=="light"&&Math.random()<.1)n[k]=Math.random()*(1<<bits)|0}return n},
+  breed(a,b){const n={v:2};for(const[k,bits]of F){n[k]=Math.random()<.5?a[k]:b[k];if(k==="hue"){if(Math.random()<.5)n.hue=(((a.hue+b.hue)/2|0)+(Math.random()*9|0)-4+256)%256}else if(k!=="light"&&Math.random()<.08)n[k]=Math.random()*(1<<bits)|0}return n},
   name(g){const NS=(g.bgh*3+g.pan+g.dim+g.acs)%16;return(g.light?"Pale ":"")+HF[T0.fam(g)]+" "+NOUN[NS]},
   build(g){const H=g.hue*360/256,H2=(H+[35,180,120,150][g.harm])%360,light=!!g.light,bgH=(H+(g.bgh-8)*7+360)%360;let bg,pn,pn2,fg,dim,ac,ac2;
-   if(!light){const bs=.12+g.bgs*.05,bl=.04+g.pan*.012;bg=hex(bgH,bs,bl);pn=hex(bgH,bs,bl+.035);pn2=hex(bgH,bs,bl+.07);fg=fit(H,.55,.88,bg,9,1);dim=fit(H,.2,.5+g.dim*.035,pn,4.5,1);ac=fit(H,.7+g.acs*.043,.52+g.acl*.07,bg,5,1);ac2=fit(H2,.7+g.a2s*.1,.62,bg,4.5,1)}
-   else{const bs=.22+g.bgs*.04;bg=hex(bgH,bs,.9-g.pan*.02);pn=hex(bgH,bs+.1,.965);pn2=hex(bgH,bs,.93-g.pan*.01);fg=fit(H,.35,.14,bg,9,-1);dim=fit(H,.15,.42,pn,4.5,-1);ac=fit(H,.55+g.acs*.05,.38-g.acl*.03,bg,5,-1);ac2=fit(H2,.55+g.a2s*.1,.36,bg,4.5,-1)}
+   if(!light){const bs=.12+g.bgs*.05,bl=.04+g.pan*.012;bg=hex(bgH,bs,bl);pn=hex(bgH,bs,bl+.035);pn2=hex(bgH,bs,bl+.07);fg=fit(H,.55,.88,bg,9,1);dim=fit(H,.2,.5+g.dim*.035,pn,4.5,1);if(g.v===1){ac=fit(H,.7+g.acs*.043,.52+g.acl*.07,bg,5,1);ac2=fit(H2,.7+g.a2s*.1,.62,bg,4.5,1)}else{ac=fit(H,.82+g.acs*.025,.55+g.acl*.06,bg,4.5,1);ac2=fit(H2,.8+g.a2s*.06,.62,bg,4.5,1)}}
+   else{const bs=.22+g.bgs*.04;bg=hex(bgH,bs,.9-g.pan*.02);pn=hex(bgH,bs+.1,.965);pn2=hex(bgH,bs,.93-g.pan*.01);fg=fit(H,.35,.14,bg,9,-1);dim=fit(H,.15,.42,pn,4.5,-1);if(g.v===1){ac=fit(H,.55+g.acs*.05,.38-g.acl*.03,bg,5,-1);ac2=fit(H2,.55+g.a2s*.1,.36,bg,4.5,-1)}else{/* vivid accents: 3:1 is enough for large text and buttons, and keeps hot pinks hot */ac=fit(H,.8+g.acs*.028,.7,bg,2.3+g.acl*.45,-1);ac2=fit(H2,.75+g.a2s*.08,.55,bg,3,-1)}}
    return T(T0.name(g),"A theme from Ex Nihilo ("+enc(g)+").",bg,pn,pn2,fg,dim,ac,ac2,{l:light?1:undefined,ff:FONTS[g.font],w:WT[g.wall],glow:light?"0px":GL[g.glow],rad:RAD[g.rad]})},
   /* make the theme exist in THEMES (only the one in use is kept) and return its id */
   reg(g){const id="g:"+enc(g);for(const k of Object.keys(THEMES))if(k.startsWith("g:")&&k!==id&&k!==SET.theme)delete THEMES[k];if(!THEMES[id])THEMES[id]=T0.build(g);return id},
@@ -3920,7 +3920,7 @@ const TH=(()=>{
    const light=!!t.l,A=rg(v.ac),A2=rg(v.ac2),B=rg(v.bg),D=rg(v.dim),H=A[0],hd=dh(A2[0],H);let harm=0,best=1e9;[35,180,120,150].forEach((x,i)=>{const e=Math.abs(hd-x);if(e<best){best=e;harm=i}});
    let bd=(B[0]-H+540)%360-180;const px=s=>parseFloat(s)||0,near=(arr,x)=>arr.reduce((bi,y,i)=>Math.abs(y-x)<Math.abs(arr[bi]-x)?i:bi,0);
    const wi=WTI(t.w);
-   return{hue:cl(H/360*256,255),harm,bgs:cl(light?(B[1]-.22)/.04:(B[1]-.12)/.05,7),bgh:cl(bd/7+8,15),acs:cl(light?(A[1]-.55)/.05:(A[1]-.7)/.043,7),acl:cl(light?(.38-A[2])/.03:(A[2]-.52)/.07,3),wall:wi,font:v.ff===SERIF?2:v.ff===SANS?1:0,glow:near([0,4,8,14],px(v.glow)),light:light?1:0,dim:cl((D[2]-.5)/.035,7),pan:cl(light?(.9-B[2])/.02:(B[2]-.04)/.012,3),rad:near([2,4,6,10],px(v.rad)),a2s:cl(light?(A2[1]-.55)/.1:(A2[1]-.7)/.1,3)}},
+   return{v:2,hue:cl(H/360*256,255),harm,bgs:cl(light?(B[1]-.22)/.04:(B[1]-.12)/.05,7),bgh:cl(bd/7+8,15),acs:cl(light?(A[1]-.55)/.05:(A[1]-.7)/.043,7),acl:cl(light?(.38-A[2])/.03:(A[2]-.52)/.07,3),wall:wi,font:v.ff===SERIF?2:v.ff===SANS?1:0,glow:near([0,4,8,14],px(v.glow)),light:light?1:0,dim:cl((D[2]-.5)/.035,7),pan:cl(light?(.9-B[2])/.02:(B[2]-.04)/.012,3),rad:near([2,4,6,10],px(v.rad)),a2s:cl(light?(A2[1]-.55)/.1:(A2[1]-.7)/.1,3)}},
   cur(){return SET.theme&&SET.theme.startsWith("g:")?T0.dec(SET.theme.slice(2)):null},
   facts(g){return T0.HF[T0.fam(g)]+" · "+HARM[g.harm]+" · "+(g.light?"Light":"Dark")+" · "+WT[g.wall]+" wallpaper · "+FN[g.font]+" · glow "+GL[g.glow]}
  };
