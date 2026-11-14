@@ -1258,7 +1258,7 @@ const fmtDate=t=>{const d=new Date(t),hm=" "+pad(d.getHours())+":"+pad(d.getMinu
 const sleep=ms=>new Promise(r=>setTimeout(r,ms));
 const LS={get(k,d){try{const v=localStorage.getItem(k);return v==null?d:JSON.parse(v)}catch(e){return d}},set(k,v){try{localStorage.setItem(k,JSON.stringify(v));return true}catch(e){return false}}};
 const fmtUp=s=>{s=Math.max(0,Math.round(s));const d=Math.floor(s/86400),hr=Math.floor(s%86400/3600),m=Math.floor(s%3600/60),sc=s%60;if(d)return d+" d "+hr+" h";if(hr)return hr+" h "+m+" min";if(m)return m+" min "+sc+" s";return sc+" s"};
-const OS={apps:{},wins:[],z:10,bus:{},boot:performance.now(),ver:"1.0 build 1114-1110"};
+const OS={apps:{},wins:[],z:10,bus:{},boot:performance.now(),ver:"1.0 build 1114-1126"};
 OS.on=(ev,f)=>{(OS.bus[ev]=OS.bus[ev]||[]).push(f);return f};
 OS.off=(ev,f)=>{OS.bus[ev]=(OS.bus[ev]||[]).filter(x=>x!==f)};
 /* reboot that always fetches the newest copy of this page (like Ctrl+Shift+R), then reloads */
@@ -3818,7 +3818,8 @@ const QN={
  drop(f){try{const u=f._url;f.remove();u&&setTimeout(()=>URL.revokeObjectURL(u),500)}catch(e){}},
  heap(){const m=performance.memory;return m?m.usedJSHeapSize/1048576:null},
  heapFull(){const m=performance.memory;return m?m.usedJSHeapSize/m.jsHeapSizeLimit:0},
- async fps(ms){return new Promise(r=>{let n=0,t0=0;const f=t=>{if(!t0)t0=t;n++;if(t-t0>=ms)r(n*1000/(t-t0));else requestAnimationFrame(f)};requestAnimationFrame(f)})},
+ /* frame rate the same way the Benchmark Live tab does: gaps between frames, skipping the first few while the page settles, and the middle value so one stall cannot ruin it */
+ async fps(ms){await QN.sleep(300);return new Promise(r=>{const d=[];let last=0,t0=performance.now();const f=t=>{if(last)d.push(t-last);last=t;const el=performance.now()-t0;if((el>=ms&&d.length>=12)||el>4000){const s=d.slice(2).sort((a,b)=>a-b);r(s.length?1000/s[s.length>>1]:0)}else requestAnimationFrame(f)};requestAnimationFrame(f)})},
  /* run two of the Benchmark app's own tests inside the given window (a copy of the OS), so the copy measures itself */
  async measure(w){const BNx=w.eval("BN"),out={};for(const id of["int","dom"]){await BNx.tests.find(x=>x.id===id).run()}/* warm-up pass so every layer is measured the same way */for(const id of["int","dom"]){const t=BNx.tests.find(x=>x.id===id);const r=await t.run();out[id]=typeof r==="number"?r:(r&&r.v)||0}return out}
 };
@@ -3913,7 +3914,7 @@ async function boot(){
  removeEventListener("keydown",sk);removeEventListener("pointerdown",sk);
  const bt=$("#boot");bt.style.transition="opacity .35s";bt.style.opacity="0";await sleep(skip?0:350);bt.remove();
  if(doRestore)sessRestore(sess);
- else if(NEST){OS.open("quine")}
+ else if(NEST){const qw=OS.open("quine");qw&&OS.minimize(qw)}
  else if(SET.autostart&&!nog){const w=OS.open("tv");if(w&&SET.autostartMin!==false)OS.minimize(w)}else OS.open("help");
  sessStart()}
 
