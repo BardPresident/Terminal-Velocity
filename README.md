@@ -114,7 +114,9 @@ THEMES AND LOOK  (the Themes app; wallpaper and other looks in Settings > Appear
   Workshop  Press Roll (or Space or R) and the whole OS becomes a brand
             new theme made from rules, so text is always readable. Back
             and Forward walk through what you rolled. "More like this"
-            rolls a close relative. Tick Colour, Wallpaper, Typeface or
+            rolls a close relative, and works on the built-in
+            themes too (they are approximated from their colours, so the
+            result is a cousin, not an exact copy). Tick Colour, Wallpaper, Typeface or
             Light/dark to keep that part while you roll the rest. Every
             theme has a short seed like V1-K7QM-3F9A: the same seed
             makes the same theme on any device, so you can share one by
