@@ -120,7 +120,7 @@ THEMES AND LOOK  (the Themes app; wallpaper and other looks in Settings > Appear
             or Light/dark (each shows its current value) and Roll changes
             everything except those. To keep a theme's pink and its light
             mood, tick Colour and Light. Every
-            theme has a short seed like V1-K7QM-3F9A: the same seed
+            theme has a short seed like V2-K7QM-3F9A: the same seed
             makes the same theme on any device, so you can share one by
             typing it in with "Enter a seed". Save keeps a theme (only its
             seed is stored) under "Your themes".
@@ -137,8 +137,10 @@ THEMES AND LOOK  (the Themes app; wallpaper and other looks in Settings > Appear
   Commissions (clients who want, say, a Jade theme with the grid
   wallpaper). Roll one yourself for full XP, or press "Roll for it" to let
   the OS search up to 300 rolls for a match (half XP). XP raises your level and title, up to Ex Nihilo.
-  Seeds start with V1, the version of the recipe, so a seed will keep
-  making the same theme even if the recipe is ever improved. Saved
+  Seeds start with V1 or V2, the version of the recipe, so a seed keeps
+  making the same theme even when the recipe is improved. V2 (current)
+  has more vivid accent colours, so hot pinks stay hot; V1 seeds still
+  make exactly the themes they always did. Saved
   themes and progress are in Backup. A forced wallpaper in Settings
   overrides a theme's wallpaper; the Workshop offers to switch that off.
   The 17 built-in "X environments" are still here: Phosphor Green, Amber Terminal, Cyan Relay,
