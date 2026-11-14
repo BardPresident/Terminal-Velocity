@@ -133,7 +133,8 @@ THEMES AND LOOK  (the Themes app; wallpaper and other looks in Settings > Appear
   rolling, saving, discovering, breeding, claiming the Theme of the Day
   (the same for everyone, with a daily streak) and delivering
   Commissions (clients who want, say, a Jade theme with the grid
-  wallpaper). XP raises your level and title, up to Ex Nihilo.
+  wallpaper). Roll one yourself for full XP, or press "Roll for it" to let
+  the OS search up to 300 rolls for a match (half XP). XP raises your level and title, up to Ex Nihilo.
   Seeds start with V1, the version of the recipe, so a seed will keep
   making the same theme even if the recipe is ever improved. Saved
   themes and progress are in Backup. A forced wallpaper in Settings
