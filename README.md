@@ -64,7 +64,7 @@ Useful addresses (add them after the file name):
                                 mount someone's archive (section 6)
 
 Files delivered:
-  terminal-velocity.html     the OS, with the game inside it
+  terminal-velocity.html        the OS, with the game inside it
   README.txt                    this file
   (generate-manifest.js is built into the OS: Manifest Maker has it.)
 
@@ -417,6 +417,11 @@ Browser
   - Tabs, address bar, back, forward, reload, bookmarks (right-click a
     bookmark to rename or remove it; Export and Import are on the start
     page). republicka.life is bookmarked by default.
+  - Reload works like Ctrl+Shift+R: it asks the network, not the cache, for
+    the page. For pages on the same site as the OS (your own website) it
+    also refreshes the styles, scripts and pictures, so edits show at once.
+    On other sites the page itself is refreshed, but the browser may keep
+    its own copy of their pictures and scripts.
   - Open tabs are remembered: close the Browser or reboot and the same
     tabs come back, with the same one selected. Only the selected tab
     loads straight away; the others load when you click them.
