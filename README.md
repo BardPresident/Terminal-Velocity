@@ -301,12 +301,23 @@ Paint
   - Guides: the Guides button cycles Off, Safe area (keep text inside
     the dashed line, because sites crop covers) and Circle crop (profile
     pictures). Guides help you draw and are never saved.
+  - Text: click the picture where the text should go and a window
+    opens with a live preview on your picture. Seven fonts (Bold Title
+    is made for video names), a size slider up to 400 px, bold, italic,
+    shadow, outline (thin or thick, any colour), text colour, and left,
+    centre or right alignment. Text is anchored on your click: centred
+    text is centred on it. "Place it" can also drop the text in the
+    middle, top centre or bottom centre of the picture, which is what
+    most video covers need. Several lines are fine, and Ctrl+Enter adds
+    it. Your last font, size ratio and style are remembered. Fonts come
+    from your device, so a font that is missing falls back to a similar
+    one.
   - Save: PNG for best quality, or JPG with a size limit (under 1 MB,
     500 KB or 200 KB), because many sites reject big uploads. The
     message shows the final file size.
   - Tools: Brush, Soft, Spray, Rainbow, Sparkle, Eraser, Line, Box,
     Circle, Heart, Star, Fill (with an adjustable range), Pick
-    (eyedropper), Text (four fonts), Stamp (24 faces, hearts, stars, a
+    (eyedropper), Text (see below), Stamp (24 faces, hearts, stars, a
     crown and more) and Hand (pan).
   - Size and opacity sliders, 20 colours plus any colour you like, and
     pen pressure on tablets and styluses.
