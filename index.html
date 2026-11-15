@@ -1258,7 +1258,7 @@ const fmtDate=t=>{const d=new Date(t),hm=" "+pad(d.getHours())+":"+pad(d.getMinu
 const sleep=ms=>new Promise(r=>setTimeout(r,ms));
 const LS={get(k,d){try{const v=localStorage.getItem(k);return v==null?d:JSON.parse(v)}catch(e){return d}},set(k,v){try{localStorage.setItem(k,JSON.stringify(v));return true}catch(e){return false}}};
 const fmtUp=s=>{s=Math.max(0,Math.round(s));const d=Math.floor(s/86400),hr=Math.floor(s%86400/3600),m=Math.floor(s%3600/60),sc=s%60;if(d)return d+" d "+hr+" h";if(hr)return hr+" h "+m+" min";if(m)return m+" min "+sc+" s";return sc+" s"};
-const OS={apps:{},wins:[],z:10,bus:{},boot:performance.now(),ver:"1.0 build 1114-1246"};
+const OS={apps:{},wins:[],z:10,bus:{},boot:performance.now(),ver:"1.0 build 1115-0018"};
 OS.on=(ev,f)=>{(OS.bus[ev]=OS.bus[ev]||[]).push(f);return f};
 OS.off=(ev,f)=>{OS.bus[ev]=(OS.bus[ev]||[]).filter(x=>x!==f)};
 /* reboot that always fetches the newest copy of this page (like Ctrl+Shift+R), then reloads */
@@ -3909,6 +3909,11 @@ const TH=(()=>{
   breed(a,b,lean){lean=lean==null?.5:lean;const n={v:2},pick=Math.random;for(const[k,bits]of F){const fromA=pick()<lean;n[k]=fromA?a[k]:b[k];
     if(k==="hue"){const d=((b.hue-a.hue+384)%256)-128;n.hue=pick()<.4?(Math.round(a.hue+d*(1-lean))+256)%256:n.hue;n.hue=(n.hue+(pick()<.3?(Math.random()*7|0)-3:0)+256)%256}
     else if(k!=="light"&&pick()<.06)n[k]=Math.random()*(1<<bits)|0}return n},
+  /* asexual reproduction: variations of one theme. focus limits what may change, st is how much. */
+  clone(g,focus,st){const n=Object.assign({},g,{v:2});const G={all:["hue","harm","bgs","bgh","acs","acl","wall","font","glow","dim","pan","rad","a2s"],colour:["hue","harm","bgh","bgs","acs","acl","a2s"],wall:["wall"],font:["font"],feel:["glow","rad","pan","dim","bgs"]};
+   const p={gentle:.25,normal:.45,wild:.75}[st]||.4,dr={gentle:7,normal:15,wild:32}[st]||15,ks=G[focus]||G.all;
+   for(const k of ks){const bits=F.find(x=>x[0]===k)[1];if(ks.length===1||Math.random()<p){if(k==="hue")n.hue=(n.hue+(Math.random()<.5?-1:1)*(2+(Math.random()*dr|0))+256)%256;else n[k]=Math.random()*(1<<bits)|0}}
+   return n},
   name(g){const NS=(g.bgh*3+g.pan+g.dim+g.acs)%16;return(g.light?"Pale ":"")+HF[T0.fam(g)]+" "+NOUN[NS]},
   build(g){const H=g.hue*360/256,H2=(H+[35,180,120,150][g.harm])%360,light=!!g.light,bgH=(H+(g.bgh-8)*7+360)%360;let bg,pn,pn2,fg,dim,ac,ac2;
    if(!light){const bs=.12+g.bgs*.05,bl=.04+g.pan*.012;bg=hex(bgH,bs,bl);pn=hex(bgH,bs,bl+.035);pn2=hex(bgH,bs,bl+.07);fg=fit(H,.55,.88,bg,9,1);dim=fit(H,.2,.5+g.dim*.035,pn,4.5,1);if(g.v===1){ac=fit(H,.7+g.acs*.043,.52+g.acl*.07,bg,5,1);ac2=fit(H2,.7+g.a2s*.1,.62,bg,4.5,1)}else{ac=fit(H,.82+g.acs*.025,.55+g.acl*.06,bg,4.5,1);ac2=fit(H2,.8+g.a2s*.06,.62,bg,4.5,1)}}
@@ -3938,7 +3943,7 @@ const THS={
 defApp("themes",{name:"Themes",icon:"swatch",cat:"System",w:820,h:720,single:true,desc:"collect and breed desktop themes: find wild ones, keep the ones you love, breed them together",kw:"themes theme colour color wallpaper appearance generate random seed breed collect catch den nursery meadow pokemon game",
  init(win,b){
   const S=THS.load();let tab=LS.get("tvos_themes_tab","Meadow");if(!["Meadow","Den","Nursery","Dex"].includes(tab))tab="Meadow";
-  let wild=null,filt={fam:-1,mood:0},pa=null,pb=null,lean=.5,kids=[];
+  let wild=null,filt={fam:-1,mood:0},pa=null,pb=null,lean=.5,kids=[],cf="all",cs="normal";
   const root=h("div",{tabindex:"-1",style:"display:flex;flex-direction:column;flex:1;min-height:0;outline:none"});b.append(root);b.style.cssText+=";display:flex;flex-direction:column";
   const WALLN=["stars","rings","grid","rain","flow","plain","none"];
   /* ---- creatures: the built-in themes (founders) and your caught ones ---- */
@@ -3955,7 +3960,7 @@ defApp("themes",{name:"Themes",icon:"swatch",cat:"System",w:820,h:720,single:tru
    S.saved.push({seed:sd,name:TH.name(g),stars:0,t:Date.now(),gen:gen||1,parents:parents||null,origin:origin||"wild"});THS.save();if(!quiet)toast("Caught "+TH.name(g)+"!");return true};
   const wornCard=()=>{const t=THEMES[SET.theme]||THEMES.phosphor,g=TH.cur(),mineW=wornIsMine();
    return h("div",{style:"flex:none;padding:6px 10px;border-bottom:1px solid var(--bd);display:flex;gap:8px;align-items:center;flex-wrap:wrap"},h("span",{class:"dim"},"Wearing:"),h("b",{},t.n),
-    g&&!mineW?h("button",{class:"btn sm pri",onclick:()=>{catchG(g,"wild",null,1);draw()}},"Catch this one"):null,g?h("button",{class:"btn sm",onclick:()=>copy(TH.enc(g))},TH.enc(g)):null)};
+    g&&!mineW?h("button",{class:"btn sm pri",onclick:()=>{catchG(g,"wild",null,1);draw()}},"Catch this one"):null,g?h("button",{class:"btn sm",onclick:()=>copy(TH.enc(g))},TH.enc(g)):null,h("span",{class:"dim",style:"margin-left:auto"},"Wallpaper:"),h("select",{class:"t",title:"Keep the theme but choose its wallpaper. \"auto\" uses the theme's own.",onchange:e=>{SET.wall=e.target.value;saveSet();try{setWall()}catch(x){}draw()}},...["auto",...WALLN].map(w=>h("option",{value:w,selected:SET.wall===w},w==="auto"?"auto (theme's own)":w))))};
   const head=()=>{const m=mine(),gen=m.reduce((a,c)=>Math.max(a,c.gen),0);
    return h("div",{style:"flex:none;padding:8px 10px;border-bottom:1px solid var(--bd);display:flex;flex-direction:column;gap:6px"},
     h("div",{style:"display:flex;gap:12px;flex-wrap:wrap;align-items:baseline"},h("b",{class:"ac"},"Themes"),h("span",{class:"dim"},m.length+" caught"),h("span",{class:"dim"},"deepest generation "+gen),h("span",{class:"dim"},"Dex "+dexN()+"/"+DEXT)),
@@ -3984,28 +3989,34 @@ defApp("themes",{name:"Themes",icon:"swatch",cat:"System",w:820,h:720,single:tru
   /* ---- Den ---- */
   const den=()=>{const m=mine();
    const parentBtn=c=>h("button",{class:"btn sm"+(pa===c.id||pb===c.id?" pri":""),onclick:()=>{if(pa===c.id||pb===c.id){if(pa===c.id)pa=null;else pb=null}else if(!pa)pa=c.id;else if(!pb)pb=c.id;else{pa=pb;pb=c.id}if(pa&&pb){tab="Nursery";LS.set("tvos_themes_tab",tab);toast("Two parents chosen. Breed them in the Nursery.")}draw()}},pa===c.id?"Parent A":pb===c.id?"Parent B":"Parent");
-   const mcard=c=>card(c,[h("button",{class:"btn sm",onclick:()=>wearC(c)},"Wear"),parentBtn(c),h("button",{class:"btn sm",onclick:()=>copy(c.s.seed)},"Seed"),h("button",{class:"btn sm",onclick:async()=>{const n=await dlgPrompt("New name:",c.s.name,"Rename");if(n!=null&&n.trim()){c.s.name=n.trim().slice(0,40);THS.save();draw()}}},"Rename"),
+   const varBtn=c=>h("button",{class:"btn sm",title:"Make variations of just this theme",onclick:()=>{pa=c.id;pb="none";tab="Nursery";LS.set("tvos_themes_tab",tab);hatch();}},"Variations");
+   const mcard=c=>card(c,[h("button",{class:"btn sm",onclick:()=>wearC(c)},"Wear"),parentBtn(c),varBtn(c),h("button",{class:"btn sm",onclick:()=>copy(c.s.seed)},"Seed"),h("button",{class:"btn sm",onclick:async()=>{const n=await dlgPrompt("New name:",c.s.name,"Rename");if(n!=null&&n.trim()){c.s.name=n.trim().slice(0,40);THS.save();draw()}}},"Rename"),
      h("button",{class:"btn sm",onclick:async()=>{if(await dlgConfirm("Release "+c.s.name+"? You can always catch it again from its seed "+c.s.seed+".","Release theme","Release")){S.saved=S.saved.filter(x=>x!==c.s);if(pa===c.id)pa=null;if(pb===c.id)pb=null;THS.save();draw()}}},"Release")],
-     (c.s.parents?"Child of "+c.s.parents.join(" × "):"Found wild")+" · "+c.s.seed);
+     (c.s.parents?(c.s.parents.length===1?"Variation of ":"Child of ")+c.s.parents.join(" × "):"Found wild")+" · "+c.s.seed);
    const stars=c=>h("div",{style:"display:flex;gap:2px"},...[1,2,3,4,5].map(n=>h("span",{style:"cursor:pointer;font-size:15px;color:"+(n<=c.s.stars?"var(--ac)":"var(--dim)"),onclick:()=>{c.s.stars=c.s.stars===n?0:n;THS.save();draw()}},n<=c.s.stars?"★":"☆")));
    return h("div",{class:"pad",style:"display:flex;flex-direction:column;gap:10px"},
     h("div",{},"Your Den. Pick any two creatures with Parent (founders too) and breed them in the Nursery."),
     h("b",{class:"ac"},"Caught ("+m.length+")"),m.length?h("div",{class:"sw"},...m.map(c=>{const d=mcard(c);d.insertBefore(stars(c),d.children[2]);return d})):h("div",{class:"dim"},"Nothing caught yet. Visit the Meadow, or breed two founders below."),
-    h("b",{class:"ac"},"Founders (the built-in themes)"),h("div",{class:"sw"},...founders().map(c=>card(c,[h("button",{class:"btn sm",onclick:()=>wearC(c)},"Wear"),parentBtn(c)]))))};
+    h("b",{class:"ac"},"Founders (the built-in themes)"),h("div",{class:"sw"},...founders().map(c=>card(c,[h("button",{class:"btn sm",onclick:()=>wearC(c)},"Wear"),parentBtn(c),varBtn(c)]))))};
   /* ---- Nursery ---- */
-  const slot=(label,id,set)=>{const c=id?byId(id):null,list=all();
-   const sel=h("select",{class:"t",onchange:e=>{set(e.target.value||null);kids=[];draw()}},h("option",{value:""},"Choose a parent..."),h("optgroup",{label:"Your creatures"},...list.filter(x=>!x.founder).map(x=>h("option",{value:x.id,selected:x.id===id},x.name))),h("optgroup",{label:"Founders"},...list.filter(x=>x.founder).map(x=>h("option",{value:x.id,selected:x.id===id},x.name))));
-   return h("div",{style:"flex:1 1 240px;display:flex;flex-direction:column;gap:6px;min-width:0"},h("b",{},label),sel,c?card(c,[h("button",{class:"btn sm",onclick:()=>wearC(c)},"Wear")]):h("div",{class:"dim",style:"border:2px dashed var(--bd);border-radius:8px;padding:20px;text-align:center"},"Empty"))};
-  const hatch=()=>{const A=byId(pa),B=byId(pb);if(!A||!B||A.id===B.id)return toast("Choose two different parents",1);const sig=g=>{const v=TH.build(g);return Object.values(v.v).join("")+v.w},seen=new Set([sig(A.g),sig(B.g)]);kids=[];let t=0;while(kids.length<4&&t++<120){const g=TH.breed(A.g,B.g,lean);const e=sig(g);if(seen.has(e))continue;seen.add(e);kids.push(g)}draw();toast("A clutch of "+kids.length+" hatched!")};
-  const nursery=()=>{const A=pa?byId(pa):null,B=pb?byId(pb):null;
+  const slot=(label,id,set,none)=>{const c=id&&id!=="none"?byId(id):null,list=all();
+   const sel=h("select",{class:"t",onchange:e=>{set(e.target.value||null);kids=[];draw()}},h("option",{value:""},"Choose a parent..."),none?h("option",{value:"none",selected:id==="none"},"None: make variations of A"):null,h("optgroup",{label:"Your creatures"},...list.filter(x=>!x.founder).map(x=>h("option",{value:x.id,selected:x.id===id},x.name))),h("optgroup",{label:"Founders"},...list.filter(x=>x.founder).map(x=>h("option",{value:x.id,selected:x.id===id},x.name))));
+   return h("div",{style:"flex:1 1 240px;display:flex;flex-direction:column;gap:6px;min-width:0"},h("b",{},label),sel,c?card(c,[h("button",{class:"btn sm",onclick:()=>wearC(c)},"Wear")]):h("div",{class:"dim",style:"border:2px dashed var(--bd);border-radius:8px;padding:20px;text-align:center"},id==="none"?"No second parent: children are variations of A":"Empty"))};
+  const hatch=()=>{const A=byId(pa),B=pb&&pb!=="none"?byId(pb):null,solo=pb==="none";if(!A||(!solo&&(!B||A.id===B.id)))return toast(solo?"Choose a parent":"Choose two different parents",1);
+   const sig=g=>{const v=TH.build(g);return Object.values(v.v).join("")+v.w},seen=new Set([sig(A.g)]);if(B)seen.add(sig(B.g));const want=solo?6:4;kids=[];let t=0;
+   while(kids.length<want&&t++<200){const g=solo?TH.clone(A.g,cf,cs):TH.breed(A.g,B.g,lean);const e=sig(g);if(seen.has(e))continue;seen.add(e);kids.push(g)}
+   draw();toast(kids.length?"A clutch of "+kids.length+" hatched!":"No new looks found. Try a wilder variation or another focus.",!kids.length)};
+  const nursery=()=>{const A=pa?byId(pa):null,solo=pb==="none",B=pb&&!solo?byId(pb):null;
    const leanS=h("select",{class:"t",onchange:e=>{lean=+e.target.value}},...[["Mostly A",.8],["Even mix",.5],["Mostly B",.2]].map(([n,v])=>h("option",{value:v,selected:lean===v},n)));
+   const focS=h("select",{class:"t",onchange:e=>{cf=e.target.value}},...[["all","Anything"],["colour","Colour only"],["wall","Wallpaper only"],["font","Typeface only"],["feel","Feel only (glow, corners, shades)"]].map(([v,n])=>h("option",{value:v,selected:cf===v},n)));
+   const stS=h("select",{class:"t",onchange:e=>{cs=e.target.value}},...[["gentle","Gentle"],["normal","Normal"],["wild","Wild"]].map(([v,n])=>h("option",{value:v,selected:cs===v},n)));
    const kc=g=>{const c={name:TH.name(g),g,v:TH.build(g).v,gen:Math.max(A?A.gen:0,B?B.gen:0)+1};const have=owned(g);
-    return card(c,[h("button",{class:"btn sm",onclick:()=>wearG(g)},"Try it on"),h("button",{class:"btn sm"+(have?"":" pri"),disabled:have,onclick:()=>{catchG(g,"bred",[A.name,B.name],c.gen);draw()}},have?"Kept":"Keep")],"Child of "+(A?A.name:"?")+" × "+(B?B.name:"?"))};
+    return card(c,[h("button",{class:"btn sm",onclick:()=>wearG(g)},"Try it on"),h("button",{class:"btn sm"+(have?"":" pri"),disabled:have,onclick:()=>{catchG(g,"bred",solo?[A.name]:[A.name,B.name],c.gen);draw()}},have?"Kept":"Keep")],(solo?"Variation of "+(A?A.name:"?"):"Child of "+(A?A.name:"?")+" × "+(B?B.name:"?")))};
    return h("div",{class:"pad",style:"display:flex;flex-direction:column;gap:10px"},
-    h("div",{},"Choose two parents and hatch a clutch of four children. Each child takes its traits from one parent or the other (colour can blend), with the odd surprise. Keep the ones you love. Keep breeding children with each other to steer toward the look you want."),
-    h("div",{style:"display:flex;gap:10px;flex-wrap:wrap"},slot("Parent A",pa,v=>pa=v),slot("Parent B",pb,v=>pb=v)),
-    h("div",{class:"row",style:"flex-wrap:wrap;gap:8px;border:0;padding:0;align-items:center"},h("span",{class:"dim"},"Children take after:"),leanS,h("button",{class:"btn pri",disabled:!A||!B||pa===pb,onclick:hatch},ic("swatch")," "+(kids.length?"Breed again":"Breed"))),
-    kids.length?h("div",{class:"sw"},...kids.map(kc)):h("div",{class:"dim"},A&&B?"Press Breed.":"Pick two parents, or press Parent on two creatures in the Den."))};
+    h("div",{},"Choose two parents and hatch a clutch of four children. Or set Parent B to None to make variations of just one theme: choose what may change (for example only the wallpaper) and how much. Each child takes its traits from one parent or the other (colour can blend), with the odd surprise. Keep the ones you love. Keep breeding children with each other to steer toward the look you want."),
+    h("div",{style:"display:flex;gap:10px;flex-wrap:wrap"},slot("Parent A",pa,v=>pa=v),slot("Parent B",pb,v=>pb=v,true)),
+    h("div",{class:"row",style:"flex-wrap:wrap;gap:8px;border:0;padding:0;align-items:center"},...(solo?[h("span",{class:"dim"},"Change:"),focS,h("span",{class:"dim"},"How much:"),stS]:[h("span",{class:"dim"},"Children take after:"),leanS]),h("button",{class:"btn pri",disabled:!A||(!solo&&(!B||pa===pb)),onclick:hatch},ic("swatch")," "+(kids.length?"Again":(solo?"Make variations":"Breed")))),
+    kids.length?h("div",{class:"sw"},...kids.map(kc)):h("div",{class:"dim"},A&&(B||solo)?"Press Breed.":"Pick two parents, or press Parent on two creatures in the Den. Choose None for Parent B to make variations of one theme."))};
   /* ---- Dex ---- */
   const dex=()=>{const o=have();const chip=(on,t)=>h("span",{style:"border:1px solid "+(on?"var(--ac)":"var(--bd)")+";color:"+(on?"var(--ac)":"var(--dim)")+";border-radius:5px;padding:2px 8px;font-size:12px"},(on?"✓ ":"")+t);
    const sec=(t,items)=>h("div",{style:"display:flex;flex-direction:column;gap:5px"},h("b",{},t),h("div",{style:"display:flex;gap:5px;flex-wrap:wrap"},...items));
