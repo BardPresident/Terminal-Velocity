@@ -1258,7 +1258,7 @@ const fmtDate=t=>{const d=new Date(t),hm=" "+pad(d.getHours())+":"+pad(d.getMinu
 const sleep=ms=>new Promise(r=>setTimeout(r,ms));
 const LS={get(k,d){try{const v=localStorage.getItem(k);return v==null?d:JSON.parse(v)}catch(e){return d}},set(k,v){try{localStorage.setItem(k,JSON.stringify(v));return true}catch(e){return false}}};
 const fmtUp=s=>{s=Math.max(0,Math.round(s));const d=Math.floor(s/86400),hr=Math.floor(s%86400/3600),m=Math.floor(s%3600/60),sc=s%60;if(d)return d+" d "+hr+" h";if(hr)return hr+" h "+m+" min";if(m)return m+" min "+sc+" s";return sc+" s"};
-const OS={apps:{},wins:[],z:10,bus:{},boot:performance.now(),ver:"1.0 build 1115-0555"};
+const OS={apps:{},wins:[],z:10,bus:{},boot:performance.now(),ver:"1.0 build 1115-0614"};
 OS.on=(ev,f)=>{(OS.bus[ev]=OS.bus[ev]||[]).push(f);return f};
 OS.off=(ev,f)=>{OS.bus[ev]=(OS.bus[ev]||[]).filter(x=>x!==f)};
 /* reboot that always fetches the newest copy of this page (like Ctrl+Shift+R), then reloads */
@@ -2403,12 +2403,12 @@ defApp("backup",{name:"Backup",icon:"save",cat:"Tools",w:560,h:640,single:true,d
     pers?h("div",{class:"dim"},"Browser storage is "+pers+"."):"",
     sec("Create a backup"),mk("files","Files (/home/user)"),mk("settings","Settings and app data"),mk("game","Game save (Terminal Velocity)"),
     h("div",{class:"row",style:"border:0;padding:0"},h("button",{class:"btn pri",onclick:async()=>{const inc={files:cb.files.checked,settings:cb.settings.checked,game:cb.game.checked};if(!inc.files&&!inc.settings&&!inc.game)return toast("Pick something to back up",1);
-      try{msg.textContent="packing...";const{blob,man}=await bkMake(inc,t=>msg.textContent=t);const d=new Date(),nm="TVOS-backup-"+MC.iso(d)+"_"+pad(d.getHours())+pad(d.getMinutes())+".zip";download(nm,blob,"application/zip");LS.set("tvos_backup_last",Date.now());BKT.mark(inc);msg.textContent="Saved "+nm+" ("+fmtBytes(blob.size)+", "+man.files.filter(f=>!f.dir).length+" files, "+man.keys+" settings items). Keep it somewhere safe, ideally in cloud storage (Google Drive, OneDrive or Dropbox), so it survives losing this device.";toast("Backup created")}catch(e){msg.textContent="Backup failed: "+e.message;toast("Backup failed",1)}}},ic("dl")," Create backup ZIP"),
+      try{msg.textContent="choose where to save...";const r=await BKT.make(inc,t=>msg.textContent=t);if(!r){msg.textContent="Cancelled. Nothing was saved.";return}msg.textContent=(r.sure?"Saved ":"Download started: ")+r.nm+" ("+fmtBytes(r.blob.size)+", "+r.man.files.filter(f=>!f.dir).length+" files, "+r.man.keys+" settings items)."+(r.sure?"":" Check that the file arrived.")+" Keep it somewhere safe, ideally in cloud storage (Google Drive, OneDrive or Dropbox), so it survives losing this device.";toast(r.sure?"Backup saved":"Backup download started")}catch(e){msg.textContent="Backup failed: "+e.message;toast("Backup failed",1)}}},ic("dl")," Create backup ZIP"),
      h("button",{class:"btn",title:"Ask the browser not to clear this OS's storage",onclick:async()=>{try{const ok=await navigator.storage.persist();toast(ok?"Storage marked persistent":"Browser declined persistent storage",!ok);draw()}catch(e){toast("Not supported here",1)}}},"Protect storage")),
     msg,
     sec("Restore from a backup ZIP"),
     h("div",{class:"dim"},"Choose a ZIP made by this app. You can pick what to restore before anything changes."),
-    h("div",{class:"row",style:"border:0;padding:0"},h("button",{class:"btn",onclick:async()=>{const f=(await pickDisk(".zip,application/zip"))[0];if(f)restoreFrom(f)}},ic("up")," Choose backup ZIP...")),
+    h("div",{class:"row",style:"border:0;padding:0"},h("button",{class:"btn",onclick:async()=>{const f=(await pickDisk(".zip,application/zip"))[0];if(f)restoreFrom(f)}},ic("up")," Choose backup ZIP..."),h("button",{class:"btn",title:"Open a backup file and prove it can be read. Nothing is changed.",onclick:async()=>{const f=(await pickDisk(".zip,application/zip"))[0];if(!f)return;msg.textContent="checking...";const v=await BKT.verify(f);msg.textContent="";dlgAlert(v.lines.join("\n"),v.ok?"Backup checked":"Backup problem")}},ic("eye")," Check a backup file")),
     sec("Save the OS itself"),h("div",{class:"dim"},"Download this whole OS as one .html file. Host it anywhere or give it to a friend."),h("div",{class:"row",style:"border:0;padding:0"},h("button",{class:"btn",onclick:()=>saveOS()},ic("save")," Save OS as .html")),sec("Game save only"),
     h("div",{class:"row",style:"border:0;padding:0"},h("button",{class:"btn",onclick:()=>{const g=localStorage.getItem("terminal_velocity_v3");if(!g)return toast("No game save yet",1);download("terminal-velocity-save-"+MC.iso(new Date())+".json",g,"application/json")}},"Export game save"),
      h("button",{class:"btn",onclick:async()=>{const f=(await pickDisk(".json,.txt"))[0];if(!f)return;try{const t=await f.text();const o=JSON.parse(t);if(!o||typeof o!=="object")throw 0;if(!await dlgConfirm("Replace your current game save with this file? The OS restarts afterwards.","Import game save","Replace"))return;localStorage.setItem("terminal_velocity_v3",t);toast("Game save imported. Restarting...");setTimeout(()=>location.reload(),1200)}catch(e){toast("That is not a game save file",1)}}},"Import game save")),
@@ -4207,13 +4207,29 @@ const BKT={
  draw(s){const el=document.getElementById("bkt");if(!el)return;s=s||BKT.st();const lv=BKT.level(s);el.querySelector(".dot")?.remove();
   if(lv){el.append(h("i",{class:"dot",style:"background:var("+(lv===2?"--er":"--wn")+")"}))}
   el.title=!s.has?"Backup: nothing to save yet":lv?"Backup: not in a backup yet: "+BKT.say(s.ch)+". "+BKT.ago(s):"Backup: everything is saved. "+BKT.ago(s)},
- async quick(){try{toast("Packing your backup...");const{blob,man}=await bkMake({files:true,settings:true,game:true});const d=new Date(),nm="TVOS-backup-"+MC.iso(d)+"_"+pad(d.getHours())+pad(d.getMinutes())+".zip";download(nm,blob,"application/zip");LS.set("tvos_backup_last",Date.now());BKT.mark();
-   BKT.note("Saved "+nm+" ("+fmtBytes(blob.size)+"). Keep it in cloud storage (Google Drive, OneDrive or Dropbox) so it survives losing this device.",[["OK",()=>{}]],9000)}catch(e){toast("Backup failed: "+e.message,1)}},
+ /* choose where to save first (so a cancel is a cancel), then pack and write. "sure" is true only when the browser confirmed the file was written. */
+ async make(inc,onProg){const d=new Date();let nm="TVOS-backup-"+MC.iso(d)+"_"+pad(d.getHours())+pad(d.getMinutes())+".zip",fh=null;
+  if(window.showSaveFilePicker){try{fh=await showSaveFilePicker({suggestedName:nm,types:[{description:"Backup ZIP",accept:{"application/zip":[".zip"]}}]})}catch(e){if(e&&e.name==="AbortError")return null;fh=null}}
+  const{blob,man}=await bkMake(inc,onProg);let sure=false;
+  if(fh){try{const w=await fh.createWritable();await w.write(blob);await w.close();sure=true;nm=fh.name||nm}catch(e){fh=null}}
+  if(!sure)download(nm,blob,"application/zip");
+  LS.set("tvos_backup_last",Date.now());BKT.mark(inc);return{nm,blob,man,sure}},
+ /* open a backup ZIP and prove every part of it can be read, without changing anything */
+ async verify(file){const out={ok:false,lines:[]};try{const z=await bkZipRead(file),mb=z.get("backup.json");if(!mb)throw new Error("no backup.json: this is not a Terminal Velocity OS backup");
+   const man=JSON.parse(new TextDecoder().decode(await bkBytes(mb)));if(man.format!==BK_FMT)throw new Error("unknown backup format");
+   let n=0,bad=[];for(const f of man.files||[]){if(f.dir)continue;const en=z.get("files"+f.p);if(!en){bad.push(f.p+" (missing)");continue}try{await bkBytes(en);n++}catch(e){bad.push(f.p+" (unreadable)")}}
+   let keys=0;const lb=z.get("localstorage.json");if(lb){const ls=JSON.parse(new TextDecoder().decode(await bkBytes(lb)));keys=Object.keys(ls).length}
+   out.lines.push("Made: "+(man.mc||man.created||"?")+" by build "+(man.build||"?"),"Files readable: "+n+(bad.length?" of "+(n+bad.length):""),"Settings and app data items readable: "+keys);
+   if(bad.length)out.lines.push("Problems: "+bad.slice(0,5).join(", ")+(bad.length>5?" and "+(bad.length-5)+" more":""));else out.ok=true}
+  catch(e){out.lines.push("This file cannot be restored: "+e.message)}
+  out.lines.push(out.ok?"This backup is good. Nothing was changed.":"Do not rely on this file.");return out},
+ async quick(){try{const r=await BKT.make({files:true,settings:true,game:true},null);if(!r)return toast("Backup cancelled. Nothing was saved.");
+   BKT.note((r.sure?"Saved ":"Download started: ")+r.nm+" ("+fmtBytes(r.blob.size)+")."+(r.sure?"":" Check that the file arrived.")+" Keep it in cloud storage (Google Drive, OneDrive or Dropbox) so it survives losing this device.",[["OK",()=>{}]],9000)}catch(e){toast("Backup failed: "+e.message,1)}},
  note(text,btns,ms){const t=h("div",{class:"toast",style:"display:flex;flex-direction:column;gap:8px;pointer-events:auto"},h("div",{},text),h("div",{style:"display:flex;gap:6px;flex-wrap:wrap"},...btns.map(([n,f,pri])=>h("button",{class:"btn sm"+(pri?" pri":""),onclick:()=>{t.remove();f()}},n))));$("#toasts").append(t);setTimeout(()=>t.remove(),ms||22000)},
  menu(e){const s=BKT.st(),q=LS.get("tvos_backup_quiet",0),lv=BKT.level(s);BKT.draw(s);
   ctxMenu(e.clientX,Math.max(10,e.clientY-170),[{t:!s.has?"Nothing to back up yet":lv?"Not backed up: "+BKT.say(s.ch):"Everything is backed up",dis:true},{t:BKT.ago(s),dis:true},"-",{t:"Back up now",ic:"dl",fn:()=>BKT.quick()},{t:"Backup options...",ic:"save",fn:()=>OS.open("backup")},{t:q?"Turn reminders on":"Turn reminders off",ic:"eye",fn:()=>{LS.set("tvos_backup_quiet",q?0:1);toast(q?"Backup reminders are on":"Backup reminders are off. The tray icon still shows the status.")}},{t:"Tip: keep backups in cloud storage",dis:true}])},
  /* a reminder is rare: at most one a day, only for real work, and it can be snoozed or switched off */
- tick(){if(document.hidden)return;const s=BKT.st();BKT.draw(s);if(NEST||LS.get("tvos_backup_quiet",0)||!s.ch.length)return;const now=Date.now();if(now<LS.get("tvos_backup_snooze",0)||now-LS.get("tvos_backup_toast",0)<864e5)return;
+ tick(){if(document.hidden)return;const s=BKT.st();BKT.draw(s);if(!NEST&&s.has&&!LS.get("tvos_backup_intro",0)){LS.set("tvos_backup_intro",1);BKT.note("A note on your data: everything you make here is stored only in this browser, on this device. There is no account and no copy anywhere else. The disk icon in the tray backs it up in one click.",[["Back up now",()=>BKT.quick(),1],["OK",()=>{}]],40000);return}if(NEST||LS.get("tvos_backup_quiet",0)||!s.ch.length)return;const now=Date.now();if(now<LS.get("tvos_backup_snooze",0)||now-LS.get("tvos_backup_toast",0)<864e5)return;
   const big=s.files>=10||s.areas>=3,need=s.last?(s.age>=7||(s.age>=1&&big)):(s.age>=2);if(!need)return;LS.set("tvos_backup_toast",now);
   BKT.note("Not in a backup yet: "+BKT.say(s.ch)+". "+BKT.ago(s)+" A backup kept in cloud storage (Google Drive, OneDrive or Dropbox) survives losing this device.",[["Back up now",()=>BKT.quick(),1],["Not now",()=>{LS.set("tvos_backup_snooze",Date.now()+3*864e5);toast("I will not ask again for 3 days")}],["Stop reminding me",()=>{LS.set("tvos_backup_quiet",1);toast("Reminders are off. You can turn them on from the tray icon.")}]],30000)}
 };
