@@ -27,7 +27,7 @@ CONTENTS
 =====================================================================
 
 Terminal Velocity OS is a complete desktop that runs entirely inside a
-web browser, from ONE file (terminal-velocity-os.html, about 620 KB).
+web browser, from ONE file (terminal-velocity.html).
 No images, no libraries, no install, no build step, no server, no
 accounts and no tracking. Everything you make stays in your browser until
 you choose to export it.
@@ -47,7 +47,7 @@ how much of the machine the OS uses.
 2. QUICK START AND HOSTING
 =====================================================================
 
-  1. Download terminal-velocity-os.html.
+  1. Download terminal-velocity.html.
   2. Double-click it. It opens in any modern browser and works offline.
   3. Press Ctrl+Space and type the name of anything you want to open.
 
@@ -64,7 +64,7 @@ Useful addresses (add them after the file name):
                                 mount someone's archive (section 6)
 
 Files delivered:
-  terminal-velocity-os.html     the OS, with the game inside it
+  terminal-velocity.html     the OS, with the game inside it
   README.txt                    this file
   (generate-manifest.js is built into the OS: Manifest Maker has it.)
 
@@ -188,6 +188,7 @@ Terminal
   head, tail, wc, sort, pipes |, redirects > >>, globs *, Tab complete,
   history. Also open, edit, play, view, theme, wallpaper, neofetch,
   reboot, saveos. Type "help".
+  A few words are not in the help on purpose. Ask the ship.
 
 Files
   The file manager. The whole archive is at /archive (read-only), your
@@ -657,7 +658,7 @@ SHARE YOUR OWN ARCHIVE (Manifest Maker)
      download manifest.json.
   3. Upload manifest.json into the same online folder.
   4. Share the link it gives you, which looks like:
-     terminal-velocity-os.html?manifest=https://yoursite.org/files/manifest.json
+     terminal-velocity.html?manifest=https://yoursite.org/files/manifest.json
   generate-manifest.js is the command line version:
      node generate-manifest.js ./files https://yoursite.org/files
   If the OS and your files are on different websites, the files server
