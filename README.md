@@ -472,6 +472,35 @@ Toolbox
 
 App Runner
   Runs pasted or opened HTML in a sandbox.
+  Press Install in its bar to turn the app you are testing into a
+  real installed program (see Programs).
+
+Programs
+  Add/Remove Programs for web apps. Install your own apps and they get
+  a desktop icon, a place in Start and Spotlight, and their own window,
+  exactly like the built-in apps. The built-in apps are not listed in
+  Programs and cannot be changed or removed from it.
+  Two kinds of app can be installed:
+    From a link   A site you type or paste, for example
+                  https://www.biblegateway.com. It needs the internet,
+                  and it only works for sites that allow themselves to be
+                  shown inside other pages (the Browser lists many). If a
+                  site shows a blank page, it refuses; the window has a
+                  Browser tab button to open it there instead.
+    A single file Paste the HTML, choose a .html file from your computer,
+                  or choose one from Files (right-click an .html file in
+                  Files > Install as program). The OS keeps a saved copy,
+                  so it works offline.
+  A saved copy runs in a sandbox: it cannot see your files, diary or
+  saves. It has its own private localStorage, kept between launches
+  (IndexedDB and cookies are not available to it). Links in it that
+  open a new window open as Browser tabs. Name, category (pick or type
+  a new one), icon, description and "show on the desktop" can be edited
+  at any time. Export saves a copy as a .html file (a link app copies
+  its link). Remove deletes the app and its data. Size limit for one
+  single-file app is about 1.5 MB.
+  Installed programs are included in Backup and show in Clean-up under
+  "Your writing and creations".
 
 --- GAMES ------------------------------------------------------------
 
