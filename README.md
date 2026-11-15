@@ -480,6 +480,9 @@ Programs
   a desktop icon, a place in Start and Spotlight, and their own window,
   exactly like the built-in apps. The built-in apps are not listed in
   Programs and cannot be changed or removed from it.
+  Installed programs always come last, after every built-in app: at the
+  end of the desktop icons, and in Start under their own "Installed:"
+  headings (one per category you chose), so yours are easy to find.
   Two kinds of app can be installed:
     From a link   A site you type or paste, for example
                   https://www.biblegateway.com. It needs the internet,
