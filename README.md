@@ -524,6 +524,16 @@ THE BACKUP ICON IN THE TRAY
   backup (or a day, if you have made a lot), or two days after you first
   had something worth saving. Choose Not now (quiet for 3 days) or Stop
   reminding me. The Backup app has the same switch.
+  Where the browser allows it (Chrome and ChromeOS do), a backup asks
+  where to save first. The icon only counts it as saved once the file is
+  really written; if you cancel, nothing is marked. Where the browser
+  only offers a plain download, the OS says so and asks you to check the
+  file arrived.
+  Backup > "Check a backup file" opens a ZIP and proves every part of it
+  can be read, without changing anything. Do this now and then: a backup
+  nobody has tested is only a hope.
+  The first time you have something worth saving, a one-time note says
+  plainly that your data lives only in this browser.
   Keep your backups in cloud storage (Google Drive, OneDrive, Dropbox).
   A backup that stays on the same device does not protect you if you
   lose it. On a Chromebook you can set Chrome's download location to a
