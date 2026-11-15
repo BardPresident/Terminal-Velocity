@@ -290,6 +290,20 @@ Paint
     timer, Mirror, Switch camera) and it becomes the picture, ready to
     draw all over. Your drawing sits on its own layer above the photo,
     so "Clear drawing" rubs out everything you drew and keeps the photo.
+  - New picture: sizes are named for what you make with them, and
+    Widescreen 1280 x 720 is the default (thumbnails, slides, wallpaper,
+    and the same size the Recorder uses). Also Square cover 1000 x 1000
+    (albums, podcasts, profile pictures), Book cover 1000 x 1500, Phone
+    720 x 1280, Page 1240 x 1754 (A4 at draft quality) and Banner
+    1500 x 500. A small preview shows the shape. "Custom size" takes
+    64 to 2000 pixels each way and remembers your last three. Sizes stop
+    there on purpose, so Paint stays quick on small computers.
+  - Guides: the Guides button cycles Off, Safe area (keep text inside
+    the dashed line, because sites crop covers) and Circle crop (profile
+    pictures). Guides help you draw and are never saved.
+  - Save: PNG for best quality, or JPG with a size limit (under 1 MB,
+    500 KB or 200 KB), because many sites reject big uploads. The
+    message shows the final file size.
   - Tools: Brush, Soft, Spray, Rainbow, Sparkle, Eraser, Line, Box,
     Circle, Heart, Star, Fill (with an adjustable range), Pick
     (eyedropper), Text (four fonts), Stamp (24 faces, hearts, stars, a
