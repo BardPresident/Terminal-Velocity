@@ -1258,7 +1258,7 @@ const fmtDate=t=>{const d=new Date(t),hm=" "+pad(d.getHours())+":"+pad(d.getMinu
 const sleep=ms=>new Promise(r=>setTimeout(r,ms));
 const LS={get(k,d){try{const v=localStorage.getItem(k);return v==null?d:JSON.parse(v)}catch(e){return d}},set(k,v){try{localStorage.setItem(k,JSON.stringify(v));return true}catch(e){return false}}};
 const fmtUp=s=>{s=Math.max(0,Math.round(s));const d=Math.floor(s/86400),hr=Math.floor(s%86400/3600),m=Math.floor(s%3600/60),sc=s%60;if(d)return d+" d "+hr+" h";if(hr)return hr+" h "+m+" min";if(m)return m+" min "+sc+" s";return sc+" s"};
-const OS={apps:{},wins:[],z:10,bus:{},boot:performance.now(),ver:"1.0 build 1115-0911"};
+const OS={apps:{},wins:[],z:10,bus:{},boot:performance.now(),ver:"1.0 build 1115-0927"};
 OS.on=(ev,f)=>{(OS.bus[ev]=OS.bus[ev]||[]).push(f);return f};
 OS.off=(ev,f)=>{OS.bus[ev]=(OS.bus[ev]||[]).filter(x=>x!==f)};
 /* reboot that always fetches the newest copy of this page (like Ctrl+Shift+R), then reloads */
@@ -3003,6 +3003,10 @@ const BR={
  /* Reload works like Ctrl+Shift+R: ask the network (not the cache) for the page and the files it uses, so the cache is updated, then the frame loads fresh.
     Pages on the same site as this OS are refreshed in full (page, styles, scripts, pictures, and the files the styles use).
     Other sites: the page itself is refreshed; the browser may keep its own copy of their pictures and scripts. */
+ /* Chrome keeps separate cache entries for pages shown in frames, so refreshing with fetch() alone may not reach them.
+    For pages on this OS's own site, the frame also loads the address with a throwaway marker, which cannot be in any cache. The marker is hidden again once the page has loaded. */
+ bust(u){try{const x=new URL(u);if(x.origin!==location.origin)return u;x.searchParams.set("_tvr",Date.now());return x.href}catch(e){return u}},
+ clean(u){try{const x=new URL(u);if(!x.searchParams.has("_tvr"))return u;x.searchParams.delete("_tvr");return x.href}catch(e){return u}},
  async freshen(u){const seen=new Set(),q=[];let n=0;
   const abs=(r,base)=>{try{const x=new URL(r,base);return/^https?:$/.test(x.protocol)?x.href.split("#")[0]:null}catch(e){return null}};
   const add=(r,base)=>{const a=abs(r,base);if(a&&!seen.has(a)&&new URL(a).origin===location.origin&&seen.size<150){seen.add(a);q.push(a)}};
@@ -3088,9 +3092,9 @@ defApp("browser",{name:"Browser",icon:"globe",cat:"Internet",w:960,h:680,single:
    const f=h("iframe",{style:"position:absolute;inset:0;width:100%;height:100%;border:0;background:#fff",sandbox:BR.sandboxFor(u),referrerpolicy:"no-referrer",allow:"fullscreen; autoplay; encrypted-media; picture-in-picture",allowfullscreen:"",loading:"eager"});
    const spin=h("div",{style:"position:absolute;left:0;right:0;top:0;padding:4px 8px;background:var(--pn2);font-size:12px;z-index:2"},"Loading "+BR.host(u)+"...");t.pane.append(f,spin);t.ifr=f;
    f.onload=()=>{spin.remove();hookFrame(f,t)};setTimeout(()=>spin.remove(),15000);
-   if(hard){spin.textContent="Refreshing from the network...";Promise.race([BR.freshen(u),new Promise(r=>setTimeout(r,7000))]).then(()=>{if(t.ifr===f){spin.textContent="Loading "+BR.host(u)+"...";f.src=u}})}else f.src=u}
+   if(hard){spin.textContent="Refreshing from the network...";Promise.race([BR.freshen(u),new Promise(r=>setTimeout(r,7000))]).then(()=>{if(t.ifr===f){spin.textContent="Loading "+BR.host(u)+"...";f.src=BR.bust(u)}})}else f.src=u}
   /* pages on the same origin as the OS (republicka.life) can be wired up directly: new-window links become OS tabs */
-  function hookFrame(f,t){try{const d=f.contentDocument,w=f.contentWindow;if(!d||!w||d.__tvh)return;d.__tvh=1;try{const cu=w.location.href;if(/^https?:/i.test(cu)&&cu!==t.url&&cu!=="about:blank"){t.url=cu;if(t.hist[t.pos]!==cu){t.hist=t.hist.slice(0,t.pos+1);t.hist.push(cu);t.pos=t.hist.length-1}if(t===cur)syncBar();drawTabs()}}catch(e){}
+  function hookFrame(f,t){try{const d=f.contentDocument,w=f.contentWindow;if(!d||!w||d.__tvh)return;d.__tvh=1;try{const cu=BR.clean(w.location.href);if(/^https?:/i.test(cu)&&cu!==t.url&&cu!=="about:blank"){t.url=cu;if(t.hist[t.pos]!==cu){t.hist=t.hist.slice(0,t.pos+1);t.hist.push(cu);t.pos=t.hist.length-1}if(t===cur)syncBar();drawTabs()}}catch(e){}
    d.addEventListener("click",e=>{if(e.defaultPrevented||e.button||e.ctrlKey||e.metaKey||e.shiftKey)return;const a=e.target.closest&&e.target.closest("a[href]");if(!a||a.hasAttribute("download"))return;const tg=(a.getAttribute("target")||"").toLowerCase();if(tg!=="_blank"&&tg!=="_new")return;if(!/^https?:\/\//i.test(a.href))return;e.preventDefault();newTab(a.href)},true);
    w.open=u=>{try{const x=new URL(u,d.baseURI).href;if(/^https?:\/\//i.test(x))newTab(x)}catch(e){}return null}}catch(e){}}
   async function pasteGo(){try{const x=(await navigator.clipboard.readText()||"").trim();if(!x)return toast("Clipboard is empty",1);go(x)}catch(e){bar.focus();toast("Paste the link into the address bar",1)}}
