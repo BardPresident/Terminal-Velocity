@@ -1258,7 +1258,7 @@ const fmtDate=t=>{const d=new Date(t),hm=" "+pad(d.getHours())+":"+pad(d.getMinu
 const sleep=ms=>new Promise(r=>setTimeout(r,ms));
 const LS={get(k,d){try{const v=localStorage.getItem(k);return v==null?d:JSON.parse(v)}catch(e){return d}},set(k,v){try{localStorage.setItem(k,JSON.stringify(v));return true}catch(e){return false}}};
 const fmtUp=s=>{s=Math.max(0,Math.round(s));const d=Math.floor(s/86400),hr=Math.floor(s%86400/3600),m=Math.floor(s%3600/60),sc=s%60;if(d)return d+" d "+hr+" h";if(hr)return hr+" h "+m+" min";if(m)return m+" min "+sc+" s";return sc+" s"};
-const OS={apps:{},wins:[],z:10,bus:{},boot:performance.now(),ver:"1.0 build 1115-0614"};
+const OS={apps:{},wins:[],z:10,bus:{},boot:performance.now(),ver:"1.0 build 1115-0620"};
 OS.on=(ev,f)=>{(OS.bus[ev]=OS.bus[ev]||[]).push(f);return f};
 OS.off=(ev,f)=>{OS.bus[ev]=(OS.bus[ev]||[]).filter(x=>x!==f)};
 /* reboot that always fetches the newest copy of this page (like Ctrl+Shift+R), then reloads */
@@ -1342,7 +1342,7 @@ function applyTheme(id){
 function wallId(){return SET.wall==="auto"?THEMES[SET.theme].w:SET.wall}
 
 /* ---- toasts, context menu, dialogs ---- */
-function toast(msg,err){const t=h("div",{class:"toast"+(err?" er":"")},msg);$("#toasts").append(t);setTimeout(()=>t.remove(),err?5200:3000)}
+function toast(msg,err){const t=h("div",{class:"toast"+(err?" er":"")},msg);$("#toasts").append(t);setTimeout(()=>t.remove(),Math.max(err?6500:4000,Math.min(16000,String(msg).length*75)))}
 let ctxOpen=false;
 function ctxMenu(x,y,items){const m=$("#ctx");m.innerHTML="";for(const it of items){if(it==="-"){m.append(h("hr"));continue}m.append(h("div",{class:it.dis?"d":"",onclick:e=>{e.stopPropagation();hideCtx();it.fn&&it.fn()}},it.ic?ic(it.ic):h("span",{style:"width:1em"}),it.t))}
  m.style.display="block";const w=m.offsetWidth,hh=m.offsetHeight;m.style.left=Math.max(2,Math.min(x,innerWidth-w-4))+"px";m.style.top=Math.max(2,Math.min(y,innerHeight-hh-4))+"px";ctxOpen=true}
@@ -4224,14 +4224,14 @@ const BKT={
   catch(e){out.lines.push("This file cannot be restored: "+e.message)}
   out.lines.push(out.ok?"This backup is good. Nothing was changed.":"Do not rely on this file.");return out},
  async quick(){try{const r=await BKT.make({files:true,settings:true,game:true},null);if(!r)return toast("Backup cancelled. Nothing was saved.");
-   BKT.note((r.sure?"Saved ":"Download started: ")+r.nm+" ("+fmtBytes(r.blob.size)+")."+(r.sure?"":" Check that the file arrived.")+" Keep it in cloud storage (Google Drive, OneDrive or Dropbox) so it survives losing this device.",[["OK",()=>{}]],9000)}catch(e){toast("Backup failed: "+e.message,1)}},
- note(text,btns,ms){const t=h("div",{class:"toast",style:"display:flex;flex-direction:column;gap:8px;pointer-events:auto"},h("div",{},text),h("div",{style:"display:flex;gap:6px;flex-wrap:wrap"},...btns.map(([n,f,pri])=>h("button",{class:"btn sm"+(pri?" pri":""),onclick:()=>{t.remove();f()}},n))));$("#toasts").append(t);setTimeout(()=>t.remove(),ms||22000)},
+   BKT.note((r.sure?"Saved ":"Download started: ")+r.nm+" ("+fmtBytes(r.blob.size)+")."+(r.sure?"":" Check that the file arrived.")+" Keep it in cloud storage (Google Drive, OneDrive or Dropbox) so it survives losing this device.",[["OK",()=>{}]])}catch(e){toast("Backup failed: "+e.message,1)}},
+ note(text,btns){const t=h("div",{class:"toast",style:"display:flex;flex-direction:column;gap:8px;pointer-events:auto"},h("div",{},text),h("div",{style:"display:flex;gap:6px;flex-wrap:wrap"},...btns.map(([n,f,pri])=>h("button",{class:"btn sm"+(pri?" pri":""),onclick:()=>{t.remove();f()}},n))));$("#toasts").append(t);return t},
  menu(e){const s=BKT.st(),q=LS.get("tvos_backup_quiet",0),lv=BKT.level(s);BKT.draw(s);
   ctxMenu(e.clientX,Math.max(10,e.clientY-170),[{t:!s.has?"Nothing to back up yet":lv?"Not backed up: "+BKT.say(s.ch):"Everything is backed up",dis:true},{t:BKT.ago(s),dis:true},"-",{t:"Back up now",ic:"dl",fn:()=>BKT.quick()},{t:"Backup options...",ic:"save",fn:()=>OS.open("backup")},{t:q?"Turn reminders on":"Turn reminders off",ic:"eye",fn:()=>{LS.set("tvos_backup_quiet",q?0:1);toast(q?"Backup reminders are on":"Backup reminders are off. The tray icon still shows the status.")}},{t:"Tip: keep backups in cloud storage",dis:true}])},
  /* a reminder is rare: at most one a day, only for real work, and it can be snoozed or switched off */
- tick(){if(document.hidden)return;const s=BKT.st();BKT.draw(s);if(!NEST&&s.has&&!LS.get("tvos_backup_intro",0)){LS.set("tvos_backup_intro",1);BKT.note("A note on your data: everything you make here is stored only in this browser, on this device. There is no account and no copy anywhere else. The disk icon in the tray backs it up in one click.",[["Back up now",()=>BKT.quick(),1],["OK",()=>{}]],40000);return}if(NEST||LS.get("tvos_backup_quiet",0)||!s.ch.length)return;const now=Date.now();if(now<LS.get("tvos_backup_snooze",0)||now-LS.get("tvos_backup_toast",0)<864e5)return;
-  const big=s.files>=10||s.areas>=3,need=s.last?(s.age>=7||(s.age>=1&&big)):(s.age>=2);if(!need)return;LS.set("tvos_backup_toast",now);
-  BKT.note("Not in a backup yet: "+BKT.say(s.ch)+". "+BKT.ago(s)+" A backup kept in cloud storage (Google Drive, OneDrive or Dropbox) survives losing this device.",[["Back up now",()=>BKT.quick(),1],["Not now",()=>{LS.set("tvos_backup_snooze",Date.now()+3*864e5);toast("I will not ask again for 3 days")}],["Stop reminding me",()=>{LS.set("tvos_backup_quiet",1);toast("Reminders are off. You can turn them on from the tray icon.")}]],30000)}
+ tick(){if(document.hidden)return;const s=BKT.st();BKT.draw(s);if(!NEST&&s.has&&!LS.get("tvos_backup_intro",0)){if(!BKT.introUp){BKT.introUp=1;const done=()=>{LS.set("tvos_backup_intro",1);BKT.introUp=0};BKT.note("A note on your data: everything you make here is stored only in this browser, on this device. There is no account and no copy anywhere else. The disk icon in the tray backs it up in one click. This note stays until you close it.",[["Back up now",()=>{done();BKT.quick()},1],["Got it",done]])}return}if(NEST||LS.get("tvos_backup_quiet",0)||!s.ch.length)return;const now=Date.now();if(now<LS.get("tvos_backup_snooze",0)||now-LS.get("tvos_backup_toast",0)<864e5)return;
+  const big=s.files>=10||s.areas>=3,need=s.last?(s.age>=7||(s.age>=1&&big)):(s.age>=2);if(!need)return;LS.set("tvos_backup_toast",now);try{BKT.rem&&BKT.rem.remove()}catch(e){}
+  BKT.rem=BKT.note("Not in a backup yet: "+BKT.say(s.ch)+". "+BKT.ago(s)+" A backup kept in cloud storage (Google Drive, OneDrive or Dropbox) survives losing this device.",[["Back up now",()=>BKT.quick(),1],["Not now",()=>{LS.set("tvos_backup_snooze",Date.now()+3*864e5);toast("I will not ask again for 3 days")}],["Stop reminding me",()=>{LS.set("tvos_backup_quiet",1);toast("Reminders are off. You can turn them on from the tray icon.")}]])}
 };
 document.head.append(h("style",{},"#bkt{position:relative;display:inline-flex}#bkt .dot{position:absolute;right:-3px;top:-3px;width:8px;height:8px;border-radius:50%;border:1px solid var(--bg)}"));
 setTimeout(BKT.tick,25000);setInterval(BKT.tick,120000);
