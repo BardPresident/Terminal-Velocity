@@ -532,8 +532,10 @@ THE BACKUP ICON IN THE TRAY
   Backup > "Check a backup file" opens a ZIP and proves every part of it
   can be read, without changing anything. Do this now and then: a backup
   nobody has tested is only a hope.
-  The first time you have something worth saving, a one-time note says
-  plainly that your data lives only in this browser.
+  The first time you have something worth saving, a note says plainly
+  that your data lives only in this browser. It stays on screen until
+  you close it, and it comes back next time if you never did. Backup
+  reminders also stay until you answer them.
   Keep your backups in cloud storage (Google Drive, OneDrive, Dropbox).
   A backup that stays on the same device does not protect you if you
   lose it. On a Chromebook you can set Chrome's download location to a
