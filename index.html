@@ -1258,7 +1258,7 @@ const fmtDate=t=>{const d=new Date(t),hm=" "+pad(d.getHours())+":"+pad(d.getMinu
 const sleep=ms=>new Promise(r=>setTimeout(r,ms));
 const LS={get(k,d){try{const v=localStorage.getItem(k);return v==null?d:JSON.parse(v)}catch(e){return d}},set(k,v){try{localStorage.setItem(k,JSON.stringify(v));return true}catch(e){return false}}};
 const fmtUp=s=>{s=Math.max(0,Math.round(s));const d=Math.floor(s/86400),hr=Math.floor(s%86400/3600),m=Math.floor(s%3600/60),sc=s%60;if(d)return d+" d "+hr+" h";if(hr)return hr+" h "+m+" min";if(m)return m+" min "+sc+" s";return sc+" s"};
-const OS={apps:{},wins:[],z:10,bus:{},boot:performance.now(),ver:"1.0 build 1115-0852"};
+const OS={apps:{},wins:[],z:10,bus:{},boot:performance.now(),ver:"1.0 build 1115-0911"};
 OS.on=(ev,f)=>{(OS.bus[ev]=OS.bus[ev]||[]).push(f);return f};
 OS.off=(ev,f)=>{OS.bus[ev]=(OS.bus[ev]||[]).filter(x=>x!==f)};
 /* reboot that always fetches the newest copy of this page (like Ctrl+Shift+R), then reloads */
@@ -3000,6 +3000,22 @@ const BR={
  engines:[{id:"marginalia",n:"Marginalia",url:"https://marginalia-search.com/search?query="},{id:"wikipedia",n:"Wikipedia",url:"https://en.wikipedia.org/w/index.php?search="},{id:"archive",n:"Internet Archive",url:"https://archive.org/search?query="},{id:"bible",n:"Bible Gateway (KJV)",url:"https://www.biblegateway.com/passage/?version=KJV&search="}],
  engine(){const id=LS.get("tvos_bm_engine","marginalia");return BR.engines.find(x=>x.id===id)||BR.engines[0]},
  host(u){try{return new URL(u).hostname.replace(/^www\./,"")}catch(e){return u}},
+ /* Reload works like Ctrl+Shift+R: ask the network (not the cache) for the page and the files it uses, so the cache is updated, then the frame loads fresh.
+    Pages on the same site as this OS are refreshed in full (page, styles, scripts, pictures, and the files the styles use).
+    Other sites: the page itself is refreshed; the browser may keep its own copy of their pictures and scripts. */
+ async freshen(u){const seen=new Set(),q=[];let n=0;
+  const abs=(r,base)=>{try{const x=new URL(r,base);return/^https?:$/.test(x.protocol)?x.href.split("#")[0]:null}catch(e){return null}};
+  const add=(r,base)=>{const a=abs(r,base);if(a&&!seen.has(a)&&new URL(a).origin===location.origin&&seen.size<150){seen.add(a);q.push(a)}};
+  try{const x=new URL(u);
+   if(x.origin!==location.origin){await fetch(u,{cache:"reload",mode:"no-cors"});return}
+   const r=await fetch(u,{cache:"reload"});if(!r.ok||!/html/i.test(r.headers.get("content-type")||""))return;
+   const doc=new DOMParser().parseFromString(await r.text(),"text/html"),base=abs(doc.querySelector("base[href]")?.getAttribute("href")||"",u)||u;
+   doc.querySelectorAll("link[href],script[src],img[src],source[src],video[poster],image[href]").forEach(e=>add(e.getAttribute("href")||e.getAttribute("src")||e.getAttribute("poster"),base));
+   doc.querySelectorAll("img[srcset],source[srcset]").forEach(e=>e.getAttribute("srcset").split(",").forEach(p=>add(p.trim().split(/\s+/)[0],base)));
+   doc.querySelectorAll("[style]").forEach(e=>{for(const m of e.getAttribute("style").matchAll(/url\(\s*['"]?([^'")]+)/g))add(m[1],base)});
+   const sheets=[];
+   while(q.length&&n<150){const batch=q.splice(0,12);n+=batch.length;await Promise.all(batch.map(async a=>{try{const rr=await fetch(a,{cache:"reload"});const ct=rr.headers.get("content-type")||"";if(/css/i.test(ct)&&sheets.length<30){sheets.push(a);const css=await rr.text();for(const m of css.matchAll(/url\(\s*['"]?([^'")]+)|@import\s+['"]([^'"]+)/g))add(m[1]||m[2],a)}}catch(e){}}))}
+  }catch(e){}},
  isBlocked(u){const hn=BR.host(u);return BR.blocked.find(b=>hn===b||hn.endsWith("."+b))},
  /* turn watch pages into their embeddable twins */
  embedFix(u){try{const x=new URL(u),hn=x.hostname.replace(/^www\./,"");
@@ -3020,7 +3036,7 @@ defApp("browser",{name:"Browser",icon:"globe",cat:"Internet",w:960,h:680,single:
  init(win,b,arg){
   let tabs=[],cur=null,idc=0,restoring=false;
   const bar=h("input",{class:"t",style:"flex:1;min-width:0",placeholder:"Type a web address, or words to search",spellcheck:"false",autocapitalize:"off",onkeydown:e=>{if(e.key==="Enter"){go(bar.value);bar.blur()}},onfocus:()=>bar.select()});
-  const bBack=h("button",{class:"btn sm",title:"Back",onclick:()=>step(-1)},ic("back")),bFwd=h("button",{class:"btn sm",title:"Forward",onclick:()=>step(1)},ic("fwd")),bRel=h("button",{class:"btn sm",title:"Reload",onclick:()=>reload()},ic("refresh")),bHome=h("button",{class:"btn sm",title:"Start page",onclick:()=>go("about:home")},ic("home")),bStar=h("button",{class:"btn sm",title:"Bookmark this page",onclick:()=>toggleBm()},ic("star")),bExt=h("button",{class:"btn sm",title:"Open this page in a real browser tab",onclick:()=>{const t=cur;if(t&&t.url!=="about:home")window.open(t.url,"_blank","noopener")}},"Open in new tab");
+  const bBack=h("button",{class:"btn sm",title:"Back",onclick:()=>step(-1)},ic("back")),bFwd=h("button",{class:"btn sm",title:"Forward",onclick:()=>step(1)},ic("fwd")),bRel=h("button",{class:"btn sm",title:"Reload from the network, like Ctrl+Shift+R (ignores the cache)",onclick:()=>reload()},ic("refresh")),bHome=h("button",{class:"btn sm",title:"Start page",onclick:()=>go("about:home")},ic("home")),bStar=h("button",{class:"btn sm",title:"Bookmark this page",onclick:()=>toggleBm()},ic("star")),bExt=h("button",{class:"btn sm",title:"Open this page in a real browser tab",onclick:()=>{const t=cur;if(t&&t.url!=="about:home")window.open(t.url,"_blank","noopener")}},"Open in new tab");
   const tabbar=h("div",{style:"display:flex;flex-direction:row;flex-wrap:nowrap;align-items:flex-end;gap:2px;overflow-x:auto;overflow-y:hidden;flex:none;padding:4px 4px 0;border-bottom:1px solid var(--bd)"}),bms=h("div",{style:"display:flex;gap:4px;overflow-x:auto;flex:none;padding:4px;border-bottom:1px solid var(--bd);min-height:26px;align-items:center"}),
    notice=h("div",{style:"flex:none;padding:5px 8px;font-size:12px;background:var(--pn2);border-bottom:1px solid var(--bd);color:var(--wn);overflow-wrap:anywhere"},"FREE WEB ONLY: this browser shows sites that allow themselves to be displayed inside other pages. Many big sites (Google, Facebook, GitHub, news sites, logins) refuse, so a page may be blank. Use Open in new tab for those. Links clicked inside a page are not tracked by Back/Forward."),
    hint=h("div",{style:"flex:none;padding:3px 8px;font-size:12px;display:none",class:"dim"}),view=h("div",{style:"position:relative;flex:1 1 0;min-height:0;background:var(--bg)"});
@@ -3047,7 +3063,7 @@ defApp("browser",{name:"Browser",icon:"globe",cat:"Internet",w:960,h:680,single:
    toggleBm=async()=>{if(!cur||cur.url==="about:home")return toast("Open a page first, then bookmark it",1);const u=cur.url;if(isBm(u)){rmBm(u);toast("Bookmark removed")}else{const v=await dlgPrompt("Bookmark name",BR.host(u),"Add bookmark");if(v==null)return;BR.setBm([...BR.bm(),{t:v.trim()||BR.host(u),u}]);drawBms();syncBar();toast("Bookmarked")}};
   function syncBar(){if(!cur)return;const hm=cur.url==="about:home";bar.value=cur.url==="about:home"?"":cur.url;bBack.disabled=cur.pos<=0;bFwd.disabled=cur.pos>=cur.hist.length-1;const home=cur.url==="about:home";bStar.style.color=!home&&isBm(cur.url)?"var(--wn)":"";bExt.disabled=home;bStar.disabled=home}
   function step(d){const t=cur;if(!t)return;const p=t.pos+d;if(p<0||p>=t.hist.length)return;t.pos=p;load(t,t.hist[p],true)}
-  function reload(){const t=cur;if(t)load(t,t.url,true)}
+  function reload(){const t=cur;if(t)load(t,t.url,true,true)}
   function go(s){const t=cur;if(!t)return;let u=BR.norm(s);if(!u)return;if(u!=="about:home")u=BR.embedFix(u);
    if(t.hist[t.pos]!==u){t.hist=t.hist.slice(0,t.pos+1);t.hist.push(u);t.pos=t.hist.length-1}load(t,u,true)}
   function showHome(t){const p=t.pane;p.innerHTML="";p.style.overflow="auto";const l=BR.bm(),hs=BR.hist().slice(0,10);
@@ -3063,7 +3079,7 @@ defApp("browser",{name:"Browser",icon:"globe",cat:"Internet",w:960,h:680,single:
     h("div",{style:"display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:8px"},...BR.sugg.map(s=>card(s[0],s[1]))),
     h("div",{class:"dim",style:"font-size:12px"},"These are suggestions. Any site can change its mind about embedding at any time."),
     ...(hs.length?[h("h3",{class:"ac",style:"margin:0"},"Recent"),h("div",{style:"display:flex;flex-direction:column;gap:4px"},...hs.map(x=>h("a",{href:"#",style:"overflow-wrap:anywhere",onclick:e=>{e.preventDefault();go(x.u)}},x.u)),h("div",{},h("button",{class:"btn sm",onclick:()=>{LS.set("tvos_bm_hist",[]);showHome(t)}},"Clear history")))]:[]))) }
-  function load(t,u,rec){t.url=u;if(t===cur){syncBar()}drawTabs();
+  function load(t,u,rec,hard){t.url=u;if(t===cur){syncBar()}drawTabs();
    if(u==="about:home"){if(t.ifr){t.ifr.remove();t.ifr=null}showHome(t);return}
    t.pane.innerHTML="";t.pane.style.overflow="hidden";t.ifr=null;
    if(!/^https:\/\//i.test(u)){t.pane.append(blockCard(u,/^http:/i.test(u)?"This is a plain http:// page. Browsers do not allow those inside an https page.":"Only https:// pages can be shown."));return}
@@ -3071,7 +3087,8 @@ defApp("browser",{name:"Browser",icon:"globe",cat:"Internet",w:960,h:680,single:
    BR.addHist(u);
    const f=h("iframe",{style:"position:absolute;inset:0;width:100%;height:100%;border:0;background:#fff",sandbox:BR.sandboxFor(u),referrerpolicy:"no-referrer",allow:"fullscreen; autoplay; encrypted-media; picture-in-picture",allowfullscreen:"",loading:"eager"});
    const spin=h("div",{style:"position:absolute;left:0;right:0;top:0;padding:4px 8px;background:var(--pn2);font-size:12px;z-index:2"},"Loading "+BR.host(u)+"...");t.pane.append(f,spin);t.ifr=f;
-   f.onload=()=>{spin.remove();hookFrame(f,t)};setTimeout(()=>spin.remove(),15000);f.src=u}
+   f.onload=()=>{spin.remove();hookFrame(f,t)};setTimeout(()=>spin.remove(),15000);
+   if(hard){spin.textContent="Refreshing from the network...";Promise.race([BR.freshen(u),new Promise(r=>setTimeout(r,7000))]).then(()=>{if(t.ifr===f){spin.textContent="Loading "+BR.host(u)+"...";f.src=u}})}else f.src=u}
   /* pages on the same origin as the OS (republicka.life) can be wired up directly: new-window links become OS tabs */
   function hookFrame(f,t){try{const d=f.contentDocument,w=f.contentWindow;if(!d||!w||d.__tvh)return;d.__tvh=1;try{const cu=w.location.href;if(/^https?:/i.test(cu)&&cu!==t.url&&cu!=="about:blank"){t.url=cu;if(t.hist[t.pos]!==cu){t.hist=t.hist.slice(0,t.pos+1);t.hist.push(cu);t.pos=t.hist.length-1}if(t===cur)syncBar();drawTabs()}}catch(e){}
    d.addEventListener("click",e=>{if(e.defaultPrevented||e.button||e.ctrlKey||e.metaKey||e.shiftKey)return;const a=e.target.closest&&e.target.closest("a[href]");if(!a||a.hasAttribute("download"))return;const tg=(a.getAttribute("target")||"").toLowerCase();if(tg!=="_blank"&&tg!=="_new")return;if(!/^https?:\/\//i.test(a.href))return;e.preventDefault();newTab(a.href)},true);
