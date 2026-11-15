@@ -1258,7 +1258,7 @@ const fmtDate=t=>{const d=new Date(t),hm=" "+pad(d.getHours())+":"+pad(d.getMinu
 const sleep=ms=>new Promise(r=>setTimeout(r,ms));
 const LS={get(k,d){try{const v=localStorage.getItem(k);return v==null?d:JSON.parse(v)}catch(e){return d}},set(k,v){try{localStorage.setItem(k,JSON.stringify(v));return true}catch(e){return false}}};
 const fmtUp=s=>{s=Math.max(0,Math.round(s));const d=Math.floor(s/86400),hr=Math.floor(s%86400/3600),m=Math.floor(s%3600/60),sc=s%60;if(d)return d+" d "+hr+" h";if(hr)return hr+" h "+m+" min";if(m)return m+" min "+sc+" s";return sc+" s"};
-const OS={apps:{},wins:[],z:10,bus:{},boot:performance.now(),ver:"1.0 build 1115-0018"};
+const OS={apps:{},wins:[],z:10,bus:{},boot:performance.now(),ver:"1.0 build 1115-0527"};
 OS.on=(ev,f)=>{(OS.bus[ev]=OS.bus[ev]||[]).push(f);return f};
 OS.off=(ev,f)=>{OS.bus[ev]=(OS.bus[ev]||[]).filter(x=>x!==f)};
 /* reboot that always fetches the newest copy of this page (like Ctrl+Shift+R), then reloads */
@@ -1546,8 +1546,8 @@ function buildTray(){const tr=$("#tray");tr.innerHTML="";tr.append(h("span",{cla
 function cycleTheme(d){const i=(THEME_ORDER.indexOf(SET.theme)+d+THEME_ORDER.length)%THEME_ORDER.length;applyTheme(THEME_ORDER[i]);toast("Theme: "+THEMES[SET.theme].n)}
 OS.on("manifest",m=>{try{buildDesk()}catch(e){}const a=$("#arc");if(a)a.textContent="archive: "+m.files.toLocaleString()+" files"});
 /* ---- desktop icons & start menu ---- */
-const DESK_FIRST=["tv","terminal","files","music","books","audiobooks","comic","school","media","images","notepad","archive","reader","calc","settings"];
-function buildDesk(){const d=$("#dic");d.innerHTML="";const rest=Object.keys(OS.apps).filter(i=>!DESK_FIRST.includes(i)&&appVisible(OS.apps[i])).sort((x,y)=>OS.apps[x].cat.localeCompare(OS.apps[y].cat)||OS.apps[x].name.localeCompare(OS.apps[y].name));for(const id of DESK_FIRST.concat(rest)){const a=OS.apps[id];if(!a||!appVisible(a))continue;const e=h("div",{class:"dic",tabindex:"0",title:a.name,onclick:e=>{if(isMob()||e.detail>=2)OS.open(id)},onkeydown:e=>{if(e.key==="Enter")OS.open(id)}},ic(a.icon),a.name);e.addEventListener("contextmenu",ev=>{ev.preventDefault();ctxMenu(ev.clientX,ev.clientY,[{t:"Open",fn:()=>OS.open(id)}])});d.append(e)}}
+const DESK_FIRST=["tv","terminal","files","music","books","audiobooks","comic","school","media","images","notepad","archive","reader","calc","settings","programs"];
+function buildDesk(){const d=$("#dic");d.innerHTML="";const rest=Object.keys(OS.apps).filter(i=>!DESK_FIRST.includes(i)&&appVisible(OS.apps[i])&&!OS.apps[i].deskHide).sort((x,y)=>OS.apps[x].cat.localeCompare(OS.apps[y].cat)||OS.apps[x].name.localeCompare(OS.apps[y].name));for(const id of DESK_FIRST.concat(rest)){const a=OS.apps[id];if(!a||!appVisible(a))continue;const e=h("div",{class:"dic",tabindex:"0",title:a.name,onclick:e=>{if(isMob()||e.detail>=2)OS.open(id)},onkeydown:e=>{if(e.key==="Enter")OS.open(id)}},ic(a.icon),a.name);e.addEventListener("contextmenu",ev=>{ev.preventDefault();ctxMenu(ev.clientX,ev.clientY,[{t:"Open",fn:()=>OS.open(id)}])});d.append(e)}}
 $("#desk").addEventListener("contextmenu",e=>{if(e.target.id!=="desk"&&e.target.id!=="dic")return;e.preventDefault();ctxMenu(e.clientX,e.clientY,[{t:"Terminal here",ic:"term",fn:()=>OS.open("terminal")},{t:"Files",ic:"folder",fn:()=>OS.open("files")},{t:"New note",ic:"note",fn:()=>OS.open("notepad")},"-",{t:"Next theme",ic:"eye",fn:()=>cycleTheme(1)},{t:"Next wallpaper",ic:"image",fn:()=>{const i=(WALLS.indexOf(wallId())+1)%WALLS.length;SET.wall=WALLS[i];saveSet();setWall();toast("Wallpaper: "+SET.wall)}},{t:"Settings",ic:"gear",fn:()=>OS.open("settings")}])});
 let startSel=0;
 function startList(q){const l=$("#sl");l.innerHTML="";q=(q||"").toLowerCase().trim();const cats={};for(const id in OS.apps){const a=OS.apps[id];if(!appVisible(a))continue;if(q&&!(a.name+" "+a.cat+" "+(a.kw||"")).toLowerCase().includes(q))continue;(cats[a.cat]=cats[a.cat]||[]).push(a)}
@@ -1746,7 +1746,7 @@ defApp("files",{name:"Files",icon:"folder",cat:"System",w:780,h:500,desc:"file m
    if(vis.length>lim)list.append(h("button",{class:"btn",style:"grid-column:1/-1;margin:8px",onclick:()=>{lim+=1200;render()}},"Show "+Math.min(1200,vis.length-lim)+" more of "+(vis.length-lim).toLocaleString()+" remaining"));
    status.textContent=vis.length.toLocaleString()+" items"+(sel.size?" · "+sel.size+" selected":"")+(V.writable(c)?"":" · read-only")+(MAN.json&&cwd.startsWith("/archive")?" · "+MAN.src:"");places()};
   const selNodes=()=>[...sel].map(p=>V.get(p)).filter(Boolean);
-  const itemMenu=(e,n)=>{const ns=selNodes(),w=ns.every(x=>V.writable(x)&&x.src!=="arch");const m=[{t:"Open",ic:"eye",fn:()=>OS.openNode(n)}];if(!n.dir){const k=V.kind(n);m.push({t:"Open in Notepad",ic:"note",fn:()=>OS.openNode(n,"notepad")});if(k==="audio"||k==="video")m.push({t:"Play",ic:"play",fn:()=>OS.open("media",V.path(n))});if(k==="image")m.push({t:"View",ic:"image",fn:()=>OS.open("images",V.path(n))});if(k==="html")m.push({t:"Run as app",ic:"code",fn:()=>OS.open("runner",V.path(n))});m.push({t:"Download",ic:"dl",fn:async()=>{try{download(n.name,await V.read(n,"blob"))}catch(e){toast("Download failed: "+e.message+(n.src==="arch"?" (the archive host may block cross-site reads; use Open instead)":""),1)}}});if(n.url)m.push({t:"Open in browser tab",ic:"globe",fn:()=>window.open(n.url,"_blank")})}else{m.push({t:"Play folder",ic:"play",fn:()=>OS.open("media",{queue:V.ls(n).filter(x=>["audio","video"].includes(V.kind(x))).map(V.path)})})}
+  const itemMenu=(e,n)=>{const ns=selNodes(),w=ns.every(x=>V.writable(x)&&x.src!=="arch");const m=[{t:"Open",ic:"eye",fn:()=>OS.openNode(n)}];if(!n.dir){const k=V.kind(n);m.push({t:"Open in Notepad",ic:"note",fn:()=>OS.openNode(n,"notepad")});if(k==="audio"||k==="video")m.push({t:"Play",ic:"play",fn:()=>OS.open("media",V.path(n))});if(k==="image")m.push({t:"View",ic:"image",fn:()=>OS.open("images",V.path(n))});if(k==="html")m.push({t:"Run as app",ic:"code",fn:()=>OS.open("runner",V.path(n))});m.push({t:"Install as program",ic:"pkg",fn:()=>OS.open("programs",V.path(n))});m.push({t:"Download",ic:"dl",fn:async()=>{try{download(n.name,await V.read(n,"blob"))}catch(e){toast("Download failed: "+e.message+(n.src==="arch"?" (the archive host may block cross-site reads; use Open instead)":""),1)}}});if(n.url)m.push({t:"Open in browser tab",ic:"globe",fn:()=>window.open(n.url,"_blank")})}else{m.push({t:"Play folder",ic:"play",fn:()=>OS.open("media",{queue:V.ls(n).filter(x=>["audio","video"].includes(V.kind(x))).map(V.path)})})}
    m.push("-",{t:"Copy",ic:"copy",fn:()=>{clip={nodes:ns,cut:false};toast("Copied "+ns.length)}},{t:"Cut",fn:()=>{clip={nodes:ns,cut:true}},dis:!w},{t:"Rename",ic:"edit",dis:!w||ns.length!==1,fn:async()=>{const nn=await dlgPrompt("Rename:",n.name);if(nn&&nn!==n.name)try{await V.mv(n,V.path(n.parent)+"/"+nn);render()}catch(er){toast(er.message,1)}}},{t:"Delete",ic:"trash",dis:!w,fn:async()=>{if(await dlgConfirm("Delete "+ns.length+" item(s)? This cannot be undone.","Delete","Delete")){try{for(const x of ns)await V.rm(x,true);sel.clear();render()}catch(er){toast(er.message,1)}}}},"-",{t:"Properties",fn:()=>dlgAlert(SH.stat([V.path(n)],{cwd:"/"}),n.name)});ctxMenu(e.clientX,e.clientY,m)};
   list.addEventListener("contextmenu",e=>{e.preventDefault();const w=V.writable(cur());ctxMenu(e.clientX,e.clientY,[{t:"New folder",ic:"folderplus",dis:!w,fn:()=>mk(true)},{t:"New text file",ic:"note",dis:!w,fn:()=>mk(false)},{t:"Paste",ic:"copy",dis:!w||!clip,fn:async()=>{try{for(const x of clip.nodes)clip.cut?await V.mv(x,cwd):await V.cp(x,cwd);if(clip.cut)clip=null;render()}catch(er){toast(er.message,1)}}},"-",{t:"Upload files from computer…",ic:"dl",dis:!w,fn:async()=>{const fs=await pickDisk("",true);for(const f of fs)await V.write(cwd+"/"+f.name,f,null,f.type);render()}},{t:SET.dot?"Hide dotfiles":"Show dotfiles",fn:()=>{SET.dot=!SET.dot;render()}},{t:"Open Terminal here",ic:"term",fn:()=>OS.open("terminal",cwd)},{t:"Refresh",ic:"refresh",fn:render}])});
   list.addEventListener("click",e=>{if(e.target===list){sel.clear();render()}});
@@ -1879,7 +1879,7 @@ defApp("reader",{name:"Reader",icon:"file",cat:"Media",w:700,h:560,desc:"read ma
 defApp("runner",{name:"App Runner",icon:"code",cat:"Tools",w:760,h:520,desc:"run HTML apps in a sandbox",kw:"html run sandbox code web app preview",
  init(win,b,arg){const ta=h("textarea",{class:"t",spellcheck:"false",style:"width:100%;height:100%;border:0;border-radius:0;resize:none;padding:10px",placeholder:"Paste HTML here and press Run. It runs in a sandbox: scripts allowed, no access to your files, saves or this OS."}),fr=h("iframe",{sandbox:"allow-scripts allow-forms allow-modals allow-popups allow-pointer-lock",style:"flex:1;border:0;background:#fff;width:100%"}),pane=h("div",{style:"flex:1;min-height:0;display:flex;flex-direction:column"},fr);let srcMode=false;
   const run=()=>{fr.srcdoc=ta.value};const setSrc=on=>{srcMode=on;pane.replaceChildren(on?ta:fr)};
-  b.append(h("div",{class:"row"},h("button",{class:"btn sm pri",onclick:()=>{setSrc(false);run()}},ic("play"),"Run"),h("button",{class:"btn sm",onclick:()=>setSrc(!srcMode)},"Source"),h("button",{class:"btn sm",onclick:async()=>{const p=await pickPath({title:"Open HTML"});if(p)load(p)}},ic("folder"),"Open…"),h("button",{class:"btn sm",onclick:()=>OS.open("notepad",{code:ta.value,name:"app.html"})},"Edit in Notepad"),h("button",{class:"btn sm",onclick:()=>{const u=URL.createObjectURL(new Blob([ta.value],{type:"text/html"}));window.open(u,"_blank")}},"Open in tab"),h("span",{class:"dim"},"sandboxed")),pane);
+  b.append(h("div",{class:"row"},h("button",{class:"btn sm pri",onclick:()=>{setSrc(false);run()}},ic("play"),"Run"),h("button",{class:"btn sm",onclick:()=>setSrc(!srcMode)},"Source"),h("button",{class:"btn sm",title:"Install this app so it gets its own icon, Start entry and window",onclick:()=>{if(!ta.value.trim())return toast("Nothing to install yet",1);OS.open("programs",{code:ta.value})}},ic("pkg"),"Install"),h("button",{class:"btn sm",onclick:async()=>{const p=await pickPath({title:"Open HTML"});if(p)load(p)}},ic("folder"),"Open…"),h("button",{class:"btn sm",onclick:()=>OS.open("notepad",{code:ta.value,name:"app.html"})},"Edit in Notepad"),h("button",{class:"btn sm",onclick:()=>{const u=URL.createObjectURL(new Blob([ta.value],{type:"text/html"}));window.open(u,"_blank")}},"Open in tab"),h("span",{class:"dim"},"sandboxed")),pane);
   const load=async p=>{const n=V.get(p);if(!n||n.dir)return;try{ta.value=await V.read(n,"text")}catch(e){return toast(e.message,1)}OS.title(win,"App Runner - "+n.name);setSrc(false);run()};
   win.load=load;if(typeof arg==="string")load(arg);else if(arg&&arg.code!=null){ta.value=arg.code;run()}else{ta.value="<!doctype html><title>hello</title><body style='font:20px monospace;background:#000;color:#0f6;padding:20px'>Hello from the sandbox.<script>document.body.append(' It is '+new Date().toLocaleTimeString())<\/script>";setSrc(true)}},
  onArg(w,a){typeof a==="string"&&w.load(a)},single:false});
@@ -3554,6 +3554,7 @@ const CL={
   tvos_rec_set:["Recorder settings","Format, channels and other Recorder choices.","App preferences"],
   tvos_rec_dest:["Where recordings save","Downloads, a folder, or inside the OS.","App preferences"],
   tvos_themes:["Themes: your Den","Your Den of caught and bred themes (just their short seeds), with names, star ratings and family trees.","Your writing and creations","Deleting it empties your Den. A theme can be caught again from its seed."],
+  tvos_apps:["Installed programs: list","The names, icons and categories of the programs you installed in the Programs app.","Your writing and creations","Deleting it removes every installed program from Start and the desktop."],
   tvos_themes_tab:["Themes: last tab","Which tab you left open in the Themes app (Meadow, Den, Nursery or Dex).","App preferences"],
   tvos_cam_set:["Camera settings","Resolution, format and other Camera choices.","App preferences"],
   tvos_paint_to:["Where Paint saves","Downloads or inside the OS.","App preferences"],
@@ -3570,6 +3571,7 @@ const CL={
   terminal_velocity_prefs:["Game preferences","Sound and display choices inside the game.","Game"]
  },
  info(k){const e=CL.known[k];if(e)return{name:e[0],desc:e[1],cat:e[2],warn:e[3]||""};
+  if(k.startsWith("tvos_appd_")||k.startsWith("tvos_app_")){const dd=k.startsWith("tvos_appd_"),id=k.slice(dd?10:9),r=(LS.get("tvos_apps",[])||[]).find(x=>x&&x.id===id);return dd?{name:"Data of "+(r?r.name:id),desc:"What the installed program "+(r?r.name:id)+" saved for itself.",cat:"Your writing and creations",warn:"Deleting it resets that program's own data."}:{name:"Installed program: "+(r?r.name:id),desc:"The saved copy of the program, so it works offline.",cat:"Your writing and creations",warn:"Deleting it breaks the program. Remove it from the Programs app instead."}}
   if(k.startsWith("tvos_rpos_"))return{name:"Reading position",desc:"Where you stopped in "+decodeURIComponent(k.slice(10)).split("/").pop()+".",cat:"Progress and saved places",warn:""};
   if(/^tvos_bm_seed/.test(k))return{name:"Starter bookmarks marker",desc:"Remembers that the starter bookmarks were already added. Deleting it may bring them back.",cat:"Housekeeping",warn:""};
   if(k.startsWith("tvos_bench_"))return{name:"Benchmark data",desc:"Saved by the Benchmark app.",cat:"Progress and saved places",warn:""};
@@ -4026,6 +4028,148 @@ defApp("themes",{name:"Themes",icon:"swatch",cat:"System",w:820,h:720,single:tru
   root.addEventListener("keydown",e=>{if(e.target.closest("input,textarea,select"))return;if((e.key===" "||e.key==="r"||e.key==="R")&&tab==="Meadow"){e.preventDefault();newWild();draw()}});
   OS.on("theme",()=>{if(!win.dead)setTimeout(draw,0)});
   draw()}});
+
+/* ===================== PROGRAMS: install and remove your own web apps ===================== */
+/* Single-file HTML apps (kept as an offline copy) or links to sites that allow being shown inside other pages.
+   Each installed app becomes a real app: desktop icon, Start entry, Spotlight, window. The 17 built-in apps are not listed here and cannot be changed. */
+IP.pkg="M3 8l9-5 9 5v8l-9 5-9-5z M3 8l9 5 9-5 M12 13v8";
+const PG={
+ ICONS:["code","globe","book","music","film","image","paint","note","calc","clock","cal","task","tools","star","grid","edit","dice","eye","mic","folder","game","mon","lock","list","home","search","binder"],
+ MAXSRC:1500000,
+ cats:["My apps","Games","Media","Tools","Accessories","Internet","Study"],
+ frames:[],
+ list(){const l=LS.get("tvos_apps",[]);return Array.isArray(l)?l.filter(r=>r&&typeof r.id==="string"&&typeof r.name==="string"&&(r.kind==="src"||r.kind==="url")):[]},
+ save(l){return LS.set("tvos_apps",l)},
+ get(id){return PG.list().find(r=>r.id===id)},
+ aid:r=>"u-"+(r.id||r),
+ src:id=>{try{return localStorage.getItem("tvos_app_"+id)}catch(e){return null}},
+ data(id){try{const o=JSON.parse(localStorage.getItem("tvos_appd_"+id)||"{}");return o&&typeof o==="object"&&!Array.isArray(o)?o:{}}catch(e){return{}}},
+ slug:s=>(String(s||"app").toLowerCase().replace(/[^a-z0-9]+/g,"-").replace(/^-+|-+$/g,"").slice(0,14)||"app"),
+ newId(name){const used=new Set(PG.list().map(r=>r.id));let id,n=0;do{id=PG.slug(name)+(n++?"-"+Math.random().toString(36).slice(2,6):"")}while(used.has(id)||OS.apps[PG.aid(id)]);return id},
+ guessIcon(name,kind){const s=String(name).toLowerCase();const m=[[/bible|book|read|librar|gutenberg|wiki|scripture|verse/,"book"],[/music|song|audio|piano|synth|radio|sound|guitar|drum/,"music"],[/video|film|movie|tube|cinema/,"film"],[/paint|draw|sketch|art\b|colou?r/,"paint"],[/photo|image|picture|gallery/,"image"],[/note|write|journal|diary|doc|text|memo/,"note"],[/calc|math|number|sum/,"calc"],[/clock|time|timer|watch|alarm/,"clock"],[/calendar|schedule|plan|agenda/,"cal"],[/game|play|chess|puzzle|quiz|snake|tetris|card/,"game"],[/task|todo|list|check/,"task"],[/map|earth|world|news|search/,"globe"]];for(const [re,i] of m)if(re.test(s))return i;return kind==="url"?"globe":"code"},
+ titleOf(code){const m=/<title[^>]*>([\s\S]*?)<\/title>/i.exec(code||"");if(!m)return"";const t=document.createElement("textarea");t.innerHTML=m[1];return t.value.replace(/\s+/g," ").trim().slice(0,40)},
+ hostOf(u){try{return new URL(u).hostname.replace(/^www\./,"")}catch(e){return u}},
+ niceName(h2){const p=String(h2).split(".");const n=p.length>2&&p[0].length<4?p[1]:p[0];return n.charAt(0).toUpperCase()+n.slice(1)},
+ normUrl(s){s=String(s||"").trim();if(!s)return"";if(!/^[a-z][a-z0-9+.-]*:\/\//i.test(s))s="https://"+s;try{const u=new URL(s);return u.protocol==="https:"||u.protocol==="http:"?u.href:""}catch(e){return""}},
+ /* the script that goes into every installed single-file app: private storage and links that open as Browser tabs */
+ shim(id,data){const J=s=>JSON.stringify(s).replace(/</g,"\\u003c").replace(new RegExp(String.fromCharCode(8232),"g"),"\\u2028").replace(new RegExp(String.fromCharCode(8233),"g"),"\\u2029");
+  return"<script>(function(){try{var D="+J(data)+";var t=0;function send(){clearTimeout(t);t=0;try{parent.postMessage({tvapp:'data',data:D},'*')}catch(e){}}function later(){clearTimeout(t);t=setTimeout(send,250)}"+
+  "function mk(p){var d=p?D:{};var o={getItem:function(k){k=String(k);return Object.prototype.hasOwnProperty.call(d,k)?d[k]:null},setItem:function(k,v){d[String(k)]=String(v);if(p)later()},removeItem:function(k){delete d[String(k)];if(p)later()},clear:function(){for(var k in d)delete d[k];if(p)later()},key:function(i){var a=Object.keys(d);return i<a.length?a[i]:null}};"+
+  "return new Proxy(o,{get:function(T,k){if(k==='length')return Object.keys(d).length;if(k in T)return T[k];return typeof k==='string'&&Object.prototype.hasOwnProperty.call(d,k)?d[k]:undefined},set:function(T,k,v){T.setItem(k,v);return true},deleteProperty:function(T,k){T.removeItem(k);return true},has:function(T,k){return k in T||Object.prototype.hasOwnProperty.call(d,k)},ownKeys:function(){return Object.keys(d)},getOwnPropertyDescriptor:function(T,k){return Object.prototype.hasOwnProperty.call(d,k)?{value:d[k],enumerable:true,configurable:true,writable:true}:undefined}})}"+
+  "var L=mk(true),S=mk(false);Object.defineProperty(window,'localStorage',{configurable:true,get:function(){return L}});Object.defineProperty(window,'sessionStorage',{configurable:true,get:function(){return S}});"+
+  "addEventListener('pagehide',function(){if(t)send()});document.addEventListener('visibilitychange',function(){if(document.hidden&&t)send()});"+
+  "document.addEventListener('click',function(e){var a=e.target.closest&&e.target.closest('a[href]');if(!a)return;var g=(a.getAttribute('target')||'').toLowerCase();if(g!=='_blank'&&g!=='_new')return;if(!/^https?:/i.test(a.href))return;e.preventDefault();parent.postMessage({tvos:'open',url:a.href},'*')},true);"+
+  "window.open=function(u){try{var x=new URL(u,document.baseURI).href;if(/^https?:/i.test(x))parent.postMessage({tvos:'open',url:x},'*')}catch(e){}return null}}catch(e){}})()<\/script>"},
+ inject(src,sc){let m=/<head(?=[\s>])[^>]*>/i.exec(src);if(!m)m=/<html(?=[\s>])[^>]*>/i.exec(src);if(!m)m=/<!doctype[^>]*>/i.exec(src);if(!m)return sc+src;const i=m.index+m[0].length;return src.slice(0,i)+sc+src.slice(i)},
+ register(r){const id=PG.aid(r);defApp(id,{name:r.name,icon:(IP[r.icon]?r.icon:"code"),cat:r.cat||"My apps",desc:r.desc||(r.kind==="url"?"online app":"installed app"),kw:(r.name+" "+(r.cat||"")+" "+(r.desc||"")+" installed program app "+(r.kind==="url"?PG.hostOf(r.url):"")),w:900,h:620,single:true,user:true,deskHide:r.desk===false,init:(win,b)=>PG.run(r.id,win,b)})},
+ refresh(){try{buildDesk()}catch(e){}OS.emit&&OS.emit("programs")},
+ /* run an installed app inside a window */
+ run(id,win,b){const r=PG.get(id);if(!r){b.append(h("div",{class:"pad"},"This program is no longer installed."));return}
+  const box=h("div",{style:"position:absolute;inset:0;display:flex;flex-direction:column;background:var(--bg)"});b.style.position="relative";b.append(box);
+  let fr;
+  if(r.kind==="url"){
+   fr=h("iframe",{style:"flex:1;border:0;background:#fff;width:100%",sandbox:BR.sandboxFor(r.url),referrerpolicy:"no-referrer",allow:"fullscreen; autoplay; encrypted-media; picture-in-picture; clipboard-write",allowfullscreen:""});
+   const bar=h("div",{class:"row",style:"gap:6px;font-size:12px;flex-wrap:wrap"},h("span",{class:"dim grow",style:"overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:80px",title:r.url},PG.hostOf(r.url)+" · online · blank page? the site may refuse to be shown here"),
+    h("button",{class:"btn sm",title:"Load it again",onclick:()=>{fr.src=r.url}},ic("refresh"),"Reload"),
+    h("button",{class:"btn sm",title:"Open in the Browser app",onclick:()=>BR.openUrl(r.url)},ic("globe"),"Browser tab"),
+    h("button",{class:"btn sm",title:"Open outside this OS",onclick:()=>window.open(r.url,"_blank","noopener")},"Outside"));
+   box.append(bar,fr);fr.src=r.url}
+  else{
+   const code=PG.src(r.id);if(code==null){box.append(h("div",{class:"pad"},"The saved copy of "+r.name+" is missing (it may have been cleared in Clean-up). Open Programs to remove it, then install it again."));return}
+   fr=h("iframe",{style:"flex:1;border:0;background:#fff;width:100%",sandbox:"allow-scripts allow-forms allow-modals allow-popups allow-downloads allow-pointer-lock allow-presentation",allow:"fullscreen; autoplay; clipboard-write; gamepad",allowfullscreen:""});
+   box.append(fr);fr.srcdoc=PG.inject(code,PG.shim(r.id,PG.data(r.id)))}
+  const f={id:r.id,name:r.name,fr,win};PG.frames.push(f);const prev=win.on.close;win.on.close=()=>{PG.frames=PG.frames.filter(x=>x!==f);prev&&prev()}},
+ add(rec,src){if(rec.kind==="src"){if(src.length>PG.MAXSRC){toast("That file is too big to install ("+fmtBytes(src.length)+"). The limit is "+fmtBytes(PG.MAXSRC)+".",1);return false}try{localStorage.setItem("tvos_app_"+rec.id,src)}catch(e){toast("Not enough browser storage to install this. Remove something in Clean-up first.",1);return false}}
+  const l=PG.list();l.push(rec);if(!PG.save(l)){try{localStorage.removeItem("tvos_app_"+rec.id)}catch(e){}toast("Could not save the program list (storage is full).",1);return false}
+  PG.register(rec);PG.refresh();return true},
+ update(rec,src){const l=PG.list(),i=l.findIndex(x=>x.id===rec.id);if(i<0)return false;if(src!=null){if(src.length>PG.MAXSRC){toast("That source is too big ("+fmtBytes(src.length)+").",1);return false}const old=PG.src(rec.id);try{localStorage.setItem("tvos_app_"+rec.id,src)}catch(e){toast("Not enough browser storage for that change.",1);return false}rec.size=src.length;void old}
+  l[i]=rec;if(!PG.save(l)){toast("Could not save the change.",1);return false}PG.register(rec);OS.wins.filter(w=>w.app===PG.aid(rec)).forEach(w=>OS.title(w,rec.name));PG.refresh();return true},
+ async remove(r){if(!await dlgConfirm("Remove "+r.name+"?\n\nIts saved copy"+(r.kind==="src"?" and any data it kept":"")+" will be deleted from this browser. You can export it first.","Remove program","Remove"))return false;
+  const aid=PG.aid(r);OS.wins.filter(w=>w.app===aid).forEach(w=>{try{OS.close(w)}catch(e){}});delete OS.apps[aid];
+  try{localStorage.removeItem("tvos_app_"+r.id);localStorage.removeItem("tvos_appd_"+r.id)}catch(e){}
+  PG.save(PG.list().filter(x=>x.id!==r.id));PG.refresh();toast(r.name+" removed");return true}
+};
+/* installed apps ask to save their data or to open links as Browser tabs */
+addEventListener("message",e=>{const d=e.data;if(!d||typeof d!=="object")return;const f=PG.frames.find(x=>x.fr.contentWindow&&x.fr.contentWindow===e.source);if(!f)return;
+ if(d.tvapp==="data"&&d.data&&typeof d.data==="object"){let s="";try{s=JSON.stringify(d.data)}catch(x){return}if(s.length>1500000){toast(f.name+" tried to save too much data",1);return}try{localStorage.setItem("tvos_appd_"+f.id,s)}catch(x){toast("Not enough storage to save "+f.name+"'s data",1)}}
+ else if(d.tvos==="open"&&typeof d.url==="string"&&/^https?:\/\//i.test(d.url))BR.openUrl(d.url)});
+for(const r of PG.list())PG.register(r);
+
+defApp("programs",{name:"Programs",icon:"pkg",cat:"System",w:840,h:620,single:true,desc:"install and remove your own web apps",kw:"install uninstall remove add programs apps web app html store add remove software",
+ init(win,b,arg){
+  let view="list",q="",catF="All",edit=null,kind="url",d=null,msg="";
+  const blank=()=>({name:"",url:"",code:"",cat:"My apps",icon:"",desc:"",desk:true,touched:false,iconTouched:false,fileName:""});
+  const catsNow=()=>{const s=new Set(PG.cats);for(const r of PG.list())if(r.cat)s.add(r.cat);return[...s]};
+  const start=(k,o)=>{edit=null;kind=k;d=Object.assign(blank(),o||{});view="form";render()};
+  const openArg=async a=>{if(!a)return;if(typeof a==="string"){const n=V.get(a);if(!n||n.dir)return;try{const t=await V.read(n,"text");start("src",{code:t,name:PG.titleOf(t)||n.name.replace(/\.[a-z]+$/i,""),fileName:n.name})}catch(e){toast("Cannot read: "+e.message,1)}return}
+   if(a.code!=null)start("src",{code:a.code,name:a.name||PG.titleOf(a.code)});else if(a.url)start("url",{url:a.url,name:a.name||PG.niceName(PG.hostOf(a.url))})};
+  win.openArg=openArg;
+  const ago=t=>{try{return new Date(t).toLocaleDateString()}catch(e){return""}};
+  const rowFor=r=>{const a=OS.apps[PG.aid(r)];
+   return h("div",{class:"row",style:"gap:10px;flex-wrap:wrap;align-items:center;border:1px solid var(--bd);border-radius:8px;padding:8px 10px"},
+    h("span",{style:"font-size:22px;display:inline-flex;color:var(--ac)"},ic(IP[r.icon]?r.icon:"code")),
+    h("div",{class:"grow",style:"min-width:160px"},h("div",{style:"font-weight:700"},r.name),
+     h("div",{class:"dim",style:"font-size:12px"},r.cat+" · "+(r.kind==="url"?"Online link: "+PG.hostOf(r.url):"Saved copy, works offline · "+fmtBytes(r.size||(PG.src(r.id)||"").length))+" · added "+ago(r.added)+(r.desk===false?" · not on desktop":"")),
+     r.desc?h("div",{class:"dim",style:"font-size:12px"},r.desc):null),
+    h("div",{style:"display:flex;gap:6px;flex-wrap:wrap"},
+     h("button",{class:"btn sm pri",onclick:()=>OS.open(PG.aid(r))},ic("play"),"Open"),
+     h("button",{class:"btn sm",onclick:()=>{edit=r;kind=r.kind;d=Object.assign(blank(),r,{code:r.kind==="src"?(PG.src(r.id)||""):"",touched:true,iconTouched:true});view="form";render()}},ic("edit"),"Edit"),
+     h("button",{class:"btn sm",title:r.kind==="src"?"Download as a .html file":"Copy the link",onclick:async()=>{if(r.kind==="src"){const s=PG.src(r.id);if(s==null)return toast("The saved copy is missing",1);download(PG.slug(r.name)+".html",s,"text/html");toast("Exported "+r.name)}else{try{await navigator.clipboard.writeText(r.url);toast("Link copied")}catch(e){dlgAlert(r.url,"Link")}}}},ic(r.kind==="src"?"dl":"copy"),r.kind==="src"?"Export":"Copy link"),
+     h("button",{class:"btn sm",title:"Uninstall",onclick:async()=>{if(await PG.remove(r))render()}},ic("trash"),"Remove")))};
+  const listView=()=>{const all=PG.list(),cats=["All",...[...new Set(all.map(r=>r.cat||"My apps"))].sort()];if(!cats.includes(catF))catF="All";
+   const ws=q.toLowerCase().split(/\s+/).filter(Boolean),rs=all.filter(r=>(catF==="All"||(r.cat||"My apps")===catF)&&ws.every(w=>(r.name+" "+r.cat+" "+(r.desc||"")+" "+(r.url||"")).toLowerCase().includes(w))).sort((x,y)=>(x.cat||"").localeCompare(y.cat||"")||x.name.localeCompare(y.name));
+   const sq=h("input",{class:"t grow",placeholder:"Search your programs",value:q,oninput:e=>{q=e.target.value;fill()}});
+   const body=h("div",{class:"scr grow",style:"display:flex;flex-direction:column;gap:8px;padding:10px;overflow:auto"});
+   const fill=()=>{const ws2=q.toLowerCase().split(/\s+/).filter(Boolean),r2=PG.list().filter(r=>(catF==="All"||(r.cat||"My apps")===catF)&&ws2.every(w=>(r.name+" "+r.cat+" "+(r.desc||"")+" "+(r.url||"")).toLowerCase().includes(w))).sort((x,y)=>(x.cat||"").localeCompare(y.cat||"")||x.name.localeCompare(y.name));body.replaceChildren();
+    if(!all.length){body.append(h("h3",{class:"ac",style:"margin:0"},"Install any web app"),
+     h("div",{},"An installed program gets its own icon on the desktop, a place in Start and in search, and its own window, just like the built-in apps. The built-in apps are not listed here and stay as they are."),
+     h("div",{},"Two kinds can be installed: a single .html file (a saved copy that works offline and keeps its own private data), or a link to a website that allows itself to be shown inside other pages."),
+     h("div",{class:"dim"},"Try a suggestion. It opens the install form with the link filled in:"),
+     h("div",{style:"display:flex;gap:6px;flex-wrap:wrap"},...BR.sugg.slice(0,10).map(([n,u])=>h("button",{class:"btn sm",onclick:()=>start("url",{url:u,name:n,cat:"Internet"})},n))));return}
+    if(!r2.length)body.append(h("div",{class:"dim"},"No program matches."));else{let last="";for(const r of r2){if((r.cat||"")!==last){last=r.cat||"";body.append(h("h6",{style:"margin:6px 0 0"},last||"My apps"))}body.append(rowFor(r))}}
+    body.append(h("div",{class:"dim",style:"font-size:12px;margin-top:6px"},"Installed apps are stored in this browser and are included in Backup. A saved copy cannot see your files, diary or saves."))};
+   fill();
+   return h("div",{class:"fl",style:"height:100%;display:flex;flex-direction:column"},
+    h("div",{class:"row",style:"gap:8px;flex-wrap:wrap"},h("b",{},"Programs"),h("span",{class:"dim"},all.length+" installed"),sq,h("button",{class:"btn pri",onclick:()=>start("url")},ic("plus"),"Install a program")),
+    all.length>1?h("div",{class:"row",style:"gap:6px;flex-wrap:wrap"},...cats.map(c=>h("button",{class:"btn sm"+(c===catF?" on":""),onclick:()=>{catF=c;render()}},c))):null,body)};
+  const formView=()=>{const isNew=!edit,fields={};
+   const setName=v=>{if(!d.touched&&fields.name){d.name=v;fields.name.value=v}if(!d.iconTouched){d.icon=PG.guessIcon(d.name,kind==="url"?"url":"src");drawIcons()}};
+   const tabs=isNew?h("div",{class:"row",style:"gap:6px;flex-wrap:wrap"},...[["url","From a link"],["paste","Paste source"],["file","From a file"]].map(([k,n])=>h("button",{class:"btn sm"+((k==="url"?kind==="url":k==="paste"?(kind==="src"&&!d.chooseFile):(kind==="src"&&!!d.chooseFile))?" on":""),onclick:()=>{if(k==="url")kind="url";else{kind="src";d.chooseFile=k==="file"}render()}},n))):null;
+   const src=()=>{if(kind==="url"){fields.url=h("input",{class:"t",placeholder:"https://www.biblegateway.com",value:d.url,oninput:e=>{d.url=e.target.value;const u=PG.normUrl(d.url);if(u)setName(PG.niceName(PG.hostOf(u)))}});return h("div",{style:"display:flex;flex-direction:column;gap:6px"},h("label",{},"Link to the site"),fields.url,h("div",{class:"dim",style:"font-size:12px"},"Needs the internet. It works for sites that allow themselves to be shown inside other pages (the Browser app lists many). If an installed site shows a blank page, it refuses; the window has a button to open it in a browser tab instead. A link app has no private storage here: the site keeps its own."))}
+    if(!isNew||!d.chooseFile){const ta=h("textarea",{class:"t",spellcheck:"false",style:"min-height:180px;font-family:monospace;font-size:12px;resize:vertical",placeholder:"Paste the complete HTML of a single-file app, from <!doctype html> to </html>.",value:d.code,oninput:e=>{d.code=e.target.value;const t=PG.titleOf(d.code);if(t)setName(t)}});ta.value=d.code;fields.code=ta;return h("div",{style:"display:flex;flex-direction:column;gap:6px"},h("label",{},isNew?"The app's HTML":"Source (change it and press Save to update the app)"),ta,h("div",{class:"dim",style:"font-size:12px"},fmtBytes(d.code.length)+" so far. Saved copies work offline. They get private storage (localStorage), but cannot see your files, diary or saves."))}
+    return h("div",{style:"display:flex;flex-direction:column;gap:6px"},h("label",{},"The app's .html file"),h("div",{class:"row",style:"gap:8px;flex-wrap:wrap;border:0;padding:0"},
+     h("button",{class:"btn",onclick:async()=>{const [f]=await pickDisk(".html,.htm,text/html");if(!f)return;const t=await f.text();d.code=t;d.fileName=f.name;d.chooseFile=true;setName(PG.titleOf(t)||f.name.replace(/\.[a-z]+$/i,""));render()}},ic("dl"),"Choose a file from this computer"),
+     h("button",{class:"btn",onclick:async()=>{const p=await pickPath({title:"Choose an HTML file"});if(!p)return;const n=V.get(p);if(!n||n.dir)return toast("Choose a file",1);try{const t=await V.read(n,"text");d.code=t;d.fileName=n.name;d.chooseFile=true;setName(PG.titleOf(t)||n.name.replace(/\.[a-z]+$/i,""));render()}catch(e){toast("Cannot read: "+e.message,1)}}},ic("folder"),"Choose from Files")),
+     d.fileName?h("div",{},"Loaded "+d.fileName+" ("+fmtBytes(d.code.length)+")"):h("div",{class:"dim"},"No file chosen yet."))};
+   const iconBox=h("div",{style:"display:flex;gap:4px;flex-wrap:wrap"});
+   function drawIcons(){iconBox.replaceChildren(...PG.ICONS.map(n=>h("button",{class:"btn sm"+(d.icon===n?" on":""),title:n,style:"padding:4px 6px",onclick:()=>{d.icon=n;d.iconTouched=true;drawIcons()}},ic(n))))}
+   if(!d.icon)d.icon=PG.guessIcon(d.name,kind==="url"?"url":"src");drawIcons();
+   fields.name=h("input",{class:"t",placeholder:"Name",value:d.name,oninput:e=>{d.name=e.target.value;d.touched=true;if(!d.iconTouched){d.icon=PG.guessIcon(d.name,kind==="url"?"url":"src");drawIcons()}}});
+   const dl=h("datalist",{id:"pgcats"+win.id},...catsNow().map(c=>h("option",{value:c})));
+   const urlEdit=!isNew&&kind==="url"?h("div",{style:"display:flex;flex-direction:column;gap:6px"},h("label",{},"Link"),h("input",{class:"t",value:d.url,oninput:e=>{d.url=e.target.value}})):null;
+   const go=async()=>{const name=d.name.trim().slice(0,40);if(!name)return toast("Give it a name",1);
+    const cat=(d.cat||"My apps").trim().slice(0,30)||"My apps",desc=(d.desc||"").trim().slice(0,120);
+    if(kind==="url"){const u=PG.normUrl(d.url);if(!u)return toast("Enter a link that starts with https://",1);if(/^http:/i.test(u))return toast("Only https:// links can be shown inside this OS",1);
+     const bk=BR.isBlocked(u);if(bk&&!await dlgConfirm(bk+" is known to refuse being shown inside other pages, so it will probably show a blank page. Install anyway?","Install anyway?","Install anyway"))return;
+     if(isNew){if(PG.add({id:PG.newId(name),name,kind:"url",url:u,icon:d.icon,cat,desc,desk:d.desk!==false,added:Date.now()})){toast("Installed "+name);view="list";render()}}
+     else{if(PG.update(Object.assign({},edit,{name,url:u,icon:d.icon,cat,desc,desk:d.desk!==false}))){toast("Saved");view="list";render()}}return}
+    const code=d.code;if(!code.trim()||!/<\w/.test(code))return toast("That does not look like an HTML app",1);
+    if(isNew){if(PG.add({id:PG.newId(name),name,kind:"src",icon:d.icon,cat,desc,desk:d.desk!==false,added:Date.now(),size:code.length},code)){toast("Installed "+name+(d.desk!==false?". It is on your desktop and in Start.":""));view="list";render()}}
+    else{if(PG.update(Object.assign({},edit,{name,icon:d.icon,cat,desc,desk:d.desk!==false}),code!==(PG.src(edit.id)||"")?code:null)){toast("Saved");view="list";render()}}};
+   return h("div",{class:"scr",style:"height:100%;overflow:auto;padding:12px;display:flex;flex-direction:column;gap:10px"},
+    h("h3",{class:"ac",style:"margin:0"},isNew?"Install a program":"Edit "+edit.name),tabs,isNew?src():(kind==="src"?src():null),urlEdit,
+    h("div",{style:"display:flex;flex-direction:column;gap:6px"},h("label",{},"Name"),fields.name),
+    h("div",{style:"display:flex;flex-direction:column;gap:6px"},h("label",{},"Category (pick one or type a new one)"),h("input",{class:"t",list:"pgcats"+win.id,value:d.cat,oninput:e=>{d.cat=e.target.value}}),dl),
+    h("div",{style:"display:flex;flex-direction:column;gap:6px"},h("label",{},"Icon"),iconBox),
+    h("div",{style:"display:flex;flex-direction:column;gap:6px"},h("label",{},"Short description (optional)"),h("input",{class:"t",value:d.desc,placeholder:"Shown in Start",oninput:e=>{d.desc=e.target.value}})),
+    h("label",{style:"display:flex;gap:8px;align-items:center"},h("input",{type:"checkbox",checked:d.desk!==false,onchange:e=>{d.desk=e.target.checked}}),"Show an icon on the desktop (it is always in Start and search)"),
+    isNew?h("div",{class:"dim",style:"font-size:12px"},"Installing runs someone's code inside a sandboxed window. It cannot read your files, diary or saves. Only install apps you trust."):null,
+    h("div",{class:"row",style:"gap:8px;border:0;padding:0"},h("button",{class:"btn",onclick:()=>{view="list";render()}},"Cancel"),h("button",{class:"btn pri",onclick:go},isNew?"Install":"Save")))};
+  const render=()=>{b.replaceChildren(view==="list"?listView():formView())};
+  win.onProg=OS.on("programs",()=>{if(view==="list"&&!win.dead)render()});
+  const prevClose=win.on.close;win.on.close=()=>{try{OS.off("programs",win.onProg)}catch(e){}prevClose&&prevClose()};
+  render();if(arg)openArg(arg)},
+ onArg(w,a){w.openArg&&w.openArg(a)}});
 
 /* ===================== BOOT ===================== */
 const LOGO=`
