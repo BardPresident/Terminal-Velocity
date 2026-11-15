@@ -1258,7 +1258,7 @@ const fmtDate=t=>{const d=new Date(t),hm=" "+pad(d.getHours())+":"+pad(d.getMinu
 const sleep=ms=>new Promise(r=>setTimeout(r,ms));
 const LS={get(k,d){try{const v=localStorage.getItem(k);return v==null?d:JSON.parse(v)}catch(e){return d}},set(k,v){try{localStorage.setItem(k,JSON.stringify(v));return true}catch(e){return false}}};
 const fmtUp=s=>{s=Math.max(0,Math.round(s));const d=Math.floor(s/86400),hr=Math.floor(s%86400/3600),m=Math.floor(s%3600/60),sc=s%60;if(d)return d+" d "+hr+" h";if(hr)return hr+" h "+m+" min";if(m)return m+" min "+sc+" s";return sc+" s"};
-const OS={apps:{},wins:[],z:10,bus:{},boot:performance.now(),ver:"1.0 build 1115-0527"};
+const OS={apps:{},wins:[],z:10,bus:{},boot:performance.now(),ver:"1.0 build 1115-0555"};
 OS.on=(ev,f)=>{(OS.bus[ev]=OS.bus[ev]||[]).push(f);return f};
 OS.off=(ev,f)=>{OS.bus[ev]=(OS.bus[ev]||[]).filter(x=>x!==f)};
 /* reboot that always fetches the newest copy of this page (like Ctrl+Shift+R), then reloads */
@@ -1542,7 +1542,7 @@ function tabDrag(e,el,arr,redraw){if(e.button>0||e.pointerType==="touch"||e.targ
  addEventListener("pointermove",mv);addEventListener("pointerup",up);addEventListener("pointercancel",up)}
 OS.renderTasks=function(){if(OS.tkDrag)return;const t=$("#tasks");t.innerHTML="";for(const w of OS.wins){const a=OS.apps[w.app];const tk=h("div",{class:"tk"+(OS.cur===w&&!w.min?" focus":"")+(w.min?" min":""),title:w.title,onclick:()=>{if(OS.cur===w&&!w.min)OS.minimize(w);else OS.focus(w)},oncontextmenu:e=>{e.preventDefault();ctxMenu(e.clientX,e.clientY-90,[{t:"Restore / focus",fn:()=>OS.focus(w)},{t:"Minimise",fn:()=>OS.minimize(w)},{t:w.max?"Unmaximise":"Maximise",fn:()=>OS.toggleMax(w)},"-",{t:"Close",ic:"x",fn:()=>OS.close(w)}])}},ic(a.icon),h("span",{class:"ti"},w.title));tk._w=w;tk.addEventListener("pointerdown",ev=>tkDrag(ev,tk));t.append(tk)}};
 function tick(){const d=new Date(),c=$("#clk");c.textContent=pad(d.getHours())+":"+pad(d.getMinutes());c.title=MC.dual(d);const m=$("#mcd");if(m){m.textContent=MC.on()?MC.short(d)+" "+MC.era(d):d.getDate()+" "+MONTHS[d.getMonth()].slice(0,3)+" "+d.getFullYear();m.title=MC.dual(d)}}
-function buildTray(){const tr=$("#tray");tr.innerHTML="";tr.append(h("span",{class:"hide",title:"Next theme",onclick:()=>cycleTheme(1)},ic("eye")),h("span",{class:"hide",id:"arc",title:"Archive status",onclick:()=>OS.open("settings",{tab:"Archive"})},"archive: …"),h("span",{title:"Spotlight (Ctrl+Space)",onclick:()=>spot(true)},ic("search")),h("span",{id:"mcd",onclick:()=>OS.open("calendar")}),h("b",{id:"clk",onclick:()=>OS.open("clock")}));tick();setInterval(tick,10000);setStand(LS.get("tvos_standing",null))}
+function buildTray(){const tr=$("#tray");tr.innerHTML="";tr.append(h("span",{class:"hide",title:"Next theme",onclick:()=>cycleTheme(1)},ic("eye")),h("span",{class:"hide",id:"arc",title:"Archive status",onclick:()=>OS.open("settings",{tab:"Archive"})},"archive: …"),h("span",{id:"bkt",title:"Backup",onclick:e=>BKT.menu(e)},ic("save")),h("span",{title:"Spotlight (Ctrl+Space)",onclick:()=>spot(true)},ic("search")),h("span",{id:"mcd",onclick:()=>OS.open("calendar")}),h("b",{id:"clk",onclick:()=>OS.open("clock")}));try{BKT.draw()}catch(e){}tick();setInterval(tick,10000);setStand(LS.get("tvos_standing",null))}
 function cycleTheme(d){const i=(THEME_ORDER.indexOf(SET.theme)+d+THEME_ORDER.length)%THEME_ORDER.length;applyTheme(THEME_ORDER[i]);toast("Theme: "+THEMES[SET.theme].n)}
 OS.on("manifest",m=>{try{buildDesk()}catch(e){}const a=$("#arc");if(a)a.textContent="archive: "+m.files.toLocaleString()+" files"});
 /* ---- desktop icons & start menu ---- */
@@ -2366,7 +2366,7 @@ defApp("bookbinder",{name:"BookBinder",icon:"binder",cat:"Tools",w:780,h:660,sin
 
 /* --- Backup: everything the user owns, in one ZIP --- */
 const BK_FMT="tvos-backup";
-const bkKeys=g=>{const o=[];for(let i=0;i<localStorage.length;i++){const k=localStorage.key(i);if(g==="game"?k.startsWith("terminal_velocity"):(k.startsWith("tvos_")&&k!=="tvos_backup_last"))o.push(k)}return o};
+const bkKeys=g=>{const o=[];for(let i=0;i<localStorage.length;i++){const k=localStorage.key(i);if(g==="game"?k.startsWith("terminal_velocity"):(k.startsWith("tvos_")&&!k.startsWith("tvos_backup_")))o.push(k)}return o};
 const bkHome=()=>{const f=[];V.walk(V.user,(n)=>{if(n!==V.user)f.push(n)});return f};
 async function bkZipRead(file){const buf=new Uint8Array(await file.arrayBuffer()),dv=new DataView(buf.buffer);let e=-1;
  for(let i=buf.length-22;i>=Math.max(0,buf.length-65557);i--)if(dv.getUint32(i,true)===0x06054b50){e=i;break}
@@ -2399,11 +2399,11 @@ defApp("backup",{name:"Backup",icon:"save",cat:"Tools",w:560,h:640,single:true,d
     h("div",{},"Files in /home/user: ",h("b",{},files.length+" ("+fmtBytes(size)+")")),
     h("div",{},"Settings and app data: ",h("b",{},sk+" items"),h("span",{class:"dim"}," (themes, books, comics, audiobooks, music, tasks, calendar notes...)")),
     h("div",{},"Game save: ",h("b",{},turn==null?"none yet":"turn "+turn)),
-    h("div",{},"Last backup: ",h("b",{},last?MC.dual(new Date(last)):"never")),
+    h("div",{},"Last backup: ",h("b",{},last?MC.dual(new Date(last)):"never")),(()=>{const bs=BKT.st(),q=LS.get("tvos_backup_quiet",0),c=h("input",{type:"checkbox"});c.checked=!q;c.onchange=()=>{LS.set("tvos_backup_quiet",c.checked?0:1);BKT.draw()};return h("div",{},h("div",{},"Not in a backup yet: ",h("b",{},!bs.has?"nothing to save yet":bs.ch.length?BKT.say(bs.ch):"nothing, you are up to date")),h("div",{class:"dim",style:"font-size:12px"},"Only things you made count: Diary, files, tasks, calendar notes, sequencer patterns, Den themes, bookmarks, programs and the game save. Window positions and settings never do."),h("label",{class:"row",style:"border:0;padding:0;gap:8px;cursor:pointer;margin-top:4px"},c,"Remind me now and then (at most once a day) when I have unsaved work"),h("div",{class:"dim",style:"font-size:12px"},"Best place to keep backups: cloud storage (Google Drive, OneDrive, Dropbox). Then losing this device loses nothing."))})(),
     pers?h("div",{class:"dim"},"Browser storage is "+pers+"."):"",
     sec("Create a backup"),mk("files","Files (/home/user)"),mk("settings","Settings and app data"),mk("game","Game save (Terminal Velocity)"),
     h("div",{class:"row",style:"border:0;padding:0"},h("button",{class:"btn pri",onclick:async()=>{const inc={files:cb.files.checked,settings:cb.settings.checked,game:cb.game.checked};if(!inc.files&&!inc.settings&&!inc.game)return toast("Pick something to back up",1);
-      try{msg.textContent="packing...";const{blob,man}=await bkMake(inc,t=>msg.textContent=t);const d=new Date(),nm="TVOS-backup-"+MC.iso(d)+"_"+pad(d.getHours())+pad(d.getMinutes())+".zip";download(nm,blob,"application/zip");LS.set("tvos_backup_last",Date.now());msg.textContent="Saved "+nm+" ("+fmtBytes(blob.size)+", "+man.files.filter(f=>!f.dir).length+" files, "+man.keys+" settings items). Keep it somewhere safe.";toast("Backup created")}catch(e){msg.textContent="Backup failed: "+e.message;toast("Backup failed",1)}}},ic("dl")," Create backup ZIP"),
+      try{msg.textContent="packing...";const{blob,man}=await bkMake(inc,t=>msg.textContent=t);const d=new Date(),nm="TVOS-backup-"+MC.iso(d)+"_"+pad(d.getHours())+pad(d.getMinutes())+".zip";download(nm,blob,"application/zip");LS.set("tvos_backup_last",Date.now());BKT.mark(inc);msg.textContent="Saved "+nm+" ("+fmtBytes(blob.size)+", "+man.files.filter(f=>!f.dir).length+" files, "+man.keys+" settings items). Keep it somewhere safe, ideally in cloud storage (Google Drive, OneDrive or Dropbox), so it survives losing this device.";toast("Backup created")}catch(e){msg.textContent="Backup failed: "+e.message;toast("Backup failed",1)}}},ic("dl")," Create backup ZIP"),
      h("button",{class:"btn",title:"Ask the browser not to clear this OS's storage",onclick:async()=>{try{const ok=await navigator.storage.persist();toast(ok?"Storage marked persistent":"Browser declined persistent storage",!ok);draw()}catch(e){toast("Not supported here",1)}}},"Protect storage")),
     msg,
     sec("Restore from a backup ZIP"),
@@ -2431,9 +2431,9 @@ defApp("backup",{name:"Backup",icon:"save",cat:"Tools",w:560,h:640,single:true,d
       try{if(safe.checked){msg.textContent="saving a safety backup...";const s=await bkMake({files:true,settings:true,game:true});download("TVOS-before-restore-"+MC.iso(new Date())+".zip",s.blob,"application/zip")}
        if(doF){if(mode.value==="replace"){msg.textContent="clearing files...";for(const n of [...V.user.kids.values()])await V.rm(n,true)}
         let i=0;for(const f of man.files){const en=z.get("files"+f.p);if(f.dir){V.mkdirp(f.p);continue}if(!en)continue;const by=await bkBytes(en),data=f.str?new TextDecoder().decode(by):new Blob([by],{type:f.mime||V.mime(f.p)});const nd=await V.write(f.p,data,"/",f.mime||undefined);if(f.mt){nd.mt=f.mt;await V.save(nd)}if(++i%10===0){msg.textContent="restoring files "+i+" / "+nF;await new Promise(r=>setTimeout(r))}}}
-       if(doS){if(mode.value==="replace")for(const k of bkKeys("tvos"))localStorage.removeItem(k);for(const k of sKeys)if(k!=="tvos_backup_last")localStorage.setItem(k,ls[k])}
+       if(doS){if(mode.value==="replace")for(const k of bkKeys("tvos"))localStorage.removeItem(k);for(const k of sKeys)if(!k.startsWith("tvos_backup_"))localStorage.setItem(k,ls[k])}
        if(doG){if(mode.value==="replace")for(const k of bkKeys("game"))localStorage.removeItem(k);for(const k of gKeys)localStorage.setItem(k,ls[k])}
-       msg.textContent="Done. Restarting the OS...";toast("Restore complete. Restarting...");setTimeout(()=>OS.reload(),1500)}catch(e){msg.textContent="Restore failed: "+e.message;toast("Restore failed",1)}}},"Restore")),msg)}
+       BKT.mark({files:doF,settings:doS,game:doG});msg.textContent="Done. Restarting the OS...";toast("Restore complete. Restarting...");setTimeout(()=>OS.reload(),1500)}catch(e){msg.textContent="Restore failed: "+e.message;toast("Restore failed",1)}}},"Restore")),msg)}
   b.append(root);draw()}});
 
 /* --- Save this OS as one .html file --- */
@@ -3566,6 +3566,11 @@ const CL={
   tvos_bench_tab:["Benchmark tab","Which Benchmark tab you last looked at.","App preferences"],
   tvos_standing:["Old game standing","A value from an older version. It is no longer shown anywhere.","Housekeeping"],
   tvos_marker:["Internal marker","A marker the OS uses to check that storage works.","Housekeeping"],
+  tvos_backup_snap:["Backup bookkeeping","What was in your last backup, so the tray icon can tell what is new. Not included in backups.","Housekeeping"],
+  tvos_backup_seen:["Backup reminder: first seen","When you first had something worth backing up. Not included in backups.","Housekeeping"],
+  tvos_backup_snooze:["Backup reminder: snooze","Hides backup reminders for a few days. Not included in backups.","Housekeeping"],
+  tvos_backup_toast:["Backup reminder: last shown","Keeps reminders to at most one a day. Not included in backups.","Housekeeping"],
+  tvos_backup_quiet:["Backup reminders: off switch","Set when you turn backup reminders off. Not included in backups.","Housekeeping"],
   tvos_backup_last:["Time of your last backup","Used for the backup reminder. It is not included in backups.","Housekeeping"],
   terminal_velocity_v3:["Game save","Your Terminal Velocity game progress.","Game","Deleting it erases your game progress for good. Make a backup first if you might want it."],
   terminal_velocity_prefs:["Game preferences","Sound and display choices inside the game.","Game"]
@@ -3578,7 +3583,7 @@ const CL={
   if(k.startsWith("tvos_"))return{name:"Other OS data",desc:"Saved by Terminal Velocity OS. This build does not have a friendlier label for it.",cat:"Other OS data",warn:""};
   if(k.startsWith("terminal_velocity"))return{name:"Game data",desc:"Saved by the Terminal Velocity game.",cat:"Game",warn:"This may be part of your game save."};
   return{name:"Saved by something else",desc:"Another page on this website (or a browser extension) saved this. Terminal Velocity OS does not use it and Backup does not include it.",cat:"Not part of this OS",warn:""}},
- inBackup:k=>(k.startsWith("tvos_")&&k!=="tvos_backup_last")||k.startsWith("terminal_velocity")||k==="rk_chat_tok",
+ inBackup:k=>(k.startsWith("tvos_")&&!k.startsWith("tvos_backup_"))||k.startsWith("terminal_velocity")||k==="rk_chat_tok",
  sz(v){try{if(v==null)return 0;if(typeof v==="string")return v.length*2;if(v instanceof Blob)return v.size;if(v.byteLength!=null)return v.byteLength;if(typeof FileSystemHandle!=="undefined"&&v instanceof FileSystemHandle)return 0;return JSON.stringify(v).length*2}catch(e){return 0}},
  metaInfo:{np_session:["Notepad drafts","Unsaved Notepad tabs, kept so they survive a restart."],rec_dir:["Recorder save folder","Permission to the folder you chose for recordings. Deleting it means you will be asked to choose again."],manifest:["Saved archive manifest","The archive manifest you loaded in Settings."]},
  async meta(){return new Promise(res=>{if(!DB.db)return res([]);const o=[];const r=DB.db.transaction("meta").objectStore("meta").openCursor();r.onsuccess=()=>{const c=r.result;if(c){o.push({k:String(c.key),v:c.value});c.continue()}else res(o)};r.onerror=()=>res(o)})},
@@ -4170,6 +4175,50 @@ defApp("programs",{name:"Programs",icon:"pkg",cat:"System",w:840,h:620,single:tr
   const prevClose=win.on.close;win.on.close=()=>{try{OS.off("programs",win.onProg)}catch(e){}prevClose&&prevClose()};
   render();if(arg)openArg(arg)},
  onArg(w,a){w.openArg&&w.openArg(a)}});
+
+/* ===================== BACKUP HABIT: tray icon, honest change counting, rare reminders ===================== */
+/* Only things you made count: Diary pages, files, tasks, calendar notes, sequencer patterns, Den themes, bookmarks, installed programs, game save.
+   Window positions, settings, themes you are wearing, history and reading places never trigger a reminder. */
+const BKT={
+ hs(s){let x=5381;for(let i=0;i<s.length;i++)x=((x<<5)+x+s.charCodeAt(i))|0;return(x>>>0).toString(36)+":"+s.length},
+ raw(k){try{return localStorage.getItem(k)}catch(e){return null}},
+ json(k,d){try{const v=JSON.parse(localStorage.getItem(k));return v==null?d:v}catch(e){return d}},
+ areas(){const A=[],add=(id,name,grp,n,sig)=>{if(n>0)A.push({id,name,grp,n,sig})};
+  const dy=BKT.json("tvos_diary",null);if(dy&&dy.e&&typeof dy.e==="object"){const ks=Object.keys(dy.e).filter(k=>{const v=dy.e[k];return v&&(typeof v==="string"?v.trim():JSON.stringify(v).length>4)});add("diary","Diary","settings",ks.length,BKT.hs(JSON.stringify(ks.map(k=>[k,dy.e[k]]))))}
+  const tk=BKT.json("tvos_tasks",[]);if(Array.isArray(tk))add("tasks","Tasks","settings",tk.length,BKT.hs(JSON.stringify(tk)));
+  const cl=BKT.json("tvos_cal",{});if(cl&&typeof cl==="object"){const ks=Object.keys(cl).filter(k=>cl[k]);add("cal","Calendar notes","settings",ks.length,BKT.hs(JSON.stringify(ks.map(k=>[k,cl[k]]))))}
+  const sq=BKT.raw("tvos_seq");if(sq)add("seq","Sequencer","settings",1,BKT.hs(sq));
+  const th=BKT.json("tvos_themes",null);if(th&&Array.isArray(th.saved))add("themes","Themes Den","settings",th.saved.length,BKT.hs(JSON.stringify(th.saved)));
+  const bm=BKT.json("tvos_bm",[]);if(Array.isArray(bm)){const u=bm.filter(x=>x&&x.u&&x.u!=="https://republicka.life");add("bm","Bookmarks","settings",u.length,BKT.hs(JSON.stringify(u)))}
+  const pg=BKT.json("tvos_apps",[]);if(Array.isArray(pg)&&pg.length){let s=BKT.raw("tvos_apps")||"";for(let i=0;i<localStorage.length;i++){const k=localStorage.key(i);if(k.startsWith("tvos_app_")||k.startsWith("tvos_appd_"))s+="|"+k+BKT.hs(BKT.raw(k)||"")}add("progs","Programs","settings",pg.length,BKT.hs(s))}
+  const gm=BKT.raw("terminal_velocity_v3");if(gm)add("game","Game save","game",1,BKT.hs(gm));
+  return A},
+ st(){const snap=BKT.json("tvos_backup_snap",null),last=LS.get("tvos_backup_last",0),sg=(snap&&snap.sigs)||{},ft=snap?(snap.ft||0):0,as=BKT.areas(),ch=[];let files=0,all=0;
+  V.walk(V.user,n=>{if(!n.dir){all++;if(n.mt>ft)files++}});
+  for(const a of as)if(a.sig!==sg[a.id])ch.push(a);if(files)ch.push({id:"files",name:"Files",n:files,grp:"files"});
+  const has=as.length>0||all>0;let seen=LS.get("tvos_backup_seen",0);if(!last&&!seen&&has){seen=Date.now();LS.set("tvos_backup_seen",seen)}
+  const base=last||(snap&&snap.t)||seen||Date.now(),age=(Date.now()-base)/864e5;
+  return{ch,last,age,has,files,areas:ch.filter(a=>a.id!=="files").length}},
+ say(ch){return ch.map(a=>a.id==="files"?a.n+" file"+(a.n===1?"":"s"):a.name).join(", ")},
+ ago(s){return s.last?"Last backup "+(s.age<1?"today":Math.floor(s.age)+" day"+(Math.floor(s.age)===1?"":"s")+" ago")+".":"You have never made a backup."},
+ /* mark what is now safe in a backup */
+ mark(inc){inc=inc||{files:1,settings:1,game:1};const snap=BKT.json("tvos_backup_snap",null)||{ft:0,sigs:{}};snap.sigs=snap.sigs||{};for(const a of BKT.areas())if(inc[a.grp])snap.sigs[a.id]=a.sig;if(inc.files)snap.ft=Date.now();snap.t=Date.now();LS.set("tvos_backup_snap",snap);BKT.draw()},
+ level(s){if(!s.ch.length)return 0;return(s.last?s.age>=7:s.age>=2)?2:1},
+ draw(s){const el=document.getElementById("bkt");if(!el)return;s=s||BKT.st();const lv=BKT.level(s);el.querySelector(".dot")?.remove();
+  if(lv){el.append(h("i",{class:"dot",style:"background:var("+(lv===2?"--er":"--wn")+")"}))}
+  el.title=!s.has?"Backup: nothing to save yet":lv?"Backup: not in a backup yet: "+BKT.say(s.ch)+". "+BKT.ago(s):"Backup: everything is saved. "+BKT.ago(s)},
+ async quick(){try{toast("Packing your backup...");const{blob,man}=await bkMake({files:true,settings:true,game:true});const d=new Date(),nm="TVOS-backup-"+MC.iso(d)+"_"+pad(d.getHours())+pad(d.getMinutes())+".zip";download(nm,blob,"application/zip");LS.set("tvos_backup_last",Date.now());BKT.mark();
+   BKT.note("Saved "+nm+" ("+fmtBytes(blob.size)+"). Keep it in cloud storage (Google Drive, OneDrive or Dropbox) so it survives losing this device.",[["OK",()=>{}]],9000)}catch(e){toast("Backup failed: "+e.message,1)}},
+ note(text,btns,ms){const t=h("div",{class:"toast",style:"display:flex;flex-direction:column;gap:8px;pointer-events:auto"},h("div",{},text),h("div",{style:"display:flex;gap:6px;flex-wrap:wrap"},...btns.map(([n,f,pri])=>h("button",{class:"btn sm"+(pri?" pri":""),onclick:()=>{t.remove();f()}},n))));$("#toasts").append(t);setTimeout(()=>t.remove(),ms||22000)},
+ menu(e){const s=BKT.st(),q=LS.get("tvos_backup_quiet",0),lv=BKT.level(s);BKT.draw(s);
+  ctxMenu(e.clientX,Math.max(10,e.clientY-170),[{t:!s.has?"Nothing to back up yet":lv?"Not backed up: "+BKT.say(s.ch):"Everything is backed up",dis:true},{t:BKT.ago(s),dis:true},"-",{t:"Back up now",ic:"dl",fn:()=>BKT.quick()},{t:"Backup options...",ic:"save",fn:()=>OS.open("backup")},{t:q?"Turn reminders on":"Turn reminders off",ic:"eye",fn:()=>{LS.set("tvos_backup_quiet",q?0:1);toast(q?"Backup reminders are on":"Backup reminders are off. The tray icon still shows the status.")}},{t:"Tip: keep backups in cloud storage",dis:true}])},
+ /* a reminder is rare: at most one a day, only for real work, and it can be snoozed or switched off */
+ tick(){if(document.hidden)return;const s=BKT.st();BKT.draw(s);if(NEST||LS.get("tvos_backup_quiet",0)||!s.ch.length)return;const now=Date.now();if(now<LS.get("tvos_backup_snooze",0)||now-LS.get("tvos_backup_toast",0)<864e5)return;
+  const big=s.files>=10||s.areas>=3,need=s.last?(s.age>=7||(s.age>=1&&big)):(s.age>=2);if(!need)return;LS.set("tvos_backup_toast",now);
+  BKT.note("Not in a backup yet: "+BKT.say(s.ch)+". "+BKT.ago(s)+" A backup kept in cloud storage (Google Drive, OneDrive or Dropbox) survives losing this device.",[["Back up now",()=>BKT.quick(),1],["Not now",()=>{LS.set("tvos_backup_snooze",Date.now()+3*864e5);toast("I will not ask again for 3 days")}],["Stop reminding me",()=>{LS.set("tvos_backup_quiet",1);toast("Reminders are off. You can turn them on from the tray icon.")}]],30000)}
+};
+document.head.append(h("style",{},"#bkt{position:relative;display:inline-flex}#bkt .dot{position:absolute;right:-3px;top:-3px;width:8px;height:8px;border-radius:50%;border:1px solid var(--bg)}"));
+setTimeout(BKT.tick,25000);setInterval(BKT.tick,120000);
 
 /* ===================== BOOT ===================== */
 const LOGO=`
