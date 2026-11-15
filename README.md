@@ -511,6 +511,24 @@ Terminal Velocity (the game, section 11), Snake and Minesweeper.
 5. YOUR DATA: SAVING, BACKUP, CLEANER, REBOOT
 =====================================================================
 
+THE BACKUP ICON IN THE TRAY
+  The small disk icon next to the clock shows whether your work is in a
+  backup. A small dot means something you made is not in a backup yet
+  (amber), or has been waiting a week (red). Click the icon to back up
+  right now, open the Backup app, or turn reminders off.
+  Only things you made count: Diary pages, files in /home/user, tasks,
+  calendar notes, sequencer patterns, Themes Den, bookmarks, installed
+  programs and the game save. Moving windows, changing settings or
+  themes, history and reading places never count and never nag.
+  A reminder appears at most once a day, and only after a week without a
+  backup (or a day, if you have made a lot), or two days after you first
+  had something worth saving. Choose Not now (quiet for 3 days) or Stop
+  reminding me. The Backup app has the same switch.
+  Keep your backups in cloud storage (Google Drive, OneDrive, Dropbox).
+  A backup that stays on the same device does not protect you if you
+  lose it. On a Chromebook you can set Chrome's download location to a
+  Google Drive folder, so every backup lands there.
+
 WHERE THINGS LIVE
   Everything is stored in your browser, on your device. There is no
   account and no server copy.
