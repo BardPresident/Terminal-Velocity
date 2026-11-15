@@ -130,6 +130,15 @@ THEMES AND LOOK  (the Themes app; wallpaper and other looks in Settings > Appear
             them on, and Keep the ones you love. Kept children are
             numbered by generation and remember their parents. Breed
             children with each other to steer toward a look you want.
+            Variations (one parent): set Parent B to None, or press
+            Variations on any Den creature, to make six variations of a
+            single theme. "Change" limits what may move (anything, colour
+            only, wallpaper only, typeface only, or feel) and "How much"
+            sets gentle, normal or wild. Founders are approximated from
+            their colours, so their variations are close, not exact.
+  Wallpaper The Wallpaper menu in the bar at the top of the app keeps
+            your theme's exact colours and only swaps the wallpaper. For
+            Plushie Pastel with the pulse, wear Plushie and choose rings.
   Dex       Which colours, wallpapers, typefaces and moods you have caught
             or bred so far, so you can see what your Den is missing.
   Every theme has a short seed like V2-K7QM-3F9A. The same seed makes the
