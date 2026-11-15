@@ -1258,7 +1258,7 @@ const fmtDate=t=>{const d=new Date(t),hm=" "+pad(d.getHours())+":"+pad(d.getMinu
 const sleep=ms=>new Promise(r=>setTimeout(r,ms));
 const LS={get(k,d){try{const v=localStorage.getItem(k);return v==null?d:JSON.parse(v)}catch(e){return d}},set(k,v){try{localStorage.setItem(k,JSON.stringify(v));return true}catch(e){return false}}};
 const fmtUp=s=>{s=Math.max(0,Math.round(s));const d=Math.floor(s/86400),hr=Math.floor(s%86400/3600),m=Math.floor(s%3600/60),sc=s%60;if(d)return d+" d "+hr+" h";if(hr)return hr+" h "+m+" min";if(m)return m+" min "+sc+" s";return sc+" s"};
-const OS={apps:{},wins:[],z:10,bus:{},boot:performance.now(),ver:"1.0 build 1115-0812"};
+const OS={apps:{},wins:[],z:10,bus:{},boot:performance.now(),ver:"1.0 build 1115-0852"};
 OS.on=(ev,f)=>{(OS.bus[ev]=OS.bus[ev]||[]).push(f);return f};
 OS.off=(ev,f)=>{OS.bus[ev]=(OS.bus[ev]||[]).filter(x=>x!==f)};
 /* reboot that always fetches the newest copy of this page (like Ctrl+Shift+R), then reloads */
@@ -2047,7 +2047,26 @@ One file. No install. Everything is drawn with CSS and canvas.
 Settings > Archive: load a manifest.json from a file or URL (same format as the Republicka archive). The game reads it too.
 
 ## Themes
-${THEME_ORDER.length} X environments in Settings > Appearance, or run \`theme\` in the terminal.
+Themes is its own app: a small game where you catch, breed and wear desktops. Wallpapers and the other looks are in Settings > Appearance. Or run \`theme\` in the terminal.
+
+## Your own programs
+**Programs** installs your own web apps, from a link or a single .html file, and gives each one an icon, a Start entry and a window. They always sit after the built-in apps.
+
+## Keep your work safe
+Everything you make lives only in this browser. The small disk icon in the tray shows whether it is in a backup, and one click makes one. Keep backups in cloud storage.
+
+## The Ship
+*The old story.* Theseus' ship comes home. Over the years its planks rot and are replaced, one by one, until not one original plank is left. Is it still the ship of Theseus? Then Hobbes made it worse: someone gathers the old planks and builds the first ship again. Now there are two. Which one is real?
+
+The usual answer argues about the wood, and the argument never ends, because the wood was never the ship.
+
+*The new story.* This ship is not made of wood. It is a pattern, written in plain text, in a single file. Open the file and the whole ship is built at once: the windows, the hearth where you keep your diary, the engine that makes themes and music and pictures, and the archive. Close it and it is gone. Open it again and the ship is whole. Copy the file and you have not made half a ship. You have made another whole ship, and so has everyone you give it to. Hobbes' puzzle does not come up. Both are Theseus' ship, because the ship was never the planks.
+
+*So what is yours?* Not the file. The file is the hull, and anyone may have one. Yours is what you put aboard: your writing, your files, your programs, the themes you bred. Replace any plank (install a program, remove one, update the file) and it is the same ship. Neurath said we must rebuild our ship on the open sea, never able to dock it and start again. So we do. Nothing here has to stop for it.
+
+Back it up. The tray icon is the harbour, and a backup is the ship's record. From it the ship can be rebuilt on any machine, by anyone who has the file.
+
+Open the Quine to watch the ship sail inside itself. The Terminal knows a few words that Help does not.
 
 CC0. Copy it.`);b.append(d)}});
 
