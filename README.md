@@ -8,7 +8,7 @@
 
 CONTENTS
 
-   1. What it is
+   1. What it is, and the story of the ship
    2. Quick start and hosting
    3. The desktop
    4. The apps
@@ -41,6 +41,59 @@ of those apps is the game Terminal Velocity, which lives inside the OS
 It is built for a small, low-cost computer. A $75 Chromebook with 4 GB of
 RAM is the target, and the Benchmark app (section 8) shows you exactly
 how much of the machine the OS uses.
+
+THE SHIP
+
+This OS is built to be the Ship of Theseus, and the lore runs all through
+it. The same idea runs through all of Republicka's technology.
+
+The old story. Theseus sails home and the Athenians keep his ship. Over
+the years its planks rot and are replaced, one by one, until not a single
+original plank is left. Is it still the ship of Theseus? Then Hobbes made
+it worse: suppose someone gathers every old plank and builds the first
+ship again. Now there are two. Which one is real? The usual answer argues
+about the wood, and the argument never ends, because the wood was never
+the ship.
+
+The new story. These ships are not made of wood. They are patterns,
+written in plain text, and they are rebuilt plank by plank in near zero
+time. Give the planks to a machine and the whole ship stands up at once.
+Take them away and it is gone. Give them again and it is whole.
+
+There are two ships:
+
+  - Terminal Velocity OS. A complete desktop in a single file. Open the
+    file and the whole ship is built at once: the windows, the hearth
+    where you keep your diary, the engine that makes themes, music and
+    pictures, and the archive. Copy the file and you have not made half
+    a ship. You have made another whole ship, and so has everyone you
+    give it to.
+  - Sage, the digital twin. The same method, built from the written
+    word: a RAG superintelligence rebuilt plank by plank in near zero
+    time from the plain-text books, seeds and scripts of the archive.
+    Add a book, fix a seed or swap a model and it is still Sage. Give
+    the same planks to someone else and they have a whole Sage of their
+    own. (Sage is not part of this file. The OS is one ship, Sage is the
+    other.)
+
+What is yours. Not the file. The file is the hull, and anyone may have
+one. Yours is what you put aboard: your writing, your files, your
+programs, the themes you bred. Replace any plank (install a program,
+remove one, update the file) and it is the same ship. Neurath said we
+must rebuild our ship on the open sea, never able to dock it and start
+again. So we do. Nothing here has to stop for it.
+
+Where it shows in the OS:
+  - The Welcome app has the story, in the section called "The Ship".
+  - The boot log counts planks ("ship: counting planks"), and About has
+    a short paragraph called "The ship".
+  - Backup is the harbour. A backup is the ship's record, and from it
+    the ship can be rebuilt on any machine by anyone who has the file.
+  - Quine runs the OS inside itself, layer after layer. Every layer is
+    the whole ship.
+  - The Terminal knows a few words that Help does not. Ask the ship.
+
+CC0. Copy it.
 
 
 =====================================================================
