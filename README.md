@@ -849,7 +849,7 @@ secondary date.
 Shown in: the tray (date and clock, hover for both), the Clock app (the
 MC tab converts years and dates), the Calendar header, the Diary, the
 terminal "date", file dates (ls -l, stat, Files) and the boot log.
-Settings > Appearance > "Calendar & dates" switches to Gregorian first.
+Settings > Appearance > "Calendar & dates", and the same control in the Clock and Calendar apps, switches to Gregorian first (with a warning).
 
 
 =====================================================================
