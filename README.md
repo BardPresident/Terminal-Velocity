@@ -422,6 +422,12 @@ Camera
   of a screen recording (choose the corner, size, circle or rectangle;
   mirror applies to the bubble). System audio, if you share it, and your
   mic are mixed. Desktop browsers only for screen recording.
+  Live preview (Auto / Always on / Always off): showing a live view of
+  your own screen inside itself makes a "hall of mirrors" that is very
+  heavy on small computers and drops frames. Auto keeps the preview on
+  for the webcam and off for screen recording (and in Low power mode).
+  With it off, recording is not affected. "Peek" shows one still frame
+  for four seconds, so you can check your framing, and Photo still works.
 
   Where recordings go (Recorder, Camera, Sequencer WAV): "A folder on
   this device" streams straight to a real folder (Chrome, Edge, Opera on
