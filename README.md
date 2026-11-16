@@ -679,6 +679,20 @@ CLEANER  (System > Cleaner)
     apply" button appears.
   Clean first, then back up, and your export holds only what you want.
 
+ERASE EVERYTHING  (for shared computers)
+  On a library, school or borrowed computer, use Cleaner > Overview >
+  "Erase everything..." (or the terminal command factoryreset) before
+  you leave. It wipes everything this OS saved on that device: your
+  files, Diary, drawings, settings, themes, installed programs, game
+  saves and your chat key. Then the OS starts fresh for the next person.
+  - It warns you, shows the date of your last backup (or that you never
+    made one), and offers "Make a backup first". To go ahead you must
+    type ERASE. It cannot be undone.
+  - Not erased: files you already downloaded or saved to a folder on the
+    computer, copies in your cloud storage, the browser's own history,
+    and data kept by other pages on the same website. Close other tabs of
+    the site as well.
+
 SAVE THE OS ITSELF
   Start menu > Save OS (also in Backup, Settings > About, or the terminal
   command saveos) downloads this whole OS as one .html file. In Chromium
