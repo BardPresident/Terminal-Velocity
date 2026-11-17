@@ -428,6 +428,11 @@ Camera
   for the webcam and off for screen recording (and in Low power mode).
   With it off, recording is not affected. "Peek" shows one still frame
   for four seconds, so you can check your framing, and Photo still works.
+  "Light look while recording" (on by default) turns off the OS's
+  animations, glow and moving wallpaper while a recording runs, so more
+  of a small computer is left for the recording. It switches back when you
+  stop. Screen + webcam corner asks for a smaller webcam picture (the
+  corner does not need more) to save work.
 
   Where recordings go (Recorder, Camera, Sequencer WAV): "A folder on
   this device" streams straight to a real folder (Chrome, Edge, Opera on
