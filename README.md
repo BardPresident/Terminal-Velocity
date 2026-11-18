@@ -615,6 +615,16 @@ Programs
 
 Terminal Velocity (the game, section 11), Snake and Minesweeper.
 
+Firework (star icon, Games)
+  A calm fireworks night sky over water. Tap to launch a rocket, hold to
+  keep launching. The Palette button opens colours (pick one or many, or
+  rainbow, or add your own), burst shapes (Peony, Chrysanthemum, Willow,
+  Palm, Ring, Heart, Star, Crossette, Glitter, or Surprise), size, Auto
+  show, Slow motion, Sound, Music and Volume. Keys while the window is
+  focused: Space surprise, A auto, S slow, M music, H hide the controls,
+  F fullscreen. Quality is Auto by default: it watches the frame rate and
+  steps down on a weak machine. Settings are remembered on this device.
+
 
 =====================================================================
 5. YOUR DATA: SAVING, BACKUP, CLEANER, REBOOT
