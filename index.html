@@ -1258,7 +1258,7 @@ const fmtDate=t=>{const d=new Date(t),hm=" "+pad(d.getHours())+":"+pad(d.getMinu
 const sleep=ms=>new Promise(r=>setTimeout(r,ms));
 const LS={get(k,d){try{const v=localStorage.getItem(k);return v==null?d:JSON.parse(v)}catch(e){return d}},set(k,v){try{localStorage.setItem(k,JSON.stringify(v));return true}catch(e){return false}}};
 const fmtUp=s=>{s=Math.max(0,Math.round(s));const d=Math.floor(s/86400),hr=Math.floor(s%86400/3600),m=Math.floor(s%3600/60),sc=s%60;if(d)return d+" d "+hr+" h";if(hr)return hr+" h "+m+" min";if(m)return m+" min "+sc+" s";return sc+" s"};
-const OS={apps:{},wins:[],z:10,bus:{},boot:performance.now(),ver:"1.0 build 1118-0312"};
+const OS={apps:{},wins:[],z:10,bus:{},boot:performance.now(),ver:"1.0 build 1118-0429"};
 OS.on=(ev,f)=>{(OS.bus[ev]=OS.bus[ev]||[]).push(f);return f};
 OS.off=(ev,f)=>{OS.bus[ev]=(OS.bus[ev]||[]).filter(x=>x!==f)};
 /* reboot that always fetches the newest copy of this page (like Ctrl+Shift+R), then reloads */
@@ -3326,7 +3326,7 @@ defApp("diary",{name:"Diary",icon:"diary",cat:"Accessories",w:900,h:620,single:t
   let D=DY.load(),cur=new Date(),view=new Date(cur.getFullYear(),cur.getMonth(),1),pane="write",q="",unlocked=false,timer=0,dirty=false,pop=null,nar=false;
   const root=h("div",{class:"dy"}),desk=h("div",{class:"desk"}),book=h("div",{class:"book"});
   const L=h("div",{class:"pg l"}),R=h("div",{class:"pg r"}),tabs=h("div",{class:"tabs"});
-  const ta=h("textarea",{class:"tx",spellcheck:"true",placeholder:"Dear Diary,\n",oninput:()=>{touch()}});
+  const ta=h("textarea",{class:"tx",spellcheck:"true",placeholder:"Dear Diary,\n",oninput:()=>{touch();keepCaret()},onkeyup:()=>keepCaret(),onclick:()=>keepCaret()});
   const dayEl=h("div",{class:"day"}),dateEl=h("div",{class:"date"}),altEl=h("div",{class:"alt"});
   const moodRow=h("div",{class:"moods"}),tray=h("div",{class:"tray"});
   const stat=h("span",{}),words=h("span",{}),
@@ -3339,6 +3339,26 @@ defApp("diary",{name:"Diary",icon:"diary",cat:"Accessories",w:900,h:620,single:t
   function flush(){clearTimeout(timer);timer=0;if(!dirty)return;dirty=false;const k=curKey(),t=ta.value;const e=D.e[k]||{};
    if(!t.trim()&&!e.mood){delete D.e[k]}else{e.t=t;e.ts=Date.now();D.e[k]=e}
    DY.save(D);saved.textContent="saved ♡";paintSide()}
+  let mir=null;
+  function keepCaret(){
+    try{
+      if(ta.selectionEnd!==ta.selectionStart)return;
+      const cs=getComputedStyle(ta);
+      if(!mir){mir=h("div",{});mir.style.cssText="position:absolute;visibility:hidden;pointer-events:none;top:0;left:0;white-space:pre-wrap;word-wrap:break-word;overflow-wrap:break-word;box-sizing:border-box";}
+      if(!mir.parentNode)ta.parentNode.appendChild(mir);
+      ["fontFamily","fontSize","fontWeight","letterSpacing","lineHeight","tabSize","paddingLeft","paddingRight"].forEach(k=>{mir.style[k]=cs[k]});
+      mir.style.paddingTop="0";mir.style.paddingBottom="0";
+      mir.style.width=ta.clientWidth+"px";
+      mir.textContent=ta.value.slice(0,ta.selectionEnd);
+      const lh=parseFloat(cs.lineHeight)||32;
+      const pt=parseFloat(cs.paddingTop)||0;
+      const bottom=pt+mir.scrollHeight+(/\n$/.test(mir.textContent)?lh:0);
+      const top=bottom-lh;
+      const margin=44;
+      if(bottom>ta.scrollTop+ta.clientHeight-margin)ta.scrollTop=bottom-ta.clientHeight+margin;
+      else if(top<ta.scrollTop)ta.scrollTop=Math.max(0,top-4);
+    }catch(e){}
+  }
   function touch(){dirty=true;saved.textContent="writing...";clearTimeout(timer);timer=setTimeout(flush,700);words.textContent=DY.words(ta.value)+" words"}
   /* ---------- page header ---------- */
   const DAYS=["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"];
