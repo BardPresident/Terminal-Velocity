@@ -418,21 +418,32 @@ Camera
   Webcam or screen recording (desktop), photos (JPG), pause, countdown,
   resolution (720p HD by default, for webcam and screen; 480p to 4K available), frame rate, format (MP4 where supported, else
   WebM), quality, mic select and mute, mirror, and front/back flip on
-  phones. Source "Screen + webcam corner" draws your camera into a corner
-  of a screen recording (choose the corner, size, circle or rectangle;
-  mirror applies to the bubble). System audio, if you share it, and your
-  mic are mixed. Desktop browsers only for screen recording.
+  phones. System audio, if you share it, and your mic are mixed. Desktop
+  browsers only for screen recording.
+  To appear on screen, the best way is: choose Source "Screen
+  (recommended)", then open the Camera button in the Paint app. Your face
+  becomes a normal window in the OS that you can place, resize and show
+  or hide whenever you like, and it costs the recording almost nothing.
+  Source "Screen + webcam corner (heavy)" instead draws your camera into
+  a corner of the recording (choose the corner, size, circle or
+  rectangle; mirror applies to the bubble). It decodes the screen and the
+  webcam, merges them one frame at a time and encodes the result, which
+  can make a small computer lag badly. The Camera app says so when you
+  pick it.
   Live preview (Auto / Always on / Always off): showing a live view of
   your own screen inside itself makes a "hall of mirrors" that is very
   heavy on small computers and drops frames. Auto keeps the preview on
   for the webcam and off for screen recording (and in Low power mode).
   With it off, recording is not affected. "Peek" shows one still frame
   for four seconds, so you can check your framing, and Photo still works.
-  "Light look while recording" (on by default) turns off the OS's
+  "Light look while recording" (off by default; tick it to use it) turns off the OS's
   animations, glow and moving wallpaper while a recording runs, so more
   of a small computer is left for the recording. It switches back when you
-  stop. Screen + webcam corner asks for a smaller webcam picture (the
-  corner does not need more) to save work.
+  stop. "New file every" is set to never by default: a take is one
+  file, which only appears when you press Stop. Choose 5 to 60 minutes if
+  you want long takes cut into parts as a safety net against a crash.
+  The corner mode asks for a smaller webcam picture (the corner does not
+  need more) to save work.
 
   Where recordings go (Recorder, Camera, Sequencer WAV): "A folder on
   this device" streams straight to a real folder (Chrome, Edge, Opera on
