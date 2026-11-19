@@ -348,17 +348,17 @@ Paint
     webcam picture, made for screen recording. Use the Webcam only button
     on the top bar, or on the camera screen. Move the mouse over the
     picture and a small bar appears (it fades after a moment) with Zoom,
-    Mirror, Fill/Fit, 16:9, 720p, Hide title bar and Exit. The picture
-    shows the whole 16:9 camera view (Fill crops it to fit the window
-    instead). 720p makes the picture exactly 1280 x 720 (or as large as
-    your desktop allows) and 16:9 reshapes the window to the camera's
-    shape at its current width. You can still resize the window freely
-    by its edges and corners. The mouse wheel zooms in at the pointer
-    (so you can focus on your face), and the arrow keys move the view.
-    Hide title bar removes the window's own title bar, so only the camera
-    shows: drag the picture to move the window and drag its edges to
-    resize it. Esc or a double-click on the picture goes
-    back to normal Paint, and the camera screen is still there.
+    Mirror, Fill/Fit, 16:9 and 720p, plus an Exit button in the top right
+    corner. The picture shows the whole 16:9 camera view (Fill crops it
+    to fit the window instead). 720p makes the picture exactly
+    1280 x 720; if your desktop is too small for that (the window's title
+    bar takes some room) it makes it the largest 16:9 size that fits and
+    tells you the size. 16:9 reshapes the window to the camera's shape at
+    its current width. You can still resize the window by its edges and
+    corners. The mouse wheel zooms in at the pointer (so you can focus
+    on your face), and the arrow keys move the view. Exit (or Esc, or a
+    double-click on the picture) brings back normal Paint at the window
+    size it had before, with the camera screen still open.
   - New picture: sizes are named for what you make with them, and
     Widescreen 1280 x 720 is the default (thumbnails, slides, wallpaper,
     and the same size the Recorder uses). Also Square cover 1000 x 1000
