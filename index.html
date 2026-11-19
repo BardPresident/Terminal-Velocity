@@ -1258,7 +1258,7 @@ const fmtDate=t=>{const d=new Date(t),hm=" "+pad(d.getHours())+":"+pad(d.getMinu
 const sleep=ms=>new Promise(r=>setTimeout(r,ms));
 const LS={get(k,d){try{const v=localStorage.getItem(k);return v==null?d:JSON.parse(v)}catch(e){return d}},set(k,v){try{localStorage.setItem(k,JSON.stringify(v));return true}catch(e){return false}}};
 const fmtUp=s=>{s=Math.max(0,Math.round(s));const d=Math.floor(s/86400),hr=Math.floor(s%86400/3600),m=Math.floor(s%3600/60),sc=s%60;if(d)return d+" d "+hr+" h";if(hr)return hr+" h "+m+" min";if(m)return m+" min "+sc+" s";return sc+" s"};
-const OS={apps:{},wins:[],z:10,bus:{},boot:performance.now(),ver:"1.0 build 1119-1030"};
+const OS={apps:{},wins:[],z:10,bus:{},boot:performance.now(),ver:"1.0 build 1119-1053"};
 OS.on=(ev,f)=>{(OS.bus[ev]=OS.bus[ev]||[]).push(f);return f};
 OS.off=(ev,f)=>{OS.bus[ev]=(OS.bus[ev]||[]).filter(x=>x!==f)};
 /* reboot that always fetches the newest copy of this page (like Ctrl+Shift+R), then reloads */
@@ -2557,7 +2557,7 @@ defApp("school",{needs:scHas,name:"School",icon:"school",cat:"Media",w:980,h:640
    stage=h("div",{class:"sc-stage",style:"position:relative;background:#000;width:100%;height:220px;flex:none;display:flex;align-items:center;justify-content:center",onclick:e=>{if(e.target===vd)pp.click()}},vd,img,aud),
    side=h("div",{class:"side sc-side",style:"width:260px"}),list=h("div",{class:"scr grow",style:"position:relative"}),
    ttl=h("div",{style:"font-size:19px;font-weight:700;color:var(--ac);overflow-wrap:anywhere"}),sub=h("div",{class:"dim"}),npT=h("div",{style:"font-weight:600;overflow-wrap:anywhere;line-height:1.3"},"Nothing playing"),npF=h("div",{class:"dim",style:"font-size:11px;overflow-wrap:anywhere"}),
-   seek=h("input",{type:"range",min:0,max:1000,value:0,style:"flex:1;accent-color:var(--ac);min-width:60px"}),tm=h("span",{class:"dim",style:"min-width:96px;text-align:center"},"0:00 / 0:00"),vol=h("input",{type:"range",min:0,max:1,step:.01,value:.9,style:"width:80px;accent-color:var(--ac)"}),
+   seek=h("input",{type:"range",min:0,max:1000,value:0,style:"flex:1 1 120px;accent-color:var(--ac);min-width:100px"}),tm=h("span",{class:"dim",style:"min-width:88px;text-align:center"},"0:00 / 0:00"),vol=h("input",{type:"range",min:0,max:1,step:.01,value:.9,style:"width:80px;accent-color:var(--ac)"}),
    find=h("input",{class:"t",placeholder:"Find a series...",style:"width:100%;box-sizing:border-box",oninput:e=>{filter=e.target.value.toLowerCase();drawSide()}});
   const vkey=f=>V.path(f);
   const pct=f=>{const p=prog[vkey(f)];return p&&p[1]?p[0]/p[1]:0};
@@ -2586,7 +2586,7 @@ defApp("school",{needs:scHas,name:"School",icon:"school",cat:"Media",w:980,h:640
   const bt=(i,t,f)=>h("button",{class:"btn",title:t,onclick:f},ic(i));
   const spb=h("button",{class:"btn sm",title:"Playback speed",onclick:()=>{spd=SPEEDS[(SPEEDS.indexOf(spd)+1)%SPEEDS.length];vd.playbackRate=spd;spb.textContent=spd+"x"}},"1x");
   const fsb=h("button",{class:"btn sm",title:"Full screen (F)",onclick:()=>{const el=player;if(document.fullscreenElement)document.exitFullscreen();else (el.requestFullscreen||el.webkitRequestFullscreen||(()=>toast("Full screen not supported here",1))).call(el)}},"Full");
-  const bar=h("div",{class:"sc-bar",style:"border-top:1px solid var(--bd);background:var(--pn2);padding:8px 12px;display:flex;flex-direction:column;gap:6px;flex:none"},h("div",{},npT,npF),h("div",{class:"mm-ctl",style:"display:flex;gap:8px;align-items:center"},bt("prev","Previous",()=>step(-1)),pp,bt("next","Next",()=>step(1)),seek,tm,spb,vol,fsb));
+  const bar=h("div",{class:"sc-bar",style:"border-top:1px solid var(--bd);background:var(--pn2);padding:8px 12px;display:flex;flex-direction:column;gap:6px;flex:none"},h("div",{},npT,npF),h("div",{class:"mm-ctl",style:"display:flex;gap:8px;align-items:center;flex-wrap:wrap"},bt("prev","Previous",()=>step(-1)),pp,bt("next","Next",()=>step(1)),seek,tm,spb,vol,fsb));
   const player=h("div",{class:"sc-player",style:"display:flex;flex-direction:column;flex:none"},stage,bar);
   const cont=h("button",{class:"btn sm",style:"display:none"},"Continue"),sbtn=h("button",{class:"btn sm sc-sbtn",onclick:()=>side.classList.toggle("open")},ic("list")," Series");
   const head=h("div",{style:"padding:8px 12px;border-bottom:1px solid var(--bd);flex:none;display:flex;gap:10px;align-items:center;flex-wrap:wrap"},h("div",{class:"grow",style:"min-width:150px"},ttl,sub),sbtn,cont,h("button",{class:"btn pri sm",onclick:()=>{const j=eps.findIndex(playable);if(j>=0)play(j)}},ic("play"),"Play series"));
