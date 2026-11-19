@@ -1258,7 +1258,7 @@ const fmtDate=t=>{const d=new Date(t),hm=" "+pad(d.getHours())+":"+pad(d.getMinu
 const sleep=ms=>new Promise(r=>setTimeout(r,ms));
 const LS={get(k,d){try{const v=localStorage.getItem(k);return v==null?d:JSON.parse(v)}catch(e){return d}},set(k,v){try{localStorage.setItem(k,JSON.stringify(v));return true}catch(e){return false}}};
 const fmtUp=s=>{s=Math.max(0,Math.round(s));const d=Math.floor(s/86400),hr=Math.floor(s%86400/3600),m=Math.floor(s%3600/60),sc=s%60;if(d)return d+" d "+hr+" h";if(hr)return hr+" h "+m+" min";if(m)return m+" min "+sc+" s";return sc+" s"};
-const OS={apps:{},wins:[],z:10,bus:{},boot:performance.now(),ver:"1.0 build 1119-0437"};
+const OS={apps:{},wins:[],z:10,bus:{},boot:performance.now(),ver:"1.0 build 1119-1030"};
 OS.on=(ev,f)=>{(OS.bus[ev]=OS.bus[ev]||[]).push(f);return f};
 OS.off=(ev,f)=>{OS.bus[ev]=(OS.bus[ev]||[]).filter(x=>x!==f)};
 /* reboot that always fetches the newest copy of this page (like Ctrl+Shift+R), then reloads */
@@ -1318,7 +1318,7 @@ const THEMES={
 };
 const THEME_ORDER=Object.keys(THEMES);
 const WALLS=["stars","rings","grid","rain","flow","plain","none"];
-const DEF={theme:"phosphor",wall:"auto",scan:false,vig:true,anim:true,verbose:true,bootSpeed:"normal",autostart:true,autostartMin:true,fsize:13,sound:false,restoreSession:true,showDataApps:false,lowPower:"auto",dateMode:"mc",manifestUrl:"",sep:false};
+const DEF={theme:"phosphor",wall:"auto",scan:false,vig:true,anim:true,verbose:true,bootSpeed:"normal",autostart:true,autostartMin:true,fsize:13,sound:false,restoreSession:true,rememberWin:true,showDataApps:false,lowPower:"auto",dateMode:"mc",manifestUrl:"",sep:false};
 const SET=Object.assign({},DEF,LS.get("tvos_settings",{}));if(!SET.scanOff1){SET.scan=false;SET.scanOff1=true;try{LS.set("tvos_settings",SET)}catch(e){}}
 /* low power mode: Off / On / Auto (Auto switches on for weak devices: 2 cores or less, or 2 GB of memory or less) */
 function lpWeak(){return (navigator.hardwareConcurrency||8)<=2||(navigator.deviceMemory&&navigator.deviceMemory<=2)}
@@ -1487,6 +1487,12 @@ const appVisible=a=>{if(!a||a.hidden)return false;if(!a.needs||SET.showDataApps)
 function defApp(id,o){OS.apps[id]=Object.assign({id,cat:"Accessories",w:640,h:440,single:false},o)}
 const isMob=()=>innerWidth<=700;
 let wid=0;
+/* Remember each app's window (size, position, snapped sides, maximised) as fractions of the desktop, so it comes back the same next time. */
+function winposSave(win){if(NEST||isMob()||SET.rememberWin===false)return;try{const d=$("#desk"),dw=d.clientWidth,dh=d.clientHeight;if(!dw||!dh)return;const g=win.max&&win.prev?win.prev:win,m=LS.get("tvos_winpos",{})||{};m[win.app]={fx:+(g.x/dw).toFixed(4),fy:+(g.y/dh).toFixed(4),fw:+(g.w/dw).toFixed(4),fh:+(g.h/dh).toFixed(4),max:win.max?1:0};LS.set("tvos_winpos",m)}catch(e){}}
+function winposApply(win,dw,dh,opts){if(NEST||isMob()||SET.rememberWin===false||(opts&&opts.max))return;const m=LS.get("tvos_winpos",{}),g=m&&m[win.app];if(!g||!(g.fw>0)||!(g.fh>0))return;
+ const same=OS.wins.filter(x=>x.app===win.app&&x!==win).length;
+ win.w=Math.max(260,Math.min(Math.round(g.fw*dw),dw));win.h=Math.max(140,Math.min(Math.round(g.fh*dh),dh));
+ win.x=Math.min(Math.max(0,Math.round(g.fx*dw)+same*24),Math.max(0,dw-80));win.y=Math.min(Math.max(0,Math.round(g.fy*dh)+same*20),Math.max(0,dh-40));if(g.max)win.remMax=1}
 OS.open=function(id,arg,opts){
  const app=OS.apps[id];if(!app){toast("No such app: "+id,1);return null}
  if(app.single){const ex=OS.wins.find(w=>w.app===id);if(ex){OS.show(ex);app.onArg&&arg!=null&&app.onArg(ex,arg);return ex}}
@@ -1500,10 +1506,11 @@ OS.open=function(id,arg,opts){
  win.tb=tb;const body=h("div",{class:"wb"});win.body=body;
  el.append(tb,body);for(const d of["n","s","e","w","ne","nw","se","sw"])el.append(h("div",{class:"rz "+d,"data-d":d}));
  $("#desk").append(el);OS.wins.push(win);
- setRect(win);el.addEventListener("pointerdown",()=>OS.focus(win),true);
+ winposApply(win,dw,dh,opts);setRect(win);el.addEventListener("pointerdown",()=>OS.focus(win),true);
  tb.addEventListener("pointerdown",e=>dragStart(e,win));tb.addEventListener("dblclick",()=>OS.toggleMax(win));
  $$(".rz",el).forEach(r=>r.addEventListener("pointerdown",e=>resizeStart(e,win,r.dataset.d)));
  if(opts&&opts.max||app.startMax&&!isMob()){/* restore target is clearly smaller than the screen, so the button visibly does something */win.w=Math.round(dw*.74);win.h=Math.round(dh*.78);win.x=Math.round((dw-win.w)/2);win.y=Math.round((dh-win.h)/2);setRect(win);OS.toggleMax(win,true)}
+ if(win.remMax&&!win.max)OS.toggleMax(win,true);
  try{app.init(win,body,arg)}catch(e){console.error(e);body.append(h("div",{class:"pad"},"App crashed: "+e.message))}
  OS.focus(win);OS.renderTasks();OS.emit("wins");return win};
 function setRect(w){const e=w.el.style;e.left=w.x+"px";e.top=w.y+"px";e.width=w.w+"px";e.height=w.h+"px"}
@@ -1512,7 +1519,7 @@ OS.focus=win=>{if(win.min){win.min=false;win.el.classList.remove("min")}OS.z++;w
 OS.show=win=>{OS.focus(win)};
 OS.minimize=win=>{win.min=true;win.el.classList.add("min");if(OS.cur===win){OS.cur=null;const nx=[...OS.wins].filter(w=>!w.min).sort((a,b)=>b.el.style.zIndex-a.el.style.zIndex)[0];nx?OS.focus(nx):OS.renderTasks()}else OS.renderTasks()};
 OS.toggleMax=(win,force)=>{const m=force!=null?force:!win.max;if(m&&!win.max){win.prev={x:win.x,y:win.y,w:win.w,h:win.h};const d=$("#desk");win.x=0;win.y=0;win.w=d.clientWidth;win.h=d.clientHeight}else if(!m&&win.max&&win.prev){Object.assign(win,win.prev)}win.max=m;win.el.classList.toggle("max",m);if(win.mb){win.mb.replaceChildren(ic(m?"copy":"max"));win.mb.title=m?"Restore":"Maximise"}setRect(win);win.on.resize&&win.on.resize()};
-OS.close=async win=>{if(win.onclose){const ok=await win.onclose();if(ok===false)return}win.dead=1;win.on.close&&win.on.close();win.el.remove();OS.wins=OS.wins.filter(w=>w!==win);if(OS.cur===win)OS.cur=null;const nx=[...OS.wins].filter(w=>!w.min).sort((a,b)=>b.el.style.zIndex-a.el.style.zIndex)[0];nx?OS.focus(nx):OS.renderTasks();OS.emit("wins")};
+OS.close=async win=>{if(win.onclose){const ok=await win.onclose();if(ok===false)return}win.dead=1;win.on.close&&win.on.close();winposSave(win);win.el.remove();OS.wins=OS.wins.filter(w=>w!==win);if(OS.cur===win)OS.cur=null;const nx=[...OS.wins].filter(w=>!w.min).sort((a,b)=>b.el.style.zIndex-a.el.style.zIndex)[0];nx?OS.focus(nx):OS.renderTasks();OS.emit("wins")};
 function snapRect(x,y){const d=$("#desk"),W=d.clientWidth,H=d.clientHeight,m=8;if(y<=m)return{t:"max",x:0,y:0,w:W,h:H};if(x<=m)return{t:"l",x:0,y:0,w:W/2,h:H};if(x>=W-m)return{t:"r",x:W/2,y:0,w:W/2,h:H};return null}
 function dragStart(e,win){if(isMob()||e.button>0)return;const sx=e.clientX,sy=e.clientY;let moved=false,s=null,ox=win.x,oy=win.y;
  const mv=ev=>{if(!moved){if(Math.abs(ev.clientX-sx)+Math.abs(ev.clientY-sy)<5)return;moved=true;if(win.max){const f=sx/win.w;OS.toggleMax(win,false);ox=sx-win.w*f;oy=0;win.x=ox;win.y=oy;setRect(win)}}win.x=ox+ev.clientX-sx;win.y=Math.max(0,oy+ev.clientY-sy);setRect(win);s=snapRect(ev.clientX,ev.clientY-$("#desk").getBoundingClientRect().top);const sn=$("#snap");if(s){sn.style.cssText=`display:block;left:${s.x}px;top:${s.y}px;width:${s.w}px;height:${s.h}px`}else sn.style.display="none"};
@@ -1906,7 +1913,7 @@ defApp("settings",{name:"Settings",icon:"gear",cat:"System",w:700,h:520,single:t
    Appearance(){
     const ws=h("select",{class:"t",onchange:e=>{SET.wall=e.target.value;saveSet();setWall()}},...["auto",...WALLS].map(w=>h("option",{value:w,selected:SET.wall===w},w==="auto"?"auto (theme default)":w)));
     return[h("h3",{class:"ac",style:"margin:0"},"Appearance"),h("div",{class:"row",style:"border:0;padding:0;gap:8px;flex-wrap:wrap;align-items:center"},h("span",{},"Themes have their own app now: roll, collect, breed and save them."),h("button",{class:"btn pri",onclick:()=>OS.open("themes")},"Open Themes")),h("div",{class:"row",style:"border:0;padding:0"},"Wallpaper (canvas, no images):",ws),h("div",{class:"row",style:"border:0;padding:0"},"Low power mode:",h("select",{class:"t",title:"Stops animations, glow and the moving wallpaper to save CPU and battery",onchange:e=>{SET.lowPower=e.target.value;saveSet();OS.lpSlow=false;document.body.classList.toggle("lp",lpOn());setWall();lpWatch();toast("Low power mode: "+(lpOn()?"on":"off"))}},...[["auto","Auto (measured: on only if it cannot keep up)"],["on","On"],["off","Off"]].map(x=>h("option",{value:x[0],selected:SET.lowPower===x[0]},x[1]))),h("span",{class:"dim",style:"font-size:12px"},lpOn()?"currently ON":"currently off")),h("div",{class:"row",style:"border:0;padding:0"},"Calendar & dates:",calSel()),chk("scan","CRT scanlines",()=>applyTheme(SET.theme)),chk("vig","Vignette",()=>applyTheme(SET.theme)),chk("anim","Window animations"),chk("showDataApps","Show Music, Books, Comics, Audiobooks and Archive even when their files are not mounted",()=>{buildDesk()}),h("div",{class:"row",style:"border:0;padding:0"},"Text size",h("input",{type:"range",min:11,max:18,value:SET.fsize,oninput:e=>{SET.fsize=+e.target.value;applyTheme(SET.theme)}}),h("span",{class:"dim"},"light themes skip scanlines automatically"))]},
-   Boot(){return[h("h3",{class:"ac",style:"margin:0"},"Boot"),chk("verbose","Verbose boot log (say what it is doing at all times)"),h("label",{style:"display:flex;gap:8px;align-items:center"},"Boot speed",h("select",{class:"t",onchange:e=>{SET.bootSpeed=e.target.value;saveSet()}},...[["slow","Slow (about 14 s)"],["normal","Normal (about 7 s)"],["fast","Fast"],["instant","Instant"]].map(([v,l])=>h("option",{value:v,selected:(SET.bootSpeed||"normal")===v},l)))),chk("restoreSession","Reopen my windows, and where they were, after a reboot or refresh (close everything and reboot to start fresh)"),chk("autostart","First boot: start Terminal Velocity (the game) automatically"),chk("autostartMin","...and keep it minimised in the taskbar (desktop first)"),h("div",{class:"dim"},"Press any key or click during boot to skip the delays. The checks still run.")]},
+   Boot(){return[h("h3",{class:"ac",style:"margin:0"},"Boot"),chk("verbose","Verbose boot log (say what it is doing at all times)"),h("label",{style:"display:flex;gap:8px;align-items:center"},"Boot speed",h("select",{class:"t",onchange:e=>{SET.bootSpeed=e.target.value;saveSet()}},...[["slow","Slow (about 14 s)"],["normal","Normal (about 7 s)"],["fast","Fast"],["instant","Instant"]].map(([v,l])=>h("option",{value:v,selected:(SET.bootSpeed||"normal")===v},l)))),chk("restoreSession","Reopen my windows, and where they were, after a reboot or refresh (close everything and reboot to start fresh)"),chk("rememberWin","Remember where each app's window was (size, position, snapped sides) and put it back when I open that app again"),chk("autostart","First boot: start Terminal Velocity (the game) automatically"),chk("autostartMin","...and keep it minimised in the taskbar (desktop first)"),h("div",{class:"dim"},"Press any key or click during boot to skip the delays. The checks still run.")]},
    Archive(){const c=h("pre",{class:"out dim"},MAN.json?`Mounted: ${MAN.files.toLocaleString()} files · ${fmtBytes(MAN.size)}\nSource : ${MAN.src}\nFormat : {generated, webPrefix, items:[{name,type:"folder"|"file",children,path,size}]}`:"No manifest mounted.\n"+MAN.tried.map(t=>"  fail "+t.u+" ("+t.why+")").join("\n"));
     const u=h("input",{class:"t grow",placeholder:"https://example.org/files/manifest.json",value:SET.manifestUrl||""});
     const apply=async j=>{try{buildArchive(j,"custom");toast("Archive mounted: "+MAN.files.toLocaleString()+" files. Restart the game window to let it see the new manifest.");draw()}catch(e){dlgAlert("That manifest could not be used: "+e.message,"Manifest")}};
@@ -5090,6 +5097,7 @@ const CL={
  cats:["Your writing and creations","Settings","Progress and saved places","App preferences","Game","Housekeeping","Other OS data","Not part of this OS"],
  known:{
   tvos_settings:["OS settings","Theme, wallpaper, date style, low power mode and the other choices in Settings.","Settings","Deleting it puts every setting back to default."],
+  tvos_winpos:["Window positions","Where each app's window was, so it opens in the same place and size next time.","Housekeeping"],
   tvos_session:["Open windows","Which windows were open last time, so they can come back at start.","Housekeeping"],
   tvos_diary:["Diary","Every page you wrote in the Diary, its colours and its PIN.","Your writing and creations","This is your writing. Deleting it removes every Diary page and the PIN."],
   tvos_seq:["Sequencer patterns","Your drum patterns A to D, tempo and mixer settings.","Your writing and creations","Deleting it erases your drum patterns."],
