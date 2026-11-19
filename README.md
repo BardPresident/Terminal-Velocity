@@ -615,6 +615,23 @@ Programs
 
 Terminal Velocity (the game, section 11), Snake and Minesweeper.
 
+Hearth (flame icon, Accessories)
+  A cozy fireplace to sit by. Pick a Hearth: Stone, Brick, Campfire
+  (night sky, moon and pines) or Flames only. Flame colours: Classic,
+  Deep red, Copper (green and teal tips) and Violet. The fire is alive:
+  logs burn down over time, the flames shrink to glowing embers, and
+  "Tend fire" adds a log for you when it gets low (turn it off to let
+  the fire die). Add a log with the button or L, and click the fire to
+  poke it. Sound is on by default and is made live in your browser, so
+  nothing is downloaded: a soft roar plus random crackles and pops.
+  Sound, Crackle and Volume are in the controls; M mutes. The sleep
+  timer (30 min, 1 hour, 90 min) keeps the fire going, then fades it
+  out over the last quarter and leaves embers; press L to relight.
+  Press H to hide all the controls (press H or double-click to bring
+  them back) and F for fullscreen. The sound keeps playing if you
+  minimise the window, which is handy as background; close the window
+  to stop it. Quality is Auto and steps down on a weak machine.
+
 Firework (star icon, Games)
   A calm fireworks night sky over water. Tap to launch a rocket, hold to
   keep launching. The Palette button opens colours (pick one or many, or
