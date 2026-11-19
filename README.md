@@ -344,6 +344,16 @@ Paint
     timer, Mirror, Switch camera) and it becomes the picture, ready to
     draw all over. Your drawing sits on its own layer above the photo,
     so "Clear drawing" rubs out everything you drew and keeps the photo.
+  - Webcam only: hides every tool and button so the window is just your
+    webcam picture, made for screen recording. Use the Webcam only button
+    on the top bar, or on the camera screen. Move the mouse over the
+    picture and a small bar appears (it fades after a moment) with Zoom,
+    Mirror, Fill/Fit, Hide title bar and Exit. The mouse wheel zooms in
+    at the pointer (so you can focus on your face), and the arrow keys
+    move the view. Hide title bar removes the window's own title bar, so
+    only the camera shows: drag the picture to move the window and drag
+    its edges to resize it. Esc or a double-click on the picture goes
+    back to normal Paint, and the camera screen is still there.
   - New picture: sizes are named for what you make with them, and
     Widescreen 1280 x 720 is the default (thumbnails, slides, wallpaper,
     and the same size the Recorder uses). Also Square cover 1000 x 1000
