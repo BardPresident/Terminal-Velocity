@@ -1258,7 +1258,7 @@ const fmtDate=t=>{const d=new Date(t),hm=" "+pad(d.getHours())+":"+pad(d.getMinu
 const sleep=ms=>new Promise(r=>setTimeout(r,ms));
 const LS={get(k,d){try{const v=localStorage.getItem(k);return v==null?d:JSON.parse(v)}catch(e){return d}},set(k,v){try{localStorage.setItem(k,JSON.stringify(v));return true}catch(e){return false}}};
 const fmtUp=s=>{s=Math.max(0,Math.round(s));const d=Math.floor(s/86400),hr=Math.floor(s%86400/3600),m=Math.floor(s%3600/60),sc=s%60;if(d)return d+" d "+hr+" h";if(hr)return hr+" h "+m+" min";if(m)return m+" min "+sc+" s";return sc+" s"};
-const OS={apps:{},wins:[],z:10,bus:{},boot:performance.now(),ver:"1.0 build 1119-0255"};
+const OS={apps:{},wins:[],z:10,bus:{},boot:performance.now(),ver:"1.0 build 1119-0324"};
 OS.on=(ev,f)=>{(OS.bus[ev]=OS.bus[ev]||[]).push(f);return f};
 OS.off=(ev,f)=>{OS.bus[ev]=(OS.bus[ev]||[]).filter(x=>x!==f)};
 /* reboot that always fetches the newest copy of this page (like Ctrl+Shift+R), then reloads */
@@ -4414,7 +4414,7 @@ defApp("hearth",{name:"Hearth",icon:"flame",cat:"Accessories",w:900,h:600,single
    deep:{n:"Deep red",st:[[0,0,0,0,0],[.1,50,0,0,.30],[.32,150,12,4,.82],[.58,225,52,12,.95],[.8,255,112,36,1],[1,255,196,120,1]],glow:[240,70,30]},
    copper:{n:"Copper",st:[[0,0,0,0,0],[.1,70,14,0,.32],[.28,215,80,8,.82],[.48,255,160,36,.95],[.68,110,225,110,1],[.86,56,214,196,1],[1,220,255,242,1]],glow:[90,210,150]},
    violet:{n:"Violet",st:[[0,0,0,0,0],[.1,34,0,60,.32],[.3,104,18,164,.84],[.55,186,66,238,.95],[.78,240,150,255,1],[1,255,232,255,1]],glow:[190,90,250]}};
-  const QUAL={low:{rs:.75,gw:72,emb:24,bloom:false,fairy:false},medium:{rs:1,gw:110,emb:60,bloom:false,fairy:true},high:{rs:Math.min(window.devicePixelRatio||1,1.5),gw:150,emb:120,bloom:true,fairy:true}};
+  const QUAL={low:{rs:.65,gw:52,emb:14,bloom:false,fairy:false},medium:{rs:.85,gw:78,emb:32,bloom:false,fairy:true},high:{rs:Math.min(window.devicePixelRatio||1,1.25),gw:118,emb:70,bloom:true,fairy:true}};
   const LEVELS=["low","medium","high"];
   const autoStart=()=>(typeof lpOn==="function"&&lpOn())?"low":"medium";
   let level=S.quality==="auto"?autoStart():S.quality,Q=QUAL[level];
@@ -4477,7 +4477,8 @@ defApp("hearth",{name:"Hearth",icon:"flame",cat:"Accessories",w:900,h:600,single
    const dx=l[2]-l[0],dy=l[3]-l[1],n=Math.hypot(dx,dy)||1,nx=-dy/n,ny=dx/n;
    c.beginPath();c.moveTo(l[0]+nx*off,l[1]+ny*off);c.lineTo(l[2]+nx*off,l[3]+ny*off)}
 
-  function buildBg(){
+  function buildBg(){buildBg0();const c=bg.getContext("2d");c.setTransform(RS,0,0,RS,0,0);const v=c.createRadialGradient(W/2,H*.5,Math.min(W,H)*.35,W/2,H*.5,Math.max(W,H)*.78);v.addColorStop(0,"rgba(0,0,0,0)");v.addColorStop(1,"rgba(0,0,0,.6)");c.fillStyle=v;c.fillRect(0,0,W,H)}
+  function buildBg0(){
    const c=bg.getContext("2d");c.setTransform(RS,0,0,RS,0,0);c.clearRect(0,0,W,H);
    const rnd=seeded(11);
    if(S.style==="flames"){
@@ -4581,6 +4582,8 @@ defApp("hearth",{name:"Hearth",icon:"flame",cat:"Accessories",w:900,h:600,single
     c.strokeStyle="rgba(60,34,16,.7)";c.lineWidth=1;for(let k=1;k<4;k++){c.beginPath();c.ellipse(0,0,r*.38*k/4,r*k/4,0,0,TAU);c.stroke()}
     c.restore()}
   }
+  let spr={};
+  function buildSprites(){spr={};for(const rgb of ["255,208,120","255,150,90","255,236,190","255,190,100"]){const c=mk();c.width=c.height=32;const x=c.getContext("2d"),gr=x.createRadialGradient(16,16,0,16,16,16);gr.addColorStop(0,`rgba(${rgb},1)`);gr.addColorStop(.35,`rgba(${rgb},.35)`);gr.addColorStop(1,`rgba(${rgb},0)`);x.fillStyle=gr;x.fillRect(0,0,32,32);spr[rgb]=c}}
   function buildVig(){
    const c=vig.getContext("2d");c.setTransform(RS,0,0,RS,0,0);c.clearRect(0,0,W,H);
    const v=c.createRadialGradient(W/2,H*.5,Math.min(W,H)*.35,W/2,H*.5,Math.max(W,H)*.78);v.addColorStop(0,"rgba(0,0,0,0)");v.addColorStop(1,"rgba(0,0,0,.6)");c.fillStyle=v;c.fillRect(0,0,W,H);
@@ -4589,12 +4592,12 @@ defApp("hearth",{name:"Hearth",icon:"flame",cat:"Accessories",w:900,h:600,single
   function resize(){
    W=root.clientWidth;H=root.clientHeight;if(W<60||H<60)return;
    RS=Q.rs;root.classList.toggle("narrow",W<=640);root.classList.toggle("lite",level!=="high");
-   for(const c of [cv,bg,logC,vig]){c.width=Math.round(W*RS);c.height=Math.round(H*RS)}
+   for(const c of [cv,bg,logC]){c.width=Math.round(W*RS);c.height=Math.round(H*RS)}
    mc.setTransform(RS,0,0,RS,0,0);
    geometry();
    GW=Q.gw;GH=Math.max(24,Math.round(GW*g.fbH/g.fbW));fc.width=GW;fc.height=GH;heat=new Float32Array(GW*GH);img=fcx.createImageData(GW,GH);u32=new Uint32Array(img.data.buffer);
    bed=new Float32Array(GW);for(let x=0;x<GW;x++){const t=(x/(GW-1)-.5)*2;bed[x]=Math.max(0,1-Math.pow(Math.abs(t)/.58,2.2))*.8}
-   buildLut();buildBg();buildLogs();buildVig();fpsReset();
+   buildLut();buildBg();buildLogs();buildSprites();fpsReset();
   }
 
   /* ---- fire state ---- */
@@ -4623,33 +4626,46 @@ defApp("hearth",{name:"Hearth",icon:"flame",cat:"Accessories",w:900,h:600,single
    if(A){if(A.ctx.state==="suspended")A.ctx.resume().catch(()=>{});return}
    const AC=window.AudioContext||window.webkitAudioContext;if(!AC)return;
    try{
-    const ctx=new AC({latencyHint:"playback"}),master=ctx.createGain();master.gain.value=0;master.connect(ctx.destination);
-    const len=ctx.sampleRate*4,nb=ctx.createBuffer(1,len,ctx.sampleRate),d=nb.getChannelData(0);let last=0;
+    const ctx=new AC({latencyHint:"playback"}),sr=ctx.sampleRate,master=ctx.createGain();master.gain.value=0;master.connect(ctx.destination);
+    /* roar: 4 s of brown noise with a cross-faded seam */
+    const len=sr*4,nb=ctx.createBuffer(1,len,sr),d=nb.getChannelData(0);let last=0;
     for(let i=0;i<len;i++){const w=Math.random()*2-1;last=(last+.02*w)/1.02;d[i]=last*3.4}
-    const fade2=Math.round(ctx.sampleRate*.25);for(let i=0;i<fade2;i++){const t=i/fade2;d[len-fade2+i]=d[len-fade2+i]*(1-t)+d[i]*t}
-    const wn=ctx.createBuffer(1,ctx.sampleRate*2,ctx.sampleRate),e=wn.getChannelData(0);for(let i=0;i<e.length;i++)e[i]=Math.random()*2-1;
-    const r=ctx.createBufferSource();r.buffer=nb;r.loop=true;const lp=ctx.createBiquadFilter();lp.type="lowpass";lp.frequency.value=430;const rg=ctx.createGain();rg.gain.value=0;r.connect(lp);lp.connect(rg);rg.connect(master);r.start();
-    const hsrc=ctx.createBufferSource();hsrc.buffer=wn;hsrc.loop=true;const bp=ctx.createBiquadFilter();bp.type="bandpass";bp.frequency.value=1700;bp.Q.value=.6;const hg=ctx.createGain();hg.gain.value=0;hsrc.connect(bp);bp.connect(hg);hg.connect(master);hsrc.start();
-    A={ctx,master,rg,hg,wn};if(ctx.state==="suspended")ctx.resume().catch(()=>{});
+    const xf=Math.round(sr*.3);for(let i=0;i<xf;i++){const t=i/xf;d[len-xf+i]=d[len-xf+i]*(1-t)+d[i]*t}
+    const r=ctx.createBufferSource();r.buffer=nb;r.loop=true;r.loopEnd=(len-xf)/sr;
+    const lp=ctx.createBiquadFilter();lp.type="lowpass";lp.frequency.value=520;const rg=ctx.createGain();rg.gain.value=0;
+    const mp=ctx.createBiquadFilter();mp.type="bandpass";mp.frequency.value=780;mp.Q.value=.5;const mg=ctx.createGain();mg.gain.value=0;
+    r.connect(lp);lp.connect(rg);rg.connect(master);r.connect(mp);mp.connect(mg);mg.connect(master);r.start();
+    /* crackle: a pre-made 12 s stereo loop of clicks and pops, so playback costs nothing and never stutters */
+    const cl=sr*12,cb=ctx.createBuffer(2,cl,sr);
+    for(let ch=0;ch<2;ch++){const o=cb.getChannelData(ch);
+     for(let n=0;n<110;n++){const p=Math.floor(Math.random()*(cl-sr*.2)),cnt=1+((Math.random()*4)|0);let q0=p;
+      for(let k=0;k<cnt;k++){const dur=Math.floor(sr*(.003+Math.random()*.014)),a=.12+Math.random()*.45;let pv=0;
+       for(let i=0;i<dur&&q0+i<cl;i++){const x=(Math.random()*2-1)*Math.exp(-i/(dur*.28));o[q0+i]+=(x-pv)*a*.7;pv=x}q0+=Math.floor(sr*(.004+Math.random()*.03))}}
+     for(let n=0;n<16;n++){const p=Math.floor(Math.random()*(cl-sr*.3)),dur=Math.floor(sr*(.05+Math.random()*.07)),a=.35+Math.random()*.4;let lpv=0;
+      for(let i=0;i<dur;i++){const t=i/sr,x=(Math.random()*2-1);lpv+=(x-lpv)*.12;o[p+i]+=(lpv*3*Math.exp(-i/(dur*.3))+Math.sin(t*TAU*(120-300*t))*Math.exp(-i/(dur*.25))*.8)*a*.5}}}
+    const cs=ctx.createBufferSource();cs.buffer=cb;cs.loop=true;const hp=ctx.createBiquadFilter();hp.type="highpass";hp.frequency.value=700;const cg=ctx.createGain();cg.gain.value=0;
+    cs.connect(hp);hp.connect(cg);cg.connect(master);cs.start();
+    const wn=ctx.createBuffer(1,sr,sr),e=wn.getChannelData(0);for(let i=0;i<e.length;i++)e[i]=Math.random()*2-1;
+    A={ctx,master,rg,mg,cg,wn};if(ctx.state==="suspended")ctx.resume().catch(()=>{});
    }catch(e){A=null}
   }
+  /* one-off pop for adding a log or poking the fire */
   function crackle(big){
-   if(!A||!S.sound||!S.crack||A.ctx.state!=="running")return;
-   const c=A.ctx,t=c.currentTime,hp=c.createBiquadFilter();hp.type=big?"bandpass":"highpass";hp.frequency.value=big?rand(500,1100):rand(2200,5200);if(big)hp.Q.value=.8;
-   const pan=c.createStereoPanner?c.createStereoPanner():null;if(pan){pan.pan.value=rand(-.55,.55);hp.connect(pan);pan.connect(A.master)}else hp.connect(A.master);
-   const n=big?1:1+((Math.random()*4)|0);
-   for(let i=0;i<n;i++){const t0=t+i*rand(.004,.032),s=c.createBufferSource();s.buffer=A.wn;const gn=c.createGain(),pk=big?rand(.35,.7):rand(.05,.22);
-    gn.gain.setValueAtTime(pk,t0);gn.gain.exponentialRampToValueAtTime(.0001,t0+(big?rand(.06,.13):rand(.006,.024)));s.connect(gn);gn.connect(hp);s.start(t0,rand(0,1.5));s.stop(t0+.16)}
-   if(big){const o=c.createOscillator();o.type="sine";o.frequency.setValueAtTime(150,t);o.frequency.exponentialRampToValueAtTime(55,t+.09);const og=c.createGain();og.gain.setValueAtTime(.22,t);og.gain.exponentialRampToValueAtTime(.0001,t+.12);o.connect(og);og.connect(A.master);o.start(t);o.stop(t+.14)}
+   if(!A||!S.sound||A.ctx.state!=="running")return;
+   const c=A.ctx,t=c.currentTime,s0=c.createBufferSource();s0.buffer=A.wn;
+   const f=c.createBiquadFilter();f.type="bandpass";f.frequency.value=rand(600,1200);f.Q.value=.8;const gn=c.createGain();gn.gain.setValueAtTime(big?.5:.2,t);gn.gain.exponentialRampToValueAtTime(.0001,t+(big?.1:.02));
+   s0.connect(f);f.connect(gn);gn.connect(A.master);s0.start(t,rand(0,.5));s0.stop(t+.14);
+   if(big){const o=c.createOscillator();o.type="sine";o.frequency.setValueAtTime(150,t);o.frequency.exponentialRampToValueAtTime(55,t+.09);const og=c.createGain();og.gain.setValueAtTime(.2,t);og.gain.exponentialRampToValueAtTime(.0001,t+.12);o.connect(og);og.connect(A.master);o.start(t);o.stop(t+.14)}
   }
   function audioTick(dt){
-   if(!A)return;const I=bigI(),t=A.ctx.currentTime;
-   A.master.gain.setTargetAtTime(S.sound?S.vol*.9:0,t,.15);
-   A.rg.gain.setTargetAtTime(.55*Math.pow(I,1.15)*(.88+.12*Math.random()),t,.3);
-   A.hg.gain.setTargetAtTime(.05*I*(.7+.3*Math.random()),t,.2);
-   if(!S.sound||!S.crack||I<.03)return;
-   const lam=(1.5+9*I)*(timerDone?0:1);if(Math.random()<lam*dt)crackle(false);
-   if(Math.random()<(.1+.5*I)*dt*.5){crackle(true);burst(5);flare=Math.min(1.1,flare+.2)}
+   if(!A)return;
+   if(S.sound&&A.ctx.state==="suspended")A.ctx.resume().catch(()=>{});
+   const I=bigI(),t=A.ctx.currentTime;
+   A.master.gain.setTargetAtTime(S.sound?S.vol*.9:0,t,.2);
+   A.rg.gain.setTargetAtTime(.5*Math.pow(I,1.1),t,.8);
+   A.mg.gain.setTargetAtTime(.16*Math.pow(I,1.1),t,.8);
+   A.cg.gain.setTargetAtTime(S.crack&&!timerDone?.85*Math.pow(I,.9):0,t,.5);
+   if(I>.03&&Math.random()<(.1+.5*I)*dt*.5){burst(5);flare=Math.min(1.1,flare+.2)}
   }
 
   /* ---- logic tick (10 Hz, keeps running even when minimised) ---- */
@@ -4681,15 +4697,17 @@ defApp("hearth",{name:"Hearth",icon:"flame",cat:"Accessories",w:900,h:600,single
    }
    /* cooling scaled so flame height follows intensity and size */
    const lift=clamp((.3+.7*Math.min(I,1.1))*sz,.15,1.6);
-   const cool=.03/lift;
+   const cool=.03/lift*(72/hh);
    for(let y=0;y<hh-2;y++){
     const o=y*w,o1=o+w,o2=o+2*w,sway=Math.sin(sim*1.1+y*.16)*.6+Math.sin(sim*2.3+y*.31)*.4;
-    const yf=1-y/hh;
+    const yf=1-y/hh,hw=.08+.4*Math.pow(yf,.75);
     for(let x=0;x<w;x++){
      let xs=x+Math.round(sway*(1-yf)*1.2+(Math.random()-.5)*.9);if(xs<0)xs=0;else if(xs>=w)xs=w-1;
      const xl=xs>0?xs-1:xs,xr=xs<w-1?xs+1:xs;
      let v=(heat[o1+xl]*.55+heat[o1+xs]*2.2+heat[o1+xr]*.55+heat[o2+xs]*.7)/4.0-Math.random()*cool*(.6+.8*Math.random());
      /* nudge flames to taper toward the top */
+     const dx=Math.abs(x/w-.5-sway*.012);if(dx>hw){let pen=Math.min(1,(dx-hw)*5);pen*=pen;v=v*(1-.7*pen)-pen*cool*.8}
+     if(y<hh*.22)v*=y/(hh*.22)
      if(v<0)v=0;heat[o+x]=v;
     }
    }
@@ -4716,7 +4734,8 @@ defApp("hearth",{name:"Hearth",icon:"flame",cat:"Accessories",w:900,h:600,single
    if(Q.bloom){mc.globalAlpha=.55;mc.drawImage(fc,g.fbX-g.fbW*.04,g.fbY-g.fbH*.06,g.fbW*1.08,g.fbH*1.04-g.fbW*.045);mc.globalAlpha=1}
    mc.restore();
    /* logs */
-   mc.globalCompositeOperation="source-over";mc.drawImage(logC,0,0,W,H);
+   mc.globalCompositeOperation="source-over";
+   {const rx=Math.max(0,g.fbX-g.fbW*.15),ry=Math.max(0,g.floorY-g.fbH*.7),rw=Math.min(W-rx,g.fbW*1.3),rh=Math.min(H-ry,g.fbH*.7+g.fbW*.12);mc.drawImage(logC,rx*RS,ry*RS,rw*RS,rh*RS,rx,ry,rw,rh)}
    mc.save();if(!g.open){openPath(mc);mc.clip()}
    mc.globalCompositeOperation="lighter";mc.lineCap="round";
    for(const l of logs){
@@ -4737,20 +4756,18 @@ defApp("hearth",{name:"Hearth",icon:"flame",cat:"Accessories",w:900,h:600,single
    /* candles and fairy lights (indoor) */
    mc.globalCompositeOperation="lighter";
    if(g.candles){for(const [x,y] of g.candles){const f=1+Math.sin(tNow*9+x)*.1+(Math.random()-.5)*.1,hh=13*SC*f,w=4.4*SC;
-     const cgl=mc.createRadialGradient(x,y-hh*.5,0,x,y-hh*.5,34*SC);cgl.addColorStop(0,"rgba(255,190,100,.32)");cgl.addColorStop(1,"rgba(255,160,60,0)");mc.fillStyle=cgl;mc.fillRect(x-34*SC,y-hh*.5-34*SC,68*SC,68*SC);
+     mc.globalAlpha=.32;mc.drawImage(spr["255,190,100"],x-34*SC,y-hh*.5-34*SC,68*SC,68*SC);mc.globalAlpha=1;
      mc.fillStyle="rgba(255,150,40,.9)";mc.beginPath();mc.ellipse(x,y-hh*.4,w,hh*.55,0,0,TAU);mc.fill();
      mc.fillStyle="rgba(255,236,170,.95)";mc.beginPath();mc.ellipse(x,y-hh*.3,w*.5,hh*.32,0,0,TAU);mc.fill()}}
    if(g.lights&&Q.fairy){for(const [x,y,ph,sp,rgb] of g.lights){const a=.55+.45*Math.sin(tNow*sp+ph);
-     const lg2=mc.createRadialGradient(x,y,0,x,y,9*SC);lg2.addColorStop(0,`rgba(${rgb},${(.8*a).toFixed(2)})`);lg2.addColorStop(1,`rgba(${rgb},0)`);mc.fillStyle=lg2;mc.fillRect(x-9*SC,y-9*SC,18*SC,18*SC);
-     mc.fillStyle=`rgba(255,248,230,${(.9*a).toFixed(2)})`;mc.fillRect(x-1.2*SC,y-1.2*SC,2.4*SC,2.4*SC)}}
+     mc.globalAlpha=.85*a;mc.drawImage(spr[rgb],x-9*SC,y-9*SC,18*SC,18*SC)}mc.globalAlpha=1}
    /* warm light across the room */
    const rad=Math.max(W,H)*.8,lx=g.cx,ly=g.floorY-g.fbH*.3;
    const rl=mc.createRadialGradient(lx,ly,0,lx,ly,rad);
    rl.addColorStop(0,`rgba(${gl[0]},${gl[1]*.7|0},${gl[2]*.5|0},${(.28*I*flick).toFixed(3)})`);rl.addColorStop(.5,`rgba(${gl[0]*.8|0},${gl[1]*.45|0},${gl[2]*.3|0},${(.09*I*flick).toFixed(3)})`);rl.addColorStop(1,"rgba(0,0,0,0)");
    mc.fillStyle=rl;mc.fillRect(0,0,W,H);
    mc.globalCompositeOperation="source-over";
-   mc.drawImage(vig,0,0,W,H);
-  }
+     }
 
   /* ---- watchdog ---- */
   let fpsT=0,fpsN=0,fpsGrace=0,fpsShown=0,cap=false;
@@ -4767,7 +4784,7 @@ defApp("hearth",{name:"Hearth",icon:"flame",cat:"Accessories",w:900,h:600,single
   function frame(now){
    if(dead)return;requestAnimationFrame(frame);
    if(win.min||root.clientWidth<60||root.clientHeight<60){lastFrame=now;return}
-   if(now-lastFrame<31)return;
+   if(now-lastFrame<(level==="low"?40:31))return;
    const raw=Math.min(.5,(now-lastFrame)/1000||.033),dt=Math.min(.06,raw);lastFrame=now;tNow+=dt;
    watch(raw);stepFire(dt);drawFrame(dt);
   }
