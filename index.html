@@ -1258,7 +1258,7 @@ const fmtDate=t=>{const d=new Date(t),hm=" "+pad(d.getHours())+":"+pad(d.getMinu
 const sleep=ms=>new Promise(r=>setTimeout(r,ms));
 const LS={get(k,d){try{const v=localStorage.getItem(k);return v==null?d:JSON.parse(v)}catch(e){return d}},set(k,v){try{localStorage.setItem(k,JSON.stringify(v));return true}catch(e){return false}}};
 const fmtUp=s=>{s=Math.max(0,Math.round(s));const d=Math.floor(s/86400),hr=Math.floor(s%86400/3600),m=Math.floor(s%3600/60),sc=s%60;if(d)return d+" d "+hr+" h";if(hr)return hr+" h "+m+" min";if(m)return m+" min "+sc+" s";return sc+" s"};
-const OS={apps:{},wins:[],z:10,bus:{},boot:performance.now(),ver:"1.0 build 1119-1053"};
+const OS={apps:{},wins:[],z:10,bus:{},boot:performance.now(),ver:"1.0 build 1119-2324"};
 OS.on=(ev,f)=>{(OS.bus[ev]=OS.bus[ev]||[]).push(f);return f};
 OS.off=(ev,f)=>{OS.bus[ev]=(OS.bus[ev]||[]).filter(x=>x!==f)};
 /* reboot that always fetches the newest copy of this page (like Ctrl+Shift+R), then reloads */
@@ -1548,8 +1548,8 @@ function tabDrag(e,el,arr,redraw){if(e.button>0||e.pointerType==="touch"||e.targ
    const ord=[...par.children].map(c=>c._t).filter(Boolean);arr.splice(0,arr.length,...ord);redraw()}};
  addEventListener("pointermove",mv);addEventListener("pointerup",up);addEventListener("pointercancel",up)}
 OS.renderTasks=function(){if(OS.tkDrag)return;const t=$("#tasks");t.innerHTML="";for(const w of OS.wins){const a=OS.apps[w.app];const tk=h("div",{class:"tk"+(OS.cur===w&&!w.min?" focus":"")+(w.min?" min":""),title:w.title,onclick:()=>{if(OS.cur===w&&!w.min)OS.minimize(w);else OS.focus(w)},oncontextmenu:e=>{e.preventDefault();ctxMenu(e.clientX,e.clientY-90,[{t:"Restore / focus",fn:()=>OS.focus(w)},{t:"Minimise",fn:()=>OS.minimize(w)},{t:w.max?"Unmaximise":"Maximise",fn:()=>OS.toggleMax(w)},"-",{t:"Close",ic:"x",fn:()=>OS.close(w)}])}},ic(a.icon),h("span",{class:"ti"},w.title));tk._w=w;tk.addEventListener("pointerdown",ev=>tkDrag(ev,tk));t.append(tk)}};
-function tick(){const d=new Date(),c=$("#clk");c.textContent=pad(d.getHours())+":"+pad(d.getMinutes());c.title=MC.dual(d);const m=$("#mcd");if(m){m.textContent=MC.on()?MC.short(d)+" "+MC.era(d):d.getDate()+" "+MONTHS[d.getMonth()].slice(0,3)+" "+d.getFullYear();m.title=MC.dual(d)}}
-function buildTray(){const tr=$("#tray");tr.innerHTML="";tr.append(h("span",{class:"hide",title:"Next theme",onclick:()=>cycleTheme(1)},ic("eye")),h("span",{class:"hide",id:"arc",title:"Archive status",onclick:()=>OS.open("settings",{tab:"Archive"})},"archive: …"),h("span",{id:"bkt",title:"Backup",onclick:e=>BKT.menu(e)},ic("save")),h("span",{title:"Spotlight (Ctrl+Space)",onclick:()=>spot(true)},ic("search")),h("span",{id:"mcd",onclick:()=>OS.open("calendar")}),h("b",{id:"clk",onclick:()=>OS.open("clock")}));try{BKT.draw()}catch(e){}tick();setInterval(tick,10000);setStand(LS.get("tvos_standing",null))}
+function tick(){const d=new Date(),c=$("#clk");c.textContent=pad(d.getHours())+":"+pad(d.getMinutes());c.title=MC.dual(d);const m=$("#mcd");if(m){m.textContent=MC.on()?MC.short(d)+" "+MC.era(d):d.getDate()+" "+MONTHS[d.getMonth()].slice(0,3)+" "+d.getFullYear();m.title="Mythocratic Calendar - "+MC.dual(d)}}
+function buildTray(){const tr=$("#tray");tr.innerHTML="";tr.append(h("span",{class:"hide",title:"Switch theme",onclick:()=>cycleTheme(1)},ic("eye")),h("span",{class:"hide",id:"arc",title:"Archive status",onclick:()=>OS.open("settings",{tab:"Archive"})},"archive: …"),h("span",{id:"bkt",title:"Backup your data",onclick:e=>BKT.menu(e)},ic("save")),h("span",{title:"Search apps and files (Ctrl+Space)",onclick:()=>spot(true)},ic("search")),h("span",{id:"mcd",onclick:()=>OS.open("calendar")}),h("b",{id:"clk",onclick:()=>OS.open("clock")}));try{BKT.draw()}catch(e){}tick();setInterval(tick,10000);setStand(LS.get("tvos_standing",null))}
 function cycleTheme(d){const i=(THEME_ORDER.indexOf(SET.theme)+d+THEME_ORDER.length)%THEME_ORDER.length;applyTheme(THEME_ORDER[i]);toast("Theme: "+THEMES[SET.theme].n)}
 OS.on("manifest",m=>{try{buildDesk()}catch(e){}const a=$("#arc");if(a)a.textContent="archive: "+m.files.toLocaleString()+" files"});
 /* ---- desktop icons & start menu ---- */
@@ -1563,7 +1563,7 @@ function startList(q){const l=$("#sl");l.innerHTML="";q=(q||"").toLowerCase().tr
 function startToggle(on){const s=$("#start");on=on==null?!s.classList.contains("on"):on;s.classList.toggle("on",on);$("#sbtn").classList.toggle("on",on);if(on){startSel=0;$("#sq").value="";startList("");if(!matchMedia("(pointer:coarse)").matches)setTimeout(()=>$("#sq").focus(),0)}else $("#sq").blur()}
 function buildStart(){$("#sbtn").append(ic("logo"),h("span",{},"TV·OS"));$("#sbtn").onclick=e=>{e.stopPropagation();startToggle()};
  $("#sq").addEventListener("input",e=>{startSel=0;startList(e.target.value)});$("#sq").addEventListener("keydown",e=>{const items=$$(".si",$("#sl"));if(e.key==="ArrowDown"){startSel=Math.min(items.length-1,startSel+1);startList($("#sq").value)}else if(e.key==="ArrowUp"){startSel=Math.max(0,startSel-1);startList($("#sq").value)}else if(e.key==="Enter"){const it=items[startSel];if(it){startToggle(false);OS.open(it.dataset.app)}}else if(e.key==="Escape")startToggle(false)});
- const f=$("#sf");f.append(h("span",{},"Terminal Velocity OS "+OS.ver),h("span",{style:"display:flex;gap:6px"},h("button",{class:"btn sm",title:"Save this whole OS as one .html file",onclick:()=>{startToggle(false);saveOS()}},ic("save"),"Save OS"),h("button",{class:"btn sm",onclick:()=>{startToggle(false);cycleTheme(1)}},"Theme"),h("button",{class:"btn sm",onclick:async()=>{startToggle(false);if(await dlgConfirm("Reboot Terminal Velocity OS? Unsaved notes are kept as drafts.","Reboot","Reboot"))OS.reload()}},ic("power"),"Reboot")));
+ const f=$("#sf");f.append(h("span",{},"Terminal Velocity OS "+OS.ver),h("span",{style:"display:flex;gap:6px"},h("button",{class:"btn sm",title:"Saves the OS itself as one .html file (not your files - use Backup for your data)",onclick:()=>{startToggle(false);saveOS()}},ic("save"),"Save OS"),h("button",{class:"btn sm",onclick:()=>{startToggle(false);cycleTheme(1)}},"Theme"),h("button",{class:"btn sm",onclick:async()=>{startToggle(false);if(await dlgConfirm("Reboot Terminal Velocity OS? Unsaved notes are kept as drafts.","Reboot","Reboot"))OS.reload()}},ic("power"),"Reboot")));
  addEventListener("pointerdown",e=>{if(!e.target.closest("#start")&&!e.target.closest("#sbtn"))startToggle(false)})}
 /* the desktop must never scroll: focus() or scrollIntoView() inside a window can otherwise shove every window (and its title bar) off screen */
 {const dk=$("#desk"),fix=()=>{if(dk.scrollTop||dk.scrollLeft){dk.scrollTop=0;dk.scrollLeft=0}};dk.addEventListener("scroll",fix);addEventListener("scroll",()=>{if(scrollY||scrollX)scrollTo(0,0)});
@@ -2283,7 +2283,7 @@ defApp("comic",{needs:()=>hasDir("/archive/Republicka-Comic"),name:"Comics",icon
 
 /* --- Audiobooks: /archive/Audiobooks, resume where you stopped --- */
 IP.headp="M4 15v-3a8 8 0 0116 0v3 M4 14h3v6H4z M17 14h3v6h-3z";
-defApp("audiobooks",{needs:()=>hasDir("/archive/Audiobooks"),name:"Audiobooks",icon:"headp",cat:"Media",w:920,h:600,single:true,desc:"listen to the Audiobooks archive, resumes where you stopped",kw:"audiobooks audiobook audio books narration listen mp3 spoken",
+defApp("audiobooks",{needs:()=>hasDir("/archive/Audiobooks"),name:"Audiobooks",icon:"headp",cat:"Media",w:920,h:600,single:true,desc:"listen to the Audiobooks archive",kw:"audiobooks audiobook audio books narration listen mp3 spoken",
  init(win,b,arg){
   const DB_=LS.get("tvos_ab",{}),ST=Object.assign({rate:1,vol:.9},LS.get("tvos_ab_set",{})),saveDB=()=>LS.set("tvos_ab",DB_),saveSt=()=>LS.set("tvos_ab_set",ST);
   let root=V.get("/archive/Audiobooks"),books=[],cur=null,filt="",sleepAt=0,sleepEnd=false,sleepT=0,lastSave=0,dead=false;
@@ -2348,7 +2348,7 @@ defApp("audiobooks",{needs:()=>hasDir("/archive/Audiobooks"),name:"Audiobooks",i
  onArg(w,a){typeof a==="string"&&w.openPath&&w.openPath(a)}});
 
 /* --- BookBinder: bind many .txt books into one file, or split into chunk ZIPs --- */
-defApp("bookbinder",{name:"BookBinder",icon:"binder",cat:"Tools",w:780,h:660,single:true,desc:"bind many .txt books into one file, or split them into chunks",kw:"bind combine merge join concatenate txt books chunks zip notebooklm sources",
+defApp("bookbinder",{name:"BookBinder",icon:"binder",cat:"Tools",w:780,h:660,single:true,desc:"bind or split .txt books",kw:"bind combine merge join concatenate txt books chunks zip notebooklm sources",
  init(win,b,arg){
   let items=[],busy=false;const enc=new TextEncoder();
   const T=(a,c)=>h("input",Object.assign({class:"t"},a),c),num=(v,mn,mx)=>T({type:"number",value:v,min:mn,max:mx,style:"width:80px"});
@@ -2421,7 +2421,7 @@ async function bkMake(inc,onProg){const enc=new TextEncoder(),now=new Date(),fil
  files.splice(2,0,{name:"localstorage.json",data:enc.encode(JSON.stringify(ls,null,1)),mt:+now});
  const g=ls.terminal_velocity_v3;if(g)files.splice(3,0,{name:"game-save.json",data:enc.encode(g),mt:+now});
  return{blob:makeZip(files),man}}
-defApp("backup",{name:"Backup",icon:"save",cat:"Tools",w:560,h:640,single:true,desc:"back up and restore all your files, settings and game save",kw:"backup restore export import zip save game data migrate transfer",
+defApp("backup",{name:"Backup",icon:"save",cat:"Tools",w:560,h:640,single:true,desc:"back up and restore your data",kw:"backup restore export import zip save game data migrate transfer",
  init(win,b){const root=h("div",{class:"scr grow pad",style:"display:flex;flex-direction:column;gap:12px"}),cb={};
   const mk=(id,txt,on)=>{const c=h("input",{type:"checkbox"});c.checked=on!==false;cb[id]=c;return h("label",{class:"row",style:"border:0;padding:0;gap:8px;cursor:pointer"},c,txt)};
   const draw=async()=>{root.innerHTML="";const files=bkHome().filter(n=>!n.dir),size=files.reduce((a,n)=>a+(n.size||0),0),sk=bkKeys("tvos").length;let turn=null;try{const g=JSON.parse(localStorage.getItem("terminal_velocity_v3")||"null");if(g)turn=g.t}catch(e){}
@@ -2442,7 +2442,7 @@ defApp("backup",{name:"Backup",icon:"save",cat:"Tools",w:560,h:640,single:true,d
     sec("Restore from a backup ZIP"),
     h("div",{class:"dim"},"Choose a ZIP made by this app. You can pick what to restore before anything changes."),
     h("div",{class:"row",style:"border:0;padding:0"},h("button",{class:"btn",onclick:async()=>{const f=(await pickDisk(".zip,application/zip"))[0];if(f)restoreFrom(f)}},ic("up")," Choose backup ZIP..."),h("button",{class:"btn",title:"Open a backup file and prove it can be read. Nothing is changed.",onclick:async()=>{const f=(await pickDisk(".zip,application/zip"))[0];if(!f)return;msg.textContent="checking...";const v=await BKT.verify(f);msg.textContent="";dlgAlert(v.lines.join("\n"),v.ok?"Backup checked":"Backup problem")}},ic("eye")," Check a backup file")),
-    sec("Save the OS itself"),h("div",{class:"dim"},"Download this whole OS as one .html file. Host it anywhere or give it to a friend."),h("div",{class:"row",style:"border:0;padding:0"},h("button",{class:"btn",onclick:()=>saveOS()},ic("save")," Save OS as .html")),sec("Game save only"),
+    sec("Save the OS itself"),h("div",{class:"dim"},"Download this whole OS as one .html file. Host it anywhere or give it to a friend. This saves the OS itself, not your files; use the Backup section for your data."),h("div",{class:"row",style:"border:0;padding:0"},h("button",{class:"btn",onclick:()=>saveOS()},ic("save")," Save OS as .html")),sec("Game save only"),
     h("div",{class:"row",style:"border:0;padding:0"},h("button",{class:"btn",onclick:()=>{const g=localStorage.getItem("terminal_velocity_v3");if(!g)return toast("No game save yet",1);download("terminal-velocity-save-"+MC.iso(new Date())+".json",g,"application/json")}},"Export game save"),
      h("button",{class:"btn",onclick:async()=>{const f=(await pickDisk(".json,.txt"))[0];if(!f)return;try{const t=await f.text();const o=JSON.parse(t);if(!o||typeof o!=="object")throw 0;if(!await dlgConfirm("Replace your current game save with this file? The OS restarts afterwards.","Import game save","Replace"))return;localStorage.setItem("terminal_velocity_v3",t);toast("Game save imported. Restarting...");setTimeout(()=>location.reload(),1200)}catch(e){toast("That is not a game save file",1)}}},"Import game save")),
     h("div",{class:"dim",style:"font-size:12px"},"Not included: /archive (it streams from the web and is the same everywhere), and real folders you mounted under /mnt (they stay on your computer)."))};
@@ -2492,7 +2492,7 @@ function mmBuild(root,prefix,skipHidden){/* root:{kids:[{name,dir,size,kids}]} *
 async function mmScanHandle(dh,prog,cnt){const kids=[];for await(const [name,h] of dh.entries()){if(h.kind==="directory")kids.push({name,dir:1,kids:(await mmScanHandle(h,prog,cnt)).kids});else{let sz=0;try{sz=(await h.getFile()).size}catch(e){}kids.push({name,dir:0,size:sz});if(++cnt.n%50===0){prog(cnt.n);await new Promise(r=>setTimeout(r))}}}return{name:dh.name,dir:1,kids}}
 function mmFromFiles(list){const root={name:"",dir:1,kids:[]};for(const f of list){const p=(f.webkitRelativePath||f.name).split("/");if(!root.name&&p.length>1)root.name=p[0];let cur=root;const parts=p.length>1?p.slice(1):p;for(let i=0;i<parts.length;i++){const last=i===parts.length-1;if(last)cur.kids.push({name:parts[i],dir:0,size:f.size});else{let k=cur.kids.find(x=>x.dir&&x.name===parts[i]);if(!k){k={name:parts[i],dir:1,kids:[]};cur.kids.push(k)}cur=k}}}return root}
 function mmFromVfs(n){return n.dir?{name:n.name,dir:1,kids:[...n.kids.values()].map(mmFromVfs)}:{name:n.name,dir:0,size:n.size||0}}
-defApp("manifest",{name:"Manifest Maker",icon:"folderplus",cat:"Tools",w:640,h:660,single:true,desc:"turn a folder into manifest.json so the OS can show your own archive",kw:"manifest archive generate json folder share host library",
+defApp("manifest",{name:"Manifest Maker",icon:"folderplus",cat:"Tools",w:640,h:660,single:true,desc:"turn a folder into manifest.json",kw:"manifest archive generate json folder share host library",
  init(win,b){let tab="Make",prefix=LS.get("tvos_mm_prefix",""),hidden=false /* = skip hidden */,res=null,srcName="",msg="";
   const tabsEl=h("div",{class:"tabs"}),body=h("div",{class:"scr grow pad",style:"display:flex;flex-direction:column;gap:10px"});
   const copy=async t=>{try{await navigator.clipboard.writeText(t);toast("Copied")}catch(e){toast("Copy failed. Select the text and copy it by hand.",1)}};
@@ -2644,7 +2644,7 @@ const recSupported=list=>{const out=[];for(const m of list){try{if(window.MediaR
 const recList=()=>{const box=h("div",{style:"display:flex;flex-direction:column;gap:2px;font-size:12px"});return{el:box,add(r){box.prepend(h("div",{class:"dim",style:"overflow-wrap:anywhere"},"✓ "+r.where+"  ("+fmtBytes(r.size)+")"))}}};
 
 /* --- Recorder: WAV or compressed audio --- */
-defApp("recorder",{name:"Recorder",icon:"mic",cat:"Media",w:480,h:640,single:true,desc:"record audio as WAV (or compressed) and save it to your device",kw:"voice microphone audio record memo wav sound capture",
+defApp("recorder",{name:"Recorder",icon:"mic",cat:"Media",w:480,h:640,single:true,desc:"record audio, save as WAV",kw:"voice microphone audio record memo wav sound capture",
  init(win,b){const S=Object.assign({fmt:"wav",ch:2,clean:false,split:30,dev:""},LS.get("tvos_rec_set",{})),save=()=>LS.set("tvos_rec_set",S);
   let state="idle",stream=null,pcm=null,mr=null,sink=null,seg=1,segBytes=0,recSec=0,tStart=0,iv=0,paused=false,level=0,q=Promise.resolve(),mrFmt=null,raf=0,splitTimer=0;
   const lab=h("div",{style:"text-align:center;font-size:44px;color:var(--ac);font-variant-numeric:tabular-nums"},"0:00"),info=h("div",{class:"dim",style:"text-align:center;min-height:18px"}),meter=h("canvas",{style:"width:100%;height:30px;background:var(--bg);border:1px solid var(--bd);border-radius:6px"}),msg=h("div",{class:"dim",style:"text-align:center;padding:0 8px;overflow-wrap:anywhere"}),rl=recList();
@@ -2688,7 +2688,7 @@ defApp("recorder",{name:"Recorder",icon:"mic",cat:"Media",w:480,h:640,single:tru
   win.on.close=()=>{cancelAnimationFrame(raf);if(state==="rec")stop();else{clearInterval(iv);stream&&stream.getTracks().forEach(t=>t.stop())}}}});
 
 /* --- Camera: photo, video, screen recording --- */
-defApp("camera",{name:"Camera",icon:"camera",cat:"Media",w:860,h:660,single:true,desc:"record video from your webcam or screen, take photos, save to your device",kw:"webcam video record photo screen capture mp4 webm selfie",
+defApp("camera",{name:"Camera",icon:"camera",cat:"Media",w:860,h:660,single:true,desc:"record webcam or screen, take photos",kw:"webcam video record photo screen capture mp4 webm selfie",
  init(win,b){const vfmts=recSupported(REC_VIDEO),S=Object.assign({pos:"br",psz:22,pshape:"round",src:"cam",prev:"auto",lite:false,res:"720",fps:30,mute:false,mirror:true,vfmt:vfmts[0]?vfmts[0][1]+"|"+vfmts[0][0]:"",br:0,split:0,cd:0,cam:"",mic:"",face:"user"},LS.get("tvos_cam_set",{})),save=()=>LS.set("tvos_cam_set",S);
   if(vfmts.length&&!vfmts.some(m=>m[1]+"|"+m[0]===S.vfmt))S.vfmt=vfmts[0][1]+"|"+vfmts[0][0];
   if(!S.liteV2){S.liteV2=1;S.lite=false;save()}
@@ -2827,7 +2827,7 @@ const PT={
 .pt .wexit{position:absolute;top:10px;right:10px;z-index:8;opacity:0;pointer-events:none;transition:opacity .25s}.pt .wexit.show{opacity:1;pointer-events:auto}
 `;document.head.append(s)}
 };
-defApp("paint",{name:"Paint",icon:"paint",cat:"Media",w:980,h:680,desc:"expression board: brushes, stamps, symmetry, draw over a webcam photo, save PNG",kw:"draw sketch canvas png paint brush webcam selfie photo face stamp emoji sticker expression board ivory",
+defApp("paint",{name:"Paint",icon:"paint",cat:"Media",w:980,h:680,desc:"brushes, stamps, webcam, save PNG",kw:"draw sketch canvas png paint brush webcam selfie photo face stamp emoji sticker expression board ivory",
  init(win,b,arg){
   PT.css();
   let W=1280,H=720,z=0,tool="brush",col="#ff5bd0",size=10,op=1,sym="off",filled=false,tol=40,font="hand",bold=true,stamp=PT.stamps[0],drawing=false,last=null,start=null,acc=0,hue=0,pr=1,nar=false,hist=[],hi=-1,hq=Promise.resolve(),cam=null,camStream=null,facing="user",mirror=true,panning=null;
@@ -3095,7 +3095,7 @@ document.addEventListener("click",e=>{if(e.defaultPrevented||e.button||e.ctrlKey
  if(o===location.origin&&a.target!=="_blank")return;e.preventDefault();BR.openUrl(a.href)});
 /* pages you control can ask the Browser to open their new-window links as tabs (see README: bridge snippet) */
 addEventListener("message",e=>{const d=e.data;if(!d||d.tvos!=="open"||typeof d.url!=="string"||!/^https?:\/\//i.test(d.url))return;const i=BR.inst.find(x=>x.has(e.source));if(i)i.newTab(d.url)});
-defApp("browser",{name:"Browser",icon:"globe",cat:"Internet",w:960,h:680,single:false,desc:"browse the free web: sites that allow themselves to be shown inside other pages",kw:"web internet browser bookmarks wikipedia website iframe surf",
+defApp("browser",{name:"Browser",icon:"globe",cat:"Internet",w:960,h:680,single:false,desc:"browse sites that allow embedding",kw:"web internet browser bookmarks wikipedia website iframe surf",
  init(win,b,arg){
   let tabs=[],cur=null,idc=0,restoring=false;
   const bar=h("input",{class:"t",style:"flex:1;min-width:0",placeholder:"Type a web address, or words to search",spellcheck:"false",autocapitalize:"off",onkeydown:e=>{if(e.key==="Enter"){go(bar.value);bar.blur()}},onfocus:()=>bar.select()});
@@ -3205,7 +3205,7 @@ const BN={
  fmt(v){return v>=100?v.toFixed(0):v>=10?v.toFixed(1):v.toFixed(2)}
 };
 
-defApp("benchmark",{name:"Benchmark",icon:"gauge",cat:"System",w:780,h:640,single:true,desc:"how much of your computer this OS really uses: live load, memory, speed tests, low power mode",kw:"benchmark performance speed ram memory cpu fps low power battery test resources",
+defApp("benchmark",{name:"Benchmark",icon:"gauge",cat:"System",w:780,h:640,single:true,desc:"live load, memory and speed tests",kw:"benchmark performance speed ram memory cpu fps low power battery test resources",
  init(win,b){
   let tab=localStorage.getItem("tvos_bench_tab")||"Live";const tabs=["Live","Windows","Benchmark","Guide"];
   const S={fps:0,budget:0,jank:0,worst:0,lt:0,heap:null,nodes:0,h:{fps:[],budget:[],heap:[],nodes:[]},ready:false};
@@ -3365,7 +3365,7 @@ const DY={
 .dy select{border:1.5px solid #e9a9c0;border-radius:14px;padding:3px 8px;background:#fff;color:var(--ink);font-size:14px}
 `;document.head.append(s)}
 };
-defApp("diary",{name:"Diary",icon:"diary",cat:"Accessories",w:900,h:620,single:true,desc:"a pretty paper diary: pages by date, moods, stickers, ruled lines, optional PIN",kw:"diary journal write dear diary private notes days feelings mood stickers cute girly paper",
+defApp("diary",{name:"Diary",icon:"diary",cat:"Accessories",w:900,h:620,single:true,desc:"a pretty paper diary with optional PIN",kw:"diary journal write dear diary private notes days feelings mood stickers cute girly paper",
  init(win,b){
   DY.css();
   let D=DY.load(),cur=new Date(),view=new Date(cur.getFullYear(),cur.getMonth(),1),pane="write",q="",unlocked=false,timer=0,dirty=false,pop=null,nar=false;
@@ -3496,7 +3496,7 @@ defApp("diary",{name:"Diary",icon:"diary",cat:"Accessories",w:900,h:620,single:t
  }});
 
 /* ===================== FIREWORK (a relaxing fireworks sky; Wendell's standalone game, built in) ===================== */
-defApp("firework",{name:"Firework",icon:"star",cat:"Games",w:880,h:560,single:true,desc:"a calm fireworks night sky: colours, shapes, water reflections, soft music",kw:"fireworks relax calm sky stars night game toy sparkle celebrate",
+defApp("firework",{name:"Firework",icon:"star",cat:"Games",w:880,h:560,single:true,desc:"a calm fireworks night sky",kw:"fireworks relax calm sky stars night game toy sparkle celebrate",
  css(){if(document.getElementById("fwcss"))return;const s=document.createElement("style");s.id="fwcss";s.textContent=".fw{\n    --glass: rgba(16, 15, 40, .58);\n    --solid: rgba(14, 13, 34, .94);\n    --line: rgba(255,255,255,.09);\n    --txt: rgba(238,234,255,.9);\n    --dim: rgba(214,208,250,.52);\n  }\n.fw,.fw *{box-sizing:border-box}\n.fw{position:relative;flex:1;min-height:0;overflow:hidden;background:#04050d;color:var(--txt);font-family:Inter,system-ui,-apple-system,sans-serif;-webkit-user-select:none;user-select:none;outline:0;-webkit-tap-highlight-color:transparent}\n.fw #fw-main{position:absolute;inset:0;width:100%;height:100%;display:block;touch-action:none;cursor:crosshair}\n.fw #fw-intro{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;\n    pointer-events:none;padding-bottom:20vh;transition:opacity 2.8s ease, transform 2.8s ease}\n.fw #fw-intro h1{font-family:'Cormorant Garamond',Georgia,'Times New Roman',serif;font-weight:300;font-style:italic;\n    font-size:clamp(64px,12vw,150px);letter-spacing:.01em;color:#f6f1ff;line-height:1;\n    text-shadow:0 0 50px rgba(200,170,255,.45)}\n.fw #fw-intro p{margin-top:18px;font-size:12px;letter-spacing:.42em;text-transform:uppercase;color:var(--dim);\n    animation:breathe 4.5s ease-in-out infinite}\n.fw #fw-intro.gone{opacity:0;transform:translateY(-12px)}\n@keyframes breathe{0%,100%{opacity:.35}50%{opacity:.95}}\n.fw .ui{transition:opacity 1.4s ease}\n.fw.idle #fw-hint,.fw.zen .ui{opacity:0;pointer-events:none}\n.fw.idle #fw-toggle{opacity:.22}\n.fw #fw-toggle{position:absolute;left:20px;bottom:20px;z-index:5;display:flex;align-items:center;gap:9px;\n    padding:11px 18px 11px 15px;border-radius:999px;border:1px solid var(--line);background:var(--glass);\n    -webkit-backdrop-filter:blur(16px);backdrop-filter:blur(16px);color:var(--txt);font:500 13px Inter,sans-serif;\n    letter-spacing:.06em;cursor:pointer;transition:opacity 1.4s ease, background .3s}\n.fw #fw-toggle:hover{background:rgba(30,28,70,.7)}\n.fw #fw-toggle .spark{display:inline-block;width:16px;height:16px;border-radius:50%;\n    background:conic-gradient(#ff7a8a,#ffc46b,#fff08a,#7dffb0,#6fd8ff,#8f8bff,#e98bff,#ff7a8a)}\n.fw #fw-panel{position:absolute;left:20px;bottom:76px;z-index:5;width:312px;max-width:calc(100% - 40px);\n    max-height:calc(100% - 110px);overflow-y:auto;overscroll-behavior:contain;\n    padding:20px 20px 16px;border-radius:20px;border:1px solid var(--line);background:var(--glass);\n    -webkit-backdrop-filter:blur(20px);backdrop-filter:blur(20px);\n    box-shadow:0 20px 60px rgba(0,0,0,.45);transition:opacity .45s ease, transform .45s ease;scrollbar-width:thin}\n.fw #fw-panel.closed{opacity:0;transform:translateY(12px) scale(.98);pointer-events:none;visibility:hidden;\n    transition:opacity .45s ease, transform .45s ease, visibility 0s .45s}\n.fw.lite #fw-panel,.fw.lite #fw-toggle{-webkit-backdrop-filter:none;backdrop-filter:none;background:var(--solid)}\n.fw.lite #fw-panel{box-shadow:none}\n.fw #fw-panel h2{font-family:'Cormorant Garamond',Georgia,'Times New Roman',serif;font-style:italic;font-weight:400;font-size:26px;margin-bottom:2px}\n.fw #fw-panel .sub{font-size:11.5px;color:var(--dim);margin-bottom:14px}\n.fw .sec{padding:13px 0;border-top:1px solid var(--line)}\n.fw .sec h3{font-size:10.5px;font-weight:500;letter-spacing:.22em;text-transform:uppercase;color:var(--dim);margin-bottom:11px;\n    display:flex;justify-content:space-between;align-items:center}\n.fw .sec h3 span{letter-spacing:.04em;text-transform:none;font-weight:400}\n.fw .swatches{display:grid;grid-template-columns:repeat(6,1fr);gap:10px}\n.fw .fwsw{position:relative;aspect-ratio:1;border-radius:50%;border:none;cursor:pointer;outline:none;\n    transition:transform .2s, box-shadow .25s, opacity .25s;opacity:.45;transform:scale(.86)}\n.fw .fwsw[aria-pressed=\"true\"]{opacity:1;transform:scale(1);box-shadow:0 0 0 2px rgba(255,255,255,.75),0 0 16px var(--c)}\n.fw .fwsw:hover{opacity:.9}\n.fw .fwsw:focus-visible{box-shadow:0 0 0 2px #fff}\n.fw .fwsw.rainbow{background:conic-gradient(#ff6b7d,#ffbe5c,#fff07a,#6dffa4,#5fd2ff,#8b86ff,#e884ff,#ff6b7d)}\n.fw .fwsw.add{background:transparent;border:1.5px dashed rgba(255,255,255,.35);opacity:.8;transform:scale(.86);\n    display:flex;align-items:center;justify-content:center;color:var(--dim);font-size:18px;line-height:1;overflow:hidden}\n.fw .fwsw.add input{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%}\n.fw.rainbow .fwsw:not(.rainbow):not(.add){opacity:.18}\n.fw .chips{display:flex;flex-wrap:wrap;gap:7px}\n.fw .chip{padding:7px 12px;border-radius:999px;border:1px solid var(--line);background:rgba(255,255,255,.04);\n    color:var(--txt);font:400 12.5px Inter,sans-serif;cursor:pointer;transition:all .2s}\n.fw .chip:hover{background:rgba(255,255,255,.09)}\n.fw .chip[aria-pressed=\"true\"]{background:rgba(243,217,164,.16);border-color:rgba(243,217,164,.55);color:#fff3da}\n.fw input[type=range]{-webkit-appearance:none;appearance:none;width:100%;height:22px;background:transparent;cursor:pointer}\n.fw input[type=range]::-webkit-slider-runnable-track{height:3px;border-radius:3px;background:linear-gradient(90deg,rgba(243,217,164,.7),rgba(255,255,255,.15))}\n.fw input[type=range]::-moz-range-track{height:3px;border-radius:3px;background:linear-gradient(90deg,rgba(243,217,164,.7),rgba(255,255,255,.15))}\n.fw input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:16px;height:16px;border-radius:50%;margin-top:-6.5px;\n    background:#fff6e2;box-shadow:0 0 12px rgba(255,220,160,.8)}\n.fw input[type=range]::-moz-range-thumb{width:16px;height:16px;border:none;border-radius:50%;background:#fff6e2;box-shadow:0 0 12px rgba(255,220,160,.8)}\n.fw .toggles{display:grid;grid-template-columns:1fr 1fr;gap:8px}\n.fw .tg{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:9px 11px;border-radius:12px;\n    border:1px solid var(--line);background:rgba(255,255,255,.035);color:var(--txt);font:400 12.5px Inter,sans-serif;cursor:pointer;text-align:left}\n.fw .tg i{flex:none;width:26px;height:15px;border-radius:999px;background:rgba(255,255,255,.14);position:relative;transition:background .25s}\n.fw .tg i::after{content:\"\";position:absolute;top:2px;left:2px;width:11px;height:11px;border-radius:50%;background:#cfc9ee;transition:transform .25s, background .25s}\n.fw .tg[aria-pressed=\"true\"] i{background:rgba(243,217,164,.55)}\n.fw .tg[aria-pressed=\"true\"] i::after{transform:translateX(11px);background:#fff6e2}\n.fw .keys{font-size:11px;color:var(--dim);line-height:1.7;padding-top:12px;border-top:1px solid var(--line)}\n.fw kbd{font:500 10px Inter,sans-serif;padding:1px 5px;border-radius:4px;border:1px solid rgba(255,255,255,.18);color:var(--txt)}\n.fw #fw-hint{position:absolute;right:22px;bottom:24px;z-index:4;font-size:11px;letter-spacing:.14em;text-transform:uppercase;\n    color:var(--dim);pointer-events:none;text-align:right}\n.fw.narrow #fw-hint{display:none}\n.fw.narrow #fw-panel{bottom:72px;left:12px;width:calc(100% - 24px)}\n.fw.narrow #fw-toggle{left:12px;bottom:14px}";document.head.append(s)},
  init(win,b){
   this.css();
@@ -4377,7 +4377,7 @@ win.on.close = () => {
  }});
 
 /* ===================== HEARTH (a cozy fireplace) ===================== */
-defApp("hearth",{name:"Hearth",icon:"flame",cat:"Accessories",w:900,h:600,single:true,desc:"a cozy fireplace: real crackling sound, logs that burn down, sleep timer",kw:"fireplace fire hearth fireside cozy relax ambience crackle warm flame logs sleep campfire",
+defApp("hearth",{name:"Hearth",icon:"flame",cat:"Accessories",w:900,h:600,single:true,desc:"a cozy fireplace with sound",kw:"fireplace fire hearth fireside cozy relax ambience crackle warm flame logs sleep campfire",
  css(){if(document.getElementById("hhcss"))return;const s=document.createElement("style");s.id="hhcss";s.textContent=`
 .hh{--glass:rgba(34,19,12,.66);--solid:rgba(30,17,11,.95);--line:rgba(255,205,160,.14);--txt:rgba(255,238,220,.92);--dim:rgba(255,218,185,.55);--ac:#ffc27a;
  position:relative;flex:1;min-height:0;overflow:hidden;background:#120a08;color:var(--txt);font-family:Inter,system-ui,-apple-system,sans-serif;-webkit-user-select:none;user-select:none;outline:0;-webkit-tap-highlight-color:transparent}
@@ -4969,7 +4969,7 @@ const SQ={
 .sq .nt{font-size:12px;opacity:.7;padding:4px 10px 12px;line-height:1.4}
 `;document.head.append(s)}
 };
-defApp("sequencer",{name:"Sequencer",icon:"seq",cat:"Media",w:880,h:640,single:true,desc:"drum machine and loop recorder: 8 drum sounds, 4 patterns, record your own loops, export to WAV",kw:"drum machine beat sequencer loop looper record music rhythm step bpm pattern 808 drums sampler",
+defApp("sequencer",{name:"Sequencer",icon:"seq",cat:"Media",w:880,h:640,single:true,desc:"drum machine and loop recorder",kw:"drum machine beat sequencer loop looper record music rhythm step bpm pattern 808 drums sampler",
  init(win,b){
   SQ.css();
   const S=SQ.load();let ctx=null,ch=null,run=false,step=0,pass=0,gridT=0,tm=0,raf=0,queue=[],bankQ=-1,curStep=-1,curT=0,nar=false,hitRec=false,showMix=true,taps=[],mic=null,cap=null,srcs=[];
@@ -5202,7 +5202,7 @@ const CL={
 .cl pre{white-space:pre-wrap;overflow-wrap:anywhere;max-height:50vh;overflow:auto;margin:0;font-size:12px;border:1px solid var(--bd);border-radius:6px;padding:8px;background:var(--bg)}
 `;document.head.append(s)}
 };
-defApp("cleaner",{name:"Cleaner",icon:"broom",cat:"System",w:820,h:640,single:true,desc:"see everything this OS has saved in your browser, and clear what you no longer want",kw:"clean clear delete storage localstorage saved data privacy reset factory reset erase everything wipe shared computer library cache indexeddb space backup export what is saved",
+defApp("cleaner",{name:"Cleaner",icon:"broom",cat:"System",w:820,h:640,single:true,desc:"see and clear what is saved here",kw:"clean clear delete storage localstorage saved data privacy reset factory reset erase everything wipe shared computer library cache indexeddb space backup export what is saved",
  init(win,b){
   CL.css();
   let tab=LS.get("tvos_cleaner_tab","Overview"),D=null,sel=new Set(),bin=[],changed=false,busy=false;
@@ -5444,7 +5444,7 @@ const QN={
  /* run two of the Benchmark app's own tests inside the given window (a copy of the OS), so the copy measures itself */
  async measure(w){const BNx=w.eval("BN"),out={};for(const id of["int","dom"]){await BNx.tests.find(x=>x.id===id).run()}/* warm-up pass so every layer is measured the same way */for(const id of["int","dom"]){const t=BNx.tests.find(x=>x.id===id);const r=await t.run();out[id]=typeof r==="number"?r:(r&&r.v)||0}return out}
 };
-defApp("quine",{name:"Quine",icon:"quine",cat:"System",w:860,h:780,single:true,desc:"the OS runs a copy of itself, which can run a copy of itself, and measures the cost",kw:"quine self recursion inception nested itself copy benchmark bootstrap ouroboros",
+defApp("quine",{name:"Quine",icon:"quine",cat:"System",w:860,h:780,single:true,desc:"the OS running inside itself",kw:"quine self recursion inception nested itself copy benchmark bootstrap ouroboros",
  init(win,b){
   const depthTxt=QN.depth?"You are inside a copy of the OS, "+QN.depth+(QN.depth===1?" layer":" layers")+" down. Every layer is the whole ship.":"This is the real OS (layer 0).";
   const stage=h("div",{style:"position:relative;flex:1 0 340px;background:#000;border:1px solid var(--bd);border-radius:8px;overflow:hidden"},h("div",{class:"dim",style:"position:absolute;inset:0;display:flex;align-items:center;justify-content:center;text-align:center;padding:20px"},"The copy will appear here."));
@@ -5551,7 +5551,7 @@ const THS={
  day(){return new Date().toISOString().slice(0,10)}
 };
 /* Themes: a monster-collecting game. Find themes you love in the Meadow, keep them in your Den, and breed any two (the built-in themes too) in the Nursery. */
-defApp("themes",{name:"Themes",icon:"swatch",cat:"System",w:820,h:720,single:true,desc:"collect and breed desktop themes: find wild ones, keep the ones you love, breed them together",kw:"themes theme colour color wallpaper appearance generate random seed breed collect catch den nursery meadow pokemon game",
+defApp("themes",{name:"Themes",icon:"swatch",cat:"System",w:820,h:720,single:true,desc:"collect and breed desktop themes",kw:"themes theme colour color wallpaper appearance generate random seed breed collect catch den nursery meadow pokemon game",
  init(win,b){
   const S=THS.load();let tab=LS.get("tvos_themes_tab","Meadow");if(!["Meadow","Den","Nursery","Dex"].includes(tab))tab="Meadow";
   let wild=null,filt={fam:-1,mood:0},pa=null,pb=null,lean=.5,kids=[],cf="all",cs="normal";
