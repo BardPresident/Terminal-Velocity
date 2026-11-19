@@ -767,7 +767,8 @@ ERASE EVERYTHING  (for shared computers)
 
 SAVE THE OS ITSELF
   Start menu > Save OS (also in Backup, Settings > About, or the terminal
-  command saveos) downloads this whole OS as one .html file. In Chromium
+  command saveos) downloads this whole OS as one .html file. Save OS saves the OS
+  program itself, not your own files or settings; use Backup for those. In Chromium
   browsers you choose where to save it. If a browser blocks a page from
   reading itself (for example when opened from disk), use Ctrl+S, "HTML
   only".
