@@ -630,7 +630,8 @@ Hearth (flame icon, Accessories)
   Press H to hide all the controls (press H or double-click to bring
   them back) and F for fullscreen. The sound keeps playing if you
   minimise the window, which is handy as background; close the window
-  to stop it. Quality is Auto and steps down on a weak machine.
+  to stop it. Quality is Auto and steps down on a weak machine. The
+  crackle is a ready-made loop, so it costs almost nothing to play.
 
 Firework (star icon, Games)
   A calm fireworks night sky over water. Tap to launch a rocket, hold to
