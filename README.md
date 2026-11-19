@@ -139,6 +139,13 @@ WINDOWS
   snap. Windows cannot be lost off-screen: if one ever ends up out of
   reach, it is pulled back automatically. On phones every window is
   full-screen.
+  Each app remembers its window: when you close an app and open it again,
+  it comes back at the same size and position, including snapped to a
+  side or maximised. This is saved as a share of the screen, so it still
+  fits if you use a different screen size. A second window of the same
+  app is nudged slightly so they do not sit exactly on top of each other.
+  Turn it off in Settings > Boot ("Remember where each app's window
+  was"), or clear it in Cleaner under "Window positions".
 
 THE TASKBAR AND START MENU
   Each open window has a taskbar button. Click to focus or minimise,
