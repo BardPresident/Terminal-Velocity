@@ -749,8 +749,12 @@ Hearth (flame icon, Accessories)
   Sound, Crackle and Volume are in the controls. A Sound on / Sound off
   button sits in the top right corner, and M does the same. Click the
   fire area while the menu is open and the menu closes. The sleep
-  timer (30 min, 1 hour, 90 min) keeps the fire going, then fades it
-  out over the last quarter and leaves embers; press L to relight.
+  timer (30 min, 1 hour, 90 min) tends the fire for you (logs are added
+  from the woodpile), fades it out over the last quarter and leaves
+  embers; press L to relight. The button "Tend fire while timer runs"
+  in the timer section turns the tending off, so the fire burns on its
+  own and may go out early. Adding wood yourself does not cancel the
+  timer, and the time left is remembered if you close Hearth.
   Press H to hide all the controls (press H or double-click to bring
   them back) and F for fullscreen. The sound keeps playing if you
   minimise the window, which is handy as background; close the window
