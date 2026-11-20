@@ -230,6 +230,8 @@ THEMES AND LOOK  (the Themes app; wallpaper and other looks in Settings > Appear
   "Show Music, Books, Comics, Audiobooks and Archive even when their files
   are not mounted".
 
+Hearth stats: the menu's "Your fireside" line shows fires lit, total time by the fire and your longest fire. No badges or goals: the fire is the point.
+
 SESSION RESTORE
   The OS remembers which windows were open, where they were, their size,
   maximised or minimised state, their order in the taskbar and which one
@@ -730,9 +732,8 @@ Hearth (flame icon, Accessories)
   snug) and the light in the room grows. Now and then a log shifts, or
   a shower of sparks pops. "Tend fire" adds logs for you from the
   woodpile; it is off by default. "Your fireside" in the menu counts
-  fires lit, time by the fire and the longest fire, and there are nine
-  quiet badges (first spark, a roaring fire, an hour by the fire, and
-  so on). A small line at the top left shows the woodpile, the fire and
+  fires lit, time by the fire and the longest fire. There are no
+  badges or goals; the fire is the point. A small line at the top left shows the woodpile, the fire and
   the room; press H to hide it and all controls when screen recording.
   A bar along the bottom has a button for every action, each showing its
   key: Kindling (K), Log (L), Flint (S), Poke (P), Full screen (F) and
