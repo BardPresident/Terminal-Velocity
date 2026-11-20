@@ -1258,7 +1258,7 @@ const fmtDate=t=>{const d=new Date(t),hm=" "+pad(d.getHours())+":"+pad(d.getMinu
 const sleep=ms=>new Promise(r=>setTimeout(r,ms));
 const LS={get(k,d){try{const v=localStorage.getItem(k);return v==null?d:JSON.parse(v)}catch(e){return d}},set(k,v){try{localStorage.setItem(k,JSON.stringify(v));return true}catch(e){try{window.tvosStorageFull&&window.tvosStorageFull(e)}catch(_){}return false}}};
 const fmtUp=s=>{s=Math.max(0,Math.round(s));const d=Math.floor(s/86400),hr=Math.floor(s%86400/3600),m=Math.floor(s%3600/60),sc=s%60;if(d)return d+" d "+hr+" h";if(hr)return hr+" h "+m+" min";if(m)return m+" min "+sc+" s";return sc+" s"};
-const OS={apps:{},wins:[],z:10,bus:{},boot:performance.now(),ver:"1.0 build 1120-2148"};
+const OS={apps:{},wins:[],z:10,bus:{},boot:performance.now(),ver:"1.0 build 1120-2200"};
 OS.on=(ev,f)=>{(OS.bus[ev]=OS.bus[ev]||[]).push(f);return f};
 OS.off=(ev,f)=>{OS.bus[ev]=(OS.bus[ev]||[]).filter(x=>x!==f)};
 /* reboot that always fetches the newest copy of this page (like Ctrl+Shift+R), then reloads */
@@ -5662,7 +5662,7 @@ defApp("lyre",{name:"Lyre",icon:"lyre",cat:"Media",w:900,h:640,single:true,desc:
   win.on.close=()=>{dead=true;clearInterval(autoT);clearInterval(uiT);clearInterval(tmT);clearInterval(playT);clearTimeout(idleT);clearTimeout(rebuildT);clearTimeout(saveT);cancelAnimationFrame(raf);ro.disconnect();document.removeEventListener("visibilitychange",vis);LS.set("tvos_lyre",S);if(rec){const r=rec;rec=null;try{r.micS&&r.micS.getTracks().forEach(t=>t.stop());r.q.stop()}catch(e){}}REC.guard(false);if(E)E.dead=true;if(ctx){try{ctx.close()}catch(e){}}}
  }});
 /* ===================== DEEJAY: all-synthesized trance and techno for parties. Launch layers, hold Build, release for the Drop, or let Autopilot run the whole night. ===================== */
-IP.deejay="M5 20V11 M9.5 20V5 M14 20V13 M18.5 20V8";
+IP.deejay="M12 3a9 9 0 100 18 9 9 0 000-18z M12 9.2a2.8 2.8 0 100 5.6 2.8 2.8 0 000-5.6z M12 11.4v1.2 M6.2 12a5.8 5.8 0 015.8-5.8 M17.8 12a5.8 5.8 0 01-5.8 5.8";
 const DJ={
  LANES:[
   {id:"k",name:"Kick",col:"#ff4d6d",pats:["Pulse","Punch","Deep","Hard","Rolling","Broken"],vol:.95},
@@ -5831,8 +5831,9 @@ const DJ={
   E.crash=(t,v)=>{const n=noise(t,2),f=bq("highpass",3000),g=c.createGain();g.gain.setValueAtTime(v||.5,t);g.gain.exponentialRampToValueAtTime(.001,t+1.8);n.connect(f);f.connect(g);g.connect(E.mix);g.connect(rin)};
   E.impact=(t,v)=>{const sb=c.createOscillator(),sg=c.createGain();sb.frequency.setValueAtTime(70,t);sb.frequency.exponentialRampToValueAtTime(34,t+1.2);sg.gain.setValueAtTime(.0001,t);sg.gain.linearRampToValueAtTime((v||.9)*.9,t+.01);sg.gain.exponentialRampToValueAtTime(.001,t+2);sb.connect(sg);sg.connect(E.mix);sb.start(t);sb.stop(t+2.1);
    const o=c.createOscillator(),g=c.createGain();o.frequency.setValueAtTime(95,t);o.frequency.exponentialRampToValueAtTime(30,t+.7);g.gain.setValueAtTime(v||.9,t);g.gain.exponentialRampToValueAtTime(.001,t+1.3);o.connect(g);g.connect(E.mix);o.start(t);o.stop(t+1.4);
-   const n=noise(t,1),f=bq("lowpass",500),ng=c.createGain();ng.gain.setValueAtTime(.5,t);ng.gain.exponentialRampToValueAtTime(.001,t+.9);n.connect(f);f.connect(ng);ng.connect(E.mix)};
-  E.laser=(t)=>{for(let i=0;i<2;i++){const tt=t+i*.16,o=c.createOscillator(),g=c.createGain(),f=bq("bandpass",1800,2);o.type="sawtooth";o.frequency.setValueAtTime(3400,tt);o.frequency.exponentialRampToValueAtTime(180,tt+.32);g.gain.setValueAtTime(.2,tt);g.gain.exponentialRampToValueAtTime(.001,tt+.34);o.connect(f);f.connect(g);g.connect(E.bus.f);o.start(tt);o.stop(tt+.4)}};
+   const n=noise(t,1),f=bq("lowpass",500),ng=c.createGain();ng.gain.setValueAtTime(.5,t);ng.gain.exponentialRampToValueAtTime(.001,t+.9);n.connect(f);f.connect(ng);ng.connect(E.mix);
+   const m=c.createOscillator(),mg=c.createGain(),mf=bq("lowpass",3000);m.type="sawtooth";m.frequency.setValueAtTime(520,t);m.frequency.exponentialRampToValueAtTime(70,t+.7);mg.gain.setValueAtTime(.0001,t);mg.gain.linearRampToValueAtTime((v||.9)*.8,t+.01);mg.gain.exponentialRampToValueAtTime(.001,t+.9);m.connect(mf);mf.connect(mg);mg.connect(E.mix);mg.connect(rin);m.start(t);m.stop(t+1.2)};
+  E.laser=(t)=>{for(let i=0;i<3;i++){const tt=t+i*.14,o=c.createOscillator(),o2=c.createOscillator(),g=c.createGain(),f=bq("bandpass",2200,1.2);o.type="sawtooth";o2.type="square";for(const x of[o,o2]){x.frequency.setValueAtTime(4200,tt);x.frequency.exponentialRampToValueAtTime(220,tt+.26);x.connect(f);x.start(tt);x.stop(tt+.3)}g.gain.setValueAtTime(.0001,tt);g.gain.linearRampToValueAtTime(.55,tt+.008);g.gain.exponentialRampToValueAtTime(.001,tt+.28);f.connect(g);g.connect(E.mix);g.connect(rin)}};
   E.sweepDown=(t,dur)=>{const n=noise(t,dur),f=bq("bandpass",9000,1.5),g=c.createGain();f.frequency.setValueAtTime(9000,t);f.frequency.exponentialRampToValueAtTime(260,t+dur);g.gain.setValueAtTime(0.0001,t);g.gain.linearRampToValueAtTime(.45,t+.06);g.gain.linearRampToValueAtTime(0.0001,t+dur);n.connect(f);f.connect(g);g.connect(E.bus.f)};
   E.sparkle=(t,notes,r)=>{for(let i=0;i<14;i++){const tt=t+i*.07+r()*.03,m=notes[Math.floor(r()*notes.length)]+12*(1+Math.floor(r()*2)),o=c.createOscillator(),g=c.createGain();o.frequency.value=DJ.hz(m);g.gain.setValueAtTime(.0001,tt);g.gain.linearRampToValueAtTime(.12,tt+.005);g.gain.exponentialRampToValueAtTime(.001,tt+.5);o.connect(g);g.connect(E.bus.f);o.start(tt);o.stop(tt+.55)}};
   /* the sidechain pump: the music ducks on every kick */
