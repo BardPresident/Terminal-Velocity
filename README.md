@@ -775,6 +775,29 @@ Firework (star icon, Games)
   F fullscreen. Quality is Auto by default: it watches the frame rate and
   steps down on a weak machine. Settings are remembered on this device.
 
+Circuit Temple (chip icon, Games)
+  A cozy motherboard-repair game for kids and anyone curious. Customers
+  bring broken gadgets; you find what is wrong, scrape the green mask off
+  a broken trace, bridge it with a wire, solder it, swap dead parts, and
+  deliver the board for money. Spend it in the Shop on better tools and
+  cosy workshop items. Nothing has a clock.
+  The Lounge is the resting screen: when you have no job (or press the
+  house button) you see your rank, boards repaired, money, time at the
+  bench, boards fixed per star level, your recent repairs and a fun
+  electronics fact. No board is shown, so you can just relax. Continue
+  repair takes you back to the bench.
+  The Job board lets you pick any star level at any time (1 to 5 stars,
+  nothing is locked). Each level has several jobs; "Show different
+  boards" brings new ones. More stars pay more.
+  Your repair is remembered: close the window or the whole OS and the
+  same board comes back exactly as you left it.
+  The NEXT bar always tells you what to do. In Settings you can turn the
+  tutorial hints off once you know the game, and turn off auto-solder.
+  Keys while the window is focused: 1 to 9 pick a tool, P power, T heat
+  view, B parts, M map, U or Ctrl+Z undo, 0 fit the board.
+  Saved on this device under tvos_circuit, so it is included in Backup
+  and Restore, and shows in Clean-up as "Circuit Temple progress".
+
 
 =====================================================================
 5. YOUR DATA: SAVING, BACKUP, CLEANER, REBOOT
@@ -787,7 +810,7 @@ THE BACKUP ICON IN THE TRAY
   right now, open the Backup app, or turn reminders off.
   Only things you made count: Diary pages, files in /home/user, tasks,
   calendar notes, sequencer patterns, Themes Den, bookmarks, installed
-  programs and the game save. Moving windows, changing settings or
+  programs, Circuit Temple progress and the game save. Moving windows, changing settings or
   themes, history and reading places never count and never nag.
   A reminder appears at most once a day, and only after a week without a
   backup (or a day, if you have made a lot), or two days after you first
