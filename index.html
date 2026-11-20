@@ -1258,7 +1258,7 @@ const fmtDate=t=>{const d=new Date(t),hm=" "+pad(d.getHours())+":"+pad(d.getMinu
 const sleep=ms=>new Promise(r=>setTimeout(r,ms));
 const LS={get(k,d){try{const v=localStorage.getItem(k);return v==null?d:JSON.parse(v)}catch(e){return d}},set(k,v){try{localStorage.setItem(k,JSON.stringify(v));return true}catch(e){return false}}};
 const fmtUp=s=>{s=Math.max(0,Math.round(s));const d=Math.floor(s/86400),hr=Math.floor(s%86400/3600),m=Math.floor(s%3600/60),sc=s%60;if(d)return d+" d "+hr+" h";if(hr)return hr+" h "+m+" min";if(m)return m+" min "+sc+" s";return sc+" s"};
-const OS={apps:{},wins:[],z:10,bus:{},boot:performance.now(),ver:"1.0 build 1120-0051"};
+const OS={apps:{},wins:[],z:10,bus:{},boot:performance.now(),ver:"1.0 build 1120-0151"};
 OS.on=(ev,f)=>{(OS.bus[ev]=OS.bus[ev]||[]).push(f);return f};
 OS.off=(ev,f)=>{OS.bus[ev]=(OS.bus[ev]||[]).filter(x=>x!==f)};
 /* reboot that always fetches the newest copy of this page (like Ctrl+Shift+R), then reloads */
@@ -5085,6 +5085,209 @@ defApp("sequencer",{name:"Sequencer",icon:"seq",cat:"Media",w:880,h:640,single:t
   win.seq={S,slots,play,stop,hit,get ctx(){return ctx},get run(){return run},exportWav,arm:armSlot};
  }});
 
+/* ===================== LYRE: a plucked-string instrument. Click or touch the strings, play from the keyboard, or let it play itself ===================== */
+IP.lyre="M6.5 4c-2.5 5-1.5 11 3 14 M17.5 4c2.5 5 1.5 11-3 14 M5 4h14 M9.5 7v10 M12 7v11 M14.5 7v10";
+const LY={
+ notes:["C","C#","D","D#","E","F","F#","G","G#","A","A#","B"],
+ scales:[["Major pentatonic",[0,2,4,7,9]],["Minor pentatonic",[0,3,5,7,10]],["Major (Ionian)",[0,2,4,5,7,9,11]],["Natural minor (Aeolian)",[0,2,3,5,7,8,10]],["Dorian",[0,2,3,5,7,9,10]],["Phrygian",[0,1,3,5,7,8,10]],["Lydian",[0,2,4,6,7,9,11]],["Mixolydian",[0,2,4,5,7,9,10]],["Harmonic minor",[0,2,3,5,7,8,11]],["Hirajoshi (Japanese)",[0,2,3,7,8]],["Hijaz (Middle Eastern)",[0,1,4,5,7,8,10]],["Whole tone",[0,2,4,6,8,10]],["Chromatic",[0,1,2,3,4,5,6,7,8,9,10,11]]],
+ keys:["a","s","d","f","g","h","j","k","l",";","'","[","]"],
+ pats:["Rising arpeggio","Falling arpeggio","Up and down","Wander","Chords","Rain","Drone"],
+ presets:{
+  "Hearth":{scale:0,root:2,oct:3,n:11,sus:.7,soft:.5,room:.4,pat:3,bpm:70},
+  "Delphi":{scale:4,root:9,oct:2,n:9,sus:.65,soft:.3,room:.45,pat:6,bpm:60},
+  "Morning":{scale:6,root:7,oct:3,n:11,sus:.5,soft:.25,room:.3,pat:0,bpm:96},
+  "Midnight":{scale:1,root:4,oct:2,n:11,sus:.85,soft:.65,room:.55,pat:5,bpm:60},
+  "Sakura":{scale:9,root:2,oct:3,n:9,sus:.55,soft:.35,room:.4,pat:2,bpm:84},
+  "Garden":{scale:2,root:0,oct:3,n:13,sus:.6,soft:.4,room:.35,pat:4,bpm:76}
+ },
+ def(){return{scale:0,root:2,oct:3,n:11,sus:.6,soft:.4,room:.35,vol:.8,pat:3,bpm:80,hum:25,phrase:null}},
+ load(){const o=LS.get("tvos_lyre",null),d=LY.def();if(o&&typeof o==="object")for(const k of Object.keys(d))if(o[k]!=null)d[k]=o[k];
+  d.scale=Math.max(0,Math.min(LY.scales.length-1,d.scale|0));d.root=((d.root|0)%12+12)%12;d.oct=Math.max(1,Math.min(5,d.oct|0));d.n=Math.max(7,Math.min(13,d.n|0));d.pat=Math.max(0,Math.min(LY.pats.length-1,d.pat|0));
+  d.sus=Math.max(0,Math.min(1,+d.sus));d.soft=Math.max(0,Math.min(1,+d.soft));d.room=Math.max(0,Math.min(1,+d.room));d.vol=Math.max(0,Math.min(1,+d.vol));d.bpm=Math.max(30,Math.min(200,+d.bpm|0));d.hum=Math.max(0,Math.min(100,+d.hum));
+  if(d.phrase&&!(Array.isArray(d.phrase.ev)&&d.phrase.len>0))d.phrase=null;return d},
+ /* string i is degree i of the chosen scale, climbing from the lowest note */
+ midi(S,i){const sc=LY.scales[S.scale][1],L=sc.length;return 12*(S.oct+1)+S.root+Math.floor(i/L)*12+sc[i%L]},
+ freq(S,i){return 440*Math.pow(2,(LY.midi(S,i)-69)/12)},
+ name(S,i){const m=LY.midi(S,i);return LY.notes[m%12]+(Math.floor(m/12)-1)},
+ /* one audio engine per AudioContext (live, or the offline one that saves a .wav). Strings are pre-computed buffers, so playing a note costs almost nothing */
+ engine(c,S,light){
+  const E={c,S,light,bufs:new Map(),voices:[],max:light?10:22};
+  const m=c.createGain();m.gain.value=S.vol;const cp=c.createDynamicsCompressor();cp.threshold.value=-14;cp.knee.value=14;cp.ratio.value=5;cp.attack.value=.004;cp.release.value=.2;m.connect(cp);cp.connect(c.destination);
+  const dry=c.createGain();dry.gain.value=1;dry.connect(m);E.m=m;E.dry=dry;E.wet=null;
+  if(!light&&c.createConvolver){const rv=c.createConvolver();rv.buffer=lyreRoom(c);const w=c.createGain();w.gain.value=S.room*.9;rv.connect(w);w.connect(m);E.rv=rv;E.wet=w}
+  E.key=i=>c.sampleRate+"|"+LY.freq(S,i).toFixed(3)+"|"+S.sus.toFixed(2)+"|"+S.soft.toFixed(2);
+  E.get=i=>{const k=E.key(i);let b=E.bufs.get(k);if(b)return b;const sr=c.sampleRate,f=LY.freq(S,i),secs=2.4+S.sus*4.2,dec=.992+S.sus*.0068;
+   const raw=lyreString(sr,f,secs,0x51ed+i*977,dec,.12+S.soft*.62),ab=c.createBuffer(1,raw.length,sr);ab.copyToChannel(raw,0);b={ab,rate:f/raw.fa};E.bufs.set(k,b);return b};
+  E.warm=()=>{let i=0;const go=()=>{if(E.dead||i>=S.n)return;E.get(i++);setTimeout(go,8)};go()};
+  E.setVol=v=>m.gain.setTargetAtTime(v,c.currentTime,.03);E.setRoom=v=>{if(E.wet)E.wet.gain.setTargetAtTime(v*.9,c.currentTime,.05)};
+  E.fade=(v,t,q)=>{try{v.g.gain.cancelScheduledValues(t);v.g.gain.setValueAtTime(v.g.gain.value,t);v.g.gain.setTargetAtTime(0,t,q||.04);v.s.stop(t+(q||.04)*6)}catch(e){}};
+  E.pluck=(i,vel,t,tag)=>{if(i<0||i>=S.n)return;t=Math.max(t||0,c.currentTime);const b=E.get(i),s=c.createBufferSource();s.buffer=b.ab;s.playbackRate.value=b.rate;
+   const g=c.createGain();g.gain.value=Math.max(.05,Math.min(1,vel))*.8;s.connect(g);
+   const pn=c.createStereoPanner?c.createStereoPanner():null;if(pn){pn.pan.value=(i/(Math.max(1,S.n-1))-.5)*.7;g.connect(pn);pn.connect(dry);if(E.rv)pn.connect(E.rv)}else{g.connect(dry);if(E.rv)g.connect(E.rv)}
+   const v={s,g,i,t,tag};
+   for(const o of E.voices)if(o.i===i&&o.t<=t&&!o.cut){o.cut=1;E.fade(o,t,.05)}/* the same string, plucked again, stops its earlier ring */
+   E.voices.push(v);while(E.voices.filter(o=>!o.cut).length>E.max){const o=E.voices.find(x=>!x.cut);if(!o)break;o.cut=1;E.fade(o,t,.05)}
+   s.onended=()=>{E.voices=E.voices.filter(o=>o!==v);try{g.disconnect();pn&&pn.disconnect()}catch(e){}};s.start(t);return v};
+  E.cutTag=tag=>{const now=c.currentTime;for(const o of E.voices)if(o.tag===tag&&!o.cut){o.cut=1;E.fade(o,now,.06)}};
+  E.quiet=()=>E.voices.length===0;
+  return E},
+ css(){if(document.getElementById("lycss"))return;const s=document.createElement("style");s.id="lycss";s.textContent=`
+.ly{position:absolute;inset:0;display:flex;flex-direction:column;outline:0;user-select:none;-webkit-user-select:none}
+.ly .bar{display:flex;gap:8px 12px;align-items:center;flex-wrap:wrap;padding:7px 10px;border-bottom:1px solid var(--bd);flex:none}
+.ly .bar.b2{border-top:1px solid var(--bd);border-bottom:0}
+.ly .grp{display:flex;gap:6px;align-items:center}
+.ly .sl{display:flex;gap:6px;align-items:center;font-size:12px;opacity:.95}
+.ly .sl input{width:96px;accent-color:var(--ac)}
+.ly canvas{flex:1;min-height:200px;width:100%;display:block;touch-action:none;cursor:pointer}
+.ly .btn.on{background:var(--ac);color:var(--bg);border-color:var(--ac);font-weight:700}
+.ly .btn.rec.on{background:var(--er);border-color:var(--er);color:#fff}
+.ly .st{font-size:12px;opacity:.85}
+.ly .nt{font-size:12px;opacity:.7;padding:4px 10px 8px;line-height:1.4}
+.ly select{max-width:190px}
+`;document.head.append(s)}
+};
+defApp("lyre",{name:"Lyre",icon:"lyre",cat:"Media",w:900,h:640,single:true,desc:"play a lyre, or let it play itself",kw:"lyre harp strings instrument music pluck calm ambient relax ancient greek kithara arpeggio scale loop record",
+ init(win,b,arg){
+  LY.css();
+  const S=LY.load();let ctx=null,E=null,dead=false,auto=false,autoT=0,nextT=0,aStep=0,aDir=1,aBase=0,aCnt=0,idleT=0,raf=0,warmT=0,saveT=0,rebuildT=0;
+  const vz=[];/* per string: {t, a} the last pluck, for drawing */
+  const ptr=new Map();let rec=null,loopOn=false,loopT=0,loopTimer=0,loopGen=0,recLoopT=0;
+  const root=h("div",{class:"ly",tabindex:"0"});
+  const sv=()=>{clearTimeout(saveT);saveT=setTimeout(()=>LS.set("tvos_lyre",S),300)};
+  const cnv=h("canvas",{});const cx=cnv.getContext("2d");
+  const status=h("span",{class:"st"},"");
+  /* ---------- audio ---------- */
+  async function ensure(){if(!ctx){ctx=new (window.AudioContext||window.webkitAudioContext)({latencyHint:"interactive"});E=LY.engine(ctx,S,lpOn());E.warm()}
+   if(ctx.state!=="running")try{await ctx.resume()}catch(e){}return ctx}
+  function wake(){clearTimeout(idleT);idleT=setTimeout(function chk(){if(dead||!ctx)return;if(auto||loopOn||(E&&!E.quiet())||ptr.size||rec){idleT=setTimeout(chk,5000);return}if(ctx.state==="running")ctx.suspend().catch(()=>{})},20000)}
+  function pluckNow(i,v,fromLoop){
+   const go=()=>{const t=ctx.currentTime;E.pluck(i,v,t);vz[i]={t,a:v};kick();if(rec&&!fromLoop)recNote(i,v)};
+   if(!ctx){ensure().then(()=>{if(!dead)go()});return}
+   if(ctx.state!=="running"){ctx.resume().then(()=>{if(!dead)go()},()=>{});return}
+   go();wake()}
+  function pluckAt(i,v,t,tag){E.pluck(i,v,t,tag);vz[i]={t,a:v};kick()}
+  /* ---------- recording and looping what you play ---------- */
+  function recNote(i,v){const now=ctx.currentTime;if(rec.over&&S.phrase){const pos=((now-loopT)%S.phrase.len+S.phrase.len)%S.phrase.len;rec.add.push({t:pos,i,v:+v.toFixed(2)})}else rec.ev.push({t:now-rec.t0,i,v:+v.toFixed(2)})}
+  async function recToggle(){await ensure();
+   if(!rec){if(S.phrase&&loopOn){rec={over:true,add:[]};toast("Overdubbing: what you play joins the loop")}else{rec={over:false,ev:[],t0:ctx.currentTime};if(loopOn)loopStop();toast("Recording: play, then press Rec again")}paint()}
+   else{const r=rec;rec=null;
+    if(r.over){S.phrase.ev=S.phrase.ev.concat(r.add).sort((a,c)=>a.t-c.t)}
+    else if(r.ev.length){const len=Math.max(1.2,ctx.currentTime-r.t0+.4);S.phrase={len:+len.toFixed(3),ev:r.ev};loopStart()}
+    else toast("Nothing was played, so nothing was kept.");
+    sv();paint()}}
+  function loopSchedule(T,gen){if(!S.phrase)return;for(const e of S.phrase.ev){const t=T+e.t;if(t>=ctx.currentTime-.02)pluckAt(e.i,e.v*.9,t,"loop")}}
+  function loopTick(){if(dead||!loopOn)return;const P=S.phrase;if(!P){loopStop();return}
+   while(loopT+P.len<ctx.currentTime+.35){loopT+=P.len;loopSchedule(loopT,loopGen)}}
+  async function loopStart(){if(!S.phrase)return;await ensure();if(loopOn)return;loopOn=true;loopGen++;loopT=ctx.currentTime+.08;loopSchedule(loopT,loopGen);loopTimer=setInterval(loopTick,60);paint()}
+  function loopStop(){loopOn=false;clearInterval(loopTimer);if(E)E.cutTag("loop");paint()}
+  function loopToggle(){if(loopOn)loopStop();else loopStart()}
+  function clearPhrase(){if(rec)rec=null;loopStop();S.phrase=null;sv();paint()}
+  async function saveWav(){const P=S.phrase;if(!P)return toast("Record a phrase first.",1);if(!window.OfflineAudioContext)return toast("This browser can't render audio files.",1);
+   const n=await dlg((bx,d)=>{const sel=h("select",{class:"t"},...[1,2,4,8].map(v=>h("option",{value:v,selected:v===2},v+(v===1?" time through":" times through"))));
+    bx.append(h("h3",{},"Save as WAV"),h("div",{},"Your recorded phrase ("+P.len.toFixed(1)+" s). How many times through?"),sel,h("div",{class:"acts"},h("button",{class:"btn",onclick:()=>d(0)},"Cancel"),h("button",{class:"btn pri",onclick:()=>d(+sel.value)},"Save")))});
+   if(!n)return;
+   try{toast("Rendering...");const sr=44100,oc=new OfflineAudioContext(2,Math.ceil((P.len*n+5)*sr),sr),oe=LY.engine(oc,S,false);
+    for(let k=0;k<n;k++)for(const e of P.ev)oe.pluck(e.i,e.v*.9,.05+k*P.len+e.t);
+    const out=await oc.startRendering(),bl=SQ.wav(out),sink=await REC.open(REC.name("lyre","wav"),"audio/wav");await sink.write(bl);const r=await sink.close();toast("Saved "+r.where)}
+   catch(e){toast("Could not save: "+(e&&e.message||e),1)}}
+  /* ---------- hands-free playing ---------- */
+  const sdur=()=>60/S.bpm/2;
+  function nextNote(){/* returns [string, velocity, gap in steps] */
+   const n=S.n,P=S.pat,L=LY.scales[S.scale][1].length;let i=0,v=.7,gap=1;
+   if(P===0){i=aStep%n;aStep++;v=.55+.25*Math.random()}
+   else if(P===1){i=n-1-(aStep%n);aStep++;v=.55+.25*Math.random()}
+   else if(P===2){const per=Math.max(2,2*n-2),k=aStep%per;i=k<n?k:per-k;aStep++;v=.55+.25*Math.random()}
+   else if(P===3){if(aBase<0||aBase>=n)aBase=Math.floor(n/2);const r=Math.random();aBase+=r<.4?1:r<.8?-1:r<.9?2:-2;aBase=Math.max(0,Math.min(n-1,aBase));i=aBase;v=.5+.3*Math.random();gap=Math.random()<.18?2:1}
+   else if(P===4){const prog=[0,3,4,0],r=prog[Math.floor(aStep/8)%prog.length],cyc=[0,2,4,7,4,2],d=r+cyc[aStep%6];i=d>n-1?d-L:d;i=Math.max(0,Math.min(n-1,i));aStep++;v=aStep%6===1?.8:.55+.2*Math.random()}
+   else if(P===5){i=Math.floor(Math.random()*n);v=.35+.4*Math.random();gap=1+Math.floor(Math.random()*4)}
+   else{const k=aCnt%6;if(k===0){i=0;v=.8;gap=4}else if(k===3&&n>4){i=Math.floor(n/2);v=.55;gap=3}else{i=Math.min(n-1,Math.floor(n*.55+Math.random()*n*.45));v=.3+.3*Math.random();gap=2+Math.floor(Math.random()*3)}}
+   aCnt++;return[i,v,gap]}
+  function autoTick(){if(dead||!auto)return;const now=ctx.currentTime;if(nextT<now-.5)nextT=now+.05;
+   while(nextT<now+.14){const[i,v,gap]=nextNote(),hum=S.hum/100,jit=(Math.random()*2-1)*hum*sdur()*.22,vv=Math.max(.2,Math.min(1,v*(1+(Math.random()*2-1)*hum*.35)));pluckAt(i,vv,nextT+Math.max(0,jit));nextT+=sdur()*gap}}
+  async function autoStart(){await ensure();if(auto)return;auto=true;aStep=0;aCnt=0;aBase=-1;nextT=ctx.currentTime+.08;autoT=setInterval(autoTick,40);autoTick();paint()}
+  function autoStop(){auto=false;clearInterval(autoT);paint()}
+  function autoToggle(){auto?autoStop():autoStart()}
+  /* ---------- drawing: the frame is drawn once; only plucked strings move ---------- */
+  let W=0,H=0,RS=1,frame=null,geo=null;
+  function layout(){const r=cnv.getBoundingClientRect();RS=Math.min(devicePixelRatio||1,1.5);W=Math.max(100,Math.round(r.width));H=Math.max(100,Math.round(r.height));cnv.width=Math.round(W*RS);cnv.height=Math.round(H*RS);
+   const side=Math.max(34,W*.07),top=Math.max(26,H*.1),bot=H-Math.max(54,H*.17),n=S.n,x0=side+Math.max(20,W*.04),x1=W-side-Math.max(20,W*.04),step=(x1-x0)/n;
+   geo={side,top,bot,x0,x1,step,xs:Array.from({length:n},(_,i)=>x0+step*(i+.5))};frame=null;draw()}
+  function ensureFrame(){if(frame)return;const f=document.createElement("canvas");f.width=cnv.width;f.height=cnv.height;const c=f.getContext("2d");c.setTransform(RS,0,0,RS,0,0);
+   const ac=css("ac")||"#6fd",fg=css("fg")||"#ccc",bd=css("bd")||"#456",bg=css("bg")||"#000",G=geo;
+   c.lineCap="round";c.lineJoin="round";
+   /* arms, crossbar, and the sound box */
+   c.strokeStyle=ac;c.lineWidth=Math.max(5,W*.008);c.globalAlpha=.85;
+   const lx=G.x0-G.step*.45,rx=G.x1+G.step*.45,yb=H-Math.max(30,H*.1);
+   c.beginPath();c.moveTo(lx,G.top);c.bezierCurveTo(lx-G.side*.9,G.top+(G.bot-G.top)*.3,lx-G.side*.75,G.top+(G.bot-G.top)*.8,lx+G.step*.1,yb);c.stroke();
+   c.beginPath();c.moveTo(rx,G.top);c.bezierCurveTo(rx+G.side*.9,G.top+(G.bot-G.top)*.3,rx+G.side*.75,G.top+(G.bot-G.top)*.8,rx-G.step*.1,yb);c.stroke();
+   c.lineWidth=Math.max(6,W*.01);c.beginPath();c.moveTo(lx-G.side*.12,G.top);c.lineTo(rx+G.side*.12,G.top);c.stroke();
+   c.globalAlpha=.5;c.lineWidth=Math.max(10,H*.02);c.beginPath();c.moveTo(lx+G.step*.1,yb);c.quadraticCurveTo((lx+rx)/2,yb+Math.max(12,H*.045),rx-G.step*.1,yb);c.stroke();
+   c.globalAlpha=1;c.strokeStyle=fg;c.lineWidth=Math.max(3,H*.008);c.globalAlpha=.55;c.beginPath();c.moveTo(G.x0-G.step*.1,G.bot);c.lineTo(G.x1+G.step*.1,G.bot);c.stroke();c.globalAlpha=1;
+   /* resting strings, then note names and the keyboard key under each */
+   c.textAlign="center";const fs=Math.max(10,Math.min(14,G.step*.3));
+   for(let i=0;i<S.n;i++){const x=G.xs[i];c.strokeStyle=fg;c.globalAlpha=.55;c.lineWidth=1+(S.n-i)/S.n*1.8;c.beginPath();c.moveTo(x,G.top);c.lineTo(x,G.bot);c.stroke();c.globalAlpha=1;
+    c.fillStyle=ac;c.font="600 "+fs+"px ui-monospace,monospace";c.fillText(LY.name(S,i),x,G.bot+fs+8);c.globalAlpha=.6;c.fillStyle=fg;c.font=(fs-1)+"px ui-monospace,monospace";c.fillText(LY.keys[i]||"",x,G.bot+fs*2+12);c.globalAlpha=1}
+   frame=f}
+  function draw(){if(!geo)return;ensureFrame();cx.setTransform(1,0,0,1,0,0);cx.clearRect(0,0,cnv.width,cnv.height);cx.drawImage(frame,0,0);cx.setTransform(RS,0,0,RS,0,0);
+   if(!ctx)return;const now=ctx.currentTime,G=geo,ac=css("ac")||"#6fd";let live=false;cx.lineCap="round";
+   for(let i=0;i<S.n;i++){const z=vz[i];if(!z||now<z.t)continue;const dt=now-z.t,tau=.5+S.sus*1.9+(S.n-i)/S.n*.5,a=z.a*Math.exp(-dt/tau);if(a<.015)continue;live=true;
+    const x=G.xs[i],mid=(G.top+G.bot)/2,amp=Math.min(G.step*.55,a*G.step*.8)*Math.sin(dt*2*Math.PI*17);
+    cx.strokeStyle=ac;cx.globalAlpha=Math.min(1,.35+a);cx.lineWidth=1.6+(S.n-i)/S.n*1.8+a*2;cx.beginPath();cx.moveTo(x,G.top);cx.quadraticCurveTo(x+amp*2,mid,x,G.bot);cx.stroke()}
+   cx.globalAlpha=1;return live}
+  let frameKey="";function kick(){const k=css("ac")+css("fg")+css("bg");if(k!==frameKey){frameKey=k;frame=null}if(!raf)raf=requestAnimationFrame(loop)}
+  function loop(){raf=0;if(dead)return;const live=draw();if(live||(ctx&&auto)||loopOn)raf=requestAnimationFrame(loop)}
+  /* ---------- touching and clicking the strings ---------- */
+  const idxAt=x=>{if(!geo)return 0;return Math.max(0,Math.min(S.n-1,Math.floor((x-geo.x0)/geo.step)))};
+  cnv.addEventListener("pointerdown",e=>{e.preventDefault();root.focus({preventScroll:true});try{cnv.setPointerCapture(e.pointerId)}catch(_){}
+   const r=cnv.getBoundingClientRect(),x=e.clientX-r.left,i=idxAt(x);ptr.set(e.pointerId,{i,x});pluckNow(i,e.pointerType==="touch"?.75:.8)});
+  cnv.addEventListener("pointermove",e=>{const p=ptr.get(e.pointerId);if(!p)return;const r=cnv.getBoundingClientRect(),x=e.clientX-r.left,i=idxAt(x);if(i===p.i){p.x=x;return}
+   const dir=i>p.i?1:-1,sp=Math.min(1,.55+Math.abs(x-p.x)/90*.3);for(let k=p.i+dir;dir>0?k<=i:k>=i;k+=dir)pluckNow(k,sp);p.i=i;p.x=x});
+  const up=e=>{ptr.delete(e.pointerId)};cnv.addEventListener("pointerup",up);cnv.addEventListener("pointercancel",up);cnv.addEventListener("lostpointercapture",up);
+  function strum(down){const idx=[...Array(S.n).keys()];if(down)idx.reverse();idx.forEach((i,k)=>setTimeout(()=>{if(!dead)pluckNow(i,.7)},k*38))}
+  root.addEventListener("keydown",e=>{const tg=e.target.tagName;if(tg==="INPUT"||tg==="SELECT"||e.ctrlKey||e.metaKey||e.altKey||e.repeat)return;
+   if(e.key===" "){e.preventDefault();strum(e.shiftKey);return}
+   if(e.key==="Enter"){e.preventDefault();autoToggle();return}
+   const k=e.key.toLowerCase();if(k==="r"){e.preventDefault();recToggle();return}
+   const i=LY.keys.indexOf(k);if(i>=0&&i<S.n){e.preventDefault();pluckNow(i,e.shiftKey?1:.8)}});
+  /* ---------- controls ---------- */
+  const mk=(label,min,max,step,key,fn,fmt)=>{const out=h("span",{style:"min-width:30px;opacity:.75"},fmt?fmt(S[key]):"");const inp=h("input",{type:"range",min,max,step,value:S[key],oninput:e=>{S[key]=+e.target.value;out.textContent=fmt?fmt(S[key]):"";fn&&fn();sv()}});return h("label",{class:"sl"},label,inp,out)};
+  const pct=v=>Math.round(v*100)+"%";
+  function rebuild(delay){clearTimeout(rebuildT);rebuildT=setTimeout(()=>{if(dead)return;frame=null;if(E){E.bufs.clear();E.S=S}if(ctx){E.warm()}layout()},delay==null?160:delay)}
+  function applyScale(){/* a new tuning: ring-outs from the old one are let go and the strings are recomputed */
+   if(E)E.cutTag("loop");if(loopOn&&S.phrase){loopStop()}vz.length=0;rebuild(0);sv()}
+  const selScale=h("select",{class:"t",onchange:e=>{S.scale=+e.target.value;applyScale()}},...LY.scales.map((s,i)=>h("option",{value:i,selected:i===S.scale},s[0])));
+  const selRoot=h("select",{class:"t",onchange:e=>{S.root=+e.target.value;applyScale()}},...LY.notes.map((n,i)=>h("option",{value:i,selected:i===S.root},n)));
+  const selOct=h("select",{class:"t",title:"Octave of the lowest string",onchange:e=>{S.oct=+e.target.value;applyScale()}},...[1,2,3,4,5].map(o=>h("option",{value:o,selected:o===S.oct},"Octave "+o)));
+  const selN=h("select",{class:"t",title:"Number of strings. The ancient lyre had 7; later ones had more.",onchange:e=>{S.n=+e.target.value;aBase=-1;applyScale()}},...[7,8,9,10,11,12,13].map(o=>h("option",{value:o,selected:o===S.n},o+" strings"+(o===7?" (classic)":""))));
+  const selPre=h("select",{class:"t",onchange:e=>{const p=LY.presets[e.target.value];if(!p)return;Object.assign(S,p);e.target.value="";syncCtl();applyScale()}},h("option",{value:""},"Moods..."),...Object.keys(LY.presets).map(k=>h("option",{value:k},k)));
+  const selPat=h("select",{class:"t",onchange:e=>{S.pat=+e.target.value;aStep=0;aBase=-1;aCnt=0;sv()}},...LY.pats.map((p,i)=>h("option",{value:i,selected:i===S.pat},p)));
+  const btnAuto=h("button",{class:"btn",onclick:autoToggle,title:"Enter"},"Play for me");
+  const btnRec=h("button",{class:"btn rec",onclick:recToggle,title:"R"},"Rec");
+  const btnLoop=h("button",{class:"btn",onclick:loopToggle},"Loop");
+  const btnClr=h("button",{class:"btn",onclick:clearPhrase},"Clear");
+  const btnWav=h("button",{class:"btn",onclick:saveWav},"Save .wav");
+  const sSus=mk("Sustain",0,1,.01,"sus",()=>rebuild(),pct),sSoft=mk("Tone",0,1,.01,"soft",()=>rebuild(),v=>v<.34?"bright":v>.66?"mellow":"warm"),sRoom=mk("Room",0,1,.01,"room",()=>E&&E.setRoom(S.room),pct),sVol=mk("Volume",0,1,.01,"vol",()=>E&&E.setVol(S.vol),pct);
+  const sBpm=mk("Speed",30,200,1,"bpm",null,v=>v+" bpm"),sHum=mk("Human",0,100,1,"hum",null,v=>v+"%");
+  function syncCtl(){selScale.value=S.scale;selRoot.value=S.root;selOct.value=S.oct;selN.value=S.n;selPat.value=S.pat;
+   for(const [lab,k] of [[sSus,"sus"],[sSoft,"soft"],[sRoom,"room"],[sVol,"vol"],[sBpm,"bpm"],[sHum,"hum"]]){const inp=lab.querySelector("input");inp.value=S[k];inp.dispatchEvent(new Event("input"))}}
+  function paint(){btnAuto.classList.toggle("on",auto);btnAuto.textContent=auto?"Stop playing":"Play for me";btnRec.classList.toggle("on",!!rec);btnRec.textContent=rec?(rec.over?"Overdubbing...":"Recording..."):(S.phrase&&loopOn?"Overdub":"Rec");
+   btnLoop.classList.toggle("on",loopOn);btnLoop.textContent=loopOn?"Stop loop":"Loop";btnLoop.disabled=!S.phrase;btnClr.disabled=!S.phrase&&!rec;btnWav.disabled=!S.phrase;
+   status.textContent=rec?"Play now. Press Rec again to finish.":S.phrase?"Phrase: "+S.phrase.len.toFixed(1)+" s, "+S.phrase.ev.length+" notes":"No phrase yet. Press Rec, play, press Rec again."}
+  root.append(
+   h("div",{class:"bar"},selPre,selScale,h("div",{class:"grp"},selRoot,selOct),selN),
+   cnv,
+   h("div",{class:"bar b2"},sSus,sSoft,sRoom,sVol),
+   h("div",{class:"bar"},h("div",{class:"grp"},btnAuto,selPat),sBpm,sHum),
+   h("div",{class:"bar"},h("div",{class:"grp"},btnRec,btnLoop,btnClr,btnWav),status),
+   h("div",{class:"nt"},"Click or touch a string, or drag across them. Keys: "+LY.keys.slice(0,S.n).join(" ")+" play the strings from low to high; Space strums up (Shift+Space down); Enter starts or stops Play for me; R records."));
+  b.append(root);paint();
+  const ro=new ResizeObserver(()=>{clearTimeout(rzT);rzT=setTimeout(()=>{if(root.clientWidth>60&&root.clientHeight>60)layout()},120)});let rzT=0;ro.observe(cnv);
+  requestAnimationFrame(()=>{layout();try{root.focus({preventScroll:true})}catch(_){}});
+  win.on.focus=()=>{try{root.focus({preventScroll:true})}catch(_){}};
+  win.api={pluck:(i,v)=>pluckNow(i,v==null?.8:v),S,get ctx(){return ctx},get E(){return E},recToggle,loopToggle,autoToggle,saveWav,layout};
+  win.on.close=()=>{dead=true;clearInterval(autoT);clearInterval(loopTimer);clearTimeout(idleT);clearTimeout(rebuildT);clearTimeout(saveT);cancelAnimationFrame(raf);ro.disconnect();LS.set("tvos_lyre",S);if(E)E.dead=true;if(ctx){try{ctx.close()}catch(e){}}}
+ }});
+
 /* ===================== CLEANER: see everything this OS has saved in your browser, and clear what you no longer want ===================== */
 IP.broom="M14 3l-4.5 8.5 M7 11.5l9 4.5-1.5 5.5H5.5L4 17z M8.5 15.5l-1 4.5 M12 17.5l-.5 3.5";
 const CL={
@@ -5135,6 +5338,7 @@ const CL={
   tvos_standing:["Old game standing","A value from an older version. It is no longer shown anywhere.","Housekeeping"],
   tvos_chat_seen:["Chat: server reached","Remembers this device has reached the chat server, so the Chat app stays on the desktop. Not needed for anything else.","Housekeeping"],
   tvos_cleaner_tab:["Cleaner tab","Which Cleaner tab you last looked at.","App preferences"],
+  tvos_lyre:["Lyre","Your Lyre tuning, sliders and the phrase you recorded in it.","Your writing and creations","Deleting it resets the Lyre and removes your recorded phrase."],
   tvos_hearth:["Hearth settings","Fire style, colour, size and sound in Hearth.","App preferences"],
   tvos_paint_recent:["Paint: recent sizes","The last few custom canvas sizes you used in Paint.","App preferences"],
   tvos_paint_text:["Paint: text tool","Font and style last used with the Paint text tool.","App preferences"],
@@ -5854,9 +6058,9 @@ const LOGO=`
    which is how a real plucked string rings and fades. A small generated room (a convolver) adds the shimmer. Everything is computed on the
    spot in a few milliseconds. Browsers only allow sound after the person has touched the page, so if sound is still locked when the desktop
    appears, the chime waits up to 12 seconds for the first touch or key and then plays once; after that it lets the moment go. */
-function lyreString(sr,f,secs,seed){const n=Math.floor(sr*secs),L=Math.max(2,Math.round(sr/f-.5)),buf=new Float32Array(n),d=new Float32Array(L);let r=seed>>>0||1;const rnd=()=>{r=(r*1664525+1013904223)>>>0;return r/2147483648-1};
- let p=0;for(let i=0;i<L;i++){const x=rnd();d[i]=x*.6+p*.4;p=x}/* softened noise: a gentle pluck, not a click */
- let k=0,prev=0;const decay=.9965-Math.min(.0015,f/1e6);
+function lyreString(sr,f,secs,seed,dec,soft){soft=soft==null?.4:soft;const n=Math.floor(sr*secs),L=Math.max(2,Math.round(sr/f-.5)),buf=new Float32Array(n),d=new Float32Array(L);let r=seed>>>0||1;const rnd=()=>{r=(r*1664525+1013904223)>>>0;return r/2147483648-1};
+ let p=0;for(let i=0;i<L;i++){const x=rnd();d[i]=x*(1-soft)+p*soft;p=x}/* softened noise: a gentle pluck, not a click */
+ let k=0,prev=0;const decay=(dec||.9965)-Math.min(.0015,f/1e6);
  for(let i=0;i<n;i++){const cur=d[k],nxt=d[(k+1)%L];const v=(cur+nxt)*.5*decay;d[k]=v;k=(k+1)%L;buf[i]=cur;
   if(i<90)buf[i]*=i/90}/* tiny fade-in so it starts soft */
  let pk=0;for(let i=0;i<n;i++){const a=Math.abs(buf[i]);if(a>pk)pk=a}if(pk>0)for(let i=0;i<n;i++)buf[i]/=pk;
