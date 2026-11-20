@@ -519,10 +519,14 @@ DeeJay
     drop and a goodbye. Tap a record and you take over that record (the
     hand sign shows it); "Give control back" hands it back. "Next part"
     skips ahead.
-  - Build and Drop: hold BUILD (or the space bar). The tension rises with a
-    riser and a snare roll, and it stays held until you let go, even if
-    your finger or mouse slides away. Let go and the drop lands on the
-    next bar. Auto DJ does this by itself too.
+  - Build and Drop: hold BUILD (or the space bar). The tension rises with
+    a riser and a snare roll, and it stays held until you let go, even if
+    your finger or mouse slides away. When you let go, a last rising
+    sweep and a faster snare roll carry you to the next bar line. Then
+    everything cuts out for a heartbeat and the DROP lands: a deep boom,
+    a crash, the sound opening up from muffled, and the music pumping
+    hard for a few bars. Put new tunes on during a build and they arrive
+    with the drop. Auto DJ does all of this by itself too.
   - Bend the sound (the glowing ball): drag left to darken, right to thin out, up for
     echo. Let go and it jumps back.
   - Speed: slide between the turtle and the rabbit.
