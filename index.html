@@ -1258,7 +1258,7 @@ const fmtDate=t=>{const d=new Date(t),hm=" "+pad(d.getHours())+":"+pad(d.getMinu
 const sleep=ms=>new Promise(r=>setTimeout(r,ms));
 const LS={get(k,d){try{const v=localStorage.getItem(k);return v==null?d:JSON.parse(v)}catch(e){return d}},set(k,v){try{localStorage.setItem(k,JSON.stringify(v));return true}catch(e){try{window.tvosStorageFull&&window.tvosStorageFull(e)}catch(_){}return false}}};
 const fmtUp=s=>{s=Math.max(0,Math.round(s));const d=Math.floor(s/86400),hr=Math.floor(s%86400/3600),m=Math.floor(s%3600/60),sc=s%60;if(d)return d+" d "+hr+" h";if(hr)return hr+" h "+m+" min";if(m)return m+" min "+sc+" s";return sc+" s"};
-const OS={apps:{},wins:[],z:10,bus:{},boot:performance.now(),ver:"1.0 build 1120-2230"};
+const OS={apps:{},wins:[],z:10,bus:{},boot:performance.now(),ver:"1.0 build 1120-2239"};
 OS.on=(ev,f)=>{(OS.bus[ev]=OS.bus[ev]||[]).push(f);return f};
 OS.off=(ev,f)=>{OS.bus[ev]=(OS.bus[ev]||[]).filter(x=>x!==f)};
 /* reboot that always fetches the newest copy of this page (like Ctrl+Shift+R), then reloads */
@@ -5864,11 +5864,11 @@ const DJ={
   const c=E.c,Q={playing:false,step:0,nextT:0,sel:S.sel.slice(0,7),pend:[],man:[],fxq:[],bd:null,sec:0,secBar:0,auto:false,journey:0,mood:S.mood,pendMood:null,bar0:0,skip:false,secName:"",riser:null,seed:1,lastBar:-1,hold:0,holdT:0};
   Q.rng=DJ.rng(99);
   const dur=()=>60/S.bpm/4;
-  Q.start=(now)=>{if(Q.playing)return;Q.playing=true;Q.step=0;Q.nextT=Math.max(now,c.currentTime)+.12;Q.bar0=0;Q.bd=null;Q.lastBar=-1;if(Q.auto)Q.beginAuto()};
+  Q.start=(now)=>{if(Q.playing)return;Q.playing=true;Q.nextMood=null;Q.step=0;Q.nextT=Math.max(now,c.currentTime)+.12;Q.bar0=0;Q.bd=null;Q.lastBar=-1;Q.moodT=Q.nextT;if(Q.auto)Q.beginAuto()};
   Q.stop=()=>{Q.playing=false;Q.bd=null;E.hpBuild=20;E.applyHP();E.gap.gain.cancelScheduledValues(0);E.gap.gain.setValueAtTime(1,c.currentTime);if(Q.riser){try{E.fadeRiser(Q.riser,c.currentTime+.1)}catch(e){}Q.riser=null}};
   Q.setSel=(i,v,manual)=>{Q.pend[i]=v;if(manual)Q.man[i]=true};
   Q.fx=(i)=>{Q.fxq.push(i)};
-  Q.setMood=(m,now)=>{if(!Q.playing){Q.mood=m;S.mood=m;return}Q.pendMood=m;Q.pendNow=!!now};
+  Q.setMood=(m,now)=>{if(!Q.playing){Q.mood=m;S.mood=m;return}Q.pendMood=m;Q.nextMood=null;Q.moodT=Q.nextT;Q.pendNow=!!now};
   Q.beginAuto=()=>{Q.sec=0;Q.secBar=0;Q.man=[];Q.autoPending=true};
   Q.setAuto=(on)=>{Q.auto=!!on;if(on){Q.man=[];if(Q.playing)Q.autoPending=true;Q.sec=0;Q.secBar=0}else{Q.secName=""}};
   Q.skipSec=()=>{if(Q.auto)Q.skip=true};
@@ -5889,7 +5889,10 @@ const DJ={
    if(Q.pendMood&&(Q.pendNow||rel%Q.mood.len===0)){Q.pendNow=false;Q.mood=Q.pendMood;S.mood=Q.mood;Q.bar0=bar;Q.pendMood=null;S.bpm=Q.mood.bpm;if(H&&H.onMood)H.onMood(Q.mood)}
    if(Q.auto){if(Q.autoPending){Q.autoPending=false;Q.sec=0;Q.secBar=0;applyAutoSection(bar,t)}
     else{Q.secBar++;const P=DJ.PLAN[Q.sec];if(Q.skip||Q.secBar>=P.bars){const wasSkip=Q.skip;Q.skip=false;if(wasSkip&&Q.bd&&Q.bd.auto){Q.bd.drop=Q.step}Q.sec++;Q.secBar=0;
-      if(Q.sec>=DJ.PLAN.length){Q.sec=0;Q.journey++;if(S.autoMood){const all=[].concat(...DJ.MOODS.map(g=>g[1]));let m;do{m=all[Math.floor(Math.random()*all.length)]}while(m[0]===Q.mood.name&&all.length>1);Q.pendMood=DJ.mkMood(m)}}
+      /* Auto DJ can hop to a different vibe every few minutes: the next vibe is picked one part ahead so its sounds are ready, then it starts on a part change */
+      if(Q.nextMood){const m=Q.nextMood;Q.nextMood=null;Q.pendMood=null;Q.mood=m;S.mood=m;Q.bar0=bar;S.bpm=m.bpm;Q.moodT=Q.nextT;if(H&&H.onMood)H.onMood(m)}
+      if(Q.sec>=DJ.PLAN.length){Q.sec=0;Q.journey++}
+      const cy=S.cycle|0;if(cy!==0&&!Q.nextMood&&((cy>0&&Q.nextT-(Q.moodT||0)>=cy*60)||(cy<0&&Q.sec===DJ.PLAN.length-1))){const all=[].concat(...DJ.MOODS.map(g=>g[1]));let m;do{m=all[Math.floor(Math.random()*all.length)]}while(m[0]===Q.mood.name&&all.length>1);Q.nextMood=DJ.mkMood(m)}
       applyAutoSection(bar,t)}}}
    for(let i=0;i<7;i++)if(Q.pend[i]!==undefined){Q.sel[i]=Q.pend[i];S.sel[i]=Q.pend[i];Q.pend[i]=undefined;Q.fresh=Q.fresh||{};Q.fresh[i]=true}
    if(H&&H.onBar)H.onBar(bar)}
@@ -6033,6 +6036,7 @@ DJ.css=()=>{const old=document.getElementById("dj-css");if(old)old.remove();cons
 .dj .st{font-size:11.5px;opacity:.8;text-align:center;min-height:14px}
 .dj .dk .btn{min-height:34px;padding:5px 12px;font-size:12px;width:100%}
 .dj .dk .hand{position:absolute;right:8px;top:6px;font-size:13px}
+.dj .cyc{display:block;font-size:12px;margin:8px 2px 4px;opacity:.9}.dj .cyc select{margin-left:4px}
 .dj .fxs{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
 .dj .fxs .t{font-size:11px;opacity:.7;margin-right:4px;font-weight:700;letter-spacing:.08em}
 .dj .fx{min-height:40px;padding:6px 12px;border-radius:20px;border:1px solid rgba(255,255,255,.2);background:rgba(255,255,255,.08);font-weight:700;transition:transform .08s}
@@ -6069,14 +6073,14 @@ DJ.css=()=>{const old=document.getElementById("dj-css");if(old)old.remove();cons
  .dj .side .xyw{flex:1}.dj .side .xy{flex:1;min-height:80px}.dj .xyc{display:none}.dj .side .bld{width:42%;min-height:0}
  .dj .sl input{width:64px}.dj .moodt{max-width:84px}.dj .top{gap:5px;padding:6px}.dj .btn{padding:6px 9px}.dj .sl.hide{display:none}
 }`;document.head.append(s)};
-DJ.load=()=>{const low=/CrOS/.test(navigator.userAgent)||(navigator.hardwareConcurrency||8)<=4||(navigator.deviceMemory||8)<=4,d={bpm:0,mood:"Sunrise festival",vol:.8,autoMood:true,viz:low?"simple":"full"};try{const o=LS.get("tvos_deejay");if(o&&typeof o==="object")Object.assign(d,{bpm:+o.bpm||0,mood:String(o.mood||d.mood),vol:Math.max(0,Math.min(1,+o.vol||d.vol)),autoMood:o.autoMood!==false,viz:["full","simple","off"].includes(o.viz)?o.viz:"full"})}catch(e){}
+DJ.load=()=>{const low=/CrOS/.test(navigator.userAgent)||(navigator.hardwareConcurrency||8)<=4||(navigator.deviceMemory||8)<=4,d={bpm:0,mood:"Sunrise festival",vol:.8,cycle:3,viz:low?"simple":"full"};try{const o=LS.get("tvos_deejay");if(o&&typeof o==="object")Object.assign(d,{bpm:+o.bpm||0,mood:String(o.mood||d.mood),vol:Math.max(0,Math.min(1,+o.vol||d.vol)),cycle:[0,2,3,5,10,-1].includes(+o.cycle)?+o.cycle:(o.autoMood===false?0:3),viz:["full","simple","off"].includes(o.viz)?o.viz:"full"})}catch(e){}
  d.moodObj=DJ.mood(d.mood);if(!d.bpm)d.bpm=d.moodObj.bpm;d.bpm=Math.max(100,Math.min(160,d.bpm));d.mood=d.moodObj;d.sel=[0,0,0,0,0,0,0];return d};
 defApp("deejay",{name:"DeeJay",icon:"deejay",cat:"Media",w:940,h:660,single:true,desc:"mix tunes on four records, or let Autopilot DJ the party",kw:"dj deejay party trance techno dance rave music beat mix drop build autopilot records turntable club electronic record wav",
  init(win,b,arg){
   DJ.css();
   const S=DJ.load();let ctx=null,E=null,Q=null,dead=false,raf=0,tickT=0,saveT=0,idleT=0,lastDraw=0;
   const root=h("div",{class:"dj",tabindex:"0"});const cnv=h("canvas",{class:"vz"});const cx=cnv.getContext("2d");
-  const keep=()=>({v:2,bpm:S.bpm,mood:S.mood.name,vol:S.vol,autoMood:S.autoMood,viz:S.viz});
+  const keep=()=>({v:2,bpm:S.bpm,mood:S.mood.name,vol:S.vol,cycle:S.cycle,viz:S.viz});
   const sv=()=>{clearTimeout(saveT);saveT=setTimeout(()=>LS.set("tvos_deejay",keep()),300)};
   /* what each record holds: a tune, and whether it is playing */
   const decks=DJ.DECKS.map(d=>({d,tune:null,on:false}));
@@ -6100,7 +6104,7 @@ defApp("deejay",{name:"DeeJay",icon:"deejay",cat:"Media",w:940,h:660,single:true
   function autoSet(sec,journey){const picks=autoPick(sec,journey,Q.mood),out=[undefined,undefined,undefined,undefined,undefined,undefined,undefined];
    decks.forEach((k,i)=>{if(k.d.lanes.some(l=>Q.man[l]))return;const t=picks[i];if(!t){k.on=false;k.d.lanes.forEach(l=>out[l]=0)}else{k.tune=t;k.on=true;k.d.lanes.forEach((l,j)=>out[l]=t.v[j])}});
    /* get the next part's sounds ready while this one plays */
-   const ns=sec+1<DJ.TIERS.length?[sec+1,journey]:[0,journey+1];DJ.bake([].concat(DJ.keysFor(out.map(x=>x||0),Q.pendMood||Q.mood,E.light),DJ.keysFor(autoSel(autoPick(ns[0],ns[1],Q.pendMood||Q.mood)),Q.pendMood||Q.mood,E.light)));return out}
+   const ns=sec+1<DJ.TIERS.length?[sec+1,journey]:[0,journey+1];DJ.bake([].concat(DJ.keysFor(out.map(x=>x||0),Q.pendMood||Q.mood,E.light),DJ.keysFor(autoSel(autoPick(ns[0],ns[1],Q.nextMood||Q.pendMood||Q.mood)),Q.nextMood||Q.pendMood||Q.mood,E.light)));return out}
   function setAuto(on){ensure().then(async()=>{if(dead)return;if(on&&!Q.playing){const ks=[].concat(DJ.keysFor(autoSel(autoPick(0,0,S.mood)),S.mood,E.light),DJ.keysFor(autoSel(autoPick(1,0,S.mood)),S.mood,E.light));if(!ks.every(x=>DJ.bank.has(x))){hint.textContent="Warming up the records…";await Promise.race([DJ.bake(ks),wait(3000)]);if(dead)return}}if(on){Q.man=[];decks.forEach(k=>{k.on=false;k.tune=null});S.sel=[0,0,0,0,0,0,0];Q.sel=S.sel.slice()}Q.setAuto(on);if(on&&!Q.playing)await startMusic();paint()})}
   async function chooseMood(m){pop.hidden=true;S.mood=m;sv();await ensure();if(dead)return;
    /* the new vibe brings its own tunes: load them onto the records, get the sounds ready, then switch together on the next bar */
@@ -6189,9 +6193,8 @@ defApp("deejay",{name:"DeeJay",icon:"deejay",cat:"Media",w:940,h:660,single:true
     h("p",{},h("b",{},"The glowing ball: "),"drag it to make the sound darker, thinner or echoey. Let go and it jumps back."),
     h("p",{},h("b",{},"Speed: "),"slide between the turtle and the rabbit. Everything stays in time."),
     h("p",{},"Keys: 1 to 4 pause or play a record, Space build, A Auto DJ, N next vibe, arrows for speed, Q W E R T Y for sound effects."),
-    h("label",{},h("input",{type:"checkbox",checked:S.autoMood,onchange:ev=>{S.autoMood=ev.target.checked;sv()}}),"Auto DJ picks a new vibe each night"),
     h("label",{},"Visuals ",h("select",{onchange:ev=>{S.viz=ev.target.value;sv()}},...[["full","Full"],["simple","Simple (lighter)"],["off","Off (quietest)"]].map(o=>h("option",{value:o[0],selected:S.viz===o[0]},o[1])))));return}
-   pop.className="pop";pop.append(h("div",{class:"mg"},h("button",{class:"btn on",onclick:surprise},"🎲 Surprise me")));
+   pop.className="pop";pop.append(h("div",{class:"mg"},h("button",{class:"btn on",onclick:surprise},"🎲 Surprise me")),h("label",{class:"cyc"},"Auto DJ changes vibe: ",h("select",{onchange:ev=>{S.cycle=+ev.target.value;sv();toast(S.cycle===0?"Auto DJ stays on one vibe":"Auto DJ will change vibe "+ev.target.selectedOptions[0].textContent.toLowerCase())}},...[[0,"never"],[2,"every 2 minutes"],[3,"every 3 minutes"],[5,"every 5 minutes"],[10,"every 10 minutes"],[-1,"every night"]].map(o=>h("option",{value:o[0],selected:S.cycle===o[0]},o[1])))));
    for(const g of DJ.MOODS){pop.append(h("h4",{},g[0]));const mg=h("div",{class:"mg"});for(const m of g[1])mg.append(h("button",{class:"btn"+(S.mood.name===m[0]?" on":""),onclick:()=>chooseMood(DJ.mkMood(m))},m[0]));pop.append(mg)}}
   function colors(){root.style.setProperty("--dj","hsl("+S.mood.hue+",85%,68%)")}
   function paint(){if(dead)return;const pl=!!(Q&&Q.playing),au=!!(Q&&Q.auto);
