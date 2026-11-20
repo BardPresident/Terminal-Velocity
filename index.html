@@ -1258,7 +1258,7 @@ const fmtDate=t=>{const d=new Date(t),hm=" "+pad(d.getHours())+":"+pad(d.getMinu
 const sleep=ms=>new Promise(r=>setTimeout(r,ms));
 const LS={get(k,d){try{const v=localStorage.getItem(k);return v==null?d:JSON.parse(v)}catch(e){return d}},set(k,v){try{localStorage.setItem(k,JSON.stringify(v));return true}catch(e){return false}}};
 const fmtUp=s=>{s=Math.max(0,Math.round(s));const d=Math.floor(s/86400),hr=Math.floor(s%86400/3600),m=Math.floor(s%3600/60),sc=s%60;if(d)return d+" d "+hr+" h";if(hr)return hr+" h "+m+" min";if(m)return m+" min "+sc+" s";return sc+" s"};
-const OS={apps:{},wins:[],z:10,bus:{},boot:performance.now(),ver:"1.0 build 1120-0226"};
+const OS={apps:{},wins:[],z:10,bus:{},boot:performance.now(),ver:"1.0 build 1120-0332"};
 OS.on=(ev,f)=>{(OS.bus[ev]=OS.bus[ev]||[]).push(f);return f};
 OS.off=(ev,f)=>{OS.bus[ev]=(OS.bus[ev]||[]).filter(x=>x!==f)};
 /* reboot that always fetches the newest copy of this page (like Ctrl+Shift+R), then reloads */
@@ -5091,8 +5091,8 @@ const LY={
  notes:["C","C#","D","D#","E","F","F#","G","G#","A","A#","B"],
  scales:[["Major pentatonic",[0,2,4,7,9]],["Minor pentatonic",[0,3,5,7,10]],["Major (Ionian)",[0,2,4,5,7,9,11]],["Natural minor (Aeolian)",[0,2,3,5,7,8,10]],["Dorian",[0,2,3,5,7,9,10]],["Phrygian",[0,1,3,5,7,8,10]],["Lydian",[0,2,4,6,7,9,11]],["Mixolydian",[0,2,4,5,7,9,10]],["Harmonic minor",[0,2,3,5,7,8,11]],["Hirajoshi (Japanese)",[0,2,3,7,8]],["Hijaz (Middle Eastern)",[0,1,4,5,7,8,10]],["Whole tone",[0,2,4,6,8,10]],["Chromatic",[0,1,2,3,4,5,6,7,8,9,10,11]]],
  keys:["a","s","d","f","g","h","j","k","l",";","'","[","]"],
- pats:["Lullaby","Dawn","Tide","Rain","Campfire","Starlight","Drone","Wander","Procession","Echoes","Fanfare","Mystery","Dance"],
- patTip:["a slow rocking cradle song","a gentle climb, like light arriving","waves that rise and fall","soft drops, with quiet between","fingerpicked, like a guitar by the fire","a music box under the stars","one long low hum, nothing else","a little tune that wanders and returns","slow, solemn chords with a walking tune","a phrase, then its quiet echo","bright rising notes and a ringing chord","low, sparse and unsettling","a gentle waltz"],
+ pats:["Lullaby","Dawn","Tide","Rain","Campfire","Starlight","Drone","Wander","Procession","Echoes","Fanfare","Mystery","Dance","Heartbeat","Cascade","Carousel","Hymn","March","Barcarolle","Chimes","Lament","Chase"],
+ patTip:["a slow rocking cradle song","a gentle climb, like light arriving","waves that rise and fall","soft drops, with quiet between","fingerpicked, like a guitar by the fire","a music box under the stars","one long low hum, nothing else","a little tune that wanders and returns","slow, solemn chords with a walking tune","a phrase, then its quiet echo","bright rising notes and a ringing chord","low, sparse and unsettling","a gentle waltz","a slow, low pulse with a held breath","a rushing harp run, up and back down","a small turning pattern that drifts, like a music box carousel","slow reverent chords, like a choir","a steady, determined step","a lilting rocking boat","wind chimes in a quiet air","a long falling tune, full of missing someone","a fast, driving pulse"],
  /* each mood sets the notes, the sound, the playing style and the pace. It never changes the look. */
  moods:[
   ["Gentle and tender",{
@@ -5108,7 +5108,9 @@ const LY={
   ["Journey and epic",{
    "Adventure":{scale:4,root:2,oct:3,n:13,sus:.5,soft:.25,room:.4,pat:7,bpm:92},
    "Triumph":{scale:2,root:2,oct:3,n:13,sus:.55,soft:.2,room:.5,pat:10,bpm:100},
-   "Procession":{scale:3,root:9,oct:2,n:11,sus:.7,soft:.4,room:.55,pat:8,bpm:58}}],
+   "Procession":{scale:3,root:9,oct:2,n:11,sus:.7,soft:.4,room:.55,pat:8,bpm:58},
+   "Hero's road":{scale:2,root:2,oct:3,n:12,sus:.55,soft:.25,room:.45,pat:17,bpm:88},
+   "Voyage":{scale:4,root:7,oct:3,n:12,sus:.65,soft:.35,room:.5,pat:18,bpm:72}}],
   ["Dark and deep",{
    "Mystery":{scale:11,root:4,oct:2,n:11,sus:.85,soft:.5,room:.6,pat:11,bpm:40},
    "Sorrow":{scale:3,root:4,oct:2,n:11,sus:.9,soft:.7,room:.5,pat:9,bpm:40},
@@ -5118,7 +5120,40 @@ const LY={
    "Forest":{scale:0,root:4,oct:3,n:11,sus:.75,soft:.55,room:.5,pat:3,bpm:50},
    "Sakura garden":{scale:9,root:2,oct:3,n:9,sus:.55,soft:.35,room:.4,pat:5,bpm:56},
    "Desert":{scale:10,root:2,oct:2,n:11,sus:.7,soft:.3,room:.45,pat:7,bpm:62},
-   "Flowing river":{scale:2,root:0,oct:3,n:13,sus:.6,soft:.4,room:.35,pat:2,bpm:60}}]],
+   "Flowing river":{scale:2,root:0,oct:3,n:13,sus:.6,soft:.4,room:.35,pat:2,bpm:60}}],
+  ["Love and longing",{
+   "Longing":{scale:3,root:9,oct:2,n:11,sus:0.85,soft:0.7,room:0.55,pat:20,bpm:40},
+   "First love":{scale:2,root:7,oct:3,n:11,sus:0.7,soft:0.5,room:0.45,pat:15,bpm:66},
+   "Farewell":{scale:4,root:2,oct:2,n:11,sus:0.85,soft:0.65,room:0.55,pat:20,bpm:44},
+   "Reunion":{scale:2,root:5,oct:3,n:12,sus:0.7,soft:0.4,room:0.45,pat:1,bpm:60},
+   "Embrace":{scale:0,root:0,oct:3,n:11,sus:0.8,soft:0.7,room:0.5,pat:16,bpm:42},
+   "Nostalgia":{scale:7,root:0,oct:3,n:11,sus:0.7,soft:0.6,room:0.5,pat:15,bpm:56}}],
+  ["Sacred and still",{
+   "Prayer":{scale:2,root:0,oct:2,n:9,sus:0.9,soft:0.6,room:0.7,pat:16,bpm:38},
+   "Temple bells":{scale:9,root:9,oct:4,n:9,sus:0.95,soft:0.2,room:0.65,pat:19,bpm:44},
+   "Stillness":{scale:0,root:7,oct:2,n:9,sus:0.95,soft:0.7,room:0.7,pat:6,bpm:30},
+   "Meditation":{scale:0,root:2,oct:3,n:9,sus:0.9,soft:0.65,room:0.6,pat:2,bpm:34},
+   "Moonlight":{scale:1,root:9,oct:3,n:11,sus:0.85,soft:0.6,room:0.6,pat:5,bpm:44}}],
+  ["Wonder and magic",{
+   "Fairy tale":{scale:6,root:7,oct:4,n:11,sus:0.6,soft:0.2,room:0.55,pat:19,bpm:58},
+   "Magic":{scale:11,root:0,oct:3,n:12,sus:0.7,soft:0.25,room:0.6,pat:14,bpm:84},
+   "Discovery":{scale:6,root:2,oct:3,n:13,sus:0.6,soft:0.25,room:0.5,pat:14,bpm:76},
+   "Snowfall":{scale:0,root:9,oct:4,n:11,sus:0.85,soft:0.4,room:0.65,pat:19,bpm:40},
+   "Playful":{scale:0,root:7,oct:3,n:11,sus:0.4,soft:0.2,room:0.25,pat:15,bpm:112}}],
+  ["Danger and suspense",{
+   "Suspense":{scale:5,root:4,oct:1,n:9,sus:0.9,soft:0.5,room:0.6,pat:13,bpm:52},
+   "Haunting":{scale:8,root:9,oct:2,n:11,sus:0.9,soft:0.6,room:0.65,pat:13,bpm:44},
+   "Ruins":{scale:3,root:2,oct:1,n:11,sus:0.95,soft:0.7,room:0.7,pat:9,bpm:36},
+   "The chase":{scale:8,root:4,oct:2,n:11,sus:0.35,soft:0.2,room:0.25,pat:21,bpm:130},
+   "Battle":{scale:5,root:4,oct:1,n:11,sus:0.5,soft:0.15,room:0.35,pat:17,bpm:100},
+   "Storm":{scale:3,root:4,oct:2,n:13,sus:0.6,soft:0.25,room:0.5,pat:14,bpm:120}}],
+  ["Everyday scenes",{
+   "Ocean":{scale:0,root:2,oct:3,n:11,sus:0.75,soft:0.5,room:0.5,pat:18,bpm:54},
+   "Rainy window":{scale:1,root:9,oct:3,n:11,sus:0.85,soft:0.65,room:0.55,pat:3,bpm:44},
+   "Medieval court":{scale:4,root:2,oct:3,n:11,sus:0.45,soft:0.2,room:0.4,pat:12,bpm:92},
+   "Harvest":{scale:7,root:7,oct:2,n:11,sus:0.5,soft:0.45,room:0.3,pat:4,bpm:92},
+   "Lake at dawn":{scale:0,root:4,oct:3,n:11,sus:0.75,soft:0.45,room:0.5,pat:1,bpm:46},
+   "Celebration":{scale:7,root:2,oct:3,n:13,sus:0.5,soft:0.2,room:0.4,pat:10,bpm:112}}]],
  mood(name){for(const g of LY.moods)if(g[1][name])return g[1][name];return null},
  /* the Lyre's own looks. They never change the rest of the desktop. */
  looks:[
@@ -5181,6 +5216,24 @@ const LY={
     [r,r+ch[1],r+ch[2],r+L].forEach((d,k)=>o.push({i:fd(d),v:.6,g:k===3?2:0,s:k===3?undefined:.06}));Z(1);break}
    case 11:{/* Mystery: sparse low notes and a strange high glint */
     const low=rnd(Math.max(2,Math.ceil(n*.4)));N(low,.5,2+R()*2);if(R()<.35)N(low+1,.32,1.5+R());if(R()<.3)N(n-1-rnd(3),.2,2+R()*2);Z(1+R()*2);break}
+   case 13:{/* Heartbeat: a slow low pulse, and a held breath */
+    const low=rnd(2)?0:ch[2];N(low,.62,.6);N(low,.46,1.2);if(R()<.5)N(n-1-rnd(3),.22,1.6);else if(R()<.3)N(low+1,.3,1.2);Z(.8);break}
+   case 14:{/* Cascade: a rushing harp run up, and a slower fall */
+    const a=rnd(Math.max(1,Math.floor(n*.3))),top=n-1-rnd(2);T(r%L,.45);for(let d=a;d<=top;d+=pick([1,1,2]))N(d,.3+.3*(d-a)/Math.max(1,top-a),.25);N(top,.6,.5);for(let d=top-1;d>=a+2;d-=pick([1,2,2]))N(d,.4-.1*(top-d)/n,.4);Z(1.5+R()*1.5);break}
+   case 15:{/* Carousel: a small cell that turns and drifts */
+    if(st.at==null)st.at=lo-2;T(r%L,.4);for(let k=0;k<2;k++)for(const d of[0,2,4,2,1,3]){N(st.at+d,k?.4:.5,.5)}st.at=Math.max(0,Math.min(n-6,st.at+pick([-2,-1,1,2])));Z(.5);break}
+   case 16:{/* Hymn: slow chords, like voices */
+    for(let k=0;k<2;k++){const c=k?pr[st.bar%pr.length]:r;T(c,.5);T(c+ch[1],.42);if(k===0&&R()<.6)T(c+L+ch[0],.3);N(c+ch[2],.46,2.5)}st.bar++;Z(.5);break}
+   case 17:{/* March: a steady, determined step */
+    N(r,.7,1);N(walk(),.55,.75);N(walk(),.45,.25);N(r+ch[2],.55,1);N(walk(),.6,1);break}
+   case 18:{/* Barcarolle: a lilting rocking boat */
+    const c1=r+ch[1]+L,c2=r+ch[2]+L,g=[.667,.333,.667,.333,.667,.333];[[r,.62],[c1,.33],[c2,.33],[r+ch[2],.5],[c1,.33],[R()<.4?walk():c2,.45]].forEach(([d,v],k)=>N(d,v,g[k]));break}
+   case 19:{/* Chimes: wind chimes in a quiet air */
+    const c=1+rnd(3);for(let k=0;k<c;k++){const x=lo+rnd(Math.max(1,n-lo));if(R()<.4){T(x,.3);N(x-2,.28,.2+R()*.2)}else N(x,.25+R()*.2,.2+R()*.3)}Z(2+R()*4);break}
+   case 20:{/* Lament: a long falling tune */
+    let d=lo+2+rnd(Math.max(1,n-lo-2));T(r,.4);const len=4+rnd(3);for(let k=0;k<len;k++){N(d,.5-.03*k,k===len-1?3:pick([1,1.5,2]));d=Math.max(0,d-pick([1,1,2]))}Z(1.5);break}
+   case 21:{/* Chase: a fast, driving pulse */
+    const f=r+ch[2];[[r,.7],[r,.45],[f,.55],[r,.45],[r,.45],[f,.55],[r,.45],[r+ch[1],.5]].forEach(([d,v])=>N(d,v,.5));if(st.bar%2)T(n-1-rnd(3),.55);N(r,.6,.5);break}
    default:{/* Dance: a gentle waltz */
     if(R()<.6)T(walk(),.55);N(r,.68,1);T(r+ch[1]+L,.34);N(r+ch[2]+L,.34,1);T(r+ch[1]+L,.3);N(r+ch[2]+L,.3,1)}}
   if(!o.length)o.push({i:0,v:.5,g:1});return o},
