@@ -133,6 +133,11 @@ BOOT
   line, "Welcome Home Ivory!", shows on the boot screen.
   On the very first boot the game starts minimised in the taskbar so the
   desktop comes first. Settings > Boot changes that.
+  When the desktop appears a short lyre chime plays (a few plucked
+  strings, made on the spot, no audio files). Settings > Boot has a switch
+  to turn it off and a button to hear it. Browsers keep sound locked until
+  you have touched the page, so after a plain refresh it may wait for your
+  first key or click, or stay silent.
 
 WINDOWS
   Drag title bars to move, drag edges to resize, drag to a screen edge to
