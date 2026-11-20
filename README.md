@@ -709,15 +709,40 @@ Programs
 Terminal Velocity (the game, section 11), Snake and Minesweeper.
 
 Hearth (flame icon, Accessories)
-  A cozy fireplace to sit by. Pick a Hearth: Stone, Brick, Campfire
-  (night sky, moon and pines) or Flames only. Flame colours: Classic,
-  Deep red, Copper (green and teal tips) and Violet. The fire is alive:
-  logs burn down over time, the flames shrink to glowing embers, and
-  "Tend fire" adds a log for you when it gets low (turn it off to let
-  the fire die). Add a log with the button or L, and click the fire to
-  poke it. Sound is on by default and is made live in your browser, so
-  nothing is downloaded: a soft roar plus random crackles and pops.
-  Sound, Crackle and Volume are in the controls; M mutes. The sleep
+  A cozy fireplace to sit by, with a small, calm game of tending it.
+  Pick a Hearth: Stone, Brick, Campfire (night sky, moon and pines) or
+  Flames only. Flame colours: Classic, Deep red, Copper (green and teal
+  tips) and Violet.
+  The game (turn "Cozy game" off for a plain fireplace that lights
+  itself): a new hearth starts cold. Lay kindling (K) and a log (L),
+  then strike the flint and steel (S, the Strike flint button, or click
+  the cold hearth). Kindling catches easily; logs alone are hard, and
+  every miss makes the next try likelier. A small flame takes hold and
+  you grow it with logs. Logs come from a woodpile of up to 8 that gains
+  a log every 75 seconds. Kindling is unlimited but burns away quickly.
+  As the fire burns, ash builds up and smothers the flames (the fire
+  dims and a message says so): poke it (P, the button, or click the
+  fire) to clear it. Poking also shakes the logs and sends sparks flying.
+  A big fire burns faster. When the fuel runs out the fire goes out and
+  the hearth is cold again: lay wood and strike the flint to relight it.
+  Glowing embers can still be brought back with a poke or kindling.
+  While the fire burns the room slowly warms (warming up, warm, cosy,
+  snug) and the light in the room grows. Now and then a log shifts, or
+  a shower of sparks pops. "Tend fire" adds logs for you from the
+  woodpile; it is off by default. "Your fireside" in the menu counts
+  fires lit, time by the fire and the longest fire, and there are nine
+  quiet badges (first spark, a roaring fire, an hour by the fire, and
+  so on). A small line at the top left shows the woodpile, the fire and
+  the room; press H to hide it and all controls when screen recording.
+  When you close Hearth, the fire, the woodpile, the ash and your
+  fireside totals are saved, and it starts again where you left it.
+  While Hearth is closed the fire waits; it does not burn down. Sound
+  is on by default and is made live in your browser, so nothing is
+  downloaded: a soft roar plus random crackles, pops and the click of
+  the flint.
+  Sound, Crackle and Volume are in the controls. A Sound on / Sound off
+  button sits in the top right corner, and M does the same. Click the
+  fire area while the menu is open and the menu closes. The sleep
   timer (30 min, 1 hour, 90 min) keeps the fire going, then fades it
   out over the last quarter and leaves embers; press L to relight.
   Press H to hide all the controls (press H or double-click to bring
@@ -731,8 +756,10 @@ Firework (star icon, Games)
   keep launching. The Palette button opens colours (pick one or many, or
   rainbow, or add your own), burst shapes (Peony, Chrysanthemum, Willow,
   Palm, Ring, Heart, Star, Crossette, Glitter, or Surprise), size, Auto
-  show, Slow motion, Sound, Music and Volume. Keys while the window is
-  focused: Space surprise, A auto, S slow, M music, H hide the controls,
+  show, Slow motion, Sound, Music and Volume. Click the sky while the
+  Palette is open to close it. A Sound on / Sound off button sits in
+  the top right corner (it silences everything). Keys while the window
+  is focused: Space surprise, A auto, S slow, M mute, H hide the controls,
   F fullscreen. Quality is Auto by default: it watches the frame rate and
   steps down on a weak machine. Settings are remembered on this device.
 
