@@ -1258,7 +1258,7 @@ const fmtDate=t=>{const d=new Date(t),hm=" "+pad(d.getHours())+":"+pad(d.getMinu
 const sleep=ms=>new Promise(r=>setTimeout(r,ms));
 const LS={get(k,d){try{const v=localStorage.getItem(k);return v==null?d:JSON.parse(v)}catch(e){return d}},set(k,v){try{localStorage.setItem(k,JSON.stringify(v));return true}catch(e){try{window.tvosStorageFull&&window.tvosStorageFull(e)}catch(_){}return false}}};
 const fmtUp=s=>{s=Math.max(0,Math.round(s));const d=Math.floor(s/86400),hr=Math.floor(s%86400/3600),m=Math.floor(s%3600/60),sc=s%60;if(d)return d+" d "+hr+" h";if(hr)return hr+" h "+m+" min";if(m)return m+" min "+sc+" s";return sc+" s"};
-const OS={apps:{},wins:[],z:10,bus:{},boot:performance.now(),ver:"1.0 build 1120-2249"};
+const OS={apps:{},wins:[],z:10,bus:{},boot:performance.now(),ver:"1.0 build 1120-2301"};
 OS.on=(ev,f)=>{(OS.bus[ev]=OS.bus[ev]||[]).push(f);return f};
 OS.off=(ev,f)=>{OS.bus[ev]=(OS.bus[ev]||[]).filter(x=>x!==f)};
 /* reboot that always fetches the newest copy of this page (like Ctrl+Shift+R), then reloads */
@@ -5777,12 +5777,13 @@ const DJ={
   if(!raw){const mg=c.createChannelMerger(2),sets=[[.0297,.0371,.0411,.0437,.0503,.0571],[.0313,.0383,.0427,.0449,.0521,.0593]];
    sets.forEach((ds,ch)=>{const sum=c.createGain();sum.gain.value=.22;for(const dt of(light?ds.slice(0,4):ds)){const d=c.createDelay(.2),lpf=c.createBiquadFilter(),fbg=c.createGain();d.delayTime.value=dt;lpf.type="lowpass";lpf.frequency.value=2800;fbg.gain.value=.8;rhp.connect(d);d.connect(lpf);lpf.connect(fbg);fbg.connect(d);lpf.connect(sum)}sum.connect(mg,0,ch)});mg.connect(rout)}
   E.rin=rin;
-  const din=c.createGain(),dl=c.createDelay(2),fb=c.createGain(),dlp=c.createBiquadFilter(),dout=c.createGain();dlp.type="lowpass";dlp.frequency.value=3200;fb.gain.value=.42;dl.delayTime.value=.43;dout.gain.value=.5;
-  if(!light){din.connect(dl);dl.connect(dlp);dlp.connect(fb);fb.connect(dl);dlp.connect(dout);dout.connect(mix)}E.din=din;E.dl=dl;
+  const din=c.createGain(),dl=c.createDelay(2),fb=c.createGain(),dlp=c.createBiquadFilter(),dout=c.createGain();dlp.type="lowpass";dlp.frequency.value=3200;fb.gain.value=.42;dl.delayTime.value=.43;dout.gain.value=.85;
+  /* the echo is in time with the music (a dotted eighth note) and works on slow computers too: it is just one delay */
+  {const dhp=c.createBiquadFilter();dhp.type="highpass";dhp.frequency.value=350;din.connect(dhp);dhp.connect(dl);dl.connect(dlp);dlp.connect(fb);fb.connect(dl);dlp.connect(dout);dout.connect(mix)}E.din=din;E.dl=dl;
   /* one bus per lane */
   E.bus={};for(const L of DJ.LANES){const g=c.createGain();g.gain.value=L.vol;E.bus[L.id]=g;const tonalLane="balp".includes(L.id);g.connect(tonalLane?tonal:drums);
    const send=({c:.22,h:.06,a:.3,l:.34,p:.42,f:.35,b:0,k:0})[L.id]||0;if(send&&!raw){const s=c.createGain();s.gain.value=send;g.connect(s);s.connect(rin)}
-   const ds=({a:.4,l:.3,f:.25,c:.1})[L.id]||0;if(ds&&!light&&!raw){const s=c.createGain();s.gain.value=ds;g.connect(s);s.connect(din)}}
+   const ds=({a:.7,l:.6,f:.4,c:.3,h:.2,p:.15})[L.id]||0;if(ds&&!raw){const s=c.createGain();s.gain.value=ds;g.connect(s);s.connect(din)}}
   /* one second of noise, shared by every drum and sweep */
   const nb=c.createBuffer(1,c.sampleRate*2,c.sampleRate),nd=nb.getChannelData(0);let ns=4242;for(let i=0;i<nd.length;i++){ns=(ns*1664525+1013904223)>>>0;nd[i]=(ns/4294967296)*2-1}E.nb=nb;
   const noise=(t,dur,off)=>{const s=c.createBufferSource();s.buffer=nb;s.loop=true;s.start(t,(off||Math.random()*1.5)%1.9);s.stop(t+dur);return s};
@@ -5853,7 +5854,7 @@ const DJ={
   /* x: 0 to 1 (dark, open, thin) and y: 0 to 1 (more room and echo) */
   E.xy=(x,y,wash)=>{const now=c.currentTime;const d=x-.5;let lf=20000,hf=20;if(d<-.03)lf=Math.max(180,20000*Math.pow(.009,Math.min(1,(-d-.03)/.47)));if(d>.03)hf=Math.min(3200,20*Math.pow(160,Math.min(1,(d-.03)/.47)));
    lp.frequency.setTargetAtTime(lf,now,.04);lp.Q.setTargetAtTime(d<-.03?4+Math.min(1,-d*2)*6:.7,now,.05);E.hpUser=hf;E.applyHP();
-   rin.gain.setTargetAtTime(Math.min(2.2,.45+wash*.8+y*1.6),now,.06);din.gain.setTargetAtTime(Math.min(1.6,.3+y*1.5),now,.06);fb.gain.setTargetAtTime(.38+y*.25,now,.1)};
+   rin.gain.setTargetAtTime(Math.min(2.2,.45+wash*.8+y*1.6),now,.06);din.gain.setTargetAtTime(y<.06?.12:.4+y*2.6,now,.05);fb.gain.setTargetAtTime(.4+y*.32,now,.1)};
   /* ---- baked sounds: each sound is synthesised once, then played back cheaply ---- */
   const live={kick:E.kick,hat:E.hat,perc:E.perc,bass:E.bass,pluck:E.pluck,super:E.super,pad:E.pad};E.live=live;
   if(!raw){const bank=DJ.bank,bq4=x=>Math.max(0,Math.min(4,Math.round((x||0)*4)));
@@ -5894,7 +5895,7 @@ const DJ={
    if(P.build){Q.bd={start:Q.step,drop:Q.step+P.bars*16,auto:true,fired:false}}
    if(H&&H.onSection)H.onSection(P.n)}
   function onBar(bar,t){
-   const rel=bar-Q.bar0;
+   const rel=bar-Q.bar0;if(E.dl)E.dl.delayTime.setTargetAtTime(.75*60/S.bpm,t,.05);
    if(Q.pendMood&&(Q.pendNow||rel%Q.mood.len===0)){Q.pendNow=false;Q.mood=Q.pendMood;S.mood=Q.mood;Q.bar0=bar;Q.pendMood=null;S.bpm=Q.mood.bpm;if(H&&H.onMood)H.onMood(Q.mood)}
    if(Q.auto){if(Q.autoPending){Q.autoPending=false;Q.sec=0;Q.secBar=0;applyAutoSection(bar,t)}
     else{Q.secBar++;const P=DJ.PLAN[Q.sec];if(Q.skip||Q.secBar>=P.bars){const wasSkip=Q.skip;Q.skip=false;if(wasSkip&&Q.bd&&Q.bd.auto){Q.bd.drop=Q.step}Q.sec++;Q.secBar=0;
