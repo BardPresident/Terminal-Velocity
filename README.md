@@ -531,9 +531,11 @@ DeeJay
     echo. Let go and it jumps back.
   - Speed: slide between the turtle and the rabbit.
   - Vibe: many vibes in groups (euphoric trance, dreamy, dark techno,
-    acid, epic, party, places). A vibe sets the key, chords and starting
-    tempo. "Surprise me" picks one. Changing vibe while playing waits for
-    the next chord, so it flows.
+    acid, epic, party, places). A vibe sets the key, chords, tempo and
+    its own favourite tunes. Picking one puts new tunes on the records
+    and switches on the next bar, so you hear the new style straight
+    away (and it starts the music if nothing is playing). Auto DJ uses
+    the same favourites. "Surprise me" picks one.
   - Sound effects: Whoosh, Crash, Boom, Laser, Slide, Twinkle.
   - Keys: 1 to 4 pause or play a record, Space build, A Auto DJ, N next
     vibe, left and right arrows for speed, Q W E R T Y for effects.
