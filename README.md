@@ -436,33 +436,49 @@ Sequencer
 
 Lyre
   A plucked-string instrument, for playing or for background music while
-  you record and talk. The strings are synthesised (a plucked-string
-  model), so there are no sample files and it stays light on cheap
-  computers.
-  - Click or touch a string, or drag across several for a strum. Touch
-    works with several fingers. Keys A S D F G H J K L ; ' [ ] play the
-    strings from low to high, Space strums up and Shift+Space strums down.
-  - 7 to 13 strings (7 is the classic ancient lyre). Every string is a
-    note of the scale you choose, so whatever you pluck sounds good
-    together: major and minor pentatonic, the Greek-style modes (Dorian,
-    Phrygian, Lydian, Mixolydian), major, minor, harmonic minor,
-    Hirajoshi, Hijaz, whole tone or chromatic, from any root note and
-    octave. "Moods" sets everything at once (Hearth, Delphi, Morning,
-    Midnight, Sakura, Garden).
-  - Sustain, Tone (bright to mellow), Room (shimmer) and Volume.
-  - Play for me: the lyre plays itself with Rising or Falling arpeggio,
-    Up and down, Wander, Chords, Rain or Drone, at the speed you set,
-    with a Human slider for natural looseness. You can play over it by
-    hand. Enter starts and stops it.
-  - Rec, Loop, Clear: press Rec, play (by hand or with Play for me), press
-    Rec again. The phrase loops. While it loops, Rec overdubs new notes
-    into it. Save .wav renders the phrase to a stereo 16-bit file in the
-    same save location as the Recorder.
-  - To get the Lyre into a screen recording, share this browser tab (with
-    tab audio) in the Recorder or Camera. Sharing a whole screen or window
-    often leaves browser sound out.
-  - Your tuning, sliders and recorded phrase are saved with the rest of
-    your data and included in Backup.
+  you tell a story. The strings are synthesised (a plucked-string model),
+  so there are no sample files and it stays light on cheap computers.
+  The top rows hold the things a storyteller needs:
+  - Choose a mood: sets the notes, the sound, the playing style and the
+    pace in one go. The moods are grouped: Gentle and tender, Bright and
+    hopeful, Journey and epic, Dark and deep, and Places. Changing the
+    mood while it plays crossfades into the new one.
+  - Play for me: the lyre plays itself, in phrases with rests, swells and
+    chord changes. Press again to stop. You can play over it by hand.
+  - Record: records what the lyre plays. Tick "Include my voice" first to
+    record your microphone too (headphones give the cleanest sound).
+    Press Stop recording when you are done. A bar then appears with Play
+    it back (press Stop to end playback), Save as WAV and Throw away.
+    Save as WAV puts a stereo 16-bit WAV file in your browser's Downloads
+    folder, and the bar tells you its name. If your browser is set to
+    ask where to save downloads, it will ask. Recordings stop at 8
+    minutes to protect cheap computers.
+  - Pace: from Very slow to Lively. Left and right arrow keys change it.
+  - Volume.
+  - Look: twelve looks that belong to the Lyre alone (Golden Hour,
+    Moonlit, Enchanted Forest, Hearth Ember, Deep Ocean, Rose Garden,
+    Parchment, Starfield, Aurora, Cherry Blossom, Desert Sunset, or Match
+    my desktop). Each has gentle background motion such as stars,
+    fireflies, embers, bubbles or petals. The T key cycles the looks. The
+    looks never change the rest of the desktop.
+  Touch or click a string, or drag across several for a strum. Touch
+  works with several fingers. Keys A S D F G H J K L ; ' [ ] play the
+  strings from low to high, Space strums (Shift+Space strums down), Enter
+  starts and stops Play for me, R starts and stops recording, T changes
+  the look.
+  "More settings" opens the rest: scale (pentatonic, the Greek-style
+  modes Dorian, Phrygian, Lydian and Mixolydian, major, minor, harmonic
+  minor, Hirajoshi, Hijaz, whole tone, chromatic), starting note, lowest
+  octave, 7 to 13 strings (7 is the classic ancient lyre), ring time,
+  tone, echo, playing style, looseness, "Stop by itself after" (a sleep
+  timer: the music fades out slowly, then stops) and "Moving background"
+  (turn it off on a very slow computer). The playing styles are Lullaby,
+  Dawn, Tide, Rain, Campfire, Starlight, Drone, Wander, Procession,
+  Echoes, Fanfare, Mystery and Dance.
+  Every string is a note of the scale you pick, so whatever you pluck
+  sounds good together. Your choices are saved with the rest of your data
+  and included in Backup. If you screen-record the whole OS, share this
+  browser tab with its audio so the Lyre is heard.
 
 Recorder
   Records real WAV (16-bit PCM, mono or stereo, at your device's sample
