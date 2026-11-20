@@ -495,7 +495,10 @@ Recorder
   file every N minutes".
 
 Camera
-  Webcam or screen recording (desktop), photos (JPG), pause, countdown,
+  Webcam or screen recording (desktop). Screen recording captures the
+  sound of the OS tab exactly as it plays, with no automatic volume
+  boosting, so the Lyre's volume slider decides how loud it is in the
+  recording. Photos (JPG), pause, countdown,
   resolution (720p HD by default, for webcam and screen; 480p to 4K available), frame rate, format (MP4 where supported, else
   WebM), quality, mic select and mute, mirror, and front/back flip on
   phones. System audio, if you share it, and your mic are mixed. Desktop
