@@ -440,8 +440,10 @@ Lyre
   so there are no sample files and it stays light on cheap computers.
   The top rows hold the things a storyteller needs:
   - Choose a mood: sets the notes, the sound, the playing style and the
-    pace in one go. The moods are grouped: Gentle and tender, Bright and
-    hopeful, Journey and epic, Dark and deep, and Places. Changing the
+    pace in one go. There are 49 moods in groups: Gentle and tender,
+    Bright and hopeful, Journey and epic, Dark and deep, Places, Love and
+    longing, Sacred and still, Wonder and magic, Danger and suspense, and
+    Everyday scenes. Changing the
     mood while it plays crossfades into the new one.
   - Play for me: the lyre plays itself, in phrases with rests, swells and
     chord changes. Press again to stop. You can play over it by hand.
@@ -474,7 +476,8 @@ Lyre
   timer: the music fades out slowly, then stops) and "Moving background"
   (turn it off on a very slow computer). The playing styles are Lullaby,
   Dawn, Tide, Rain, Campfire, Starlight, Drone, Wander, Procession,
-  Echoes, Fanfare, Mystery and Dance.
+  Echoes, Fanfare, Mystery, Dance, Heartbeat, Cascade, Carousel, Hymn,
+  March, Barcarolle, Chimes, Lament and Chase.
   Every string is a note of the scale you pick, so whatever you pluck
   sounds good together. Your choices are saved with the rest of your data
   and included in Backup. If you screen-record the whole OS, share this
