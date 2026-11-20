@@ -1258,7 +1258,7 @@ const fmtDate=t=>{const d=new Date(t),hm=" "+pad(d.getHours())+":"+pad(d.getMinu
 const sleep=ms=>new Promise(r=>setTimeout(r,ms));
 const LS={get(k,d){try{const v=localStorage.getItem(k);return v==null?d:JSON.parse(v)}catch(e){return d}},set(k,v){try{localStorage.setItem(k,JSON.stringify(v));return true}catch(e){return false}}};
 const fmtUp=s=>{s=Math.max(0,Math.round(s));const d=Math.floor(s/86400),hr=Math.floor(s%86400/3600),m=Math.floor(s%3600/60),sc=s%60;if(d)return d+" d "+hr+" h";if(hr)return hr+" h "+m+" min";if(m)return m+" min "+sc+" s";return sc+" s"};
-const OS={apps:{},wins:[],z:10,bus:{},boot:performance.now(),ver:"1.0 build 1120-0018"};
+const OS={apps:{},wins:[],z:10,bus:{},boot:performance.now(),ver:"1.0 build 1120-0051"};
 OS.on=(ev,f)=>{(OS.bus[ev]=OS.bus[ev]||[]).push(f);return f};
 OS.off=(ev,f)=>{OS.bus[ev]=(OS.bus[ev]||[]).filter(x=>x!==f)};
 /* reboot that always fetches the newest copy of this page (like Ctrl+Shift+R), then reloads */
@@ -1317,7 +1317,7 @@ const THEMES={
 };
 const THEME_ORDER=Object.keys(THEMES);
 const WALLS=["stars","rings","grid","rain","flow","plain","none"];
-const DEF={theme:"phosphor",wall:"auto",scan:false,vig:true,anim:true,verbose:true,bootSpeed:"normal",autostart:true,autostartMin:true,fsize:13,sound:false,restoreSession:true,rememberWin:true,showDataApps:false,lowPower:"auto",dateMode:"mc",manifestUrl:""};
+const DEF={theme:"phosphor",wall:"auto",scan:false,vig:true,anim:true,verbose:true,bootSpeed:"normal",autostart:true,autostartMin:true,fsize:13,sound:false,restoreSession:true,rememberWin:true,showDataApps:false,lowPower:"auto",dateMode:"mc",manifestUrl:"",startupSound:true};
 const SET=Object.assign({},DEF,LS.get("tvos_settings",{}));if(!SET.scanOff1){SET.scan=false;SET.scanOff1=true;try{LS.set("tvos_settings",SET)}catch(e){}}
 /* low power mode: Off / On / Auto (Auto switches on for weak devices: 2 cores or less, or 2 GB of memory or less) */
 function lpWeak(){return (navigator.hardwareConcurrency||8)<=2||(navigator.deviceMemory&&navigator.deviceMemory<=2)}
@@ -1911,7 +1911,7 @@ defApp("settings",{name:"Settings",icon:"gear",cat:"System",w:700,h:520,single:t
    Appearance(){
     const ws=h("select",{class:"t",onchange:e=>{SET.wall=e.target.value;saveSet();setWall()}},...["auto",...WALLS].map(w=>h("option",{value:w,selected:SET.wall===w},w==="auto"?"auto (theme default)":w)));
     return[h("h3",{class:"ac",style:"margin:0"},"Appearance"),h("div",{class:"row",style:"border:0;padding:0;gap:8px;flex-wrap:wrap;align-items:center"},h("span",{},"Themes have their own app now: roll, collect, breed and save them."),h("button",{class:"btn pri",onclick:()=>OS.open("themes")},"Open Themes")),h("div",{class:"row",style:"border:0;padding:0"},"Wallpaper (canvas, no images):",ws),h("div",{class:"row",style:"border:0;padding:0"},"Low power mode:",h("select",{class:"t",title:"Stops animations, glow and the moving wallpaper to save CPU and battery",onchange:e=>{SET.lowPower=e.target.value;saveSet();OS.lpSlow=false;document.body.classList.toggle("lp",lpOn());setWall();lpWatch();toast("Low power mode: "+(lpOn()?"on":"off"))}},...[["auto","Auto (measured: on only if it cannot keep up)"],["on","On"],["off","Off"]].map(x=>h("option",{value:x[0],selected:SET.lowPower===x[0]},x[1]))),h("span",{class:"dim",style:"font-size:12px"},lpOn()?"currently ON":"currently off")),h("div",{class:"row",style:"border:0;padding:0"},"Calendar & dates:",calSel()),chk("scan","CRT scanlines",()=>applyTheme(SET.theme)),chk("vig","Vignette",()=>applyTheme(SET.theme)),chk("anim","Window animations"),chk("showDataApps","Show Music, Books, Comics, Audiobooks and Archive even when their files are not mounted",()=>{buildDesk()}),h("div",{class:"row",style:"border:0;padding:0"},"Text size",h("input",{type:"range",min:11,max:18,value:SET.fsize,oninput:e=>{SET.fsize=+e.target.value;applyTheme(SET.theme)}}),h("span",{class:"dim"},"light themes skip scanlines automatically"))]},
-   Boot(){return[h("h3",{class:"ac",style:"margin:0"},"Boot"),chk("verbose","Verbose boot log (say what it is doing at all times)"),h("label",{style:"display:flex;gap:8px;align-items:center"},"Boot speed",h("select",{class:"t",onchange:e=>{SET.bootSpeed=e.target.value;saveSet()}},...[["slow","Slow (about 14 s)"],["normal","Normal (about 7 s)"],["fast","Fast"],["instant","Instant"]].map(([v,l])=>h("option",{value:v,selected:(SET.bootSpeed||"normal")===v},l)))),chk("restoreSession","Reopen my windows, and where they were, after a reboot or refresh (close everything and reboot to start fresh)"),chk("rememberWin","Remember where each app's window was (size, position, snapped sides) and put it back when I open that app again"),chk("autostart","First boot: start Terminal Velocity (the game) automatically"),chk("autostartMin","...and keep it minimised in the taskbar (desktop first)"),h("div",{class:"dim"},"Press any key or click during boot to skip the delays. The checks still run.")]},
+   Boot(){return[h("h3",{class:"ac",style:"margin:0"},"Boot"),chk("verbose","Verbose boot log (say what it is doing at all times)"),h("label",{style:"display:flex;gap:8px;align-items:center"},"Boot speed",h("select",{class:"t",onchange:e=>{SET.bootSpeed=e.target.value;saveSet()}},...[["slow","Slow (about 14 s)"],["normal","Normal (about 7 s)"],["fast","Fast"],["instant","Instant"]].map(([v,l])=>h("option",{value:v,selected:(SET.bootSpeed||"normal")===v},l)))),chk("restoreSession","Reopen my windows, and where they were, after a reboot or refresh (close everything and reboot to start fresh)"),chk("rememberWin","Remember where each app's window was (size, position, snapped sides) and put it back when I open that app again"),chk("autostart","First boot: start Terminal Velocity (the game) automatically"),chk("autostartMin","...and keep it minimised in the taskbar (desktop first)"),h("div",{style:"display:flex;gap:10px;align-items:center;flex-wrap:wrap"},chk("startupSound","Play a short lyre chime when the desktop appears"),h("button",{class:"btn sm",onclick:()=>startupChime(true)},"Play it now")),h("div",{class:"dim"},"Press any key or click during boot to skip the delays. The checks still run.")]},
    Archive(){const c=h("pre",{class:"out dim"},MAN.json?`Mounted: ${MAN.files.toLocaleString()} files · ${fmtBytes(MAN.size)}\nSource : ${MAN.src}\nFormat : {generated, webPrefix, items:[{name,type:"folder"|"file",children,path,size}]}`:"No manifest mounted.\n"+MAN.tried.map(t=>"  fail "+t.u+" ("+t.why+")").join("\n"));
     const u=h("input",{class:"t grow",placeholder:"https://example.org/files/manifest.json",value:SET.manifestUrl||""});
     const apply=async j=>{try{buildArchive(j,"custom");toast("Archive mounted: "+MAN.files.toLocaleString()+" files. Restart the game window to let it see the new manifest.");draw()}catch(e){dlgAlert("That manifest could not be used: "+e.message,"Manifest")}};
@@ -5848,6 +5848,48 @@ const LOGO=`
     ██║   ███████╗██║  ██║██║ ╚═╝ ██║██║██║ ╚████║██║  ██║███████╗
     ╚═╝   ╚══════╝╚═╝  ╚═╝╚═╝     ╚═╝╚═╝╚═╝  ╚═══╝╚═╝  ╚═╝╚══════╝
         V E L O C I T Y   O S   ·   one file · CC0 · Republicka`;
+
+/* ===================== STARTUP LYRE: a few plucked strings, synthesised here (no audio files) =====================
+   Each string is a Karplus-Strong pluck: a burst of softened noise circulating in a short delay line that loses a little energy each lap,
+   which is how a real plucked string rings and fades. A small generated room (a convolver) adds the shimmer. Everything is computed on the
+   spot in a few milliseconds. Browsers only allow sound after the person has touched the page, so if sound is still locked when the desktop
+   appears, the chime waits up to 12 seconds for the first touch or key and then plays once; after that it lets the moment go. */
+function lyreString(sr,f,secs,seed){const n=Math.floor(sr*secs),L=Math.max(2,Math.round(sr/f-.5)),buf=new Float32Array(n),d=new Float32Array(L);let r=seed>>>0||1;const rnd=()=>{r=(r*1664525+1013904223)>>>0;return r/2147483648-1};
+ let p=0;for(let i=0;i<L;i++){const x=rnd();d[i]=x*.6+p*.4;p=x}/* softened noise: a gentle pluck, not a click */
+ let k=0,prev=0;const decay=.9965-Math.min(.0015,f/1e6);
+ for(let i=0;i<n;i++){const cur=d[k],nxt=d[(k+1)%L];const v=(cur+nxt)*.5*decay;d[k]=v;k=(k+1)%L;buf[i]=cur;
+  if(i<90)buf[i]*=i/90}/* tiny fade-in so it starts soft */
+ let pk=0;for(let i=0;i<n;i++){const a=Math.abs(buf[i]);if(a>pk)pk=a}if(pk>0)for(let i=0;i<n;i++)buf[i]/=pk;
+ /* measure the pitch this string really has (autocorrelation around its loop length), so playback rate can trim it to the exact note */
+ {const o=1500,m=Math.min(2048,n-o-L-8),ac=[];for(let lag=L-3;lag<=L+3;lag++){let sum=0;for(let i=0;i<m;i++)sum+=buf[o+i]*buf[o+i+lag];ac.push(sum)}
+  let bi=0;for(let i=1;i<ac.length;i++)if(ac[i]>ac[bi])bi=i;let P=L-3+bi;if(bi>0&&bi<ac.length-1){const y0=ac[bi-1],y1=ac[bi],y2=ac[bi+1],dn=y0-2*y1+y2;if(dn)P+=.5*(y0-y2)/dn}buf.fa=sr/P}
+ const fo=Math.floor(sr*.4);for(let i=0;i<fo;i++)buf[n-1-i]*=i/fo;return buf}
+function lyreRoom(ctx){const sr=ctx.sampleRate,n=Math.floor(sr*1.9),b=ctx.createBuffer(2,n,sr);for(let c=0;c<2;c++){const d=b.getChannelData(c);let r=12345+c*777;for(let i=0;i<n;i++){r=(r*1664525+1013904223)>>>0;d[i]=((r/2147483648)-1)*Math.pow(1-i/n,3.2)}}return b}
+let lyreCtx=null;
+function lyrePlay(ctx){const t0=ctx.currentTime+.06,sr=ctx.sampleRate;
+ /* D major, rising and settling: D4 A4 D5 F#5 A5, then a soft low D to close */
+ const seq=[[293.66,0,.9],[440,.2,.85],[587.33,.4,.8],[739.99,.62,.75],[880,.86,.7],[146.83,1.25,.55]];
+ const master=ctx.createGain();master.gain.value=0;master.connect(ctx.destination);
+ master.gain.setValueAtTime(0,t0);master.gain.linearRampToValueAtTime(.42,t0+.02);
+ const room=ctx.createConvolver();room.buffer=lyreRoom(ctx);const wet=ctx.createGain();wet.gain.value=.28;room.connect(wet);wet.connect(master);
+ const dry=ctx.createGain();dry.gain.value=.9;dry.connect(master);
+ seq.forEach(([f,at,v],i)=>{const b=ctx.createBuffer(1,Math.floor(sr*3),sr);const ls=lyreString(sr,f,3,0x9e37+i*131);b.copyToChannel(ls,0);
+  const s=ctx.createBufferSource();s.buffer=b;s.playbackRate.value=f/ls.fa;const g=ctx.createGain();g.gain.value=v;const pan=ctx.createStereoPanner?ctx.createStereoPanner():null;
+  if(pan){pan.pan.value=(i%2?.25:-.25)*(f>500?1:.5);s.connect(g);g.connect(pan);pan.connect(dry);pan.connect(room)}else{s.connect(g);g.connect(dry);g.connect(room)}
+  s.start(t0+at)});
+ master.gain.setValueAtTime(.42,t0+3.4);master.gain.linearRampToValueAtTime(0,t0+4.2);
+ setTimeout(()=>{try{master.disconnect()}catch(e){}},5200)}
+function startupChime(force){
+ try{if(!force&&(NEST||SET.startupSound===false))return;
+  const AC=window.AudioContext||window.webkitAudioContext;if(!AC)return;
+  if(!lyreCtx)lyreCtx=new AC();const ctx=lyreCtx;
+  const go=()=>{try{lyrePlay(ctx)}catch(e){}};
+  if(ctx.state==="running"){go();return}
+  const r=ctx.resume();if(r&&r.then)r.then(()=>{if(ctx.state==="running")go()},()=>{});
+  setTimeout(()=>{if(ctx.state==="running")return;/* still locked: wait for the first touch or key, but only briefly */
+   const t=performance.now(),once=()=>{removeEventListener("pointerdown",once,true);removeEventListener("keydown",once,true);if(performance.now()-t>12000)return;ctx.resume().then(()=>{if(ctx.state==="running"&&SET.startupSound!==false)go()},()=>{})};
+   addEventListener("pointerdown",once,true);addEventListener("keydown",once,true);setTimeout(()=>{removeEventListener("pointerdown",once,true);removeEventListener("keydown",once,true)},12000)},150)}catch(e){}}
+
 async function boot(){
  const bl=$("#bl"),pb=$("#bp");{const dd=h("div",{id:"bded"},"Welcome Home Ivory!");bl.parentNode.insertBefore(dd,bl)}const lg=$("#blogo");{const NS="http://www.w3.org/2000/svg",L=LOGO.split("\n").filter(x=>x.length),cw=10,lh=17,W=Math.max(...L.map(x=>x.length))*cw,sv=document.createElementNS(NS,"svg");
  sv.setAttribute("viewBox","0 0 "+W+" "+(L.length*lh+4));sv.setAttribute("preserveAspectRatio","xMinYMid meet");sv.style.cssText="display:block;width:100%;max-width:"+Math.round(W*0.74)+"px;height:auto;overflow:visible";
@@ -5890,6 +5932,7 @@ async function boot(){
  await drain();if(!skip&&sp&&SET.verbose)await sleep(900*sp);
  removeEventListener("keydown",sk);removeEventListener("pointerdown",sk);
  const bt=$("#boot");bt.style.transition="opacity .35s";bt.style.opacity="0";await sleep(skip?0:350);bt.remove();
+ startupChime();
  if(doRestore)sessRestore(sess);
  else if(NEST){const qw=OS.open("quine");qw&&OS.minimize(qw)}
  else if(SET.autostart&&!nog){const w=OS.open("tv");if(w&&SET.autostartMin!==false)OS.minimize(w)}else OS.open("help");
