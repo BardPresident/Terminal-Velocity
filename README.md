@@ -461,6 +461,13 @@ Lyre
     a voice, and 30% or less is very quiet. The speakers on your computer
     do not change what is recorded: a recording takes the level from this
     slider, so set it by the recording, not only by ear.
+  - Narration mode: for telling a story over the music. It switches to
+    its own saved volume (50% to start; change the slider while it is on
+    and it remembers), plays softer with fewer notes, uses a lighter
+    echo and bigger audio buffers, and redraws more gently, so the Lyre
+    asks very little of a slow computer and your voice stays clean.
+    Turning it off brings back your normal volume. Switch it on before
+    you start recording, not during.
   - Look: twelve looks that belong to the Lyre alone (Golden Hour,
     Moonlit, Enchanted Forest, Hearth Ember, Deep Ocean, Rose Garden,
     Parchment, Starfield, Aurora, Cherry Blossom, Desert Sunset, or Match
@@ -495,6 +502,9 @@ Recorder
   file every N minutes".
 
 Camera
+  Voice comes first in every recording: audio is mixed with large
+  buffers (steadier on slow computers), at a high audio bitrate. If
+  anything glitches under load it will be the system sound, not you.
   Webcam or screen recording (desktop). Screen recording captures the
   sound of the OS tab exactly as it plays, with no automatic volume
   boosting, so the Lyre's volume slider decides how loud it is in the
