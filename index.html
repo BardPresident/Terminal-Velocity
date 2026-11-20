@@ -1258,7 +1258,7 @@ const fmtDate=t=>{const d=new Date(t),hm=" "+pad(d.getHours())+":"+pad(d.getMinu
 const sleep=ms=>new Promise(r=>setTimeout(r,ms));
 const LS={get(k,d){try{const v=localStorage.getItem(k);return v==null?d:JSON.parse(v)}catch(e){return d}},set(k,v){try{localStorage.setItem(k,JSON.stringify(v));return true}catch(e){try{window.tvosStorageFull&&window.tvosStorageFull(e)}catch(_){}return false}}};
 const fmtUp=s=>{s=Math.max(0,Math.round(s));const d=Math.floor(s/86400),hr=Math.floor(s%86400/3600),m=Math.floor(s%3600/60),sc=s%60;if(d)return d+" d "+hr+" h";if(hr)return hr+" h "+m+" min";if(m)return m+" min "+sc+" s";return sc+" s"};
-const OS={apps:{},wins:[],z:10,bus:{},boot:performance.now(),ver:"1.0 build 1120-2200"};
+const OS={apps:{},wins:[],z:10,bus:{},boot:performance.now(),ver:"1.0 build 1120-2215"};
 OS.on=(ev,f)=>{(OS.bus[ev]=OS.bus[ev]||[]).push(f);return f};
 OS.off=(ev,f)=>{OS.bus[ev]=(OS.bus[ev]||[]).filter(x=>x!==f)};
 /* reboot that always fetches the newest copy of this page (like Ctrl+Shift+R), then reloads */
@@ -5868,7 +5868,7 @@ const DJ={
   Q.stop=()=>{Q.playing=false;Q.bd=null;E.hpBuild=20;E.applyHP();E.gap.gain.cancelScheduledValues(0);E.gap.gain.setValueAtTime(1,c.currentTime);if(Q.riser){try{E.fadeRiser(Q.riser,c.currentTime+.1)}catch(e){}Q.riser=null}};
   Q.setSel=(i,v,manual)=>{Q.pend[i]=v;if(manual)Q.man[i]=true};
   Q.fx=(i)=>{Q.fxq.push(i)};
-  Q.setMood=(m,now)=>{if(!Q.playing){Q.mood=m;S.mood=m;return}Q.pendMood=m};
+  Q.setMood=(m,now)=>{if(!Q.playing){Q.mood=m;S.mood=m;return}Q.pendMood=m;Q.pendNow=!!now};
   Q.beginAuto=()=>{Q.sec=0;Q.secBar=0;Q.man=[];Q.autoPending=true};
   Q.setAuto=(on)=>{Q.auto=!!on;if(on){Q.man=[];if(Q.playing)Q.autoPending=true;Q.sec=0;Q.secBar=0}else{Q.secName=""}};
   Q.skipSec=()=>{if(Q.auto)Q.skip=true};
@@ -5886,7 +5886,7 @@ const DJ={
    if(H&&H.onSection)H.onSection(P.n)}
   function onBar(bar,t){
    const rel=bar-Q.bar0;
-   if(Q.pendMood&&rel%Q.mood.len===0){Q.mood=Q.pendMood;S.mood=Q.mood;Q.bar0=bar;Q.pendMood=null;S.bpm=Q.mood.bpm;if(H&&H.onMood)H.onMood(Q.mood)}
+   if(Q.pendMood&&(Q.pendNow||rel%Q.mood.len===0)){Q.pendNow=false;Q.mood=Q.pendMood;S.mood=Q.mood;Q.bar0=bar;Q.pendMood=null;S.bpm=Q.mood.bpm;if(H&&H.onMood)H.onMood(Q.mood)}
    if(Q.auto){if(Q.autoPending){Q.autoPending=false;Q.sec=0;Q.secBar=0;applyAutoSection(bar,t)}
     else{Q.secBar++;const P=DJ.PLAN[Q.sec];if(Q.skip||Q.secBar>=P.bars){const wasSkip=Q.skip;Q.skip=false;if(wasSkip&&Q.bd&&Q.bd.auto){Q.bd.drop=Q.step}Q.sec++;Q.secBar=0;
       if(Q.sec>=DJ.PLAN.length){Q.sec=0;Q.journey++;if(S.autoMood){const all=[].concat(...DJ.MOODS.map(g=>g[1]));let m;do{m=all[Math.floor(Math.random()*all.length)]}while(m[0]===Q.mood.name&&all.length>1);Q.pendMood=DJ.mkMood(m)}}
@@ -5955,7 +5955,20 @@ DJ.DECKS=[
   {n:"Glass Rain",d:"Tinkly drops",v:[3],e:1},{n:"Strings of Gold",d:"Shiny and rich",v:[2],e:1},{n:"Choir of Stars",d:"Singing voices",v:[6],e:1},{n:"Rising Tide",d:"Swelling waves",v:[4],e:2}]}];
 /* Autopilot's night, written in tunes: how big each record should be in each section (-1 = off) */
 DJ.TIERS=[[0,-1,-1,0],[1,1,-1,0],[1,1,0,1],[2,2,2,1],[0,-1,1,1],[1,-1,1,1],[2,2,2,2],[0,-1,-1,0]];
-DJ.pickTune=(deck,e,seed)=>{let c=deck.tunes.filter(t=>t.e===e);if(!c.length)c=deck.tunes.filter(t=>t.e<=e);return c[seed%c.length]};
+DJ.pickTune=(deck,e,seed,pref,loose)=>{let pool=pref?deck.tunes.filter(t=>pref.includes(t.n)):deck.tunes;if(!pool.length)pool=deck.tunes;let c=pool.filter(t=>loose?Math.abs(t.e-e)<=1:t.e===e);if(!c.length){const ds=pool.map(t=>Math.abs(t.e-e)),mn=Math.min(...ds);c=pool.filter((t,i)=>ds[i]===mn)}return c[seed%c.length]};
+/* each style of music has its own favourite tunes on every record, so changing the vibe changes what you hear */
+DJ.STYLE={
+ "Euphoric trance":{p:{beat:["Heartbeat","Walk Along","Rocket","Drum Circle"],bass:["Big Hum","Bounce Bass","Rumble"],mel:["Bell Tower","Sparkle Run","Sky High","Hero Song","Anthem","Fireworks","Festival"],dream:["Warm Blanket","Strings of Gold","Rising Tide"]},kit:[1,1,2,-1]},
+ "Dreamy and progressive":{p:{beat:["Heartbeat","Deep Ocean","Walk Along"],bass:["Big Hum","Rumble"],mel:["Bell Tower","Waterfall","Sky High"],dream:["Warm Blanket","Deep Space","Glass Rain","Choir of Stars","Rising Tide"]},kit:[0,0,1,1]},
+ "Dark techno":{p:{beat:["Tick Tock","Rolling Thunder","Stomp","Deep Ocean"],bass:["Rumble","Growl","Wobble Walk"],mel:["Pulse Light","Pop Pop","Laser Show"],dream:["Deep Space","Choir of Stars"]},kit:[2,2,1,-1]},
+ "Acid and hypnotic":{p:{beat:["Tick Tock","Rolling Thunder","Rocket"],bass:["Zap","Wobble Walk","Growl"],mel:["Pulse Light","Pop Pop","Laser Show","Dance Steps"],dream:["Deep Space","Glass Rain"]},kit:[2,2,2,-1]},
+ "Epic and cinematic":{p:{beat:["Rolling Thunder","Stomp","Rocket"],bass:["Growl","Big Hum","Rumble"],mel:["Hero Song","Anthem","Fireworks","Festival"],dream:["Strings of Gold","Choir of Stars","Rising Tide"]},kit:[2,2,2,1]},
+ "Party and fun":{p:{beat:["Carnival","Drum Circle","Walk Along","Rocket"],bass:["Bounce Bass","Wobble Walk"],mel:["Bouncy Ball","Pop Pop","Dance Steps","Festival","Sparkle Run"],dream:["Glass Rain","Warm Blanket"]},kit:[2,1,2,-1]}};
+DJ.PLACE={"Ibiza sunset":"Dreamy and progressive","Tokyo nights":"Acid and hypnotic","Berlin club":"Dark techno","Desert festival":"Epic and cinematic","Arctic":"Dreamy and progressive","Space station":"Acid and hypnotic"};
+DJ.styleOf=name=>{for(const g of DJ.MOODS)for(const m of g[1])if(m[0]===name)return DJ.STYLE[g[0]]||DJ.STYLE[DJ.PLACE[name]]||DJ.STYLE["Euphoric trance"];return DJ.STYLE["Euphoric trance"]};
+DJ.pref=(mood,deckId)=>DJ.styleOf(mood.name).p[deckId];
+/* the starting tunes for a vibe: one per record (null = that record stays off) */
+DJ.kit=mood=>{const st=DJ.styleOf(mood.name),sd=DJ.hash(mood.name);return DJ.DECKS.map((d,i)=>st.kit[i]<0?null:DJ.pickTune(d,st.kit[i],(sd>>>(i*3))+i*7,st.p[d.id],1))};
 DJ.hash=s=>{let x=7;for(let i=0;i<s.length;i++)x=(x*31+s.charCodeAt(i))>>>0;return x};
 /* loudness balance per pattern, measured so every tune is clearly audible on laptop speakers */
 DJ.G={b:[1,1.15,.65,.75,1,.8],a:[1.6,1.6,1.6,2.6,1.9,1.95],l:[1,1,1,1.17,1,1.27],p:[.75,.8,.7,1.8,.78,1.05]};
@@ -6082,14 +6095,21 @@ defApp("deejay",{name:"DeeJay",icon:"deejay",cat:"Media",w:940,h:660,single:true
   async function setTune(i,tune){await ensure();if(dead)return;const k=decks[i];if(tune){const sel=[0,0,0,0,0,0,0];k.d.lanes.forEach((l,j)=>sel[l]=tune.v[j]);const keys=DJ.keysFor(sel,S.mood,E.light);if(!keys.every(x=>DJ.bank.has(x))){k.warm=true;paint();await Promise.race([DJ.bake(keys),wait(3000)]);k.warm=false;if(dead)return}}k.tune=tune;k.on=!!tune;applyDeck(i,true);if(!Q.playing)await startMusic();paint();toast(tune?tune.n+" is on the "+k.d.name+" record":"Record taken off")}
   async function tapDeck(i){const k=decks[i];if(!k.tune){openCrate(i);return}await ensure();if(dead)return;k.on=!k.on;applyDeck(i,true);if(k.on&&!Q.playing)await startMusic();paint()}
   /* Autopilot picks the tunes */
-  function autoPick(sec,journey,mood){const T=DJ.TIERS[sec],seed=DJ.hash(mood.name)+journey*5+(sec===6?1:0);return decks.map((k,i)=>T[i]<0?null:DJ.pickTune(k.d,T[i],seed+i*3))}
+  function autoPick(sec,journey,mood){const T=DJ.TIERS[sec],seed=DJ.hash(mood.name)+journey*5+(sec===6?1:0);return decks.map((k,i)=>T[i]<0?null:DJ.pickTune(k.d,T[i],seed+i*3,DJ.pref(mood,k.d.id)))}
   const autoSel=(picks)=>{const s=[0,0,0,0,0,0,0];picks.forEach((t,i)=>{if(t)decks[i].d.lanes.forEach((l,j)=>s[l]=t.v[j])});return s};
   function autoSet(sec,journey){const picks=autoPick(sec,journey,Q.mood),out=[undefined,undefined,undefined,undefined,undefined,undefined,undefined];
    decks.forEach((k,i)=>{if(k.d.lanes.some(l=>Q.man[l]))return;const t=picks[i];if(!t){k.on=false;k.d.lanes.forEach(l=>out[l]=0)}else{k.tune=t;k.on=true;k.d.lanes.forEach((l,j)=>out[l]=t.v[j])}});
    /* get the next part's sounds ready while this one plays */
    const ns=sec+1<DJ.TIERS.length?[sec+1,journey]:[0,journey+1];DJ.bake([].concat(DJ.keysFor(out.map(x=>x||0),Q.pendMood||Q.mood,E.light),DJ.keysFor(autoSel(autoPick(ns[0],ns[1],Q.pendMood||Q.mood)),Q.pendMood||Q.mood,E.light)));return out}
   function setAuto(on){ensure().then(async()=>{if(dead)return;if(on&&!Q.playing){const ks=[].concat(DJ.keysFor(autoSel(autoPick(0,0,S.mood)),S.mood,E.light),DJ.keysFor(autoSel(autoPick(1,0,S.mood)),S.mood,E.light));if(!ks.every(x=>DJ.bank.has(x))){hint.textContent="Warming up the records…";await Promise.race([DJ.bake(ks),wait(3000)]);if(dead)return}}if(on){Q.man=[];decks.forEach(k=>{k.on=false;k.tune=null});S.sel=[0,0,0,0,0,0,0];Q.sel=S.sel.slice()}Q.setAuto(on);if(on&&!Q.playing)await startMusic();paint()})}
-  function chooseMood(m){S.mood=m;sv();ensure().then(()=>{if(dead)return;if(Q.playing){DJ.bake(DJ.keysFor(Q.sel,m,E.light));Q.setMood(m);toast("Next vibe: "+m.name+" (changes with the next chord)")}else{Q.mood=m;S.bpm=m.bpm;bpmIn.value=S.bpm;bpmOut.textContent=Math.round(S.bpm)}moodTxt.textContent=m.name;colors();paint()});pop.hidden=true}
+  async function chooseMood(m){pop.hidden=true;S.mood=m;sv();await ensure();if(dead)return;
+   /* the new vibe brings its own tunes: load them onto the records, get the sounds ready, then switch together on the next bar */
+   const auto=Q.playing&&Q.auto,picks=auto?autoPick(Q.sec,Q.journey,m):DJ.kit(m),sel=[0,0,0,0,0,0,0];
+   picks.forEach((t,i)=>{if(t)decks[i].d.lanes.forEach((l,j)=>sel[l]=t.v[j])});
+   const keys=DJ.keysFor(sel,m,E.light);if(!keys.every(x=>DJ.bank.has(x))){hint.textContent="Warming up the new vibe…";await Promise.race([DJ.bake(keys),wait(3000)]);if(dead)return}
+   decks.forEach((k,i)=>{if(auto&&k.d.lanes.some(l=>Q.man[l]))return;const t=picks[i];if(auto&&!t){k.on=false}else{k.tune=t;k.on=!!t}applyDeck(i,true)});
+   if(Q.playing)Q.setMood(m,true);else{Q.mood=m;S.bpm=m.bpm;bpmIn.value=S.bpm;bpmOut.textContent=Math.round(S.bpm);moodTxt.textContent=m.name;colors();await startMusic()}
+   moodTxt.textContent=m.name;colors();paint();toast(m.name+": new tunes on the records")}
   const allMoods=()=>[].concat(...DJ.MOODS.map(g=>g[1]));
   const surprise=()=>{const a=allMoods();chooseMood(DJ.mkMood(a[Math.floor(Math.random()*a.length)]))};
   const nextMood=()=>{const a=allMoods(),i=a.findIndex(m=>m[0]===S.mood.name);chooseMood(DJ.mkMood(a[(i+1)%a.length]))};
