@@ -1258,7 +1258,7 @@ const fmtDate=t=>{const d=new Date(t),hm=" "+pad(d.getHours())+":"+pad(d.getMinu
 const sleep=ms=>new Promise(r=>setTimeout(r,ms));
 const LS={get(k,d){try{const v=localStorage.getItem(k);return v==null?d:JSON.parse(v)}catch(e){return d}},set(k,v){try{localStorage.setItem(k,JSON.stringify(v));return true}catch(e){try{window.tvosStorageFull&&window.tvosStorageFull(e)}catch(_){}return false}}};
 const fmtUp=s=>{s=Math.max(0,Math.round(s));const d=Math.floor(s/86400),hr=Math.floor(s%86400/3600),m=Math.floor(s%3600/60),sc=s%60;if(d)return d+" d "+hr+" h";if(hr)return hr+" h "+m+" min";if(m)return m+" min "+sc+" s";return sc+" s"};
-const OS={apps:{},wins:[],z:10,bus:{},boot:performance.now(),ver:"1.0 build 1120-2239"};
+const OS={apps:{},wins:[],z:10,bus:{},boot:performance.now(),ver:"1.0 build 1120-2249"};
 OS.on=(ev,f)=>{(OS.bus[ev]=OS.bus[ev]||[]).push(f);return f};
 OS.off=(ev,f)=>{OS.bus[ev]=(OS.bus[ev]||[]).filter(x=>x!==f)};
 /* reboot that always fetches the newest copy of this page (like Ctrl+Shift+R), then reloads */
@@ -5745,6 +5745,15 @@ const DJ={
  /* a note some steps up the scale from the chord's root (the third always follows the chord, so major and minor chords stay right) */
  scaleNote(mood,ch,base,n){const sc=mood.prog[0][1]==="m"?[0,2,3,5,7,8,10]:[0,2,4,5,7,9,11],rel=((ch.pc-mood.key)%12+12)%12;let ix=0,bd=99;for(let i=0;i<7;i++){const d=Math.abs(sc[i]-rel);if(d<bd){bd=d;ix=i}}
   const off=d=>{const k=ix+d,v=sc[k%7]+12*Math.floor(k/7)-sc[ix];return((v%12)+12)%12},deg=[0,off(1),ch.th,off(3),7,off(5),off(6)];return base+ch.pc+deg[((n%7)+7)%7]+12*Math.floor(n/7)},
+ /* tunes grow over eight bars instead of repeating: the first phrase states the idea, the second answers it and stays open,
+    the third climbs to the high chord notes, and the last one comes home. Chord notes stay chord notes, so nothing can clash. */
+ CT:[0,2,4,7,9,11,14],
+ FORMS:[[0,0,1,2],[0,1,0,2],[0,1,1,2]],
+ form(mood){return DJ.FORMS[DJ.hash(mood.name)%3]},
+ leadVar(e,v){if(!v)return e;const CT=DJ.CT,ns=e[2],one=ns.length===1;let n2;
+  if(v===1){n2=ns.map(n=>CT.includes(n)?n:n+1);if(one&&e[0]>=28&&CT.includes(ns[0]))n2=[4]}
+  else{n2=ns.map(n=>{const i=CT.indexOf(n);return i<0?n:CT[Math.min(i+1,5)]});if(one&&e[0]>=28&&CT.includes(ns[0]))n2=[7]}
+  return[e[0],e[1],n2,e[3]]},
  /* a cheap seeded random so a section always plays the same way */
  rng(seed){let s=seed>>>0||1;return()=>((s=(s*1664525+1013904223)>>>0)/4294967296)},
  /* ---------- the sound engine ---------- */
@@ -5933,8 +5942,8 @@ const DJ={
    const cp=sel[1];if(cp)for(const e of DJ.PERC[cp-1])if(e[0]===s&&!(B&&Q.bd&&(e[2]==="snare"||e[2]==="clap")&&step-B.start>=8))E.perc(t,e[1],e[2]);
    const hs=sel[2];if(hs)for(const e of DJ.HATS[hs-1])if(e[0]===s)E.hat(t,e[1],e[2]);
    const bs=sel[3];if(bs&&bassOn){const base=36,fill=bar%4===3&&s>=12;for(const e of DJ.BASS[bs-1])if(e[0]===s){const m=DJ.note(ch,base,fill&&bs!==4&&bs!==6?(s%2?3:e[2]):e[2]);const d=e[1]*sd;if(bs===4)E.sub(t,m,d,e[3]*DJ.G.b[3]);else E.bass(t,m,d*.92,e[3]*DJ.G.b[bs-1],bs,step)}}
-   const as=sel[4];if(as){let i=DJ.ARP[as-1][s];if(i>=0){if(bar%2&&as!==5&&as!==4)i=(i+2)%6;const m=DJ.note(ch,48,i);E.pluck(t,m,as===5?sd*8:sd*.9,(as===5?.8:(s%4===0?.95:s%2===0?.78:.62))*DJ.G.a[as-1],M.br,as===5)}}
-   const ls=sel[5];if(ls){const ph=(bar%2)*16+s;for(const e of DJ.LEAD[ls-1])if(e[0]===ph){const dd=e[1]*sd;const o=DJ.leadOpt(ls,M.br,light(3));o.k=ls;o.br=M.br;const ns=e[2].map(n=>DJ.scaleNote(M,ch,48,n));const nn=ns.length;for(const m of ns)E.super(t,m,ls===4||ls===5?dd*.7:dd,e[3]*(nn>1?.7:1)*DJ.G.l[ls-1],o)}}
+   const as=sel[4];if(as){let i=DJ.ARP[as-1][s];if(i>=0){{const rk=((bar-Q.bar0)%4+4)%4,k=[0,2,1,3][rk];if(k&&as!==5&&as!==4)i=(i+k)%6}const m=DJ.note(ch,48,i);E.pluck(t,m,as===5?sd*8:sd*.9,(as===5?.8:(s%4===0?.95:s%2===0?.78:.62))*DJ.G.a[as-1],M.br,as===5)}}
+   const ls=sel[5];if(ls){const rb=bar-Q.bar0,ph=(((rb%2)+2)%2)*16+s,un=(((rb>>1)%4)+4)%4,vr=DJ.form(M)[un],lv=[.9,.95,.98,1.07][un];for(const e0 of DJ.LEAD[ls-1])if(e0[0]===ph){const e=DJ.leadVar(e0,vr),dd=e[1]*sd,hj=ph%4?((ph*7+bar*3)%5-2)*.003:0;const o=DJ.leadOpt(ls,M.br,light(3));o.k=ls;o.br=M.br;const ns=e[2].map(n=>DJ.scaleNote(M,ch,48,n));const nn=ns.length;for(const m of ns)E.super(t+hj,m,ls===4||ls===5?dd*.7:dd,e[3]*lv*(nn>1?.7:1)*DJ.G.l[ls-1],o)}}
    const ps=sel[6];if(ps&&(ch.bar===0&&s===0||(fresh[6]&&s===0))){const left=(ch.len-ch.bar)*16*sd;const root=DJ.note(ch,48,0),th=DJ.note(ch,48,1),fi=DJ.note(ch,48,2);E.pad(t,ps===5?[root,fi]:[root,th,fi,root+12],left,.9*DJ.G.p[ps-1],ps-1,M.br)}
    if(s===15)Q.fresh=null;
    function light(n){return E.light?Math.min(n,2):n}}
