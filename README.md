@@ -503,6 +503,52 @@ Recorder
   archive quality), pause and resume, a level meter, and "start a new
   file every N minutes".
 
+DeeJay
+  A party in a box: trance and techno, all synthesised (no sample files).
+  It is not like other DJ apps. There are no tempo-matching tricks and
+  nothing you do can sound out of tune or off the beat.
+  - Four records: Beats, Bass, Melody and Dreams. Nothing plays when you
+    open it. Tap a record, pick a tune from the crate (every tune has a
+    name and a short description) and the party starts. Add a tune to
+    each record and they stack up into a full track.
+  - Tap a record to pause or play it. "Change tune" swaps the tune.
+    New tunes join on the next beat, so everything stays in time. A
+    record glows and spins while it plays, and pulses with the beat.
+  - Auto DJ: puts records on and swaps them for you through a whole night:
+    a quiet start, a groove, a build, the drop, a calm part, a bigger
+    drop and a goodbye. Tap a record and you take over that record (the
+    hand sign shows it); "Give control back" hands it back. "Next part"
+    skips ahead.
+  - Build and Drop: hold BUILD (or the space bar). The tension rises with a
+    riser and a snare roll, and it stays held until you let go, even if
+    your finger or mouse slides away. Let go and the drop lands on the
+    next bar. Auto DJ does this by itself too.
+  - Bend the sound (the glowing ball): drag left to darken, right to thin out, up for
+    echo. Let go and it jumps back.
+  - Speed: slide between the turtle and the rabbit.
+  - Vibe: many vibes in groups (euphoric trance, dreamy, dark techno,
+    acid, epic, party, places). A vibe sets the key, chords and starting
+    tempo. "Surprise me" picks one. Changing vibe while playing waits for
+    the next chord, so it flows.
+  - Sound effects: Whoosh, Crash, Boom, Laser, Slide, Twinkle.
+  - Keys: 1 to 4 pause or play a record, Space build, A Auto DJ, N next
+    vibe, left and right arrows for speed, Q W E R T Y for effects.
+  - Rec saves the whole party as a WAV, like the Lyre (8 minutes at
+    most). Screen recording works too.
+  - Built to be light: each sound is made once when you pick a tune (a
+    short "Warming up" appears on the record) and then played back, so a
+    full mix needs far less from the processor than building every note
+    live. The screen uses no blur effects, and on Chromebooks and other
+    small computers the visuals start on Simple. The Help button has a
+    visuals setting (Full, Simple, Off); Off is the quietest. If this
+    computer is slow to keep time, DeeJay looks further ahead on its own
+    so the music does not drop out. Music keeps playing if you switch tabs.
+  - On a phone it works with touch; the glowing ball and BUILD stay at
+    the bottom of the screen.
+  - Your vibe, speed, volume and settings are saved with the rest of
+    your data and included in Backup. Which records are on is not saved:
+    it always starts quiet.
+
 Camera
   Voice comes first in every recording: audio is mixed with large
   buffers (steadier on slow computers), at a high audio bitrate. If
