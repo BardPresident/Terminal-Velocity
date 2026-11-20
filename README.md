@@ -734,6 +734,11 @@ Hearth (flame icon, Accessories)
   quiet badges (first spark, a roaring fire, an hour by the fire, and
   so on). A small line at the top left shows the woodpile, the fire and
   the room; press H to hide it and all controls when screen recording.
+  A bar along the bottom has a button for every action, each showing its
+  key: Kindling (K), Log (L), Flint (S), Poke (P), Full screen (F) and
+  Hide (H). The bar, the status line and the Sound button all hide with
+  H (press H or double-click to bring them back). Flame size in the menu
+  changes both how tall and how wide the flames are.
   When you close Hearth, the fire, the woodpile, the ash and your
   fireside totals are saved, and it starts again where you left it.
   While Hearth is closed the fire waits; it does not burn down. Sound
@@ -756,7 +761,9 @@ Firework (star icon, Games)
   keep launching. The Palette button opens colours (pick one or many, or
   rainbow, or add your own), burst shapes (Peony, Chrysanthemum, Willow,
   Palm, Ring, Heart, Star, Crossette, Glitter, or Surprise), size, Auto
-  show, Slow motion, Sound, Music and Volume. Click the sky while the
+  show, Slow motion, Sound, Music and Volume. A bar along the bottom has
+  a button for every action, each showing its key (Surprise, Auto show,
+  Slow motion, Full screen, Hide); it hides with H. Click the sky while the
   Palette is open to close it. A Sound on / Sound off button sits in
   the top right corner (it silences everything). Keys while the window
   is focused: Space surprise, A auto, S slow, M mute, H hide the controls,
