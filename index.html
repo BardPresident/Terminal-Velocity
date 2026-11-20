@@ -1258,7 +1258,7 @@ const fmtDate=t=>{const d=new Date(t),hm=" "+pad(d.getHours())+":"+pad(d.getMinu
 const sleep=ms=>new Promise(r=>setTimeout(r,ms));
 const LS={get(k,d){try{const v=localStorage.getItem(k);return v==null?d:JSON.parse(v)}catch(e){return d}},set(k,v){try{localStorage.setItem(k,JSON.stringify(v));return true}catch(e){return false}}};
 const fmtUp=s=>{s=Math.max(0,Math.round(s));const d=Math.floor(s/86400),hr=Math.floor(s%86400/3600),m=Math.floor(s%3600/60),sc=s%60;if(d)return d+" d "+hr+" h";if(hr)return hr+" h "+m+" min";if(m)return m+" min "+sc+" s";return sc+" s"};
-const OS={apps:{},wins:[],z:10,bus:{},boot:performance.now(),ver:"1.0 build 1120-0151"};
+const OS={apps:{},wins:[],z:10,bus:{},boot:performance.now(),ver:"1.0 build 1120-0226"};
 OS.on=(ev,f)=>{(OS.bus[ev]=OS.bus[ev]||[]).push(f);return f};
 OS.off=(ev,f)=>{OS.bus[ev]=(OS.bus[ev]||[]).filter(x=>x!==f)};
 /* reboot that always fetches the newest copy of this page (like Ctrl+Shift+R), then reloads */
@@ -5085,35 +5085,115 @@ defApp("sequencer",{name:"Sequencer",icon:"seq",cat:"Media",w:880,h:640,single:t
   win.seq={S,slots,play,stop,hit,get ctx(){return ctx},get run(){return run},exportWav,arm:armSlot};
  }});
 
-/* ===================== LYRE: a plucked-string instrument. Click or touch the strings, play from the keyboard, or let it play itself ===================== */
+/* ===================== LYRE: a plucked-string instrument. Touch the strings, or let it play itself. One Record button saves a WAV. ===================== */
 IP.lyre="M6.5 4c-2.5 5-1.5 11 3 14 M17.5 4c2.5 5 1.5 11-3 14 M5 4h14 M9.5 7v10 M12 7v11 M14.5 7v10";
 const LY={
  notes:["C","C#","D","D#","E","F","F#","G","G#","A","A#","B"],
  scales:[["Major pentatonic",[0,2,4,7,9]],["Minor pentatonic",[0,3,5,7,10]],["Major (Ionian)",[0,2,4,5,7,9,11]],["Natural minor (Aeolian)",[0,2,3,5,7,8,10]],["Dorian",[0,2,3,5,7,9,10]],["Phrygian",[0,1,3,5,7,8,10]],["Lydian",[0,2,4,6,7,9,11]],["Mixolydian",[0,2,4,5,7,9,10]],["Harmonic minor",[0,2,3,5,7,8,11]],["Hirajoshi (Japanese)",[0,2,3,7,8]],["Hijaz (Middle Eastern)",[0,1,4,5,7,8,10]],["Whole tone",[0,2,4,6,8,10]],["Chromatic",[0,1,2,3,4,5,6,7,8,9,10,11]]],
  keys:["a","s","d","f","g","h","j","k","l",";","'","[","]"],
- pats:["Rising arpeggio","Falling arpeggio","Up and down","Wander","Chords","Rain","Drone"],
- presets:{
-  "Hearth":{scale:0,root:2,oct:3,n:11,sus:.7,soft:.5,room:.4,pat:3,bpm:70},
-  "Delphi":{scale:4,root:9,oct:2,n:9,sus:.65,soft:.3,room:.45,pat:6,bpm:60},
-  "Morning":{scale:6,root:7,oct:3,n:11,sus:.5,soft:.25,room:.3,pat:0,bpm:96},
-  "Midnight":{scale:1,root:4,oct:2,n:11,sus:.85,soft:.65,room:.55,pat:5,bpm:60},
-  "Sakura":{scale:9,root:2,oct:3,n:9,sus:.55,soft:.35,room:.4,pat:2,bpm:84},
-  "Garden":{scale:2,root:0,oct:3,n:13,sus:.6,soft:.4,room:.35,pat:4,bpm:76}
- },
- def(){return{scale:0,root:2,oct:3,n:11,sus:.6,soft:.4,room:.35,vol:.8,pat:3,bpm:80,hum:25,phrase:null}},
- load(){const o=LS.get("tvos_lyre",null),d=LY.def();if(o&&typeof o==="object")for(const k of Object.keys(d))if(o[k]!=null)d[k]=o[k];
+ pats:["Lullaby","Dawn","Tide","Rain","Campfire","Starlight","Drone","Wander","Procession","Echoes","Fanfare","Mystery","Dance"],
+ patTip:["a slow rocking cradle song","a gentle climb, like light arriving","waves that rise and fall","soft drops, with quiet between","fingerpicked, like a guitar by the fire","a music box under the stars","one long low hum, nothing else","a little tune that wanders and returns","slow, solemn chords with a walking tune","a phrase, then its quiet echo","bright rising notes and a ringing chord","low, sparse and unsettling","a gentle waltz"],
+ /* each mood sets the notes, the sound, the playing style and the pace. It never changes the look. */
+ moods:[
+  ["Gentle and tender",{
+   "Lullaby":{scale:0,root:7,oct:3,n:11,sus:.7,soft:.6,room:.45,pat:0,bpm:46},
+   "Tender":{scale:2,root:5,oct:3,n:11,sus:.7,soft:.55,room:.4,pat:7,bpm:50},
+   "Dreamy":{scale:6,root:2,oct:3,n:12,sus:.85,soft:.65,room:.6,pat:2,bpm:42},
+   "Starry night":{scale:0,root:2,oct:4,n:11,sus:.8,soft:.3,room:.55,pat:5,bpm:52}}],
+  ["Bright and hopeful",{
+   "Sunrise":{scale:2,root:2,oct:3,n:11,sus:.6,soft:.3,room:.4,pat:1,bpm:56},
+   "Wonder":{scale:6,root:7,oct:3,n:11,sus:.65,soft:.25,room:.5,pat:9,bpm:60},
+   "Joyful":{scale:7,root:7,oct:3,n:12,sus:.45,soft:.2,room:.3,pat:12,bpm:96},
+   "Campfire":{scale:0,root:9,oct:2,n:11,sus:.55,soft:.5,room:.3,pat:4,bpm:84}}],
+  ["Journey and epic",{
+   "Adventure":{scale:4,root:2,oct:3,n:13,sus:.5,soft:.25,room:.4,pat:7,bpm:92},
+   "Triumph":{scale:2,root:2,oct:3,n:13,sus:.55,soft:.2,room:.5,pat:10,bpm:100},
+   "Procession":{scale:3,root:9,oct:2,n:11,sus:.7,soft:.4,room:.55,pat:8,bpm:58}}],
+  ["Dark and deep",{
+   "Mystery":{scale:11,root:4,oct:2,n:11,sus:.85,soft:.5,room:.6,pat:11,bpm:40},
+   "Sorrow":{scale:3,root:4,oct:2,n:11,sus:.9,soft:.7,room:.5,pat:9,bpm:40},
+   "Dread":{scale:5,root:4,oct:1,n:9,sus:.95,soft:.6,room:.65,pat:6,bpm:30},
+   "Ancient Greece":{scale:4,root:9,oct:2,n:7,sus:.65,soft:.3,room:.45,pat:7,bpm:44}}],
+  ["Places",{
+   "Forest":{scale:0,root:4,oct:3,n:11,sus:.75,soft:.55,room:.5,pat:3,bpm:50},
+   "Sakura garden":{scale:9,root:2,oct:3,n:9,sus:.55,soft:.35,room:.4,pat:5,bpm:56},
+   "Desert":{scale:10,root:2,oct:2,n:11,sus:.7,soft:.3,room:.45,pat:7,bpm:62},
+   "Flowing river":{scale:2,root:0,oct:3,n:13,sus:.6,soft:.4,room:.35,pat:2,bpm:60}}]],
+ mood(name){for(const g of LY.moods)if(g[1][name])return g[1][name];return null},
+ /* the Lyre's own looks. They never change the rest of the desktop. */
+ looks:[
+  {id:"os",name:"Match my desktop"},
+  {id:"gold",name:"Golden Hour",fx:"dust",sky:["#3b2410","#150b05"],orb:[.5,.95,.3,"#f2a93b"],c:{bg:"#1b1007",pn:"#2a1b0c",pn2:"#35230f",fg:"#f7e6c4",dim:"#c0a273",ac:"#f4b64e",bd:"#5e421f",er:"#e0573a"}},
+  {id:"moon",name:"Moonlit",fx:"stars",sky:["#16213f","#070b1a"],orb:[.8,.2,.07,"#eef3ff"],c:{bg:"#0a1022",pn:"#141c36",pn2:"#1b2545",fg:"#dfe8ff",dim:"#8d9cc8",ac:"#a9c4ff",bd:"#33406b",er:"#ef6a7a"}},
+  {id:"forest",name:"Enchanted Forest",fx:"fireflies",sky:["#0f2a22","#050f0b"],orb:[.2,.16,.05,"#d7f2c4"],c:{bg:"#07140f",pn:"#0f2219",pn2:"#163023",fg:"#dcf3d6",dim:"#8fb89a",ac:"#b8f26b",bd:"#2c5a3f",er:"#e7704a"}},
+  {id:"ember",name:"Hearth Ember",fx:"embers",sky:["#2e0f08","#0e0403"],c:{bg:"#120504",pn:"#240d08",pn2:"#31130b",fg:"#ffe2c8",dim:"#c28d6c",ac:"#ff8a3d",bd:"#66291a",er:"#ff5a4a"}},
+  {id:"ocean",name:"Deep Ocean",fx:"bubbles",sky:["#0c4a64","#021521"],c:{bg:"#03121c",pn:"#0a2332",pn2:"#0f2f43",fg:"#d4f1fb",dim:"#7fb2c6",ac:"#5fe0e8",bd:"#1f5870",er:"#f27a7a"}},
+  {id:"rose",name:"Rose Garden",fx:"petals",pc:["#e87a98","#f4a6b8","#d9567d"],sky:["#fff7f4","#f8dfe3"],c:{bg:"#fdf1f1",pn:"#f8e2e5",pn2:"#f3d3d9",fg:"#4a2530",dim:"#8a5a68",ac:"#b83a5e",bd:"#dba9b5",er:"#c0392b"}},
+  {id:"parch",name:"Parchment",fx:"none",sky:["#f6edd6","#e4d2a8"],c:{bg:"#f1e6c9",pn:"#e8d9b4",pn2:"#e0cfa6",fg:"#3a2a14",dim:"#7b6540",ac:"#8d5b22",bd:"#c6b182",er:"#b23a2a"}},
+  {id:"star",name:"Starfield",fx:"stars",sky:["#1a0f33","#05020d"],c:{bg:"#090415",pn:"#150b2b",pn2:"#1e1140",fg:"#e6dcff",dim:"#9d8fcb",ac:"#b79bff",bd:"#3d2b73",er:"#ff6f91"}},
+  {id:"aurora",name:"Aurora",fx:"aurora",sky:["#071a2e","#02070f"],c:{bg:"#030b14",pn:"#0a1a2a",pn2:"#102740",fg:"#d9fff1",dim:"#80b9a6",ac:"#5df2c2",bd:"#1f4f56",er:"#ff7a8a"}},
+  {id:"blossom",name:"Cherry Blossom",fx:"petals",pc:["#ffd3e2","#ffb3cd","#fff0f5"],sky:["#2b1a3a","#150a1e"],orb:[.8,.2,.07,"#fff1f6"],c:{bg:"#140a1c",pn:"#22122f",pn2:"#2e193f",fg:"#ffe9f1",dim:"#c59ab0",ac:"#ff9ec4",bd:"#512c68",er:"#ff6b86"}},
+  {id:"desert",name:"Desert Sunset",fx:"dust",sky:["#2a1642","#c9582c"],orb:[.5,.82,.2,"#ffc070"],c:{bg:"#1d0f1f",pn:"#331628",pn2:"#431c2b",fg:"#ffead2",dim:"#d7a98a",ac:"#ffb454",bd:"#7a3a35",er:"#ff5a4a"}}],
+ def(){return{v:3,scale:0,root:7,oct:3,n:11,sus:.7,soft:.6,room:.45,vol:.8,pat:0,bpm:46,hum:25,voice:false,more:false,mood:"Lullaby",look:"gold",amb:true,sleep:0}},
+ load(){let o=LS.get("tvos_lyre",null);const d=LY.def();if(o&&typeof o==="object"){if(o.v!==3)o={vol:o.vol,voice:o.voice};for(const k of Object.keys(d))if(o[k]!=null)d[k]=o[k]}
   d.scale=Math.max(0,Math.min(LY.scales.length-1,d.scale|0));d.root=((d.root|0)%12+12)%12;d.oct=Math.max(1,Math.min(5,d.oct|0));d.n=Math.max(7,Math.min(13,d.n|0));d.pat=Math.max(0,Math.min(LY.pats.length-1,d.pat|0));
-  d.sus=Math.max(0,Math.min(1,+d.sus));d.soft=Math.max(0,Math.min(1,+d.soft));d.room=Math.max(0,Math.min(1,+d.room));d.vol=Math.max(0,Math.min(1,+d.vol));d.bpm=Math.max(30,Math.min(200,+d.bpm|0));d.hum=Math.max(0,Math.min(100,+d.hum));
-  if(d.phrase&&!(Array.isArray(d.phrase.ev)&&d.phrase.len>0))d.phrase=null;return d},
+  d.sus=Math.max(0,Math.min(1,+d.sus||0));d.soft=Math.max(0,Math.min(1,+d.soft||0));d.room=Math.max(0,Math.min(1,+d.room||0));d.vol=Math.max(0,Math.min(1,+d.vol));d.bpm=Math.max(20,Math.min(160,Math.round(+d.bpm)||46));d.hum=Math.max(0,Math.min(100,+d.hum||0));
+  d.voice=!!d.voice;d.more=!!d.more;d.amb=d.amb!==false;d.sleep=[0,10,20,30,45,60].includes(+d.sleep)?+d.sleep:0;if(!LY.looks.some(l=>l.id===d.look))d.look="gold";d.mood=typeof d.mood==="string"&&LY.mood(d.mood)?d.mood:"";return d},
+ paceWord(b){return b<32?"Very slow":b<50?"Slow":b<72?"Gentle":b<105?"Steady":"Lively"},
+ /* phrases: lists of {i: string (-1 is a rest), v: strength, g: beats until the next note (0 plays together), s: seconds, when a strum should stay quick at any pace} */
+ phrase(S,st){
+  const n=S.n,L=LY.scales[S.scale][1].length,R=Math.random,o=[],big=L>=12;
+  const rnd=k=>Math.floor(R()*k),pick=a=>a[rnd(a.length)];
+  const fd=d=>{d=Math.round(d);while(d>n-1)d-=L;while(d<0)d+=L;return Math.max(0,Math.min(n-1,d))};
+  const N=(d,v,g,s)=>{o.push({i:fd(d),v,g,s})},Z=g=>o.push({i:-1,v:0,g});
+  const T=(d,v)=>o.push({i:fd(d),v,g:0});/* plays together with the next note */
+  const ch=big?[0,4,7]:[0,2,4],pr=big?[0,9,5,7]:L>=7?[0,5,3,4]:[0,3,1,4];
+  const r=pr[(st.bar++)%pr.length];
+  const lo=Math.floor(n*.45);
+  const walk=()=>{st.mel=st.mel==null?lo+2:st.mel+pick([-2,-1,-1,0,1,1,2]);st.mel=Math.max(lo,Math.min(n-1,st.mel));return st.mel};
+  const fit=(b,seq)=>{const f=seq.filter(d=>b+d>=0&&b+d<=n-1);return f.length>=3?f.map(d=>b+d):seq.map(d=>fd(b+d))};
+  switch(S.pat){
+   case 0:/* Lullaby: a rocking cradle in three */
+    N(r,.62,1);N(r+ch[2],.36,.5);N(r+ch[1]+L,.34,.5);if(st.bar%2)N(r+ch[2]+L,.42,1);else if(R()<.2)Z(1);else N(walk(),.5,1);break;
+   case 1:{/* Dawn: a slow climb with a swell */
+    N(r,.5,1);const f=fit(r,[ch[0],ch[1],ch[2],L+ch[0],L+ch[1],L+ch[2]]);f.forEach((d,k)=>N(d,.26+.5*k/f.length,.75));Z(1.5);break}
+   case 2:{/* Tide: waves of steps up and down */
+    const len=4+rnd(4),a=rnd(Math.max(1,n-len));T(r%L,.4);for(let k=0;k<2*len;k++){const d=k<=len?a+k:a+2*len-k;N(d,.3+.3*Math.sin(Math.PI*k/(2*len)),.75)}Z(1);break}
+   case 3:{/* Rain: soft drops, and quiet between */
+    const c=2+rnd(3);for(let k=0;k<c;k++)N(lo+rnd(Math.max(1,n-lo)),.22+R()*.3,.25+R()*.3);if(R()<.15)N(r,.32,.5);Z(1.5+R()*3);break}
+   case 4:{/* Campfire: thumb and fingers, like a guitar */
+    const c1=r+ch[1]+L,c2=r+ch[2]+L;N(r,.68,.5);N(c2,.4,.5);N(c1,.4,.5);N(c2,.42,.5);N(r+ch[2],.62,.5);N(c2,.4,.5);N(R()<.5?walk():c1,.55,.5);N(c2,.4,.5);break}
+   case 5:{/* Starlight: a music box falling */
+    let d=n-1-rnd(3);if(R()<.5)T(r,.45);const run=3+rnd(3);for(let k=0;k<run;k++){N(d,.52-.06*k,.5);d=Math.max(0,d-pick([1,1,2]))}Z(1+R()*2.5);break}
+   case 6:{/* Drone: one low hum, a fifth above it, a far glimmer */
+    const dr=st.bar%4===0?(big?5:L>=7?3:1):0;T(dr,.58);N(dr+ch[2],.36,2.5);if(R()<.7)N(n-1-rnd(Math.min(4,n)),.2,2+R()*2);else Z(2);Z(1.5);break}
+   case 7:{/* Wander: a small tune that goes away and comes back */
+    if(!st.mo||st.mc<=0){const len=4+rnd(3);st.mo=[];let d=0;for(let k=0;k<len;k++){st.mo.push(d);d+=pick([-2,-1,-1,1,1,2])}
+     st.rh=pick([[1,1,2,1,1,2],[1.5,.5,1,1.5,.5,2],[.5,.5,1,.5,.5,1,2],[1,2,1,2,1,3]]);st.mc=4;st.at=lo+rnd(Math.max(1,Math.ceil(n*.35)))}
+    st.mc--;const sh=pick([0,0,1,-1,2]);st.mo.forEach((d,k)=>N(Math.max(0,st.at+d+sh),.42+.2*R(),st.rh[k%st.rh.length]));Z(R()<.5?1:2);break}
+   case 8:{/* Procession: slow chords, strummed, with a walking tune */
+    const cs=[r+ch[0],r+ch[1],r+ch[2],r+L+ch[0]];cs.forEach((d,k)=>{const last=k===cs.length-1;o.push({i:fd(d),v:.5+.04*k,g:last?2.2:0,s:last?undefined:.085})});N(walk(),.5,1);N(walk(),.45,1.5);break}
+   case 9:{/* Echoes: three notes, then the same notes more quietly */
+    st.at=st.at==null?lo:Math.max(Math.floor(n*.25),Math.min(n-4,st.at+pick([-2,-1,1,2])));
+    const m=[0,pick([1,2,-1]),pick([2,3,4])].map(d=>Math.max(0,st.at+d)),e=m.every(d=>d+L<=n-1)?L:0;T(r,.38);m.forEach((d,k)=>N(d,.6,k<2?.75:1.5));m.forEach((d,k)=>N(d+e,.24,k<2?.75:2.5));break}
+   case 10:{/* Fanfare: a bright climb and a ringing chord */
+    const f=fit(r,[ch[0],ch[1],ch[2],L+ch[0],L+ch[1],L+ch[2]]);f.forEach((d,k)=>N(d,.5+.3*k/f.length,.5));N(n-1-rnd(2),.95,1);
+    [r,r+ch[1],r+ch[2],r+L].forEach((d,k)=>o.push({i:fd(d),v:.6,g:k===3?2:0,s:k===3?undefined:.06}));Z(1);break}
+   case 11:{/* Mystery: sparse low notes and a strange high glint */
+    const low=rnd(Math.max(2,Math.ceil(n*.4)));N(low,.5,2+R()*2);if(R()<.35)N(low+1,.32,1.5+R());if(R()<.3)N(n-1-rnd(3),.2,2+R()*2);Z(1+R()*2);break}
+   default:{/* Dance: a gentle waltz */
+    if(R()<.6)T(walk(),.55);N(r,.68,1);T(r+ch[1]+L,.34);N(r+ch[2]+L,.34,1);T(r+ch[1]+L,.3);N(r+ch[2]+L,.3,1)}}
+  if(!o.length)o.push({i:0,v:.5,g:1});return o},
  /* string i is degree i of the chosen scale, climbing from the lowest note */
  midi(S,i){const sc=LY.scales[S.scale][1],L=sc.length;return 12*(S.oct+1)+S.root+Math.floor(i/L)*12+sc[i%L]},
  freq(S,i){return 440*Math.pow(2,(LY.midi(S,i)-69)/12)},
  name(S,i){const m=LY.midi(S,i);return LY.notes[m%12]+(Math.floor(m/12)-1)},
- /* one audio engine per AudioContext (live, or the offline one that saves a .wav). Strings are pre-computed buffers, so playing a note costs almost nothing */
+ clock(s){s=Math.max(0,Math.floor(s));return Math.floor(s/60)+":"+String(s%60).padStart(2,"0")},
+ /* one audio engine per AudioContext. Strings are pre-computed buffers, so playing a note costs almost nothing */
  engine(c,S,light){
   const E={c,S,light,bufs:new Map(),voices:[],max:light?10:22};
   const m=c.createGain();m.gain.value=S.vol;const cp=c.createDynamicsCompressor();cp.threshold.value=-14;cp.knee.value=14;cp.ratio.value=5;cp.attack.value=.004;cp.release.value=.2;m.connect(cp);cp.connect(c.destination);
-  const dry=c.createGain();dry.gain.value=1;dry.connect(m);E.m=m;E.dry=dry;E.wet=null;
+  const dry=c.createGain();dry.gain.value=1;dry.connect(m);E.m=m;E.dry=dry;E.cp=cp;E.wet=null;
   if(!light&&c.createConvolver){const rv=c.createConvolver();rv.buffer=lyreRoom(c);const w=c.createGain();w.gain.value=S.room*.9;rv.connect(w);w.connect(m);E.rv=rv;E.wet=w}
   E.key=i=>c.sampleRate+"|"+LY.freq(S,i).toFixed(3)+"|"+S.sus.toFixed(2)+"|"+S.soft.toFixed(2);
   E.get=i=>{const k=E.key(i);let b=E.bufs.get(k);if(b)return b;const sr=c.sampleRate,f=LY.freq(S,i),secs=2.4+S.sus*4.2,dec=.992+S.sus*.0068;
@@ -5128,94 +5208,115 @@ const LY={
    for(const o of E.voices)if(o.i===i&&o.t<=t&&!o.cut){o.cut=1;E.fade(o,t,.05)}/* the same string, plucked again, stops its earlier ring */
    E.voices.push(v);while(E.voices.filter(o=>!o.cut).length>E.max){const o=E.voices.find(x=>!x.cut);if(!o)break;o.cut=1;E.fade(o,t,.05)}
    s.onended=()=>{E.voices=E.voices.filter(o=>o!==v);try{g.disconnect();pn&&pn.disconnect()}catch(e){}};s.start(t);return v};
-  E.cutTag=tag=>{const now=c.currentTime;for(const o of E.voices)if(o.tag===tag&&!o.cut){o.cut=1;E.fade(o,now,.06)}};
   E.quiet=()=>E.voices.length===0;
   return E},
  css(){if(document.getElementById("lycss"))return;const s=document.createElement("style");s.id="lycss";s.textContent=`
 .ly{position:absolute;inset:0;display:flex;flex-direction:column;outline:0;user-select:none;-webkit-user-select:none}
-.ly .bar{display:flex;gap:8px 12px;align-items:center;flex-wrap:wrap;padding:7px 10px;border-bottom:1px solid var(--bd);flex:none}
-.ly .bar.b2{border-top:1px solid var(--bd);border-bottom:0}
+.ly .bar{display:flex;gap:8px 12px;align-items:center;flex-wrap:wrap;padding:8px 10px;border-bottom:1px solid var(--bd);flex:none}
 .ly .grp{display:flex;gap:6px;align-items:center}
-.ly .sl{display:flex;gap:6px;align-items:center;font-size:12px;opacity:.95}
+.ly .sl{display:flex;gap:6px;align-items:center;font-size:12px}
 .ly .sl input{width:96px;accent-color:var(--ac)}
-.ly canvas{flex:1;min-height:200px;width:100%;display:block;touch-action:none;cursor:pointer}
-.ly .btn.on{background:var(--ac);color:var(--bg);border-color:var(--ac);font-weight:700}
+.ly canvas{flex:1;min-height:180px;width:100%;display:block;touch-action:none;cursor:pointer}
+.ly .btn.big{padding:9px 16px;font-size:15px;font-weight:700}
+.ly .btn.on{background:var(--ac);color:var(--bg);border-color:var(--ac)}
 .ly .btn.rec.on{background:var(--er);border-color:var(--er);color:#fff}
-.ly .st{font-size:12px;opacity:.85}
+.ly .res{background:var(--pn2);border-bottom:1px solid var(--bd);display:none}
+.ly .res.show{display:flex}
+.ly .res .msg{font-size:13px;flex:1;min-width:170px}
+.ly .more{display:none;border-top:1px solid var(--bd);border-bottom:0;background:var(--pn2)}
+.ly .more.show{display:flex}
+.ly .more label.f{display:flex;flex-direction:column;gap:2px;font-size:12px;opacity:.95}
+.ly .more label.f select{max-width:200px}
+.ly .tm{font-size:15px;min-width:42px;font-variant-numeric:tabular-nums}
 .ly .nt{font-size:12px;opacity:.7;padding:4px 10px 8px;line-height:1.4}
-.ly select{max-width:190px}
+.ly .chk{display:flex;gap:6px;align-items:center;font-size:13px;cursor:pointer}
+.ly .bar.sub{padding-top:2px}.ly .pace input{width:150px}.ly .slp{font-size:12px;opacity:.8}
 `;document.head.append(s)}
 };
-defApp("lyre",{name:"Lyre",icon:"lyre",cat:"Media",w:900,h:640,single:true,desc:"play a lyre, or let it play itself",kw:"lyre harp strings instrument music pluck calm ambient relax ancient greek kithara arpeggio scale loop record",
+defApp("lyre",{name:"Lyre",icon:"lyre",cat:"Media",w:900,h:640,single:true,desc:"play a lyre, or let it play itself",kw:"lyre harp strings instrument music pluck calm ambient relax ancient greek kithara arpeggio scale record wav story",
  init(win,b,arg){
   LY.css();
-  const S=LY.load();let ctx=null,E=null,dead=false,auto=false,autoT=0,nextT=0,aStep=0,aDir=1,aBase=0,aCnt=0,idleT=0,raf=0,warmT=0,saveT=0,rebuildT=0;
-  const vz=[];/* per string: {t, a} the last pluck, for drawing */
-  const ptr=new Map();let rec=null,loopOn=false,loopT=0,loopTimer=0,loopGen=0,recLoopT=0;
+  const S=LY.load();let ctx=null,E=null,dead=false,auto=false,autoT=0,nextT=0,idleT=0,raf=0,saveT=0,rebuildT=0;
+  const vz=[];const ptr=new Map();
+  /* recording state: rec = what is being recorded now, take = the finished recording waiting to be played or saved */
+  let rec=null,take=null,play=null,tmT=0,playT=0;
   const root=h("div",{class:"ly",tabindex:"0"});
   const sv=()=>{clearTimeout(saveT);saveT=setTimeout(()=>LS.set("tvos_lyre",S),300)};
   const cnv=h("canvas",{});const cx=cnv.getContext("2d");
-  const status=h("span",{class:"st"},"");
   /* ---------- audio ---------- */
   async function ensure(){if(!ctx){ctx=new (window.AudioContext||window.webkitAudioContext)({latencyHint:"interactive"});E=LY.engine(ctx,S,lpOn());E.warm()}
    if(ctx.state!=="running")try{await ctx.resume()}catch(e){}return ctx}
-  function wake(){clearTimeout(idleT);idleT=setTimeout(function chk(){if(dead||!ctx)return;if(auto||loopOn||(E&&!E.quiet())||ptr.size||rec){idleT=setTimeout(chk,5000);return}if(ctx.state==="running")ctx.suspend().catch(()=>{})},20000)}
-  function pluckNow(i,v,fromLoop){
-   const go=()=>{const t=ctx.currentTime;E.pluck(i,v,t);vz[i]={t,a:v};kick();if(rec&&!fromLoop)recNote(i,v)};
+  function wake(){clearTimeout(idleT);idleT=setTimeout(function chk(){if(dead||!ctx)return;if(auto||rec||play||(E&&!E.quiet())||ptr.size){idleT=setTimeout(chk,5000);return}if(ctx.state==="running")ctx.suspend().catch(()=>{})},20000)}
+  function pluckNow(i,v){
+   const go=()=>{const t=ctx.currentTime;E.pluck(i,v,t);vz[i]={t,a:v};kick()};
    if(!ctx){ensure().then(()=>{if(!dead)go()});return}
    if(ctx.state!=="running"){ctx.resume().then(()=>{if(!dead)go()},()=>{});return}
    go();wake()}
-  function pluckAt(i,v,t,tag){E.pluck(i,v,t,tag);vz[i]={t,a:v};kick()}
-  /* ---------- recording and looping what you play ---------- */
-  function recNote(i,v){const now=ctx.currentTime;if(rec.over&&S.phrase){const pos=((now-loopT)%S.phrase.len+S.phrase.len)%S.phrase.len;rec.add.push({t:pos,i,v:+v.toFixed(2)})}else rec.ev.push({t:now-rec.t0,i,v:+v.toFixed(2)})}
-  async function recToggle(){await ensure();
-   if(!rec){if(S.phrase&&loopOn){rec={over:true,add:[]};toast("Overdubbing: what you play joins the loop")}else{rec={over:false,ev:[],t0:ctx.currentTime};if(loopOn)loopStop();toast("Recording: play, then press Rec again")}paint()}
-   else{const r=rec;rec=null;
-    if(r.over){S.phrase.ev=S.phrase.ev.concat(r.add).sort((a,c)=>a.t-c.t)}
-    else if(r.ev.length){const len=Math.max(1.2,ctx.currentTime-r.t0+.4);S.phrase={len:+len.toFixed(3),ev:r.ev};loopStart()}
-    else toast("Nothing was played, so nothing was kept.");
-    sv();paint()}}
-  function loopSchedule(T,gen){if(!S.phrase)return;for(const e of S.phrase.ev){const t=T+e.t;if(t>=ctx.currentTime-.02)pluckAt(e.i,e.v*.9,t,"loop")}}
-  function loopTick(){if(dead||!loopOn)return;const P=S.phrase;if(!P){loopStop();return}
-   while(loopT+P.len<ctx.currentTime+.35){loopT+=P.len;loopSchedule(loopT,loopGen)}}
-  async function loopStart(){if(!S.phrase)return;await ensure();if(loopOn)return;loopOn=true;loopGen++;loopT=ctx.currentTime+.08;loopSchedule(loopT,loopGen);loopTimer=setInterval(loopTick,60);paint()}
-  function loopStop(){loopOn=false;clearInterval(loopTimer);if(E)E.cutTag("loop");paint()}
-  function loopToggle(){if(loopOn)loopStop();else loopStart()}
-  function clearPhrase(){if(rec)rec=null;loopStop();S.phrase=null;sv();paint()}
-  async function saveWav(){const P=S.phrase;if(!P)return toast("Record a phrase first.",1);if(!window.OfflineAudioContext)return toast("This browser can't render audio files.",1);
-   const n=await dlg((bx,d)=>{const sel=h("select",{class:"t"},...[1,2,4,8].map(v=>h("option",{value:v,selected:v===2},v+(v===1?" time through":" times through"))));
-    bx.append(h("h3",{},"Save as WAV"),h("div",{},"Your recorded phrase ("+P.len.toFixed(1)+" s). How many times through?"),sel,h("div",{class:"acts"},h("button",{class:"btn",onclick:()=>d(0)},"Cancel"),h("button",{class:"btn pri",onclick:()=>d(+sel.value)},"Save")))});
-   if(!n)return;
-   try{toast("Rendering...");const sr=44100,oc=new OfflineAudioContext(2,Math.ceil((P.len*n+5)*sr),sr),oe=LY.engine(oc,S,false);
-    for(let k=0;k<n;k++)for(const e of P.ev)oe.pluck(e.i,e.v*.9,.05+k*P.len+e.t);
-    const out=await oc.startRendering(),bl=SQ.wav(out),sink=await REC.open(REC.name("lyre","wav"),"audio/wav");await sink.write(bl);const r=await sink.close();toast("Saved "+r.where)}
-   catch(e){toast("Could not save: "+(e&&e.message||e),1)}}
+  function pluckAt(i,v,t){E.pluck(i,v,t);vz[i]={t,a:v};kick()}
   /* ---------- hands-free playing ---------- */
-  const sdur=()=>60/S.bpm/2;
-  function nextNote(){/* returns [string, velocity, gap in steps] */
-   const n=S.n,P=S.pat,L=LY.scales[S.scale][1].length;let i=0,v=.7,gap=1;
-   if(P===0){i=aStep%n;aStep++;v=.55+.25*Math.random()}
-   else if(P===1){i=n-1-(aStep%n);aStep++;v=.55+.25*Math.random()}
-   else if(P===2){const per=Math.max(2,2*n-2),k=aStep%per;i=k<n?k:per-k;aStep++;v=.55+.25*Math.random()}
-   else if(P===3){if(aBase<0||aBase>=n)aBase=Math.floor(n/2);const r=Math.random();aBase+=r<.4?1:r<.8?-1:r<.9?2:-2;aBase=Math.max(0,Math.min(n-1,aBase));i=aBase;v=.5+.3*Math.random();gap=Math.random()<.18?2:1}
-   else if(P===4){const prog=[0,3,4,0],r=prog[Math.floor(aStep/8)%prog.length],cyc=[0,2,4,7,4,2],d=r+cyc[aStep%6];i=d>n-1?d-L:d;i=Math.max(0,Math.min(n-1,i));aStep++;v=aStep%6===1?.8:.55+.2*Math.random()}
-   else if(P===5){i=Math.floor(Math.random()*n);v=.35+.4*Math.random();gap=1+Math.floor(Math.random()*4)}
-   else{const k=aCnt%6;if(k===0){i=0;v=.8;gap=4}else if(k===3&&n>4){i=Math.floor(n/2);v=.55;gap=3}else{i=Math.min(n-1,Math.floor(n*.55+Math.random()*n*.45));v=.3+.3*Math.random();gap=2+Math.floor(Math.random()*3)}}
-   aCnt++;return[i,v,gap]}
+  /* ---------- hands-free playing: phrases, played at your pace ---------- */
+  let q=[],st={bar:0},sleepEnd=0,uiT=0;
+  const beat=()=>60/S.bpm;
+  const resetSt=()=>{st={bar:0};q=[]};
+  function fadeAll(k){if(!E||!ctx)return;const t=ctx.currentTime;for(const v of E.voices)if(!v.cut){v.cut=1;E.fade(v,t,k)}}
   function autoTick(){if(dead||!auto)return;const now=ctx.currentTime;if(nextT<now-.5)nextT=now+.05;
-   while(nextT<now+.14){const[i,v,gap]=nextNote(),hum=S.hum/100,jit=(Math.random()*2-1)*hum*sdur()*.22,vv=Math.max(.2,Math.min(1,v*(1+(Math.random()*2-1)*hum*.35)));pluckAt(i,vv,nextT+Math.max(0,jit));nextT+=sdur()*gap}}
-  async function autoStart(){await ensure();if(auto)return;auto=true;aStep=0;aCnt=0;aBase=-1;nextT=ctx.currentTime+.08;autoT=setInterval(autoTick,40);autoTick();paint()}
-  function autoStop(){auto=false;clearInterval(autoT);paint()}
+   if(sleepEnd){const left=sleepEnd-performance.now();if(left<=0){sleepDone();return}if(left<16000)E.m.gain.setTargetAtTime(S.vol*Math.pow(left/16000,2),now,.15)}
+   let guard=0;
+   while(nextT<now+.2&&guard++<40){if(!q.length)q=LY.phrase(S,st);const it=q.shift(),hum=S.hum/100,bt=beat();
+    if(it.i>=0){const jit=(Math.random()*2-1)*hum*Math.min(.09,bt*.12),vv=Math.max(.12,Math.min(1,it.v*(1+(Math.random()*2-1)*hum*.3)));pluckAt(it.i,vv,nextT+Math.max(0,jit))}
+    nextT+=it.s!=null?it.s:it.g*bt}}
+  async function autoStart(){await ensure();if(auto)return;auto=true;resetSt();nextT=ctx.currentTime+.08;sleepEnd=S.sleep?performance.now()+S.sleep*60000:0;
+   E.setVol(S.vol);autoT=setInterval(autoTick,40);clearInterval(uiT);uiT=setInterval(paint,1000);autoTick();paint();kick()}
+  function autoStop(keepVol){if(sleepEnd&&!keepVol&&E)E.setVol(S.vol);auto=false;sleepEnd=0;clearInterval(autoT);clearInterval(uiT);paint()}
+  function sleepDone(){autoStop(true);fadeAll(.4);toast("The Lyre has stopped by itself.");setTimeout(()=>{if(!dead&&E)E.setVol(S.vol)},2500)}
   function autoToggle(){auto?autoStop():autoStart()}
+  /* ---------- recording: what the lyre plays, and (if you ask) your voice, saved as a WAV ---------- */
+  const MAXS=8*60;/* 8 minutes keeps a cheap computer's memory safe */
+  async function recStart(){if(rec)return;stopPlay();await ensure();
+   if(take&&!take.saved&&!(await dlgConfirm("Your last recording has not been saved. Start a new one and lose it?","Start a new recording","Start new")))return;
+   const dest=ctx.createMediaStreamDestination();E.cp.connect(dest);
+   let micS=null,micSrc=null,micG=null;
+   if(S.voice){try{micS=await navigator.mediaDevices.getUserMedia({audio:{echoCancellation:true,noiseSuppression:false,autoGainControl:false}});micSrc=ctx.createMediaStreamSource(micS);micG=ctx.createGain();micG.gain.value=1;micSrc.connect(micG);micG.connect(dest)}
+    catch(e){toast("The microphone is not available, so this records the lyre only.",1);micS=null}}
+   const L=[],R=[];let n=0,pk=0;
+   let q;try{q=await REC.pcm(dest.stream,2,arr=>{if(!rec)return;const l=arr[0],r=arr[1]||arr[0],a=new Int16Array(l.length),c=new Int16Array(l.length);for(let i=0;i<l.length;i++){const x=l[i],y=r[i];const ax=Math.abs(x),ay=Math.abs(y);if(ax>pk)pk=ax;if(ay>pk)pk=ay;a[i]=Math.max(-1,Math.min(1,x))*32767;c[i]=Math.max(-1,Math.min(1,y))*32767}L.push(a);R.push(c);n+=l.length;rec.n=n;rec.pk=pk})}catch(e){try{E.cp.disconnect(dest)}catch(_){}if(micS)micS.getTracks().forEach(t=>t.stop());toast("Could not start recording: "+(e&&e.message||e),1);return}
+   rec={dest,micS,micSrc,micG,q,L,R,n:0,pk:0,t0:performance.now(),voice:!!micS};REC.guard(true);
+   clearInterval(tmT);tmT=setInterval(()=>{if(!rec)return;paint();if(rec.n/rec.q.sr>=MAXS){toast("Stopped at 8 minutes.");recStop()}},250);paint()}
+  function recStop(){if(!rec)return;const r=rec;rec=null;clearInterval(tmT);try{E.cp.disconnect(r.dest)}catch(e){}try{r.micSrc&&r.micSrc.disconnect()}catch(e){}if(r.micS)r.micS.getTracks().forEach(t=>t.stop());try{r.q.stop()}catch(e){}
+   if(r.n<r.q.sr*.3){take=null;REC.guard(false);toast("That was too short to keep.");paint();return}
+   take={sr:r.q.sr,L:r.L,R:r.R,n:r.n,pk:r.pk,saved:false,voice:r.voice,buf:null};
+   if(r.pk<.004)toast("I did not hear anything in that recording. Play the lyre, or check your microphone.",1);
+   paint()}
+  function recToggle(){rec?recStop():recStart()}
+  function takeBuf(){if(take.buf)return take.buf;const bf=ctx.createBuffer(2,take.n,take.sr),a=bf.getChannelData(0),c=bf.getChannelData(1);let o=0;for(let k=0;k<take.L.length;k++){const l=take.L[k],r=take.R[k];for(let i=0;i<l.length;i++){a[o+i]=l[i]/32767;c[o+i]=r[i]/32767}o+=l.length}take.buf=bf;return bf}
+  async function playToggle(){if(play){stopPlay();return}if(!take)return;await ensure();if(rec)return;const s=ctx.createBufferSource();s.buffer=takeBuf();const g=ctx.createGain();g.gain.value=Math.min(1,S.vol*1.1);s.connect(g);g.connect(ctx.destination);play={s,g,t0:ctx.currentTime};s.onended=()=>{if(play&&play.s===s){play=null;clearInterval(playT);paint()}};s.start();clearInterval(playT);playT=setInterval(paint,250);paint()}
+  function stopPlay(){if(!play)return;const p=play;play=null;clearInterval(playT);try{p.s.onended=null;p.s.stop();p.g.disconnect()}catch(e){}paint()}
+  function wavBlob(){const n=take.n,bytes=n*4,ab=new ArrayBuffer(44+bytes),v=new DataView(ab),w=(o,t)=>{for(let i=0;i<t.length;i++)v.setUint8(o+i,t.charCodeAt(i))};
+   w(0,"RIFF");v.setUint32(4,36+bytes,true);w(8,"WAVE");w(12,"fmt ");v.setUint32(16,16,true);v.setUint16(20,1,true);v.setUint16(22,2,true);v.setUint32(24,take.sr,true);v.setUint32(28,take.sr*4,true);v.setUint16(32,4,true);v.setUint16(34,16,true);w(36,"data");v.setUint32(40,bytes,true);
+   const o=new Int16Array(ab,44);let p=0;for(let k=0;k<take.L.length;k++){const l=take.L[k],r=take.R[k];for(let i=0;i<l.length;i++){o[p++]=l[i];o[p++]=r[i]}}return new Blob([ab],{type:"audio/wav"})}
+  function saveTake(){if(!take)return;const name=REC.name("lyre","wav");try{download(name,wavBlob(),"audio/wav");take.saved=true;take.where=name;REC.guard(false);paint();toast("Saved "+name+" to your Downloads folder")}catch(e){toast("Could not save: "+(e&&e.message||e),1)}}
+  async function dropTake(){if(!take)return;if(!take.saved&&!(await dlgConfirm("Throw away this recording? It has not been saved.","Throw away","Throw away")))return;stopPlay();take=null;REC.guard(false);paint()}
   /* ---------- drawing: the frame is drawn once; only plucked strings move ---------- */
-  let W=0,H=0,RS=1,frame=null,geo=null;
+  /* ---------- drawing: the sky and the frame are drawn once; only moving things are redrawn ---------- */
+  let W=0,H=0,RS=1,frame=null,skyC=null,geo=null,ps=[],lastF=0,liveLast=false;
+  const look=()=>LY.looks.find(l=>l.id===S.look)||LY.looks[0];
+  const pal=()=>{const l=look();return l.c||{ac:css("ac")||"#6fd",fg:css("fg")||"#ccc",bg:css("bg")||"#111"}};
+  function applyLook(){const l=look();for(const k of["bg","pn","pn2","fg","dim","ac","bd","er","hv","aca","ac2"])root.style.removeProperty("--"+k);root.style.background="";root.style.color="";
+   if(l.c){for(const k in l.c)root.style.setProperty("--"+k,l.c[k]);root.style.setProperty("--hv",l.c.pn2);root.style.setProperty("--aca",l.c.ac+"33");root.style.setProperty("--ac2",l.c.ac);root.style.background=l.c.bg;root.style.color=l.c.fg}
+   frame=null;skyC=null;seedFx();draw();kick()}
+  function seedFx(){const l=look(),fx=l.fx||"none",k={dust:26,stars:42,fireflies:18,embers:28,bubbles:18,petals:20,aurora:30,none:0}[fx]||0;ps=[];const R=Math.random;
+   for(let i=0;i<k;i++)ps.push({x:R()*W,y:R()*H,r:.8+R()*1.8,ph:R()*6.28,sp:.4+R()*1.2,v:8+R()*22,a:R(),rot:R()*6.28,d:R()*6.28})}
   function layout(){const r=cnv.getBoundingClientRect();RS=Math.min(devicePixelRatio||1,1.5);W=Math.max(100,Math.round(r.width));H=Math.max(100,Math.round(r.height));cnv.width=Math.round(W*RS);cnv.height=Math.round(H*RS);
    const side=Math.max(34,W*.07),top=Math.max(26,H*.1),bot=H-Math.max(54,H*.17),n=S.n,x0=side+Math.max(20,W*.04),x1=W-side-Math.max(20,W*.04),step=(x1-x0)/n;
-   geo={side,top,bot,x0,x1,step,xs:Array.from({length:n},(_,i)=>x0+step*(i+.5))};frame=null;draw()}
-  function ensureFrame(){if(frame)return;const f=document.createElement("canvas");f.width=cnv.width;f.height=cnv.height;const c=f.getContext("2d");c.setTransform(RS,0,0,RS,0,0);
-   const ac=css("ac")||"#6fd",fg=css("fg")||"#ccc",bd=css("bd")||"#456",bg=css("bg")||"#000",G=geo;
+   geo={side,top,bot,x0,x1,step,xs:Array.from({length:n},(_,i)=>x0+step*(i+.5))};frame=null;skyC=null;seedFx();draw();kick()}
+  function mkLayer(){const f=document.createElement("canvas");f.width=cnv.width;f.height=cnv.height;const c=f.getContext("2d");c.setTransform(RS,0,0,RS,0,0);return[f,c]}
+  function ensureSky(){if(skyC)return;const[f,c]=mkLayer(),l=look();skyC=f;if(!l.sky)return;
+   const g=c.createLinearGradient(0,0,0,H);g.addColorStop(0,l.sky[0]);g.addColorStop(1,l.sky[1]);c.fillStyle=g;c.fillRect(0,0,W,H);
+   if(l.orb){const[ox,oy,or,oc]=l.orb,rr=Math.max(20,or*Math.min(W,H)*(or>.15?1.6:1)),g2=c.createRadialGradient(ox*W,oy*H,0,ox*W,oy*H,rr*(or>.15?2.2:3.2));g2.addColorStop(0,oc+(or>.15?"88":"cc"));g2.addColorStop(.35,oc+"33");g2.addColorStop(1,oc+"00");c.fillStyle=g2;c.fillRect(0,0,W,H);
+    if(or<=.15){c.fillStyle=oc;c.globalAlpha=.9;c.beginPath();c.arc(ox*W,oy*H,rr*.55,0,6.283);c.fill();c.globalAlpha=1}}}
+  function ensureFrame(){if(frame)return;const[f,c]=mkLayer();
+   const P=pal(),ac=P.ac,fg=P.fg,G=geo;
    c.lineCap="round";c.lineJoin="round";
-   /* arms, crossbar, and the sound box */
    c.strokeStyle=ac;c.lineWidth=Math.max(5,W*.008);c.globalAlpha=.85;
    const lx=G.x0-G.step*.45,rx=G.x1+G.step*.45,yb=H-Math.max(30,H*.1);
    c.beginPath();c.moveTo(lx,G.top);c.bezierCurveTo(lx-G.side*.9,G.top+(G.bot-G.top)*.3,lx-G.side*.75,G.top+(G.bot-G.top)*.8,lx+G.step*.1,yb);c.stroke();
@@ -5223,19 +5324,35 @@ defApp("lyre",{name:"Lyre",icon:"lyre",cat:"Media",w:900,h:640,single:true,desc:
    c.lineWidth=Math.max(6,W*.01);c.beginPath();c.moveTo(lx-G.side*.12,G.top);c.lineTo(rx+G.side*.12,G.top);c.stroke();
    c.globalAlpha=.5;c.lineWidth=Math.max(10,H*.02);c.beginPath();c.moveTo(lx+G.step*.1,yb);c.quadraticCurveTo((lx+rx)/2,yb+Math.max(12,H*.045),rx-G.step*.1,yb);c.stroke();
    c.globalAlpha=1;c.strokeStyle=fg;c.lineWidth=Math.max(3,H*.008);c.globalAlpha=.55;c.beginPath();c.moveTo(G.x0-G.step*.1,G.bot);c.lineTo(G.x1+G.step*.1,G.bot);c.stroke();c.globalAlpha=1;
-   /* resting strings, then note names and the keyboard key under each */
    c.textAlign="center";const fs=Math.max(10,Math.min(14,G.step*.3));
    for(let i=0;i<S.n;i++){const x=G.xs[i];c.strokeStyle=fg;c.globalAlpha=.55;c.lineWidth=1+(S.n-i)/S.n*1.8;c.beginPath();c.moveTo(x,G.top);c.lineTo(x,G.bot);c.stroke();c.globalAlpha=1;
     c.fillStyle=ac;c.font="600 "+fs+"px ui-monospace,monospace";c.fillText(LY.name(S,i),x,G.bot+fs+8);c.globalAlpha=.6;c.fillStyle=fg;c.font=(fs-1)+"px ui-monospace,monospace";c.fillText(LY.keys[i]||"",x,G.bot+fs*2+12);c.globalAlpha=1}
    frame=f}
-  function draw(){if(!geo)return;ensureFrame();cx.setTransform(1,0,0,1,0,0);cx.clearRect(0,0,cnv.width,cnv.height);cx.drawImage(frame,0,0);cx.setTransform(RS,0,0,RS,0,0);
-   if(!ctx)return;const now=ctx.currentTime,G=geo,ac=css("ac")||"#6fd";let live=false;cx.lineCap="round";
-   for(let i=0;i<S.n;i++){const z=vz[i];if(!z||now<z.t)continue;const dt=now-z.t,tau=.5+S.sus*1.9+(S.n-i)/S.n*.5,a=z.a*Math.exp(-dt/tau);if(a<.015)continue;live=true;
-    const x=G.xs[i],mid=(G.top+G.bot)/2,amp=Math.min(G.step*.55,a*G.step*.8)*Math.sin(dt*2*Math.PI*17);
+  const ambOn=()=>S.amb&&!lpOn()&&(look().fx||"none")!=="none"&&root.offsetParent!==null&&!document.hidden;
+  function fxDraw(dt,tm){const l=look(),fx=l.fx,P=pal(),ac=P.ac,c=cx;c.lineCap="round";
+   if(fx==="aurora"){c.strokeStyle=ac;for(let k=0;k<3;k++){for(const[w,a]of[[H*.16,.04],[H*.09,.06],[H*.035,.08]]){c.globalAlpha=a;c.lineWidth=w;c.beginPath();for(let x=-10;x<=W+10;x+=26){const y=H*(.24+k*.09)+Math.sin(x/(W*.16)+tm*.35+k*2.1)*H*.06+Math.sin(x/(W*.07)-tm*.5)*H*.012;x<-5?c.moveTo(x,y):c.lineTo(x,y)}c.stroke()}}c.globalAlpha=1}
+   for(const p of ps){p.ph+=dt*p.sp;
+    if(fx==="stars"||fx==="aurora"){const a=.25+.55*(.5+.5*Math.sin(p.ph*1.7));c.globalAlpha=a;c.fillStyle="#fff";c.beginPath();c.arc(p.x,p.y*(fx==="aurora"?.6:.85),p.r*.6,0,6.283);c.fill()}
+    else if(fx==="dust"){p.y-=p.v*.35*dt;p.x+=Math.sin(p.ph)*6*dt;if(p.y<-6){p.y=H+6;p.x=Math.random()*W}c.globalAlpha=.12+.3*(.5+.5*Math.sin(p.ph*1.3));c.fillStyle=ac;c.beginPath();c.arc(p.x,p.y,p.r*1.2,0,6.283);c.fill()}
+    else if(fx==="fireflies"){p.d+=(Math.random()-.5)*dt*3;p.x+=Math.cos(p.d)*p.v*.6*dt;p.y+=Math.sin(p.d)*p.v*.6*dt;if(p.x<0)p.x=W;if(p.x>W)p.x=0;if(p.y<0)p.y=H;if(p.y>H)p.y=0;const a=Math.max(0,Math.sin(p.ph*1.4));
+     c.fillStyle=ac;c.globalAlpha=a*.16;c.beginPath();c.arc(p.x,p.y,p.r*4.5,0,6.283);c.fill();c.globalAlpha=a*.85;c.beginPath();c.arc(p.x,p.y,p.r*1.1,0,6.283);c.fill()}
+    else if(fx==="embers"){p.y-=p.v*1.4*dt;p.x+=Math.sin(p.ph*2)*14*dt;if(p.y<-6){p.y=H+6;p.x=Math.random()*W}const k=Math.max(0,Math.min(1,p.y/H));c.globalAlpha=.15+.6*(1-k)*.9;c.fillStyle=k>.5?ac:"#ffd27a";c.beginPath();c.arc(p.x,p.y,p.r*.9,0,6.283);c.fill()}
+    else if(fx==="bubbles"){p.y-=p.v*.9*dt;p.x+=Math.sin(p.ph)*8*dt;if(p.y<-12){p.y=H+12;p.x=Math.random()*W}c.globalAlpha=.4;c.strokeStyle=ac;c.lineWidth=1;c.beginPath();c.arc(p.x,p.y,p.r*2.4,0,6.283);c.stroke();c.globalAlpha=.5;c.fillStyle="#fff";c.beginPath();c.arc(p.x-p.r*.7,p.y-p.r*.7,p.r*.4,0,6.283);c.fill()}
+    else if(fx==="petals"){p.y+=p.v*.8*dt;p.x+=Math.sin(p.ph)*20*dt+5*dt;p.rot+=dt*p.sp;if(p.y>H+10){p.y=-10;p.x=Math.random()*W}if(p.x>W+10)p.x=-10;const pc=l.pc||[ac];c.globalAlpha=.7;c.fillStyle=pc[Math.floor(p.d)%pc.length];c.beginPath();c.ellipse(p.x,p.y,p.r*2.6,p.r*1.4,p.rot,0,6.283);c.fill()}}
+   c.globalAlpha=1}
+  function draw(dt){if(!geo)return;ensureSky();ensureFrame();dt=dt||.04;cx.setTransform(1,0,0,1,0,0);cx.clearRect(0,0,cnv.width,cnv.height);cx.drawImage(skyC,0,0);cx.setTransform(RS,0,0,RS,0,0);
+   if(ambOn())fxDraw(dt,performance.now()/1000);
+   cx.setTransform(1,0,0,1,0,0);cx.drawImage(frame,0,0);cx.setTransform(RS,0,0,RS,0,0);
+   if(!ctx)return false;const now=ctx.currentTime,G=geo,ac=pal().ac;let live=false;cx.lineCap="round";
+   for(let i=0;i<S.n;i++){const z=vz[i];if(!z||now<z.t)continue;const dt2=now-z.t,tau=.5+S.sus*1.9+(S.n-i)/S.n*.5,a=z.a*Math.exp(-dt2/tau);if(a<.015)continue;live=true;
+    const x=G.xs[i],mid=(G.top+G.bot)/2,amp=Math.min(G.step*.55,a*G.step*.8)*Math.sin(dt2*2*Math.PI*17);
     cx.strokeStyle=ac;cx.globalAlpha=Math.min(1,.35+a);cx.lineWidth=1.6+(S.n-i)/S.n*1.8+a*2;cx.beginPath();cx.moveTo(x,G.top);cx.quadraticCurveTo(x+amp*2,mid,x,G.bot);cx.stroke()}
    cx.globalAlpha=1;return live}
-  let frameKey="";function kick(){const k=css("ac")+css("fg")+css("bg");if(k!==frameKey){frameKey=k;frame=null}if(!raf)raf=requestAnimationFrame(loop)}
-  function loop(){raf=0;if(dead)return;const live=draw();if(live||(ctx&&auto)||loopOn)raf=requestAnimationFrame(loop)}
+  let fk="";function kick(){if(S.look==="os"){const k=css("ac")+css("fg");if(k!==fk){fk=k;frame=null}}if(!raf)raf=requestAnimationFrame(loop)}
+  function loop(t){raf=0;if(dead)return;
+   if(!liveLast&&t-lastF<40){raf=requestAnimationFrame(loop);return}
+   const dt=Math.min(.1,(t-lastF)/1000||.04);lastF=t;liveLast=!!draw(dt);
+   if(liveLast||(ctx&&auto)||ambOn())raf=requestAnimationFrame(loop)}
   /* ---------- touching and clicking the strings ---------- */
   const idxAt=x=>{if(!geo)return 0;return Math.max(0,Math.min(S.n-1,Math.floor((x-geo.x0)/geo.step)))};
   cnv.addEventListener("pointerdown",e=>{e.preventDefault();root.focus({preventScroll:true});try{cnv.setPointerCapture(e.pointerId)}catch(_){}
@@ -5247,47 +5364,80 @@ defApp("lyre",{name:"Lyre",icon:"lyre",cat:"Media",w:900,h:640,single:true,desc:
   root.addEventListener("keydown",e=>{const tg=e.target.tagName;if(tg==="INPUT"||tg==="SELECT"||e.ctrlKey||e.metaKey||e.altKey||e.repeat)return;
    if(e.key===" "){e.preventDefault();strum(e.shiftKey);return}
    if(e.key==="Enter"){e.preventDefault();autoToggle();return}
+   if(e.key==="ArrowLeft"||e.key==="ArrowRight"){e.preventDefault();setPace(e.key==="ArrowRight"?4:-4);toast("Pace: "+LY.paceWord(S.bpm));return}
    const k=e.key.toLowerCase();if(k==="r"){e.preventDefault();recToggle();return}
+   if(k==="t"){e.preventDefault();const i=LY.looks.findIndex(l=>l.id===S.look);S.look=LY.looks[(i+1)%LY.looks.length].id;selLook.value=S.look;sv();applyLook();toast("Look: "+look().name);return}
    const i=LY.keys.indexOf(k);if(i>=0&&i<S.n){e.preventDefault();pluckNow(i,e.shiftKey?1:.8)}});
   /* ---------- controls ---------- */
   const mk=(label,min,max,step,key,fn,fmt)=>{const out=h("span",{style:"min-width:30px;opacity:.75"},fmt?fmt(S[key]):"");const inp=h("input",{type:"range",min,max,step,value:S[key],oninput:e=>{S[key]=+e.target.value;out.textContent=fmt?fmt(S[key]):"";fn&&fn();sv()}});return h("label",{class:"sl"},label,inp,out)};
   const pct=v=>Math.round(v*100)+"%";
-  function rebuild(delay){clearTimeout(rebuildT);rebuildT=setTimeout(()=>{if(dead)return;frame=null;if(E){E.bufs.clear();E.S=S}if(ctx){E.warm()}layout()},delay==null?160:delay)}
-  function applyScale(){/* a new tuning: ring-outs from the old one are let go and the strings are recomputed */
-   if(E)E.cutTag("loop");if(loopOn&&S.phrase){loopStop()}vz.length=0;rebuild(0);sv()}
-  const selScale=h("select",{class:"t",onchange:e=>{S.scale=+e.target.value;applyScale()}},...LY.scales.map((s,i)=>h("option",{value:i,selected:i===S.scale},s[0])));
+  function rebuild(delay){clearTimeout(rebuildT);rebuildT=setTimeout(()=>{if(dead)return;frame=null;if(E){E.bufs.clear()}if(ctx){E.warm()}layout()},delay==null?160:delay)}
+  function applyScale(){/* new notes: let the old ones fade away gently while the new ones begin */
+   vz.length=0;if(auto){fadeAll(.3);q=[];st={bar:0};nextT=ctx.currentTime+.5}else if(!ptr.size){q=[];st={bar:0}}rebuild(0);sv()}
+  const fld=(t,el)=>h("label",{class:"f"},t,el);
+  const selScale=h("select",{class:"t",onchange:e=>{S.scale=+e.target.value;S.mood="";selPre.value="";applyScale()}},...LY.scales.map((s,i)=>h("option",{value:i,selected:i===S.scale},s[0])));
   const selRoot=h("select",{class:"t",onchange:e=>{S.root=+e.target.value;applyScale()}},...LY.notes.map((n,i)=>h("option",{value:i,selected:i===S.root},n)));
-  const selOct=h("select",{class:"t",title:"Octave of the lowest string",onchange:e=>{S.oct=+e.target.value;applyScale()}},...[1,2,3,4,5].map(o=>h("option",{value:o,selected:o===S.oct},"Octave "+o)));
-  const selN=h("select",{class:"t",title:"Number of strings. The ancient lyre had 7; later ones had more.",onchange:e=>{S.n=+e.target.value;aBase=-1;applyScale()}},...[7,8,9,10,11,12,13].map(o=>h("option",{value:o,selected:o===S.n},o+" strings"+(o===7?" (classic)":""))));
-  const selPre=h("select",{class:"t",onchange:e=>{const p=LY.presets[e.target.value];if(!p)return;Object.assign(S,p);e.target.value="";syncCtl();applyScale()}},h("option",{value:""},"Moods..."),...Object.keys(LY.presets).map(k=>h("option",{value:k},k)));
-  const selPat=h("select",{class:"t",onchange:e=>{S.pat=+e.target.value;aStep=0;aBase=-1;aCnt=0;sv()}},...LY.pats.map((p,i)=>h("option",{value:i,selected:i===S.pat},p)));
-  const btnAuto=h("button",{class:"btn",onclick:autoToggle,title:"Enter"},"Play for me");
-  const btnRec=h("button",{class:"btn rec",onclick:recToggle,title:"R"},"Rec");
-  const btnLoop=h("button",{class:"btn",onclick:loopToggle},"Loop");
-  const btnClr=h("button",{class:"btn",onclick:clearPhrase},"Clear");
-  const btnWav=h("button",{class:"btn",onclick:saveWav},"Save .wav");
-  const sSus=mk("Sustain",0,1,.01,"sus",()=>rebuild(),pct),sSoft=mk("Tone",0,1,.01,"soft",()=>rebuild(),v=>v<.34?"bright":v>.66?"mellow":"warm"),sRoom=mk("Room",0,1,.01,"room",()=>E&&E.setRoom(S.room),pct),sVol=mk("Volume",0,1,.01,"vol",()=>E&&E.setVol(S.vol),pct);
-  const sBpm=mk("Speed",30,200,1,"bpm",null,v=>v+" bpm"),sHum=mk("Human",0,100,1,"hum",null,v=>v+"%");
-  function syncCtl(){selScale.value=S.scale;selRoot.value=S.root;selOct.value=S.oct;selN.value=S.n;selPat.value=S.pat;
-   for(const [lab,k] of [[sSus,"sus"],[sSoft,"soft"],[sRoom,"room"],[sVol,"vol"],[sBpm,"bpm"],[sHum,"hum"]]){const inp=lab.querySelector("input");inp.value=S[k];inp.dispatchEvent(new Event("input"))}}
-  function paint(){btnAuto.classList.toggle("on",auto);btnAuto.textContent=auto?"Stop playing":"Play for me";btnRec.classList.toggle("on",!!rec);btnRec.textContent=rec?(rec.over?"Overdubbing...":"Recording..."):(S.phrase&&loopOn?"Overdub":"Rec");
-   btnLoop.classList.toggle("on",loopOn);btnLoop.textContent=loopOn?"Stop loop":"Loop";btnLoop.disabled=!S.phrase;btnClr.disabled=!S.phrase&&!rec;btnWav.disabled=!S.phrase;
-   status.textContent=rec?"Play now. Press Rec again to finish.":S.phrase?"Phrase: "+S.phrase.len.toFixed(1)+" s, "+S.phrase.ev.length+" notes":"No phrase yet. Press Rec, play, press Rec again."}
+  const selOct=h("select",{class:"t",onchange:e=>{S.oct=+e.target.value;applyScale()}},...[1,2,3,4,5].map(o=>h("option",{value:o,selected:o===S.oct},o+(o===1?" (deepest)":o===5?" (highest)":""))));
+  const selN=h("select",{class:"t",onchange:e=>{S.n=+e.target.value;applyScale()}},...[7,8,9,10,11,12,13].map(o=>h("option",{value:o,selected:o===S.n},o+(o===7?" (classic lyre)":""))));
+  const selPre=h("select",{class:"t",title:"Pick a mood. It sets the notes, the sound, the playing style and the pace.",onchange:e=>{const p=LY.mood(e.target.value);if(!p)return;Object.assign(S,p);S.mood=e.target.value;syncCtl();applyScale()}},h("option",{value:""},"Choose a mood..."),...LY.moods.map(g=>h("optgroup",{label:g[0]},...Object.keys(g[1]).map(k=>h("option",{value:k,selected:k===S.mood},k)))));
+  const selPat=h("select",{class:"t",title:"How the Lyre plays by itself",onchange:e=>{S.pat=+e.target.value;S.mood="";selPre.value="";q=[];st={bar:0};sv()}},...LY.pats.map((p,i)=>h("option",{value:i,selected:i===S.pat,title:LY.patTip[i]},p+": "+LY.patTip[i])));
+  const selLook=h("select",{class:"t",title:"Change how the Lyre looks (key T). This does not change your desktop.",onchange:e=>{S.look=e.target.value;sv();applyLook()}},...LY.looks.map(l=>h("option",{value:l.id,selected:l.id===S.look},l.name)));
+  const selSleep=h("select",{class:"t",title:"The Lyre fades out slowly, then stops",onchange:e=>{S.sleep=+e.target.value;if(auto)sleepEnd=S.sleep?performance.now()+S.sleep*60000:0;sv();paint()}},...[[0,"Never"],[10,"10 minutes"],[20,"20 minutes"],[30,"30 minutes"],[45,"45 minutes"],[60,"1 hour"]].map(([v,t])=>h("option",{value:v,selected:v===S.sleep},t)));
+  const ambChk=h("input",{type:"checkbox",checked:S.amb,onchange:e=>{S.amb=e.target.checked;sv();draw();kick()}});
+  const ambLab=h("label",{class:"chk",title:"Gentle moving things in the background, like stars or petals. Turn off for a very slow computer."},ambChk,"Moving background");
+  const btnAuto=h("button",{class:"btn big",onclick:autoToggle,title:"Enter"},"");
+  const btnRec=h("button",{class:"btn big rec",onclick:recToggle,title:"R"},"");
+  const tm=h("span",{class:"tm"},"");
+  const voice=h("input",{type:"checkbox",checked:S.voice,onchange:e=>{S.voice=e.target.checked;sv()}});
+  const voiceLab=h("label",{class:"chk",title:"Also record your voice from the microphone. Headphones give the cleanest sound."},voice,"Include my voice");
+  const btnMore=h("button",{class:"btn",onclick:()=>{S.more=!S.more;sv();paint()}},"");
+  const sVol=mk("Volume",0,1,.01,"vol",()=>E&&E.setVol(S.vol),pct);
+  const sSus=mk("Ring time",0,1,.01,"sus",()=>rebuild(),pct),sSoft=mk("Tone",0,1,.01,"soft",()=>rebuild(),v=>v<.34?"bright":v>.66?"mellow":"warm"),sRoom=mk("Echo",0,1,.01,"room",()=>E&&E.setRoom(S.room),pct);
+  const sHum=mk("Looseness",0,100,1,"hum",null,v=>v+"%");
+  /* Pace: very slow to lively. The slider is spread so that the slow end has room. */
+  const p2b=p=>Math.round(20*Math.pow(8,p/100)),b2p=b=>Math.round(100*Math.log(b/20)/Math.log(8));
+  const paceOut=h("span",{style:"min-width:62px;opacity:.85"},"");
+  const paceIn=h("input",{type:"range",min:0,max:100,step:1,value:b2p(S.bpm),title:"How fast it plays. Left and right arrow keys change it too.",oninput:e=>{S.bpm=p2b(+e.target.value);paceOut.textContent=LY.paceWord(S.bpm);sv()}});
+  const pace=h("label",{class:"sl pace"},"Pace",paceIn,paceOut);
+  function setPace(d){const p=Math.max(0,Math.min(100,b2p(S.bpm)+d));paceIn.value=p;S.bpm=p2b(p);paceOut.textContent=LY.paceWord(S.bpm);sv()}
+  function syncCtl(){selScale.value=S.scale;selRoot.value=S.root;selOct.value=S.oct;selN.value=S.n;selPat.value=S.pat;selPre.value=S.mood;paceIn.value=b2p(S.bpm);paceOut.textContent=LY.paceWord(S.bpm);
+   for(const [lab,k] of [[sSus,"sus"],[sSoft,"soft"],[sRoom,"room"],[sVol,"vol"],[sHum,"hum"]]){const inp=lab.querySelector("input");inp.value=S[k];inp.dispatchEvent(new Event("input"))}}
+  /* the result bar: appears after a recording, with Play, Save and Throw away */
+  const resMsg=h("div",{class:"msg"},"");
+  const btnPlay=h("button",{class:"btn big",onclick:playToggle},"");
+  const btnSave=h("button",{class:"btn big pri",onclick:saveTake},"Save as WAV");
+  const btnDrop=h("button",{class:"btn",onclick:dropTake},"Throw away");
+  const resBar=h("div",{class:"bar res"},resMsg,btnPlay,btnSave,btnDrop);
+  const more=h("div",{class:"bar more"},fld("Scale",selScale),fld("Starting note",selRoot),fld("Lowest octave",selOct),fld("Number of strings",selN),sSus,sSoft,sRoom,fld("Playing style",selPat),sHum,fld("Stop by itself after",selSleep),ambLab);
+  const slp=h("span",{class:"slp"},"");
+  function paint(){
+   btnAuto.classList.toggle("on",auto);btnAuto.textContent=auto?"■ Stop playing":"▶ Play for me";
+   btnRec.classList.toggle("on",!!rec);btnRec.textContent=rec?"■ Stop recording":"● Record";
+   tm.textContent=rec?LY.clock(rec.n/(rec.q?rec.q.sr:44100)):"";
+   slp.textContent=auto&&sleepEnd?"Stops in "+LY.clock(Math.max(0,(sleepEnd-performance.now())/1000)):"";
+   voiceLab.style.display=rec?"none":"";
+   btnMore.textContent=S.more?"Fewer settings":"More settings";more.classList.toggle("show",!!S.more);
+   const show=!!take&&!rec;resBar.classList.toggle("show",show);
+   if(show){const len=take.n/take.sr;btnPlay.textContent=play?"■ Stop":"▶ Play it back";
+    resMsg.textContent=play?"Playing "+LY.clock(ctx.currentTime-play.t0)+" of "+LY.clock(len):take.saved?"Saved as "+take.where+" in your Downloads folder.":"Your recording ("+LY.clock(len)+") is ready. Play it, then save it.";
+    btnSave.textContent=take.saved?"Save again":"Save as WAV"}
+  }
   root.append(
-   h("div",{class:"bar"},selPre,selScale,h("div",{class:"grp"},selRoot,selOct),selN),
+   h("div",{class:"bar"},selPre,btnAuto,slp,btnRec,tm,voiceLab),
+   h("div",{class:"bar sub"},pace,sVol,h("label",{class:"sl"},"Look",selLook),btnMore),
+   resBar,
    cnv,
-   h("div",{class:"bar b2"},sSus,sSoft,sRoom,sVol),
-   h("div",{class:"bar"},h("div",{class:"grp"},btnAuto,selPat),sBpm,sHum),
-   h("div",{class:"bar"},h("div",{class:"grp"},btnRec,btnLoop,btnClr,btnWav),status),
-   h("div",{class:"nt"},"Click or touch a string, or drag across them. Keys: "+LY.keys.slice(0,S.n).join(" ")+" play the strings from low to high; Space strums up (Shift+Space down); Enter starts or stops Play for me; R records."));
-  b.append(root);paint();
+   more,
+   h("div",{class:"nt"},"Touch or click the strings, or drag across them. Keys "+LY.keys.slice(0,S.n).join(" ")+" play them from low to high. Space strums, Enter starts and stops Play for me, R records, T changes the look, left and right arrows change the pace."));
+  b.append(root);paintInit();
+  function paintInit(){applyLook();paceOut.textContent=LY.paceWord(S.bpm);paint()}
   const ro=new ResizeObserver(()=>{clearTimeout(rzT);rzT=setTimeout(()=>{if(root.clientWidth>60&&root.clientHeight>60)layout()},120)});let rzT=0;ro.observe(cnv);
   requestAnimationFrame(()=>{layout();try{root.focus({preventScroll:true})}catch(_){}});
-  win.on.focus=()=>{try{root.focus({preventScroll:true})}catch(_){}};
-  win.api={pluck:(i,v)=>pluckNow(i,v==null?.8:v),S,get ctx(){return ctx},get E(){return E},recToggle,loopToggle,autoToggle,saveWav,layout};
-  win.on.close=()=>{dead=true;clearInterval(autoT);clearInterval(loopTimer);clearTimeout(idleT);clearTimeout(rebuildT);clearTimeout(saveT);cancelAnimationFrame(raf);ro.disconnect();LS.set("tvos_lyre",S);if(E)E.dead=true;if(ctx){try{ctx.close()}catch(e){}}}
+  win.on.focus=()=>{try{root.focus({preventScroll:true})}catch(_){}kick()};
+  const vis=()=>{if(!document.hidden)kick()};document.addEventListener("visibilitychange",vis);
+  win.api={pluck:(i,v)=>pluckNow(i,v==null?.8:v),S,get ctx(){return ctx},get E(){return E},get take(){return take},get rec(){return rec},recStart,recStop,recToggle,playToggle,saveTake,dropTake,autoToggle,layout,setPace,applyLook,get ps(){return ps},get st(){return st},get q(){return q},fadeAll,get sleepEnd(){return sleepEnd},set sleepEnd(v){sleepEnd=v},autoTick,get auto(){return auto}};
+  win.on.close=()=>{dead=true;clearInterval(autoT);clearInterval(uiT);clearInterval(tmT);clearInterval(playT);clearTimeout(idleT);clearTimeout(rebuildT);clearTimeout(saveT);cancelAnimationFrame(raf);ro.disconnect();document.removeEventListener("visibilitychange",vis);LS.set("tvos_lyre",S);if(rec){const r=rec;rec=null;try{r.micS&&r.micS.getTracks().forEach(t=>t.stop());r.q.stop()}catch(e){}}REC.guard(false);if(E)E.dead=true;if(ctx){try{ctx.close()}catch(e){}}}
  }});
-
 /* ===================== CLEANER: see everything this OS has saved in your browser, and clear what you no longer want ===================== */
 IP.broom="M14 3l-4.5 8.5 M7 11.5l9 4.5-1.5 5.5H5.5L4 17z M8.5 15.5l-1 4.5 M12 17.5l-.5 3.5";
 const CL={
@@ -5338,7 +5488,7 @@ const CL={
   tvos_standing:["Old game standing","A value from an older version. It is no longer shown anywhere.","Housekeeping"],
   tvos_chat_seen:["Chat: server reached","Remembers this device has reached the chat server, so the Chat app stays on the desktop. Not needed for anything else.","Housekeeping"],
   tvos_cleaner_tab:["Cleaner tab","Which Cleaner tab you last looked at.","App preferences"],
-  tvos_lyre:["Lyre","Your Lyre tuning, sliders and the phrase you recorded in it.","Your writing and creations","Deleting it resets the Lyre and removes your recorded phrase."],
+  tvos_lyre:["Lyre","Your Lyre settings: the notes, sliders and playing style you chose.","App preferences"],
   tvos_hearth:["Hearth settings","Fire style, colour, size and sound in Hearth.","App preferences"],
   tvos_paint_recent:["Paint: recent sizes","The last few custom canvas sizes you used in Paint.","App preferences"],
   tvos_paint_text:["Paint: text tool","Font and style last used with the Paint text tool.","App preferences"],
