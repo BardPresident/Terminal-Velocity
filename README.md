@@ -803,6 +803,31 @@ Circuit Temple (chip icon, Games)
 5. YOUR DATA: SAVING, BACKUP, CLEANER, REBOOT
 =====================================================================
 
+HOW MUCH ROOM IS LEFT (Settings > Storage)
+  The OS keeps your data in two places in the browser, and Settings >
+  Storage shows how full each one is, measured live on your device.
+  1. Settings and saves (the small store): settings, themes, Diary,
+     tasks, bookmarks, Sequencer patterns and game saves. Browsers give
+     every website only about 5 MB here, and it cannot be raised.
+  2. Files and everything else (the big store): /home/user and the OS's
+     own database. The browser allows far more here, usually a large
+     share of the free space on the device.
+  If the small store fills up, the browser refuses new saves and the OS
+  shows a red message. Everything already saved stays as it is; the OS
+  never deletes anything to make room. Changes made after that point
+  are lost when you close or reload, so free some space straight away.
+  If the big store fills up, saving a new file is refused with an error
+  and existing files are not touched.
+  Only the browser can clear your data by itself (very low disk space on
+  a store not marked persistent, or you clearing site data). The Storage
+  screen has a button to ask the browser to keep it.
+  To free space: Cleaner lists every saved item with its size, biggest
+  first. Make a Backup first. A very large backup is built in memory and
+  can fail on a weak device; back up Files and Settings separately.
+  Restoring settings checks they fit first. If they would not, nothing is
+  changed and you are told why. A quiet warning appears, at most once a
+  week, only when the small store is close to full.
+
 THE BACKUP ICON IN THE TRAY
   The small disk icon next to the clock shows whether your work is in a
   backup. A small dot means something you made is not in a backup yet
