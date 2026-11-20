@@ -1258,7 +1258,7 @@ const fmtDate=t=>{const d=new Date(t),hm=" "+pad(d.getHours())+":"+pad(d.getMinu
 const sleep=ms=>new Promise(r=>setTimeout(r,ms));
 const LS={get(k,d){try{const v=localStorage.getItem(k);return v==null?d:JSON.parse(v)}catch(e){return d}},set(k,v){try{localStorage.setItem(k,JSON.stringify(v));return true}catch(e){return false}}};
 const fmtUp=s=>{s=Math.max(0,Math.round(s));const d=Math.floor(s/86400),hr=Math.floor(s%86400/3600),m=Math.floor(s%3600/60),sc=s%60;if(d)return d+" d "+hr+" h";if(hr)return hr+" h "+m+" min";if(m)return m+" min "+sc+" s";return sc+" s"};
-const OS={apps:{},wins:[],z:10,bus:{},boot:performance.now(),ver:"1.0 build 1120-0950"};
+const OS={apps:{},wins:[],z:10,bus:{},boot:performance.now(),ver:"1.0 build 1120-1012"};
 OS.on=(ev,f)=>{(OS.bus[ev]=OS.bus[ev]||[]).push(f);return f};
 OS.off=(ev,f)=>{OS.bus[ev]=(OS.bus[ev]||[]).filter(x=>x!==f)};
 /* reboot that always fetches the newest copy of this page (like Ctrl+Shift+R), then reloads */
@@ -4458,6 +4458,7 @@ defApp("hearth",{name:"Hearth",icon:"flame",cat:"Accessories",w:900,h:600,single
 .hh.narrow #hh-bot{padding:0 10px 10px;gap:6px;flex-wrap:wrap}
 .hh.narrow #hh-acts{order:2;flex-basis:100%}
 .hh.narrow #hh-panel{bottom:104px}
+.hh .bdg{display:flex;gap:8px;align-items:baseline;font:400 12.5px Inter,system-ui,sans-serif;padding:3px 0;opacity:.5;line-height:1.4}.hh .bdg.on{opacity:1;color:#ffe2b0}.hh .bdg i{font-style:normal;flex:none;width:14px}.hh .bdg small{display:block;opacity:.75;font-size:11px}
 .hh.narrow #hh-note{font-size:15px;min-height:22px}.hh.narrow #hh-hud{font-size:11px}
 .hh #hh-mute{position:static;flex:none;z-index:5;padding:9px 16px;border-radius:999px;border:1px solid var(--line);background:var(--glass);-webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px);color:var(--txt);font:500 13px Inter,system-ui,sans-serif;letter-spacing:.05em;cursor:pointer;transition:opacity 1.2s ease,background .3s}
 .hh #hh-mute[aria-pressed=true]{background:rgba(190,60,80,.55)}
@@ -4699,7 +4700,7 @@ defApp("hearth",{name:"Hearth",icon:"flame",cat:"Accessories",w:900,h:600,single
    if(f.stats&&typeof f.stats==="object"){stats.fires=+f.stats.fires||0;stats.secs=+f.stats.secs||0;stats.best=+f.stats.best||0;stats.ach=f.stats.ach&&typeof f.stats.ach==="object"?f.stats.ach:{}}}
    else if(S.game){startUp=false;fuel=0;out=true;freshGame=true}}
   const pickOf=a=>a[Math.floor(Math.random()*a.length)];
-  function ach(id,title){if(stats.ach[id])return;stats.ach[id]=1;saveFire();setTimeout(()=>{if(!dead)note("★ "+title)},1700)}
+  
   function addLog(auto){addWood("log",auto)}
   function addWood(kind,auto){
    const log=kind==="log";
@@ -4723,7 +4724,7 @@ defApp("hearth",{name:"Hearth",icon:"flame",cat:"Accessories",w:900,h:600,single
    if(!laidK&&!laidL){note("Nothing to light yet. Lay some kindling (K) and a log (L) first.");return}
    if(Math.random()<(laidK>0?.42:.1)+catchB){
     fuel=clamp(.12+laidK*.12+laidL*.45,.15,1.3);laidK=0;laidL=0;catchB=0;startUp=false;out=false;ash=0;flare=1;curSecs=0;stats.fires++;
-    burst(26,true);crackle(true);crackle(true);note("It catches! A small flame takes hold.");ach("spark","First spark");if(stats.fires>=10)ach("keeper","Fire keeper: ten fires lit");saveFire()}
+    burst(26,true);crackle(true);crackle(true);note("It catches! A small flame takes hold.");saveFire()}
    else{catchB=Math.min(.35,catchB+.12);note(pickOf(["Just sparks. Try again.","The sparks fade. Again.","Almost caught...","A little smoke. Strike again."]))}
    renderHud();
   }
@@ -4733,7 +4734,7 @@ defApp("hearth",{name:"Hearth",icon:"flame",cat:"Accessories",w:900,h:600,single
    const gn=c.createGain();gn.gain.setValueAtTime(.45,t);gn.gain.exponentialRampToValueAtTime(.0001,t+.09);s0.connect(f);f.connect(gn);gn.connect(A.master);s0.start(t,rand(0,.5));s0.stop(t+.12);
    const o=c.createOscillator();o.type="triangle";o.frequency.setValueAtTime(2600,t);o.frequency.exponentialRampToValueAtTime(1500,t+.08);const og=c.createGain();og.gain.setValueAtTime(.08,t);og.gain.exponentialRampToValueAtTime(.0001,t+.1);o.connect(og);og.connect(A.master);o.start(t);o.stop(t+.12)}
   function poke(){pokeT=1;flare=Math.min(1.7,flare+1);ash=0;ashNoted=false;burst(48,true);crackle(true);crackle(true);crackle(false);
-   if(fuel>.001){const low=fuel<.15;fuel=Math.min(2.1,fuel+(low?.14:.07));note(fuel<.3?"You stir the embers":"You poke the fire. Sparks fly!");if(low)ach("rekindle","Brought back from the embers")}
+   if(fuel>.001){const low=fuel<.15;fuel=Math.min(2.1,fuel+(low?.14:.07));note(fuel<.3?"You stir the embers":"You poke the fire. Sparks fly!")}
    else note(S.game?"Nothing is left to stir. Lay kindling and a log, then strike the flint.":"Nothing is left to stir. Add a log to light it again.");renderHud()}
   function note(t){const el=q("#hh-note");el.textContent=t;el.classList.add("on");clearTimeout(noteT);noteT=setTimeout(()=>el.classList.remove("on"),2600)}
 
@@ -4808,8 +4809,7 @@ defApp("hearth",{name:"Hearth",icon:"flame",cat:"Accessories",w:900,h:600,single
     if(lit&&!timerDone){ash=Math.min(1,ash+dt*(.003+.004*Math.min(fuel,1.5)));if(ash>.75&&!ashNoted){ashNoted=true;note("Ash is smothering the flames. Give it a poke (P).")}}}
    if(lit&&fuel>.35&&ash<.8)cosy=Math.min(1,cosy+dt*.008);else cosy=Math.max(0,cosy-dt*(lit?.01:.03));
    if(lit&&!timerDone){stats.secs+=dt;curSecs+=dt;if(curSecs>stats.best)stats.best=curSecs;
-    if(curSecs>900)ach("m15","Fifteen warm minutes");if(curSecs>1800)ach("m30","Half an hour by the fire");if(curSecs>3600)ach("m60","An hour by the fire");
-    if(fuel>1.55)ach("roar","A roaring fire");if(cosy>.97)ach("snug","Snug: the room is truly warm");if(stats.secs>36000)ach("h10","Ten hours by the fire");
+    
     evT-=dt;if(evT<=0){evT=rand(50,110);if(fuel>.3){shakeT=.6;burst(12);crackle(true);note(pickOf(["A log shifts and settles.","A pocket of sap pops.","The fire murmurs and shifts.","A little shower of sparks."]))}}}
    if(endAt&&!timerDone){const left=endAt-now;if(left<=0){timerDone=true;fade=0;fuel=Math.min(fuel,.2);note("The fire has burned down. Press L to relight it.");renderTimer()}else fade=clamp(left/(timerDur*.25),0,1)}
    audioTick(dt);
@@ -5006,7 +5006,7 @@ defApp("hearth",{name:"Hearth",icon:"flame",cat:"Accessories",w:900,h:600,single
    else lines.push("Fire: "+st+(S.game&&ash>.6&&lit?" · needs a poke":"")+(lit?" · room: "+rm:""));
    hud.innerHTML="";for(const l of lines){const d=document.createElement("div");d.textContent=l;hud.append(d)}
    const w=q("#hh-wood");if(w)w.textContent=S.game?"Wood: "+wood+" of 8 logs ready":"";
-   const sEl=q("#hh-stats");if(sEl){const n=Object.keys(stats.ach).length;sEl.textContent="Fires lit: "+stats.fires+" · Time by the fire: "+span(stats.secs)+" · Longest fire: "+span(stats.best)+" · Badges: "+n+" of 9"}
+   const sEl=q("#hh-stats");if(sEl){sEl.textContent="Fires lit: "+stats.fires+" · Time by the fire: "+span(stats.secs)+" · Longest fire: "+span(stats.best)}
   }
   win.renderHud=renderHud;
   const sizeEl=q("#hh-size"),volEl=q("#hh-vol");
