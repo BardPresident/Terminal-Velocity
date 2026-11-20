@@ -1258,7 +1258,7 @@ const fmtDate=t=>{const d=new Date(t),hm=" "+pad(d.getHours())+":"+pad(d.getMinu
 const sleep=ms=>new Promise(r=>setTimeout(r,ms));
 const LS={get(k,d){try{const v=localStorage.getItem(k);return v==null?d:JSON.parse(v)}catch(e){return d}},set(k,v){try{localStorage.setItem(k,JSON.stringify(v));return true}catch(e){return false}}};
 const fmtUp=s=>{s=Math.max(0,Math.round(s));const d=Math.floor(s/86400),hr=Math.floor(s%86400/3600),m=Math.floor(s%3600/60),sc=s%60;if(d)return d+" d "+hr+" h";if(hr)return hr+" h "+m+" min";if(m)return m+" min "+sc+" s";return sc+" s"};
-const OS={apps:{},wins:[],z:10,bus:{},boot:performance.now(),ver:"1.0 build 1120-0708"};
+const OS={apps:{},wins:[],z:10,bus:{},boot:performance.now(),ver:"1.0 build 1120-0735"};
 OS.on=(ev,f)=>{(OS.bus[ev]=OS.bus[ev]||[]).push(f);return f};
 OS.off=(ev,f)=>{OS.bus[ev]=(OS.bus[ev]||[]).filter(x=>x!==f)};
 /* reboot that always fetches the newest copy of this page (like Ctrl+Shift+R), then reloads */
@@ -2628,7 +2628,7 @@ const REC={canDir:!!window.showDirectoryPicker,
  guard(on){if(on&&!REC._g){REC._g=e=>{e.preventDefault();e.returnValue=""};addEventListener("beforeunload",REC._g)}else if(!on&&REC._g){removeEventListener("beforeunload",REC._g);REC._g=null}},
  wavHeader(sr,ch,bytes){const b=new ArrayBuffer(44),v=new DataView(b),s=(o,t)=>{for(let i=0;i<t.length;i++)v.setUint8(o+i,t.charCodeAt(i))};s(0,"RIFF");v.setUint32(4,36+bytes,true);s(8,"WAVE");s(12,"fmt ");v.setUint32(16,16,true);v.setUint16(20,1,true);v.setUint16(22,ch,true);v.setUint32(24,sr,true);v.setUint32(28,sr*ch*2,true);v.setUint16(32,ch*2,true);v.setUint16(34,16,true);s(36,"data");v.setUint32(40,bytes,true);return new Uint8Array(b)},
  /* raw microphone samples -> onData(Float32Array[] per channel). Returns {stop(),ctx} */
- async pcm(stream,nch,onData){const ctx=new (window.AudioContext||window.webkitAudioContext)(),src=ctx.createMediaStreamSource(stream);let node=null;
+ async pcm(stream,nch,onData){const ctx=new (window.AudioContext||window.webkitAudioContext)({latencyHint:"playback"}),/* bigger audio buffers: far fewer glitches on a slow computer */src=ctx.createMediaStreamSource(stream);let node=null;
   const sink=ctx.createGain();sink.gain.value=0;sink.connect(ctx.destination);
   if(ctx.audioWorklet&&window.AudioWorkletNode){try{const code='class P extends AudioWorkletProcessor{constructor(){super();this.b=[];this.n=0}process(i){const c=i[0];if(c&&c.length){this.b.push(c.map(x=>x.slice()));this.n+=c[0].length;if(this.n>=4096){const o=[];for(let k=0;k<c.length;k++){const a=new Float32Array(this.n);let p=0;for(const q of this.b){a.set(q[k],p);p+=q[k].length}o.push(a)}this.b=[];this.n=0;this.port.postMessage(o,o.map(x=>x.buffer))}}return true}}registerProcessor("tvpcm",P)';
     const u=URL.createObjectURL(new Blob([code],{type:"text/javascript"}));await ctx.audioWorklet.addModule(u);URL.revokeObjectURL(u);node=new AudioWorkletNode(ctx,"tvpcm",{numberOfInputs:1,numberOfOutputs:1,channelCount:nch,channelCountMode:"explicit",outputChannelCount:[nch]});node.port.onmessage=e=>onData(e.data);src.connect(node);node.connect(sink)}catch(e){node=null}}
@@ -2669,7 +2669,7 @@ defApp("recorder",{name:"Recorder",icon:"mic",cat:"Media",w:480,h:640,single:tru
    state="rec";tStart=Date.now();REC.guard(true);rec.replaceChildren(ic("x")," Stop");pau.style.display="";pau.textContent="Pause";if(S.split&&!splitTimer)splitTimer=setInterval(()=>{if(state==="rec"&&!paused)rotate()},S.split*60000);
    iv=setInterval(()=>{lab.textContent=fmtTime(elapsed());info.textContent=(sink?fmtBytes(segBytes||sink.size):"")+(seg>1?"  ·  part "+seg:"")+(paused?"  ·  paused":"")+(sink?"  ·  "+sink.where:"")},250);
    if(S.fmt==="wav")info.textContent=(pcm.sr/1000)+" kHz · "+S.ch+" ch · 16-bit"}
-  function startMR(){mr=new MediaRecorder(stream,{mimeType:mrFmt[1]});mr.ondataavailable=e=>{if(e.data&&e.data.size){const s=sink;q=q.then(()=>s&&s.write(e.data)).catch(er=>{msg.textContent="Write failed: "+er.message})}};mr.start(1000);segBytes=0}
+  function startMR(){mr=new MediaRecorder(stream,{mimeType:mrFmt[1],audioBitsPerSecond:192000});mr.ondataavailable=e=>{if(e.data&&e.data.size){const s=sink;q=q.then(()=>s&&s.write(e.data)).catch(er=>{msg.textContent="Write failed: "+er.message})}};mr.start(1000);segBytes=0}
   async function rotate(){if(state!=="rec")return;if(S.fmt==="wav"){const old=q;await q;await closeSeg();seg++;await openSeg()}else{const m=mr;await new Promise(r=>{m.onstop=r;m.stop()});await q;await closeSeg();seg++;await openSeg();startMR()}}
   async function stop(){if(state!=="rec")return;const dur=elapsed();state="stopping";rec.disabled=true;clearInterval(iv);clearInterval(splitTimer);splitTimer=0;
    if(mr){const m=mr;mr=null;await new Promise(r=>{m.onstop=r;try{m.stop()}catch(e){r()}})}
@@ -2741,10 +2741,10 @@ defApp("camera",{name:"Camera",icon:"camera",cat:"Media",w:860,h:660,single:true
    const o=cnv.captureStream(fps);o._srcs=[sv,cv];return o}
   function buildOut(){const tracks=[...vstream.getVideoTracks()];const auds=[];if(astream&&!S.mute)auds.push(astream);if(sysA)auds.push(sysA);
    if(auds.length===1&&auds[0]===astream)tracks.push(...astream.getAudioTracks());
-   else if(auds.length){const c=new (window.AudioContext||window.webkitAudioContext)(),d=c.createMediaStreamDestination();auds.forEach(a=>c.createMediaStreamSource(a).connect(d));mix=c;tracks.push(...d.stream.getAudioTracks())}
+   else if(auds.length){const c=new (window.AudioContext||window.webkitAudioContext)({latencyHint:"playback"}),d=c.createMediaStreamDestination();auds.forEach(a=>c.createMediaStreamSource(a).connect(d));mix=c;tracks.push(...d.stream.getAudioTracks())}
    return new MediaStream(tracks)}
   async function openSeg(){const f=S.vfmt.split("|");sink=await REC.open(REC.name("cam",f[0],seg>1?seg:0),f[1].split(";")[0]);segBytes=0}
-  function startMR(){const f=S.vfmt.split("|"),o={mimeType:f[1]};if(S.br)o.videoBitsPerSecond=S.br;mr=new MediaRecorder(out,o);mr.ondataavailable=e=>{if(e.data&&e.data.size){const s=sink;segBytes+=e.data.size;q=q.then(()=>s&&s.write(e.data)).catch(er=>{msg.textContent="Write failed: "+er.message})}};mr.start(1000)}
+  function startMR(){const f=S.vfmt.split("|"),o={mimeType:f[1]};o.audioBitsPerSecond=192000;if(S.br)o.videoBitsPerSecond=S.br;mr=new MediaRecorder(out,o);mr.ondataavailable=e=>{if(e.data&&e.data.size){const s=sink;segBytes+=e.data.size;q=q.then(()=>s&&s.write(e.data)).catch(er=>{msg.textContent="Write failed: "+er.message})}};mr.start(1000)}
   async function closeSeg(){if(!sink)return;const s=sink;sink=null;try{const r=await s.close();rl.add(r);msg.textContent="Saved "+r.where;toast("Saved "+r.name)}catch(e){msg.textContent="Save failed: "+e.message;toast("Save failed",1)}}
   async function rotate(){if(state!=="rec")return;const m=mr;await new Promise(r=>{m.onstop=r;try{m.stop()}catch(e){r()}});await q;await closeSeg();seg++;await openSeg();startMR()}
   const elapsed=()=>recSec+(paused||state!=="rec"?0:(Date.now()-tStart)/1000);
@@ -5169,11 +5169,11 @@ const LY={
   {id:"aurora",name:"Aurora",fx:"aurora",sky:["#071a2e","#02070f"],c:{bg:"#030b14",pn:"#0a1a2a",pn2:"#102740",fg:"#d9fff1",dim:"#80b9a6",ac:"#5df2c2",bd:"#1f4f56",er:"#ff7a8a"}},
   {id:"blossom",name:"Cherry Blossom",fx:"petals",pc:["#ffd3e2","#ffb3cd","#fff0f5"],sky:["#2b1a3a","#150a1e"],orb:[.8,.2,.07,"#fff1f6"],c:{bg:"#140a1c",pn:"#22122f",pn2:"#2e193f",fg:"#ffe9f1",dim:"#c59ab0",ac:"#ff9ec4",bd:"#512c68",er:"#ff6b86"}},
   {id:"desert",name:"Desert Sunset",fx:"dust",sky:["#2a1642","#c9582c"],orb:[.5,.82,.2,"#ffc070"],c:{bg:"#1d0f1f",pn:"#331628",pn2:"#431c2b",fg:"#ffead2",dim:"#d7a98a",ac:"#ffb454",bd:"#7a3a35",er:"#ff5a4a"}}],
- def(){return{v:5,scale:0,root:7,oct:3,n:11,sus:.7,soft:.6,room:.45,vol:.8,pat:0,bpm:46,hum:25,voice:false,more:false,mood:"Lullaby",look:"gold",amb:true,sleep:0}},
+ def(){return{v:5,scale:0,root:7,oct:3,n:11,sus:.7,soft:.6,room:.45,vol:.8,pat:0,bpm:46,hum:25,voice:false,more:false,nar:false,narVol:.5,volOff:.8,mood:"Lullaby",look:"gold",amb:true,sleep:0}},
  load(){let o=LS.get("tvos_lyre",null);const d=LY.def();if(o&&typeof o==="object"){if(![3,4,5].includes(o.v))o={v:3,vol:o.vol,voice:o.voice};if(o.v<5&&o.vol!=null){/* older saves used other slider curves; keep the loudness they had */const x=Math.max(0,+o.vol||0),g=o.v===4?.8*Math.pow(x/.8,2):x;o.vol=g<=0?0:Math.max(0,Math.min(1,g>.8?.8+(g-.8)/.45*.2:.8+Math.log10(g/.8)/3.5))}for(const k of Object.keys(d))if(o[k]!=null)d[k]=o[k]}
   d.scale=Math.max(0,Math.min(LY.scales.length-1,d.scale|0));d.root=((d.root|0)%12+12)%12;d.oct=Math.max(1,Math.min(5,d.oct|0));d.n=Math.max(7,Math.min(13,d.n|0));d.pat=Math.max(0,Math.min(LY.pats.length-1,d.pat|0));
   d.sus=Math.max(0,Math.min(1,+d.sus||0));d.soft=Math.max(0,Math.min(1,+d.soft||0));d.room=Math.max(0,Math.min(1,+d.room||0));d.vol=Math.max(0,Math.min(1,+d.vol));d.bpm=Math.max(20,Math.min(160,Math.round(+d.bpm)||46));d.hum=Math.max(0,Math.min(100,+d.hum||0));
-  d.voice=!!d.voice;d.more=!!d.more;d.amb=d.amb!==false;d.sleep=[0,10,20,30,45,60].includes(+d.sleep)?+d.sleep:0;if(!LY.looks.some(l=>l.id===d.look))d.look="gold";d.mood=typeof d.mood==="string"&&LY.mood(d.mood)?d.mood:"";return d},
+  d.voice=!!d.voice;d.nar=!!d.nar;d.narVol=Math.max(0,Math.min(1,+d.narVol||.5));d.volOff=Math.max(0,Math.min(1,+d.volOff||.8));d.more=!!d.more;d.amb=d.amb!==false;d.sleep=[0,10,20,30,45,60].includes(+d.sleep)?+d.sleep:0;if(!LY.looks.some(l=>l.id===d.look))d.look="gold";d.mood=typeof d.mood==="string"&&LY.mood(d.mood)?d.mood:"";return d},
  /* the volume slider is in decibels: each step down is the same drop in loudness, so the Lyre can sit far behind a voice */
  gain(v){return v<=0?0:v>=.8?.8+(v-.8)/.2*.45:.8*Math.pow(10,(v-.8)*3.5)},
  paceWord(b){return b<32?"Very slow":b<50?"Slow":b<72?"Gentle":b<105?"Steady":"Lively"},
@@ -5246,10 +5246,10 @@ const LY={
  clock(s){s=Math.max(0,Math.floor(s));return Math.floor(s/60)+":"+String(s%60).padStart(2,"0")},
  /* one audio engine per AudioContext. Strings are pre-computed buffers, so playing a note costs almost nothing */
  engine(c,S,light){
-  const E={c,S,light,bufs:new Map(),voices:[],max:light?10:22};
+  const E={c,S,light,bufs:new Map(),voices:[],max:light?10:S.nar?12:22};
   const m=c.createGain();m.gain.value=LY.gain(S.vol);const cp=c.createDynamicsCompressor();cp.threshold.value=-14;cp.knee.value=14;cp.ratio.value=5;cp.attack.value=.004;cp.release.value=.2;m.connect(cp);cp.connect(c.destination);
   const dry=c.createGain();dry.gain.value=1;dry.connect(m);E.m=m;E.dry=dry;E.cp=cp;E.wet=null;
-  if(!light&&c.createConvolver){const rv=c.createConvolver();rv.buffer=lyreRoom(c);const w=c.createGain();w.gain.value=S.room*.9;rv.connect(w);w.connect(m);E.rv=rv;E.wet=w}
+  if(!light&&c.createConvolver){const rv=c.createConvolver();rv.buffer=lyreRoom(c,S.nar?.9:1.9);const w=c.createGain();w.gain.value=S.room*.9;rv.connect(w);w.connect(m);E.rv=rv;E.wet=w}
   E.key=i=>c.sampleRate+"|"+LY.freq(S,i).toFixed(3)+"|"+S.sus.toFixed(2)+"|"+S.soft.toFixed(2);
   E.get=i=>{const k=E.key(i);let b=E.bufs.get(k);if(b)return b;const sr=c.sampleRate,f=LY.freq(S,i),secs=2.4+S.sus*4.2,dec=.992+S.sus*.0068;
    const raw=lyreString(sr,f,secs,0x51ed+i*977,dec,.12+S.soft*.62),ab=c.createBuffer(1,raw.length,sr);ab.copyToChannel(raw,0);b={ab,rate:f/raw.fa};E.bufs.set(k,b);return b};
@@ -5299,7 +5299,7 @@ defApp("lyre",{name:"Lyre",icon:"lyre",cat:"Media",w:900,h:640,single:true,desc:
   const sv=()=>{clearTimeout(saveT);saveT=setTimeout(()=>LS.set("tvos_lyre",S),300)};
   const cnv=h("canvas",{});const cx=cnv.getContext("2d");
   /* ---------- audio ---------- */
-  async function ensure(){if(!ctx){ctx=new (window.AudioContext||window.webkitAudioContext)({latencyHint:"interactive"});E=LY.engine(ctx,S,lpOn());E.warm()}
+  async function ensure(){if(!ctx){ctx=new (window.AudioContext||window.webkitAudioContext)({latencyHint:(S.nar||REC._g)?"playback":"interactive"});E=LY.engine(ctx,S,lpOn());E.warm()}
    if(ctx.state!=="running")try{await ctx.resume()}catch(e){}return ctx}
   function wake(){clearTimeout(idleT);idleT=setTimeout(function chk(){if(dead||!ctx)return;if(auto||rec||play||(E&&!E.quiet())||ptr.size){idleT=setTimeout(chk,5000);return}if(ctx.state==="running")ctx.suspend().catch(()=>{})},20000)}
   function pluckNow(i,v){
@@ -5318,7 +5318,7 @@ defApp("lyre",{name:"Lyre",icon:"lyre",cat:"Media",w:900,h:640,single:true,desc:
    if(sleepEnd){const left=sleepEnd-performance.now();if(left<=0){sleepDone();return}if(left<16000)E.m.gain.setTargetAtTime(LY.gain(S.vol)*Math.pow(left/16000,2),now,.15)}
    let guard=0;
    while(nextT<now+.2&&guard++<40){if(!q.length)q=LY.phrase(S,st);const it=q.shift(),hum=S.hum/100,bt=beat();
-    if(it.i>=0){const jit=(Math.random()*2-1)*hum*Math.min(.09,bt*.12),vv=Math.max(.12,Math.min(1,it.v*(1+(Math.random()*2-1)*hum*.3)));pluckAt(it.i,vv,nextT+Math.max(0,jit))}
+    if(it.i>=0&&!(S.nar&&it.v<.5&&Math.random()<.3)){const jit=(Math.random()*2-1)*hum*Math.min(.09,bt*.12),vv=Math.max(.12,Math.min(1,it.v*(1+(Math.random()*2-1)*hum*.3)*(S.nar?.75:1)));pluckAt(it.i,vv,nextT+Math.max(0,jit))}
     nextT+=it.s!=null?it.s:it.g*bt}}
   async function autoStart(){await ensure();if(auto)return;auto=true;resetSt();nextT=ctx.currentTime+.08;sleepEnd=S.sleep?performance.now()+S.sleep*60000:0;
    E.setVol(S.vol);autoT=setInterval(autoTick,40);clearInterval(uiT);uiT=setInterval(paint,1000);autoTick();paint();kick()}
@@ -5405,7 +5405,7 @@ defApp("lyre",{name:"Lyre",icon:"lyre",cat:"Media",w:900,h:640,single:true,desc:
    cx.globalAlpha=1;return live}
   let fk="";function kick(){if(S.look==="os"){const k=css("ac")+css("fg");if(k!==fk){fk=k;frame=null}}if(!raf)raf=requestAnimationFrame(loop)}
   function loop(t){raf=0;if(dead)return;
-   if(!liveLast&&t-lastF<40){raf=requestAnimationFrame(loop);return}
+   if(!liveLast&&t-lastF<((S.nar||REC._g)?66:40)){raf=requestAnimationFrame(loop);return}
    const dt=Math.min(.1,(t-lastF)/1000||.04);lastF=t;liveLast=!!draw(dt);
    if(liveLast||(ctx&&auto)||ambOn())raf=requestAnimationFrame(loop)}
   /* ---------- touching and clicking the strings ---------- */
@@ -5464,6 +5464,16 @@ defApp("lyre",{name:"Lyre",icon:"lyre",cat:"Media",w:900,h:640,single:true,desc:
   const btnDrop=h("button",{class:"btn",onclick:dropTake},"Throw away");
   const resBar=h("div",{class:"bar res"},resMsg,btnPlay,btnSave,btnDrop);
   const more=h("div",{class:"bar more"},fld("Scale",selScale),fld("Starting note",selRoot),fld("Lowest octave",selOct),fld("Number of strings",selN),sSus,sSoft,sRoom,fld("Playing style",selPat),sHum,fld("Stop by itself after",selSleep),ambLab);
+  /* Narration mode: soft, light and steady, so your voice comes first. It remembers its own volume. */
+  const narChk=h("input",{type:"checkbox",checked:S.nar,onchange:e=>setNar(e.target.checked)});
+  const narLab=h("label",{class:"chk",title:"Keeps the music quiet and light so your voice comes first: softer, fewer notes, a lighter echo and a steadier sound for recording. Narration has its own volume. Your normal volume comes back when you turn it off."},narChk,"Narration mode");
+  function setNar(on){
+   if(rec){toast("Stop recording first, then change Narration mode.");narChk.checked=S.nar;return}
+   if(on){S.volOff=S.vol;S.vol=S.narVol}else{S.narVol=S.vol;S.vol=S.volOff}
+   S.nar=on;const inp=sVol.querySelector("input");inp.value=S.vol;inp.dispatchEvent(new Event("input"));
+   const was=auto;if(auto)autoStop();stopPlay();
+   if(ctx){const c=ctx;ctx=null;if(E)E.dead=true;E=null;vz.length=0;try{c.close()}catch(e){}}
+   sv();toast(on?"Narration mode on. The Lyre is soft and light.":"Narration mode off.");if(was)autoStart();else paint()}
   const slp=h("span",{class:"slp"},"");
   function paint(){
    btnAuto.classList.toggle("on",auto);btnAuto.textContent=auto?"■ Stop playing":"▶ Play for me";
@@ -5479,7 +5489,7 @@ defApp("lyre",{name:"Lyre",icon:"lyre",cat:"Media",w:900,h:640,single:true,desc:
   }
   root.append(
    h("div",{class:"bar"},selPre,btnAuto,slp,btnRec,tm,voiceLab),
-   h("div",{class:"bar sub"},pace,sVol,h("label",{class:"sl"},"Look",selLook),btnMore),
+   h("div",{class:"bar sub"},pace,sVol,narLab,h("label",{class:"sl"},"Look",selLook),btnMore),
    resBar,
    cnv,
    more,
@@ -5490,7 +5500,7 @@ defApp("lyre",{name:"Lyre",icon:"lyre",cat:"Media",w:900,h:640,single:true,desc:
   requestAnimationFrame(()=>{layout();try{root.focus({preventScroll:true})}catch(_){}});
   win.on.focus=()=>{try{root.focus({preventScroll:true})}catch(_){}kick()};
   const vis=()=>{if(!document.hidden)kick()};document.addEventListener("visibilitychange",vis);
-  win.api={pluck:(i,v)=>pluckNow(i,v==null?.8:v),S,get ctx(){return ctx},get E(){return E},get take(){return take},get rec(){return rec},recStart,recStop,recToggle,playToggle,saveTake,dropTake,autoToggle,layout,setPace,applyLook,get ps(){return ps},get st(){return st},get q(){return q},fadeAll,get sleepEnd(){return sleepEnd},set sleepEnd(v){sleepEnd=v},autoTick,get auto(){return auto}};
+  win.api={pluck:(i,v)=>pluckNow(i,v==null?.8:v),S,get ctx(){return ctx},get E(){return E},get take(){return take},get rec(){return rec},recStart,recStop,recToggle,playToggle,saveTake,dropTake,autoToggle,layout,setPace,applyLook,get ps(){return ps},get st(){return st},get q(){return q},fadeAll,get sleepEnd(){return sleepEnd},set sleepEnd(v){sleepEnd=v},autoTick,get auto(){return auto},setNar};
   win.on.close=()=>{dead=true;clearInterval(autoT);clearInterval(uiT);clearInterval(tmT);clearInterval(playT);clearTimeout(idleT);clearTimeout(rebuildT);clearTimeout(saveT);cancelAnimationFrame(raf);ro.disconnect();document.removeEventListener("visibilitychange",vis);LS.set("tvos_lyre",S);if(rec){const r=rec;rec=null;try{r.micS&&r.micS.getTracks().forEach(t=>t.stop());r.q.stop()}catch(e){}}REC.guard(false);if(E)E.dead=true;if(ctx){try{ctx.close()}catch(e){}}}
  }});
 /* ===================== CLEANER: see everything this OS has saved in your browser, and clear what you no longer want ===================== */
@@ -6273,7 +6283,7 @@ function lyreString(sr,f,secs,seed,dec,soft){soft=soft==null?.4:soft;const n=Mat
  {const o=1500,m=Math.min(2048,n-o-L-8),ac=[];for(let lag=L-3;lag<=L+3;lag++){let sum=0;for(let i=0;i<m;i++)sum+=buf[o+i]*buf[o+i+lag];ac.push(sum)}
   let bi=0;for(let i=1;i<ac.length;i++)if(ac[i]>ac[bi])bi=i;let P=L-3+bi;if(bi>0&&bi<ac.length-1){const y0=ac[bi-1],y1=ac[bi],y2=ac[bi+1],dn=y0-2*y1+y2;if(dn)P+=.5*(y0-y2)/dn}buf.fa=sr/P}
  const fo=Math.floor(sr*.4);for(let i=0;i<fo;i++)buf[n-1-i]*=i/fo;return buf}
-function lyreRoom(ctx){const sr=ctx.sampleRate,n=Math.floor(sr*1.9),b=ctx.createBuffer(2,n,sr);for(let c=0;c<2;c++){const d=b.getChannelData(c);let r=12345+c*777;for(let i=0;i<n;i++){r=(r*1664525+1013904223)>>>0;d[i]=((r/2147483648)-1)*Math.pow(1-i/n,3.2)}}return b}
+function lyreRoom(ctx,secs){const sr=ctx.sampleRate,n=Math.floor(sr*(secs||1.9)),b=ctx.createBuffer(2,n,sr);for(let c=0;c<2;c++){const d=b.getChannelData(c);let r=12345+c*777;for(let i=0;i<n;i++){r=(r*1664525+1013904223)>>>0;d[i]=((r/2147483648)-1)*Math.pow(1-i/n,3.2)}}return b}
 let lyreCtx=null;
 function lyrePlay(ctx){const t0=ctx.currentTime+.06,sr=ctx.sampleRate;
  /* D major, rising and settling: D4 A4 D5 F#5 A5, then a soft low D to close */
