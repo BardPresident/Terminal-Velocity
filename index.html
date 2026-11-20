@@ -1258,7 +1258,7 @@ const fmtDate=t=>{const d=new Date(t),hm=" "+pad(d.getHours())+":"+pad(d.getMinu
 const sleep=ms=>new Promise(r=>setTimeout(r,ms));
 const LS={get(k,d){try{const v=localStorage.getItem(k);return v==null?d:JSON.parse(v)}catch(e){return d}},set(k,v){try{localStorage.setItem(k,JSON.stringify(v));return true}catch(e){return false}}};
 const fmtUp=s=>{s=Math.max(0,Math.round(s));const d=Math.floor(s/86400),hr=Math.floor(s%86400/3600),m=Math.floor(s%3600/60),sc=s%60;if(d)return d+" d "+hr+" h";if(hr)return hr+" h "+m+" min";if(m)return m+" min "+sc+" s";return sc+" s"};
-const OS={apps:{},wins:[],z:10,bus:{},boot:performance.now(),ver:"1.0 build 1120-0538"};
+const OS={apps:{},wins:[],z:10,bus:{},boot:performance.now(),ver:"1.0 build 1120-0556"};
 OS.on=(ev,f)=>{(OS.bus[ev]=OS.bus[ev]||[]).push(f);return f};
 OS.off=(ev,f)=>{OS.bus[ev]=(OS.bus[ev]||[]).filter(x=>x!==f)};
 /* reboot that always fetches the newest copy of this page (like Ctrl+Shift+R), then reloads */
@@ -5169,13 +5169,13 @@ const LY={
   {id:"aurora",name:"Aurora",fx:"aurora",sky:["#071a2e","#02070f"],c:{bg:"#030b14",pn:"#0a1a2a",pn2:"#102740",fg:"#d9fff1",dim:"#80b9a6",ac:"#5df2c2",bd:"#1f4f56",er:"#ff7a8a"}},
   {id:"blossom",name:"Cherry Blossom",fx:"petals",pc:["#ffd3e2","#ffb3cd","#fff0f5"],sky:["#2b1a3a","#150a1e"],orb:[.8,.2,.07,"#fff1f6"],c:{bg:"#140a1c",pn:"#22122f",pn2:"#2e193f",fg:"#ffe9f1",dim:"#c59ab0",ac:"#ff9ec4",bd:"#512c68",er:"#ff6b86"}},
   {id:"desert",name:"Desert Sunset",fx:"dust",sky:["#2a1642","#c9582c"],orb:[.5,.82,.2,"#ffc070"],c:{bg:"#1d0f1f",pn:"#331628",pn2:"#431c2b",fg:"#ffead2",dim:"#d7a98a",ac:"#ffb454",bd:"#7a3a35",er:"#ff5a4a"}}],
- def(){return{v:3,scale:0,root:7,oct:3,n:11,sus:.7,soft:.6,room:.45,vol:.8,pat:0,bpm:46,hum:25,voice:false,more:false,mood:"Lullaby",look:"gold",amb:true,sleep:0}},
- load(){let o=LS.get("tvos_lyre",null);const d=LY.def();if(o&&typeof o==="object"){if(o.v!==3)o={vol:o.vol,voice:o.voice};for(const k of Object.keys(d))if(o[k]!=null)d[k]=o[k]}
+ def(){return{v:4,scale:0,root:7,oct:3,n:11,sus:.7,soft:.6,room:.45,vol:.8,pat:0,bpm:46,hum:25,voice:false,more:false,mood:"Lullaby",look:"gold",amb:true,sleep:0}},
+ load(){let o=LS.get("tvos_lyre",null);const d=LY.def();if(o&&typeof o==="object"){if(o.v!==3&&o.v!==4)o={vol:o.vol,voice:o.voice};if(o.v!==4&&o.vol!=null)o.vol=Math.min(1,.8*Math.sqrt(Math.max(0,+o.vol||0)/.8));/* older saves used a straight slider; keep the loudness they had */for(const k of Object.keys(d))if(o[k]!=null)d[k]=o[k]}
   d.scale=Math.max(0,Math.min(LY.scales.length-1,d.scale|0));d.root=((d.root|0)%12+12)%12;d.oct=Math.max(1,Math.min(5,d.oct|0));d.n=Math.max(7,Math.min(13,d.n|0));d.pat=Math.max(0,Math.min(LY.pats.length-1,d.pat|0));
   d.sus=Math.max(0,Math.min(1,+d.sus||0));d.soft=Math.max(0,Math.min(1,+d.soft||0));d.room=Math.max(0,Math.min(1,+d.room||0));d.vol=Math.max(0,Math.min(1,+d.vol));d.bpm=Math.max(20,Math.min(160,Math.round(+d.bpm)||46));d.hum=Math.max(0,Math.min(100,+d.hum||0));
   d.voice=!!d.voice;d.more=!!d.more;d.amb=d.amb!==false;d.sleep=[0,10,20,30,45,60].includes(+d.sleep)?+d.sleep:0;if(!LY.looks.some(l=>l.id===d.look))d.look="gold";d.mood=typeof d.mood==="string"&&LY.mood(d.mood)?d.mood:"";return d},
  /* the volume slider follows how ears hear: the bottom of the slider is truly quiet, so the Lyre can sit far behind a voice */
- gain(v){return v<=0?0:.8*Math.pow(v/.8,3)},
+ gain(v){return v<=0?0:.8*Math.pow(v/.8,2)},
  paceWord(b){return b<32?"Very slow":b<50?"Slow":b<72?"Gentle":b<105?"Steady":"Lively"},
  /* phrases: lists of {i: string (-1 is a rest), v: strength, g: beats until the next note (0 plays together), s: seconds, when a strum should stay quick at any pace} */
  phrase(S,st){
