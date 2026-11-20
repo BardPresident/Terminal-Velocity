@@ -434,6 +434,36 @@ Sequencer
     file, using the same save location as the Recorder.
   - Patterns are saved with the rest of your data and included in Backup.
 
+Lyre
+  A plucked-string instrument, for playing or for background music while
+  you record and talk. The strings are synthesised (a plucked-string
+  model), so there are no sample files and it stays light on cheap
+  computers.
+  - Click or touch a string, or drag across several for a strum. Touch
+    works with several fingers. Keys A S D F G H J K L ; ' [ ] play the
+    strings from low to high, Space strums up and Shift+Space strums down.
+  - 7 to 13 strings (7 is the classic ancient lyre). Every string is a
+    note of the scale you choose, so whatever you pluck sounds good
+    together: major and minor pentatonic, the Greek-style modes (Dorian,
+    Phrygian, Lydian, Mixolydian), major, minor, harmonic minor,
+    Hirajoshi, Hijaz, whole tone or chromatic, from any root note and
+    octave. "Moods" sets everything at once (Hearth, Delphi, Morning,
+    Midnight, Sakura, Garden).
+  - Sustain, Tone (bright to mellow), Room (shimmer) and Volume.
+  - Play for me: the lyre plays itself with Rising or Falling arpeggio,
+    Up and down, Wander, Chords, Rain or Drone, at the speed you set,
+    with a Human slider for natural looseness. You can play over it by
+    hand. Enter starts and stops it.
+  - Rec, Loop, Clear: press Rec, play (by hand or with Play for me), press
+    Rec again. The phrase loops. While it loops, Rec overdubs new notes
+    into it. Save .wav renders the phrase to a stereo 16-bit file in the
+    same save location as the Recorder.
+  - To get the Lyre into a screen recording, share this browser tab (with
+    tab audio) in the Recorder or Camera. Sharing a whole screen or window
+    often leaves browser sound out.
+  - Your tuning, sliders and recorded phrase are saved with the rest of
+    your data and included in Backup.
+
 Recorder
   Records real WAV (16-bit PCM, mono or stereo, at your device's sample
   rate), or compressed m4a, webm or ogg where the browser supports it.
