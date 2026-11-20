@@ -1258,7 +1258,7 @@ const fmtDate=t=>{const d=new Date(t),hm=" "+pad(d.getHours())+":"+pad(d.getMinu
 const sleep=ms=>new Promise(r=>setTimeout(r,ms));
 const LS={get(k,d){try{const v=localStorage.getItem(k);return v==null?d:JSON.parse(v)}catch(e){return d}},set(k,v){try{localStorage.setItem(k,JSON.stringify(v));return true}catch(e){return false}}};
 const fmtUp=s=>{s=Math.max(0,Math.round(s));const d=Math.floor(s/86400),hr=Math.floor(s%86400/3600),m=Math.floor(s%3600/60),sc=s%60;if(d)return d+" d "+hr+" h";if(hr)return hr+" h "+m+" min";if(m)return m+" min "+sc+" s";return sc+" s"};
-const OS={apps:{},wins:[],z:10,bus:{},boot:performance.now(),ver:"1.0 build 1120-1012"};
+const OS={apps:{},wins:[],z:10,bus:{},boot:performance.now(),ver:"1.0 build 1120-1132"};
 OS.on=(ev,f)=>{(OS.bus[ev]=OS.bus[ev]||[]).push(f);return f};
 OS.off=(ev,f)=>{OS.bus[ev]=(OS.bus[ev]||[]).filter(x=>x!==f)};
 /* reboot that always fetches the newest copy of this page (like Ctrl+Shift+R), then reloads */
@@ -4486,7 +4486,9 @@ defApp("hearth",{name:"Hearth",icon:"flame",cat:"Accessories",w:900,h:600,single
  <div class="sec"><h3>Your fireside</h3><div class="sub" id="hh-stats" style="line-height:1.6"></div></div>
  <div class="sec"><h3>Sound</h3><div class="toggles"><button class="tg" data-k="sound">Sound <i></i></button><button class="tg" data-k="crack">Crackle <i></i></button></div>
   <h3 style="margin:10px 0 0">Volume</h3><input type="range" id="hh-vol" min="0" max="1" step="0.01" aria-label="Volume"></div>
- <div class="sec"><h3>Sleep timer <span id="hh-timerV"></span></h3><div class="chips" id="hh-timer"></div></div>
+ <div class="sec"><h3>Sleep timer <span id="hh-timerV"></span></h3><div class="chips" id="hh-timer"></div>
+  <div class="toggles" style="margin-top:8px"><button class="tg" data-k="timerTend">Tend fire while timer runs <i></i></button></div>
+  <div class="sub" style="margin:8px 0 0;line-height:1.5">Pick a time and the fire is kept going for you: logs are added from the woodpile so it does not die down. Over the last quarter of the time the light and sound fade away, and when time is up the fire burns down to embers (press L to relight it). Turn the button off if you want the fire to burn on its own, so it may go out before the time ends. Adding wood yourself does not cancel the timer; it keeps running until it finishes or you pick Off. The time left is remembered if you close Hearth.</div></div>
  <div class="sec"><h3>Quality <span id="hh-qualV"></span></h3><div class="chips" id="hh-qual"></div></div>
  <div class="keys">Click the fire to poke it, or to strike the flint when it is cold<br><kbd>K</kbd> kindling &nbsp;<kbd>L</kbd> log &nbsp;<kbd>S</kbd> flint &nbsp;<kbd>P</kbd> poke &nbsp;<kbd>M</kbd> sound &nbsp;<kbd>H</kbd> hide controls &nbsp;<kbd>F</kbd> fullscreen</div>
 </div>
@@ -4498,7 +4500,7 @@ defApp("hearth",{name:"Hearth",icon:"flame",cat:"Accessories",w:900,h:600,single
   function seeded(seed){return()=>{seed|=0;seed=seed+0x6D2B79F5|0;let t=Math.imul(seed^seed>>>15,1|seed);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296}}
 
   /* ---- settings ---- */
-  const S=Object.assign({style:"stone",color:"classic",size:1,sound:true,crack:true,vol:0.6,tend:false,game:true,quality:"auto"},LS.get("tvos_hearth",{})||{});if(S.v!==2){S.v=2;S.tend=false}/* the fire now goes out unless you tend it, or turn Tend fire on */
+  const S=Object.assign({style:"stone",color:"classic",size:1,sound:true,crack:true,vol:0.6,tend:false,timerTend:true,game:true,quality:"auto"},LS.get("tvos_hearth",{})||{});if(S.v!==2){S.v=2;S.tend=false}/* the fire now goes out unless you tend it, or turn Tend fire on */
   const save=()=>{try{LS.set("tvos_hearth",S)}catch(e){}};
   const STYLES=[["stone","Stone"],["brick","Brick"],["camp","Campfire"],["flames","Flames only"]];
   const RAMPS={
@@ -4705,7 +4707,7 @@ defApp("hearth",{name:"Hearth",icon:"flame",cat:"Accessories",w:900,h:600,single
   function addWood(kind,auto){
    const log=kind==="log";
    if(S.game&&log&&wood<1){if(!auto)note("The woodpile is empty. More logs will be along soon.");return}
-   if(!auto&&(timerDone||endAt)){endAt=0;timerDone=false;timerDur=0;fade=1;renderTimer()}
+   if(!auto&&timerDone){endAt=0;timerDone=false;timerDur=0;fade=1;renderTimer()}
    if(S.game&&fuel<=.001){/* a cold hearth: lay the wood ready for the flint */
     if(auto)return;
     if(log){wood--;laidL++}else laidK++;
@@ -4801,7 +4803,7 @@ defApp("hearth",{name:"Hearth",icon:"flame",cat:"Accessories",w:900,h:600,single
    const now=performance.now(),dt=Math.min(1,(now-lastTick)/1000);lastTick=now;
    if(startUp){fuel+=dt*.16;if(fuel>=.9){fuel=.9;startUp=false}}
    else if(timerDone)fuel=Math.max(0,fuel-dt*.02);
-   else{fuel=Math.max(0,fuel-dt*(.0008+.0013*fuel*fuel));/* a big fire burns faster */if(S.tend&&fuel<.22)addLog(true);if(fuel<=.001&&!out){out=true;note(S.game?"The fire has gone out. Lay kindling and a log, then strike the flint again.":"The fire has gone out. Add a log to light it again.")}}
+   else{fuel=Math.max(0,fuel-dt*(.0008+.0013*fuel*fuel));/* a big fire burns faster */if((S.tend||(endAt&&S.timerTend))&&fuel<.22)addLog(true);if(fuel<=.001&&!out){out=true;note(S.game?"The fire has gone out. Lay kindling and a log, then strike the flint again.":"The fire has gone out. Add a log to light it again.")}}
    flare=Math.max(0,flare-dt*.8);
    /* the cozy game: wood arrives, ash builds up, the room warms, little things happen */
    const lit=fuel>.001&&!startUp;
@@ -4978,7 +4980,7 @@ defApp("hearth",{name:"Hearth",icon:"flame",cat:"Accessories",w:900,h:600,single
   function renderQual(){chips("#hh-qual",[["auto","Auto"],["low","Low"],["medium","Medium"],["high","High"]],()=>S.quality,v=>{S.quality=v;save();setLevel(v==="auto"?autoStart():v);renderQualNote()});renderQualNote()}
   function renderQualNote(){q("#hh-qualV").textContent=(S.quality==="auto"?"auto · "+level:level)+(fpsShown?" · "+fpsShown+" fps":"")}
   function renderTimer(){chips("#hh-timer",[[0,"Off"],[30,"30 min"],[60,"1 hour"],[90,"90 min"]],()=>timerDone?0:(endAt?timerDur/60000:0),v=>{
-    if(!v){endAt=0;timerDur=0;timerDone=false;fade=1}else{timerDur=v*60000;endAt=performance.now()+timerDur;timerDone=false;fade=1;note("The fire will fade out over the last quarter of "+(v===60?"the hour":v+" minutes"))}
+    if(!v){endAt=0;timerDur=0;timerDone=false;fade=1}else{timerDur=v*60000;endAt=performance.now()+timerDur;timerDone=false;fade=1;note((fuel<=.001?"The hearth is cold: light the fire and the timer will keep it going. ":S.timerTend?"The fire will be tended for you. ":"")+"It fades out over the last quarter of "+(v===60?"the hour":v+" minutes"))}
     renderTimer()});timerLabel()}
   function timerLabel(){const el=q("#hh-timerV");if(!el)return;if(timerDone)el.textContent="burned down";else if(endAt){const m=Math.max(0,Math.ceil((endAt-performance.now())/60000));el.textContent=m+" min left"}else el.textContent=""}
   const tgs=root.querySelectorAll(".tg");
