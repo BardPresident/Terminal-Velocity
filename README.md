@@ -539,6 +539,9 @@ DeeJay
     In the vibe menu, "Auto DJ changes vibe" lets Auto DJ hop to a new
     vibe every few minutes (or every night, or never), for background
     listening. The change lands on a part change, with its tunes ready.
+  - Melodies grow over eight bars: the first phrase states the idea, the
+    second answers it and stays open, the third climbs, the last one
+    comes home. The arpeggios turn through the chord notes too.
   - Sound effects: Whoosh, Crash, Boom, Laser, Slide, Twinkle.
   - Keys: 1 to 4 pause or play a record, Space build, A Auto DJ, N next
     vibe, left and right arrows for speed, Q W E R T Y for effects.
