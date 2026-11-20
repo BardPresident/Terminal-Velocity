@@ -456,8 +456,8 @@ Lyre
     ask where to save downloads, it will ask. Recordings stop at 8
     minutes to protect cheap computers.
   - Pace: from Very slow to Lively. Left and right arrow keys change it.
-  - Volume: follows how ears hear. Around 30% is a soft background
-    behind a voice, and 10% is nearly silent. It also sets the level of a
+  - Volume: follows how ears hear. Around 25-35% is a soft background
+    behind a voice, and 10% is very quiet. It also sets the level of a
     recording.
   - Look: twelve looks that belong to the Lyre alone (Golden Hour,
     Moonlit, Enchanted Forest, Hearth Ember, Deep Ocean, Rose Garden,
