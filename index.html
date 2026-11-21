@@ -1258,7 +1258,7 @@ const fmtDate=t=>{const d=new Date(t),hm=" "+pad(d.getHours())+":"+pad(d.getMinu
 const sleep=ms=>new Promise(r=>setTimeout(r,ms));
 const LS={get(k,d){try{const v=localStorage.getItem(k);return v==null?d:JSON.parse(v)}catch(e){return d}},set(k,v){try{localStorage.setItem(k,JSON.stringify(v));return true}catch(e){try{window.tvosStorageFull&&window.tvosStorageFull(e)}catch(_){}return false}}};
 const fmtUp=s=>{s=Math.max(0,Math.round(s));const d=Math.floor(s/86400),hr=Math.floor(s%86400/3600),m=Math.floor(s%3600/60),sc=s%60;if(d)return d+" d "+hr+" h";if(hr)return hr+" h "+m+" min";if(m)return m+" min "+sc+" s";return sc+" s"};
-const OS={apps:{},wins:[],z:10,bus:{},boot:performance.now(),ver:"1.0 build 1121-1148"};
+const OS={apps:{},wins:[],z:10,bus:{},boot:performance.now(),ver:"1.0 build 1121-1538"};
 OS.on=(ev,f)=>{(OS.bus[ev]=OS.bus[ev]||[]).push(f);return f};
 OS.off=(ev,f)=>{OS.bus[ev]=(OS.bus[ev]||[]).filter(x=>x!==f)};
 /* reboot that always fetches the newest copy of this page (like Ctrl+Shift+R), then reloads */
@@ -1548,7 +1548,7 @@ function tabDrag(e,el,arr,redraw){if(e.button>0||e.pointerType==="touch"||e.targ
  addEventListener("pointermove",mv);addEventListener("pointerup",up);addEventListener("pointercancel",up)}
 OS.renderTasks=function(){if(OS.tkDrag)return;const t=$("#tasks");t.innerHTML="";for(const w of OS.wins){const a=OS.apps[w.app];const tk=h("div",{class:"tk"+(OS.cur===w&&!w.min?" focus":"")+(w.min?" min":""),title:w.title,onclick:()=>{if(OS.cur===w&&!w.min)OS.minimize(w);else OS.focus(w)},oncontextmenu:e=>{e.preventDefault();ctxMenu(e.clientX,e.clientY-90,[{t:"Restore / focus",fn:()=>OS.focus(w)},{t:"Minimise",fn:()=>OS.minimize(w)},{t:w.max?"Unmaximise":"Maximise",fn:()=>OS.toggleMax(w)},"-",{t:"Close",ic:"x",fn:()=>OS.close(w)}])}},ic(a.icon),h("span",{class:"ti"},w.title));tk._w=w;tk.addEventListener("pointerdown",ev=>tkDrag(ev,tk));t.append(tk)}};
 function tick(){const d=new Date(),c=$("#clk");c.textContent=pad(d.getHours())+":"+pad(d.getMinutes());c.title=MC.dual(d);const m=$("#mcd");if(m){m.textContent=MC.on()?MC.short(d)+" "+MC.era(d):d.getDate()+" "+MONTHS[d.getMonth()].slice(0,3)+" "+d.getFullYear();m.title="Mythocratic Calendar - "+MC.dual(d)}}
-function buildTray(){const tr=$("#tray");tr.innerHTML="";tr.append(h("span",{class:"hide",title:"Switch theme",onclick:()=>cycleTheme(1)},ic("eye")),h("span",{class:"hide",id:"arc",title:"Archive status",onclick:()=>OS.open("settings",{tab:"Archive"})},"archive: …"),h("span",{id:"bkt",title:"Backup your data",onclick:e=>BKT.menu(e)},ic("save")),h("span",{title:"Search apps and files (Ctrl+Space)",onclick:()=>spot(true)},ic("search")),h("span",{id:"mcd",onclick:()=>OS.open("calendar")}),h("b",{id:"clk",onclick:()=>OS.open("clock")}));try{BKT.draw()}catch(e){}tick();setInterval(tick,10000)}
+function buildTray(){const tr=$("#tray");tr.innerHTML="";tr.append(h("span",{class:"hide",title:"Switch theme",onclick:()=>cycleTheme(1)},ic("eye")),h("span",{class:"hide",id:"arc",title:"Archive status",onclick:()=>OS.open("settings",{tab:"Archive"})},"archive: …"),h("span",{id:"bkt",title:"Backup your data",onclick:e=>BKT.menu(e)},ic("save")),h("span",{title:"Search apps and files (Ctrl+Space)",onclick:()=>spot(true)},ic("search")),h("span",{id:"mcd",onclick:()=>OS.open("calendar")}),h("b",{id:"clk",onclick:()=>OS.open("clock")}));try{sophiaTray(tr)}catch(e){}try{BKT.draw()}catch(e){}tick();setInterval(tick,10000)}
 function cycleTheme(d){const i=(THEME_ORDER.indexOf(SET.theme)+d+THEME_ORDER.length)%THEME_ORDER.length;applyTheme(THEME_ORDER[i]);toast("Theme: "+THEMES[SET.theme].n)}
 OS.on("manifest",m=>{try{buildDesk()}catch(e){}const a=$("#arc");if(a)a.textContent="archive: "+m.files.toLocaleString()+" files"});
 /* ---- desktop icons & start menu ---- */
@@ -8585,6 +8585,502 @@ defApp("deejay",{name:"DeeJay",icon:"deejay",cat:"Media",w:940,h:660,single:true
    if(ctx)try{ctx.close()}catch(e){}ctx=null;E=null;Q=null}
  }});
 
+/* ===================== SOPHIA, part 1: how she looks. Everything is drawn in code from a 100 x 100 box, feet on the line at y = 94, so she stays sharp at any size. Her colours come from the photo: black coat, white chest and paws, tan eyebrow dots and tan legs, enormous ears. ===================== */
+IP.paw="M12 20.4c-3.1 0-5.3-1.7-5.3-3.8 0-2.2 2.2-4.2 5.3-4.2s5.3 2 5.3 4.2c0 2.1-2.2 3.8-5.3 3.8z M4.7 11.4m-1.4 0a1.4 1.4 0 1 0 2.8 0a1.4 1.4 0 1 0-2.8 0 M8.7 6.8m-1.4 0a1.4 1.4 0 1 0 2.8 0a1.4 1.4 0 1 0-2.8 0 M15.3 6.8m-1.4 0a1.4 1.4 0 1 0 2.8 0a1.4 1.4 0 1 0-2.8 0 M19.3 11.4m-1.4 0a1.4 1.4 0 1 0 2.8 0a1.4 1.4 0 1 0-2.8 0";
+const SPC={blk:"#17151c",blk2:"#2b2733",wht:"#f7f2ea",wht2:"#d8d0c5",tan:"#c98f55",tan2:"#e3bd8a",nose:"#0c0b10",pink:"#ea8c9c",earIn:"#d8c2a2",eye:"#2a1912",eye2:"#5a3a28"};
+const SPA={};
+/* a fluffy ellipse: n little scallops around the edge, so fur looks like fur */
+SPA.blob=(c,cx,cy,rx,ry,n,amp)=>{c.beginPath();for(let i=0;i<n;i++){const a0=i/n*6.2832,a1=(i+1)/n*6.2832,am=(a0+a1)/2;const x0=cx+Math.cos(a0)*rx,y0=cy+Math.sin(a0)*ry,x1=cx+Math.cos(a1)*rx,y1=cy+Math.sin(a1)*ry,xm=cx+Math.cos(am)*rx*(1+amp),ym=cy+Math.sin(am)*ry*(1+amp);if(!i)c.moveTo(x0,y0);c.quadraticCurveTo(xm,ym,x1,y1)}c.closePath()};
+SPA.el=(c,x,y,rx,ry,col,rot)=>{c.fillStyle=col;c.beginPath();c.ellipse(x,y,rx,ry,rot||0,0,6.2832);c.fill()};
+/* one big ear. side -1 = left, +1 = right. perk 0 = relaxed and drooping outward, 1 = straight up and listening */
+SPA.ear=(c,side,perk)=>{
+  const px=1-perk,tx=side*(18+px*7),ty=-29+px*13;
+  c.fillStyle=SPC.blk;c.beginPath();c.moveTo(side*3,-10);c.quadraticCurveTo(side*9,-24+px*6,tx,ty);c.quadraticCurveTo(side*21+px*2,-13,side*14.5,-3);c.closePath();c.fill();
+  /* fur tufts along the outer edge */
+  c.strokeStyle=SPC.blk;c.lineWidth=1.7;c.lineCap="round";
+  for(let i=0;i<3;i++){const t=.3+i*.22,bx=tx*(1-t)+side*14.5*t+side*.3,by=ty*(1-t)-3*t;c.beginPath();c.moveTo(bx,by);c.lineTo(bx+side*(2.8-i*.4),by+(2.2+px*1.5));c.stroke()}
+  /* soft cream fur inside */
+  c.fillStyle=SPC.earIn;c.beginPath();c.moveTo(side*5.2,-9);c.quadraticCurveTo(side*9.5,-19+px*5,side*(14+px*5),-22+px*10);c.quadraticCurveTo(side*15,-12,side*12.5,-5);c.closePath();c.fill();
+  c.fillStyle="rgba(23,21,28,.55)";c.beginPath();c.moveTo(side*8,-10);c.quadraticCurveTo(side*11,-16,side*(14+px*5),-22+px*10);c.quadraticCurveTo(side*15.5,-13,side*13,-6);c.closePath();c.fill();
+};
+/* her face, always seen from the front. Big glossy anime eyes. o: tilt, ear, eye (open|blink|closed|happy), mouth (closed|open|tongue|lick), look */
+SPA.eye=(c,ex,ey,lk,o)=>{
+  const t=o.t||0;
+  c.fillStyle="#2b1810";c.beginPath();c.ellipse(ex,ey,4.7,5.4,0,0,6.2832);c.fill();
+  c.strokeStyle="#7a5238";c.lineWidth=.7;c.stroke();
+  const g=c.createLinearGradient(0,ey-5,0,ey+5);g.addColorStop(0,"#5a3118");g.addColorStop(.55,"#b8742f");g.addColorStop(1,"#f0b863");
+  c.fillStyle=g;c.beginPath();c.ellipse(ex+lk*.6,ey+.3,4.05,4.8,0,0,6.2832);c.fill();
+  SPA.el(c,ex+lk*.9,ey+.2,2.2,3,"#120a07");
+  SPA.el(c,ex+lk*.6-1.5,ey-2.3,1.8,1.9,"#fff");
+  SPA.el(c,ex+lk*.6+1.6,ey+2.4,.9,.9,"rgba(255,255,255,.92)");
+  SPA.el(c,ex+lk*.6+2.2,ey-.6,.45,.45,"rgba(255,255,255,.8)");
+};
+SPA.head=(c,x,y,s,o)=>{
+  c.save();c.translate(x,y);c.rotate(o.tilt||0);c.scale(s,s);
+  SPA.ear(c,-1,o.ear==null?.7:o.ear);SPA.ear(c,1,o.ear==null?.7:o.ear);
+  SPA.el(c,0,0,15.8,14,SPC.blk);
+  SPA.el(c,0,-8.4,10,3.4,"rgba(70,62,86,.55)");
+  /* white cheeks, muzzle and chin */
+  c.fillStyle=SPC.wht;SPA.blob(c,-10.8,8.4,3.8,3.1,6,.22);c.fill();SPA.blob(c,10.8,8.4,3.8,3.1,6,.22);c.fill();
+  SPA.el(c,0,8.4,6.6,4.9,SPC.wht);SPA.el(c,0,12.6,4.6,2.4,SPC.wht);
+  SPA.el(c,0,2.4,3.5,3.1,SPC.blk);
+  /* rosy cheeks */
+  SPA.el(c,-10.6,4.4,2.5,1.5,"rgba(240,120,140,.55)");SPA.el(c,10.6,4.4,2.5,1.5,"rgba(240,120,140,.55)");
+  /* nose, with a little shine */
+  SPA.el(c,0,5.4,3.1,2.2,SPC.nose);SPA.el(c,-1,4.7,1.05,.6,"rgba(255,255,255,.55)");
+  /* eyes and the two tan eyebrow dots */
+  const lk=o.look||0,e=o.eye||"open";
+  for(const sd of[-1,1]){
+    const ex=sd*6.7,ey=-2;
+    if(e==="open")SPA.eye(c,ex,ey,lk,o);
+    else{c.strokeStyle="#e4d6c8";c.lineWidth=1.5;c.lineCap="round";c.beginPath();
+      if(e==="happy"){c.moveTo(ex-3.4,ey+1.8);c.quadraticCurveTo(ex,ey-3.8,ex+3.4,ey+1.8)}
+      else if(e==="closed"){c.moveTo(ex-3.2,ey-.6);c.quadraticCurveTo(ex,ey+2.8,ex+3.2,ey-.6)}
+      else{c.moveTo(ex-3.2,ey+.4);c.lineTo(ex+3.2,ey+.4)}
+      c.stroke()}
+    c.save();c.translate(sd*7,-9.4);c.rotate(sd*-.22);SPA.el(c,0,0,2.9,1.65,SPC.tan2);c.restore();
+  }
+  /* mouth */
+  const m=o.mouth||"closed";c.strokeStyle="#6d6258";c.lineWidth=.9;c.lineCap="round";
+  if(m==="closed"){c.beginPath();c.moveTo(-3.2,10.4);c.quadraticCurveTo(-1.5,12,0,10.6);c.quadraticCurveTo(1.5,12,3.2,10.4);c.stroke();c.beginPath();c.moveTo(0,7.2);c.lineTo(0,10.6);c.stroke()}
+  else if(m==="open"){SPA.el(c,0,11.6,3.4,2.8,"#3a1e26");SPA.el(c,0,12.8,2.1,1.6,SPC.pink)}
+  else{const L=m==="lick"?3.8+Math.sin((o.t||0)*14)*1.3:2.5;c.beginPath();c.moveTo(-3.2,10.4);c.quadraticCurveTo(-1.5,12,0,10.6);c.quadraticCurveTo(1.5,12,3.2,10.4);c.stroke();SPA.el(c,0,11.4+L/2,2,L/2+.7,SPC.pink);c.strokeStyle="rgba(120,40,60,.6)";c.lineWidth=.5;c.beginPath();c.moveTo(0,11.6);c.lineTo(0,11.4+L);c.stroke()}
+  c.restore();
+};
+/* the long plume of a tail */
+SPA.tail=(c,x,y,ang,len)=>{
+  c.save();c.translate(x,y);c.rotate(ang);c.strokeStyle=SPC.blk;c.lineCap="round";
+  c.lineWidth=6.5;c.beginPath();c.moveTo(0,0);c.quadraticCurveTo(len*.5,-len*.1,len*.8,-len*.55);c.stroke();
+  c.lineWidth=4.2;c.beginPath();c.moveTo(len*.5,-len*.1);c.quadraticCurveTo(len*.95,-len*.4,len*.95,-len*.85);c.stroke();
+  c.strokeStyle=SPC.blk2;c.lineWidth=1.3;for(let i=0;i<4;i++){const t=.25+i*.2;c.beginPath();c.moveTo(len*t,-len*t*.16);c.lineTo(len*t+1.6,-len*t*.16-4.2);c.stroke()}
+  c.restore();
+};
+/* a leg: black, tan band, white sock and paw */
+SPA.leg=(c,hx,hy,ang,len,lift,dark)=>{
+  const fx=hx+Math.sin(ang)*len,fy=hy+Math.cos(ang)*len-lift;
+  c.lineCap="round";
+  c.strokeStyle=dark?SPC.blk2:SPC.blk;c.lineWidth=6;c.beginPath();c.moveTo(hx,hy);c.lineTo(fx,fy);c.stroke();
+  const p=(t)=>[hx+(fx-hx)*t,hy+(fy-hy)*t];let a=p(.46),b=p(.78);
+  c.strokeStyle=SPC.tan;c.lineWidth=5.6;c.beginPath();c.moveTo(a[0],a[1]);c.lineTo(b[0],b[1]);c.stroke();
+  SPA.el(c,fx+.6,fy,4.4,3,SPC.wht);
+};
+/* sitting, facing you: the pose from the photo, made cuter: big head, small body */
+SPA.front=(c,o)=>{
+  SPA.tail(c,59,88,-.15+Math.sin(o.wag||0)*.32,21);
+  SPA.el(c,37,85,9.5,8,SPC.blk);SPA.el(c,63,85,9.5,8,SPC.blk);
+  SPA.el(c,50,74,12.5,15,SPC.blk);
+  c.fillStyle=SPC.wht;SPA.blob(c,50,72,8.6,12,9,.14);c.fill();
+  c.fillStyle=SPC.wht2;SPA.blob(c,50,79,5.2,5,7,.14);c.fill();
+  for(const sd of[-1,1]){
+    const bx=50+sd*6.6,sw=(o.paw||0)*sd,lf=o.paw?Math.abs(o.paw)*4:0;
+    c.strokeStyle=SPC.blk;c.lineWidth=6.2;c.lineCap="round";c.beginPath();c.moveTo(bx,76);c.lineTo(bx-sw*3,88.5-lf);c.stroke();
+    c.strokeStyle=SPC.tan;c.lineWidth=5.8;c.beginPath();c.moveTo(bx,83);c.lineTo(bx,87);c.stroke();
+    SPA.el(c,bx-sw*3,92-lf,4.6,3.1,SPC.wht);
+  }
+  SPA.head(c,50,41+(o.bob||0),1.22,o);
+};
+/* standing or walking, seen from the side, facing right */
+SPA.side=(c,o)=>{
+  const ph=o.ph||0,tuck=o.jump?1:0;
+  SPA.tail(c,22,64,-.55+(o.tailUp||0)+Math.sin(o.wag||0)*.3,22);
+  const L=(off,hx,dark)=>{
+    const p=(ph+off)*6.2832;let ang=Math.sin(p)*.55,lift=Math.max(0,Math.cos(p))*4;
+    if(tuck){ang=dark?.9:-.8;lift=7}
+    if(o.still){ang=0;lift=0}
+    SPA.leg(c,hx,68,ang,22-tuck*5,lift,dark);
+  };
+  L(.5,56,1);L(0,32,1);
+  SPA.el(c,43,66,21,11,SPC.blk);
+  c.fillStyle=SPC.blk;SPA.blob(c,43,72,17,4.6,8,.3);c.fill();
+  SPA.el(c,58,59,9,9.5,SPC.blk);
+  L(.25,59,0);L(.75,36,0);
+  c.fillStyle=SPC.wht;SPA.blob(c,63,67,7,8.4,7,.16);c.fill();
+  SPA.head(c,67+(o.hx||0),44+(o.hy||0),1.18,o);
+};
+/* asleep: curled up in a loaf, chin on white paws, tail wrapped over */
+SPA.sleep=(c,o)=>{
+  const b=Math.sin((o.t||0)*2.1)*.9;
+  SPA.tail(c,20,86,.45,24);
+  SPA.el(c,44,82,26,10.5+b*.4,SPC.blk);
+  c.fillStyle=SPC.blk;SPA.blob(c,44,89,23,4,9,.25);c.fill();
+  c.strokeStyle=SPC.blk2;c.lineWidth=1.3;c.lineCap="round";for(let i=0;i<5;i++){c.beginPath();c.moveTo(27+i*9,76+b*.4);c.lineTo(28+i*9,80)}c.stroke();
+  SPA.el(c,79,91,6,3.2,SPC.wht);SPA.el(c,67,91.5,5,3,SPC.wht);
+  c.fillStyle=SPC.wht;SPA.blob(c,64,84,6,7,6,.16);c.fill();
+  SPA.head(c,69,76+b*.4,1.1,Object.assign({},o,{tilt:.2,ear:.14,eye:"closed",mouth:"closed"}));
+};
+/* right up against the glass: a huge face, paws pressed flat, and a big tongue sweeping across the screen. Returns where the tongue tip is, in 0-100 units, so the caller can leave a wet smear. */
+SPA.close=(cv,o)=>{
+  const c=cv.getContext("2d");c.setTransform(1,0,0,1,0,0);c.clearRect(0,0,cv.width,cv.height);const s=cv.width/100;c.setTransform(s,0,0,s,0,0);
+  const t=o.t||0,lick=!!o.lick,bob=Math.sin(t*3)*.8;
+  /* paws pressed on the glass */
+  for(const sd of[-1,1]){const px=50+sd*37,py=93;SPA.el(c,px,py,10,7.6,"rgba(0,0,0,.25)");SPA.el(c,px,py-1,9.4,7.2,SPC.wht);for(let i=-1;i<=1;i++)SPA.el(c,px+i*4.4,py-6.4+Math.abs(i)*1.2,2.6,2.2,SPC.wht2);SPA.el(c,px,py+.6,4,2.8,"#e9a3ad")}
+  SPA.head(c,50,63+bob,2.15,{ear:1,eye:o.eye||"open",mouth:lick?"open":"closed",look:0,t});
+  let tip=null;
+  if(lick){
+    const mx=50,my=87+bob*2.15,tx=50+Math.sin(t*3.1)*25,ty=82+Math.cos(t*1.7)*8-Math.abs(Math.sin(t*3.1))*6;tip={x:tx,y:ty};
+    c.lineCap="round";c.strokeStyle="#e4788b";c.lineWidth=11;c.beginPath();c.moveTo(mx,my);c.quadraticCurveTo((mx+tx)/2,Math.max(my,ty)+4,tx,ty);c.stroke();
+    c.strokeStyle="#f3a3b0";c.lineWidth=7;c.beginPath();c.moveTo(mx,my);c.quadraticCurveTo((mx+tx)/2,Math.max(my,ty)+4,tx,ty);c.stroke();
+    c.strokeStyle="rgba(190,70,95,.55)";c.lineWidth=1;c.beginPath();c.moveTo(mx,my);c.quadraticCurveTo((mx+tx)/2,Math.max(my,ty)+4,tx,ty);c.stroke();
+    SPA.el(c,tx,ty,7.2,6,"#f0909f");SPA.el(c,tx-1.8,ty-1.8,2.6,1.7,"rgba(255,255,255,.55)");
+  }
+  return tip;
+};
+/* the wet trail she leaves on the glass. pts: {x,y,age} */
+SPA.smear=(cv,pts)=>{
+  const c=cv.getContext("2d");c.setTransform(1,0,0,1,0,0);c.clearRect(0,0,cv.width,cv.height);const s=cv.width/100;c.setTransform(s,0,0,s,0,0);c.lineCap="round";c.lineJoin="round";
+  for(let i=1;i<pts.length;i++){const a=pts[i-1],b=pts[i],al=Math.max(0,1-b.age/2.4);if(al<=0)continue;
+    c.strokeStyle="rgba(255,255,255,"+(.2*al).toFixed(3)+")";c.lineWidth=11;c.beginPath();c.moveTo(a.x,a.y);c.lineTo(b.x,b.y);c.stroke();
+    c.strokeStyle="rgba(255,210,222,"+(.22*al).toFixed(3)+")";c.lineWidth=6;c.beginPath();c.moveTo(a.x,a.y);c.lineTo(b.x,b.y);c.stroke();
+    c.strokeStyle="rgba(255,255,255,"+(.3*al).toFixed(3)+")";c.lineWidth=1.4;c.beginPath();c.moveTo(a.x-2,a.y-2.2);c.lineTo(b.x-2,b.y-2.2);c.stroke()}
+};
+/* one frame of Sophia, in the right pose, facing the right way */
+SPA.draw=(cv,o,k)=>{
+  const c=cv.getContext("2d");c.setTransform(1,0,0,1,0,0);c.clearRect(0,0,cv.width,cv.height);
+  const s=cv.width/100;c.setTransform(s,0,0,s,0,0);
+  if(o.face<0){c.translate(100,0);c.scale(-1,1)}
+  const p=o.pose;
+  if(p==="sleep")SPA.sleep(c,o);else if(p==="front")SPA.front(c,o);else SPA.side(c,o);
+};
+
+/* ===================== SOPHIA, part 2: Chief of Defence of Republicka. A tiny companion who lives on the desktop: she naps in her corner, wanders, checks every new window is safe, barks softly at trouble, loves cuddles and treats, and keeps a notebook of real system facts. She cannot be hurt, cannot starve, and wants nothing. Tap her to pet her, hold for a cuddle, right-click for a menu. ===================== */
+const SP={P:null,L:null,run:false,last:0,q:[],treats:[],t0:0,act:0};
+const spDay=(d)=>{d=d||new Date();return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0")};
+SP.def=()=>({v:2,on:true,mode:"up",size:2,snd:false,vol:.2,pitch:1,soft:.6,met:false,tot:{pet:0,treat:0,win:0,err:0,nap:0,cuddle:0,safe:0},days:{}});
+SP.load=()=>{const d=SP.def(),o=LS.get("tvos_sophia",null);if(o&&typeof o==="object"){for(const k of Object.keys(d))if(o[k]!=null)d[k]=o[k]}
+  if(o&&(o.v||1)<2)d.size=2;d.on=d.on!==false;d.mode=["up","bed","away"].includes(d.mode)?d.mode:"up";d.size=[1,1.4,2,2.8,3.6].includes(+d.size)?+d.size:2;d.snd=!!d.snd;d.vol=Math.max(0,Math.min(1,+d.vol||0));d.pitch=Math.max(.6,Math.min(1.5,+d.pitch||1));d.soft=Math.max(0,Math.min(1,+d.soft));d.met=!!d.met;
+  if(!d.days||typeof d.days!=="object")d.days={};if(!d.tot||typeof d.tot!=="object")d.tot=SP.def().tot;for(const k in SP.def().tot)d.tot[k]=+d.tot[k]||0;SP.prune(d);return d};
+/* the notebook keeps two weeks and then clears itself, like a real log */
+SP.prune=(d)=>{const keep=new Date();keep.setDate(keep.getDate()-14);const ks=spDay(keep);for(const k of Object.keys(d.days))if(k<ks)delete d.days[k]};
+SP.save=()=>{clearTimeout(SP.svT);SP.svT=setTimeout(()=>{if(SP.S){SP.prune(SP.S);LS.set("tvos_sophia",SP.S)}},700)};
+SP.bump=(k,n,sub)=>{const S=SP.S;if(!S)return;n=n||1;const d=S.days[spDay()]=S.days[spDay()]||{};if(sub){d.a=d.a||{};d.a[sub]=(d.a[sub]||0)+n}else d[k]=(d[k]||0)+n;if(S.tot[k]!=null)S.tot[k]+=n;SP.save()};
+SP.day=()=>SP.S.days[spDay()]||{};
+SP.motion=()=>{try{return matchMedia("(prefers-reduced-motion: reduce)").matches}catch(e){return false}};
+SP.Sz=()=>{const w=SP.W||innerWidth,base=64*SP.S.size;return w<=900?Math.min(base,Math.max(48,w*.3)):base};
+SP.rand=(a,b)=>a+Math.random()*(b-a);
+
+/* ---------- where she can stand ---------- */
+/* a window's real place on screen. Its stored x,y,w,h are not enough: on small screens every window is stretched to fill the screen by the page styles. */
+SP.rect=(w)=>{try{const r=w.el.getBoundingClientRect(),d=$("#desk").getBoundingClientRect();return{x:r.left-d.left,y:r.top-d.top,w:r.width,h:r.height}}catch(e){return{x:0,y:0,w:SP.W,h:SP.H}}};
+SP.wins=()=>OS.wins.filter(w=>!w.dead&&!w.min&&w.el&&w.el.isConnected&&OS.apps[w.app]&&w.app!=="sophia");
+SP.platY=(pl)=>{if(pl.k!=="w")return SP.H-2;return Math.max(SP.rect(pl.win).y,SP.Sz()*.94+6)};
+SP.platR=(pl)=>{const m=SP.Sz()*.42;let a,b;if(pl.k!=="w"){a=m;b=SP.W-m}else{const w=SP.rect(pl.win);a=Math.max(m,w.x+10);b=Math.min(SP.W-m,w.x+w.w-10);if(b<a){const c=Math.max(m,Math.min(SP.W-m,w.x+w.w/2));a=b=Math.max(10,Math.min(SP.W-10,c))}}if(b<a)a=b=SP.W/2;return[a,b]};
+SP.floor={k:"f"};
+SP.bagY=()=>SP.H-2;
+/* her sleeping corner: bottom-right, on the bare floor */
+SP.home=()=>({bag:Math.max(SP.Sz()*.5,SP.W-.5*SP.Sz()-4)});
+
+/* ---------- build / tear down ---------- */
+SP.css=()=>{if($("#spcss"))return;const s=document.createElement("style");s.id="spcss";s.textContent=`
+#sophia{position:absolute;inset:0;z-index:2147483000;pointer-events:none;overflow:hidden}
+#sophia canvas{position:absolute;left:0;top:0;pointer-events:none;will-change:transform}
+#sophia .sphit{position:absolute;pointer-events:auto;cursor:pointer;touch-action:none;-webkit-tap-highlight-color:transparent}
+#sophia .spsay{position:absolute;left:0;top:0;white-space:nowrap;font-size:11px;line-height:1;padding:4px 8px;border-radius:10px;background:var(--pn);color:var(--fg);border:1px solid var(--bd);box-shadow:0 2px 8px rgba(0,0,0,.35);opacity:0;transition:opacity .25s;pointer-events:none}
+#sophia .spsay.on{opacity:1}
+#sophia .spfx{position:absolute;left:0;top:0;pointer-events:none;font-size:14px;color:#ff8fa8;text-shadow:0 1px 3px rgba(0,0,0,.4);animation:spfx 1.5s ease-out forwards}
+#sophia .spfx.z{color:var(--dim);font-size:12px;animation-duration:2.6s}
+@keyframes spfx{0%{opacity:0;transform:translate(var(--x),var(--y)) scale(.6)}15%{opacity:1}100%{opacity:0;transform:translate(calc(var(--x) + var(--dx)),calc(var(--y) - 34px)) scale(1.1)}}
+#sophia .spt{position:absolute;left:0;top:0;pointer-events:none;animation:sptd .45s cubic-bezier(.5,0,.8,.6)}
+@keyframes sptd{from{margin-top:-110px;opacity:0}to{margin-top:0;opacity:1}}
+.spn{display:flex;flex-direction:column;height:100%;min-height:0;background:var(--bg);color:var(--fg);font-size:13px;container-type:inline-size}
+.spn .top{display:flex;gap:14px;align-items:center;padding:14px 16px;border-bottom:1px solid var(--bd);flex-wrap:wrap}
+.spn .top canvas{width:92px;height:92px;flex:none;background:var(--pn);border-radius:12px;border:1px solid var(--bd)}
+.spn .top .who{flex:1;min-width:180px}.spn .top h2{margin:0 0 2px;font-size:17px;color:var(--ac)}
+.spn .top .sub{color:var(--dim);font-size:12px;margin-bottom:6px}.spn .top .st{font-size:12.5px}
+.spn .btns{display:flex;gap:6px;flex-wrap:wrap;margin-top:9px}
+.spn button{font:inherit;color:var(--fg);background:var(--pn);border:1px solid var(--bd);border-radius:7px;padding:6px 11px;cursor:pointer}
+.spn button:hover{border-color:var(--ac)}.spn button.pri{border-color:var(--ac);color:var(--ac)}.spn button:disabled{opacity:.45;cursor:default}
+.spn .tabs{display:flex;gap:4px;padding:8px 14px 0;border-bottom:1px solid var(--bd)}
+.spn .tabs button{border-radius:7px 7px 0 0;border-bottom:0;background:transparent;color:var(--dim)}.spn .tabs button.on{background:var(--pn);color:var(--fg);border-color:var(--bd)}
+.spn .pg{flex:1;min-height:0;overflow:auto;padding:14px 16px 18px}
+.spn h3{margin:16px 0 8px;font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--dim);font-weight:600}.spn h3:first-child{margin-top:0}
+.spn .tiles{display:grid;grid-template-columns:repeat(auto-fill,minmax(112px,1fr));gap:8px}
+.spn .tile{background:var(--pn);border:1px solid var(--bd);border-radius:9px;padding:9px 10px}.spn .tile b{display:block;font-size:20px;color:var(--ac);font-weight:600}.spn .tile span{color:var(--dim);font-size:11.5px}
+.spn .rows{border:1px solid var(--bd);border-radius:9px;overflow:hidden}.spn .row{display:flex;justify-content:space-between;gap:12px;padding:7px 11px;border-bottom:1px solid var(--bd)}.spn .row:last-child{border:0}.spn .row span:first-child{color:var(--dim)}.spn .row span:last-child{text-align:right}
+.spn .bars{display:flex;gap:4px;align-items:flex-end;height:64px;padding:6px 8px;background:var(--pn);border:1px solid var(--bd);border-radius:9px}.spn .bars i{flex:1;background:var(--ac);opacity:.75;border-radius:3px 3px 0 0;min-height:2px}.spn .bars i.z{opacity:.2}
+.spn .note{color:var(--dim);font-size:12px;line-height:1.5;margin-top:10px}
+.spn .opt{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:9px 0;border-bottom:1px solid var(--bd)}.spn .opt:last-child{border:0}.spn .opt small{display:block;color:var(--dim);font-size:11.5px;margin-top:2px}
+.spn select,.spn input[type=range]{font:inherit;color:var(--fg);background:var(--pn);border:1px solid var(--bd);border-radius:6px;padding:4px 6px}.spn input[type=range]{padding:0;width:120px}
+.spn .off{padding:34px 20px;text-align:center;color:var(--dim)}.spn .off canvas{width:96px;height:96px;display:block;margin:0 auto 14px}
+`;document.head.append(s)};
+SP.build=()=>{
+  if(SP.L)return;SP.css();const d=$("#desk"),S=SP.S;
+  const L=h("div",{id:"sophia"});SP.L=L;
+  SP.cv=h("canvas");SP.cl=h("canvas");SP.sm=h("canvas");SP.cl.style.display=SP.sm.style.display="none";SP.say_el=h("div",{class:"spsay"});
+  SP.hit=h("div",{class:"sphit",title:"Sophia. Tap to pet, hold for a cuddle."});
+  L.append(SP.cv,SP.sm,SP.cl,SP.hit,SP.say_el);SP.lk={on:false,k:0,t:0,pts:[],Cs:0};d.append(L);
+  SP.P={x:0,fy:0,plat:SP.floor,face:-1,st:"sleep",t:0,dur:1e9,then:null,ph:0,wag:0,earT:0,blinkT:2,blink:0,hx:0,hy:0,eye:"open",mouth:"closed",ear:.6,hold:null,seq:null,bd:0,lastBark:0,napStart:0};
+  SP.size();SP.bindHit();SP.t0=performance.now();SP.lastActive=Date.now();
+  const P=SP.P,hm=SP.home();P.x=hm.bag;P.fy=SP.bagY();SP.setSt("sleep",SP.rand(15,40));
+  if(!S.met)setTimeout(()=>{if(SP.L&&!SP.S.met&&SP.P.st!=="sleep")SP.say("Tap me!",3500)},7000);
+  document.addEventListener("visibilitychange",SP.vis);
+};
+SP.destroy=()=>{SP.run=false;SP.lk=null;if(SP.L){SP.L.remove();SP.L=null}for(const t of SP.treats)t.el.remove();SP.treats=[];SP.q=[];document.removeEventListener("visibilitychange",SP.vis)};
+SP.vis=()=>{if(!document.hidden&&SP.run&&SP.L){SP.last=0}};
+SP.size=()=>{
+  const d=$("#desk");SP.W=d.clientWidth;SP.H=d.clientHeight;const Sz=SP.Sz(),dpr=Math.min(2,window.devicePixelRatio||1);
+  SP.cv.width=SP.cv.height=Math.round(Sz*dpr);SP.cv.style.width=SP.cv.style.height=Sz+"px";
+  if(SP.P&&SP.P.st==="sleep"&&SP.P.plat===SP.floor){SP.P.x=SP.home().bag;SP.P.fy=SP.bagY()}else if(SP.P&&SP.P.plat===SP.floor)SP.P.fy=SP.platY(SP.floor);
+  SP.fit();
+};
+SP.fit=()=>{if(!SP.P)return;const r=SP.platR(SP.P.plat);SP.P.x=Math.max(r[0],Math.min(r[1],SP.P.x))};
+SP.visible=()=>{const S=SP.S;if(!S||!S.on||S.mode==="away")return false;return true};
+
+/* ---------- little things you can see: hearts, zzz, bubbles ---------- */
+SP.fx=(txt,cls)=>{if(!SP.L)return;const P=SP.P,Sz=SP.Sz(),e=h("div",{class:"spfx "+(cls||"")},txt);e.style.setProperty("--x",Math.round(P.x+SP.rand(-8,8)+(cls==="z"?P.face*Sz*.22:0)-5)+"px");e.style.setProperty("--y",Math.round(P.fy-Sz*(cls==="z"?.6:.8))+"px");e.style.setProperty("--dx",Math.round(SP.rand(-10,10))+"px");SP.L.append(e);setTimeout(()=>e.remove(),2800)};
+SP.say=(txt,ms)=>{if(!SP.L)return;const e=SP.say_el;e.textContent=txt;e.classList.add("on");clearTimeout(SP.sayT);SP.sayT=setTimeout(()=>e.classList.remove("on"),ms||1800);SP.placeSay()};
+SP.placeSay=()=>{const P=SP.P,e=SP.say_el,Sz=SP.Sz();if(!e||!P)return;const w=e.offsetWidth||40;let x=P.x-w/2,y=P.fy-Sz*.98-18;x=Math.max(4,Math.min(SP.W-w-4,x));if(y<2)y=P.fy+4;e.style.transform="translate("+Math.round(x)+"px,"+Math.round(y)+"px)"};
+
+/* ---------- soft sound. Off until you turn it on, and never loud. ---------- */
+SP.snd=(kind)=>{const S=SP.S;if(!S||!S.snd||S.vol<=0)return;try{
+  const A=SP.ac=SP.ac||new (window.AudioContext||window.webkitAudioContext)();if(A.state==="suspended")A.resume();
+  const t=A.currentTime,g=A.createGain(),f=A.createBiquadFilter();f.type="lowpass";f.frequency.value=500+S.soft*2400;g.connect(f);f.connect(A.destination);
+  const base=(kind==="grumble"?190:kind==="yip"?640:440)*S.pitch,vol=Math.min(.18,S.vol*.22);
+  const o=A.createOscillator();o.type="triangle";o.frequency.setValueAtTime(base*1.25,t);o.frequency.exponentialRampToValueAtTime(base*.8,t+.14);
+  g.gain.setValueAtTime(0,t);g.gain.linearRampToValueAtTime(vol,t+.015);g.gain.exponentialRampToValueAtTime(.0008,t+(kind==="grumble"?.4:.16));o.connect(g);o.start(t);o.stop(t+.45);
+  const n=A.createBufferSource(),b=A.createBuffer(1,A.sampleRate*.08,A.sampleRate),dd=b.getChannelData(0);for(let i=0;i<dd.length;i++)dd[i]=(Math.random()*2-1)*(1-i/dd.length);n.buffer=b;const ng=A.createGain();ng.gain.value=vol*.35;n.connect(ng);ng.connect(f);n.start(t);
+}catch(e){}};
+SP.bark=(txt)=>{const P=SP.P;if(!P)return;P.st==="sleep"&&SP.wake(true);SP.setSt("bark",1.1,()=>SP.think());SP.say(txt||"woof!",1300);SP.snd("bark");SP.P.earT=2};
+
+/* ---------- state machine ---------- */
+SP.setSt=(st,dur,then)=>{const P=SP.P;P.st=st;P.t=0;P.dur=dur==null?1e9:dur;P.then=then||null;if(st==="sleep"){P.napStart=performance.now()}};
+SP.done=()=>{const P=SP.P,f=P.then;P.then=null;if(f)f();else SP.think()};
+SP.wake=(quiet)=>{const P=SP.P;if(P.st!=="sleep")return;P.earT=1.2;P.mouth="closed";const fl=SP.platY(P.plat);if(P.fy<fl-4&&P.plat===SP.floor){SP.hopTo(P.x-SP.Sz()*.7,fl,()=>SP.setSt("sit",quiet?.4:1.1))}else{P.fy=fl;SP.setSt("sit",quiet?.8:1.4)}};
+SP.sleepy=()=>{const idle=Math.min(1,(Date.now()-SP.lastActive)/240000),hr=new Date().getHours(),night=(hr>=22||hr<6)?.45:0;return Math.min(1,idle*.7+night+.12)};
+SP.speed=(fast)=>(fast?74:38)*SP.S.size*(SP.motion()?.6:1);
+/* walk somewhere on the current surface */
+SP.walk=(x,then,fast)=>{const P=SP.P,r=SP.platR(P.plat);x=Math.max(r[0],Math.min(r[1],x));P.tx=x;P.fast=!!fast;P.face=x<P.x?-1:1;P.wlim=Math.abs(x-P.x)/Math.max(10,SP.speed(P.fast))*1.7+3;SP.setSt("walk",1e9,then)};
+/* go to any surface: walk if it is this one, otherwise a little hop */
+SP.go=(pl,x,then,fast)=>{const P=SP.P;if(pl===P.plat||(pl.k==="f"&&P.plat.k==="f"))return SP.walk(x,then,fast);
+  if(SP.motion()){P.plat=pl;P.x=x;P.fy=SP.platY(pl);return SP.setSt("sit",.3,then)}
+  const rr=SP.platR(pl);x=Math.max(rr[0],Math.min(rr[1],x));const y1=SP.platY(pl),dist=Math.hypot(x-P.x,y1-P.fy);P.hp={x0:P.x,y0:P.fy,x1:x,y1,pl,d:.4+dist/650,peak:26+Math.abs(y1-P.fy)*.12};P.face=x<P.x?-1:1;SP.setSt("hop",P.hp.d,then);P.plat=SP.floor===pl?pl:P.plat};
+SP.hopTo=(x,y,then)=>{const P=SP.P;if(SP.motion()){P.x=x;P.fy=y;return SP.setSt("sit",.3,then)}const d=Math.hypot(x-P.x,y-P.fy);P.hp={x0:P.x,y0:P.fy,x1:x,y1:y,pl:SP.floor,d:.35+d/700,peak:18};P.face=x<P.x?-1:1;SP.setSt("hop",P.hp.d,then)};
+SP.home_go=(then)=>{const hm=SP.home();SP.go(SP.floor,hm.bag,then)};
+SP.toBag=(then)=>{const P=SP.P;SP.home_go(()=>{P.face=-1;then()})};
+SP.nap=(len)=>{SP.toBag(()=>SP.setSt("sleep",len||SP.rand(25,70),()=>{SP.bump("nap");SP.wake()}))};
+SP.think=()=>{
+  const P=SP.P,S=SP.S;if(!SP.L)return;
+  if(S.mode==="bed"){if(P.st==="sleep")return;return SP.toBag(()=>SP.setSt("sleep"))}
+  if(SP.q.length){const w=SP.q.shift();if(w&&!w.dead&&!w.min&&w.el&&w.el.isConnected)return SP.inspect(w)}
+  if(P.plat.k==="w"&&(P.plat.win.dead||P.plat.win.min||!P.plat.win.el.isConnected))return SP.fall();
+  const mo=SP.motion(),wins=SP.wins(),sl=SP.sleepy();
+  const opts=[["look",22],["walk",mo?4:26],["sniff",mo?0:12],["nap",sl>.35?40+90*sl:6],["perch",wins.length&&!mo?11:0],["floor",P.plat.k==="w"?44:0],["wag",8],["stretch",10]];
+  let tot=0;for(const o of opts)tot+=o[1];let r=Math.random()*tot,pick="look";for(const o of opts){r-=o[1];if(r<=0){pick=o[0];break}}
+  const rg=SP.platR(P.plat);
+  switch(pick){
+    case"walk":{const x=Math.max(rg[0],Math.min(rg[1],P.x+SP.rand(-190,190)*SP.S.size));return SP.walk(x,()=>SP.setSt("sit",SP.rand(1.5,4)))}
+    case"sniff":return SP.setSt("sniff",SP.rand(1.4,2.6));
+    case"nap":return SP.nap();
+    case"perch":{const w=wins[Math.floor(Math.random()*wins.length)],r2=SP.platR({k:"w",win:w});return SP.go({k:"w",win:w},SP.rand(r2[0],r2[1]),()=>SP.setSt("sit",SP.rand(3,7)))}
+    case"floor":{const fr=SP.platR(SP.floor);return SP.go(SP.floor,SP.rand(fr[0],fr[1]),()=>SP.setSt("sit",SP.rand(2,4)))}
+    case"wag":P.earT=1.4;return SP.setSt("happy",1.6);
+    case"stretch":return SP.setSt("stretch",1.6);
+    default:return SP.setSt("sit",SP.rand(2.5,6.5));
+  }};
+SP.fall=()=>{const P=SP.P;P.vy=0;P.plat=SP.floor;SP.setSt("fall",3)};
+/* checking out a new window: sniff along its top edge and say it is safe */
+SP.inspect=(w)=>{
+  const P=SP.P,pl={k:"w",win:w},r=SP.platR(pl),span=r[1]-r[0],quick=SP.q.length>0;
+  const stops=quick?[.5]:[.22,.55,.85];const ok=()=>w&&!w.dead&&!w.min&&w.el&&w.el.isConnected;
+  P.earT=1.5;if(P.st==="sleep")SP.wake(true);
+  const step=(i)=>{if(!ok())return SP.think();
+    if(i>=stops.length){SP.say("all clear ✓",1800);SP.bump("safe");P.earT=1;return SP.setSt("happy",1.3,()=>SP.think())}
+    const rr=SP.platR(pl),x=rr[0]+(rr[1]-rr[0])*stops[i];
+    SP.go(pl,x,()=>SP.setSt("sniff",quick?1:SP.rand(1.1,1.7),()=>step(i+1)),!quick)};
+  step(0)};
+SP.onWins=()=>{if(!SP.S)return;const known=SP.known||(SP.known=new Set());const cur=OS.wins.filter(w=>!w.dead);const fresh=cur.filter(w=>!known.has(w.id));for(const w of cur)known.add(w.id);for(const id of [...known])if(!cur.some(w=>w.id===id))known.delete(id);
+  for(const w of fresh){SP.bump("win");SP.bump("win",0,w.app);if(!SP.L||!SP.visible())continue;if(performance.now()-SP.t0<9000||w.app==="sophia")continue;if(SP.S.mode==="bed")continue;if(SP.q.length<3)SP.q.push(w);if(["sit","walk","look","sniff","sleep","happy","stretch","stare"].includes(SP.P.st)&&!SP.P.seqBusy)setTimeout(()=>{if(SP.L&&SP.q.length&&["sit","walk","sniff","sleep","happy","stretch","stare"].includes(SP.P.st))SP.think()},700)}};
+SP.onErr=()=>{const now=Date.now();if(!SP.S||now-SP.P_lastErr<20000&&SP.P_lastErr)return;SP.P_lastErr=now;SP.bump("err");if(SP.L&&SP.visible()&&SP.S.mode!=="bed")SP.bark("woof!")};
+
+/* ---------- treats and petting ---------- */
+SP.treat=()=>{
+  const S=SP.S;if(!SP.L||!SP.visible()){toast("Sophia is not on the desktop right now. Call her back first.");return false}
+  const now=Date.now();SP.tr=(SP.tr||[]).filter(t=>now-t<600000);if(SP.tr.length>=6){toast("Sophia is full and happy. Treats again in a little while.");SP.say("so full ♡",2200);return false}
+  SP.tr.push(now);const P=SP.P,Sz=SP.Sz();if(S.mode==="bed"){S.mode="up";SP.save()}
+  const rg=SP.platR(P.plat),x=Math.max(rg[0],Math.min(rg[1],P.x+SP.rand(-110,110)*S.size+(P.x<SP.W/2?60:-60)*S.size)),y=SP.platY(P.plat);
+  const el=h("div",{class:"spt"});el.innerHTML='<svg width="20" height="10" viewBox="0 0 20 10"><g fill="#f4ecdc" stroke="#bfae8f" stroke-width=".8"><rect x="4" y="3" width="12" height="4" rx="1.5"/><circle cx="3.5" cy="2.8" r="2.2"/><circle cx="3.5" cy="7.2" r="2.2"/><circle cx="16.5" cy="2.8" r="2.2"/><circle cx="16.5" cy="7.2" r="2.2"/></g></svg>';el.style.transform="translate("+Math.round(x-10)+"px,"+Math.round(y-10)+"px)";SP.L.append(el);
+  const tr={x,pl:P.plat,el};SP.treats.push(tr);
+  if(P.st==="sleep")SP.wake(true);P.earT=2;P.face=x<P.x?-1:1;SP.q.length=0;
+  SP.setSt("alert",.55,()=>SP.go(P.plat,x,()=>{if(!SP.treats.includes(tr))return SP.think();SP.setSt("eat",1.3,()=>{tr.el.remove();SP.treats=SP.treats.filter(t=>t!==tr);SP.bump("treat");SP.fx("♡");SP.setSt("happy",2.2,()=>{if(SP.tr.length>=6){SP.say("so full ♡",2200);SP.nap(SP.rand(40,80))}else SP.think()})})},true));
+  return true};
+SP.pet=()=>{const P=SP.P;if(P.st==="sleep"){SP.wake(true)}SP.lastActive=Date.now();SP.bump("pet");SP.S.met=true;SP.save();SP.say_el.classList.remove("on");P.earT=1.5;
+  SP.setSt("pet",1.7,()=>SP.think());SP.fx("♡");setTimeout(()=>SP.fx("♡"),260)};
+SP.bindHit=()=>{
+  const hit=SP.hit;let t0=0,timer=0,down=false;
+  const end=()=>{clearTimeout(timer);if(!down)return;down=false;const P=SP.P,dt=performance.now()-t0;
+    if(P.st==="cuddle"){if(dt>1800){SP.bump("cuddle");SP.fx("♡")}SP.lickEnd();SP.setSt("pet",1.6,()=>SP.think())}else SP.pet()};
+  hit.addEventListener("pointerdown",e=>{if(e.button!==0)return;e.preventDefault();down=true;t0=performance.now();try{hit.setPointerCapture(e.pointerId)}catch(_){}
+    timer=setTimeout(()=>{if(!down)return;const P=SP.P;if(P.st==="sleep")SP.wake(true);SP.q.length=0;SP.setSt("cuddle");P.earT=1;P.face=1;SP.fx("♡")},420)});
+  hit.addEventListener("pointerup",end);hit.addEventListener("pointercancel",()=>{clearTimeout(timer);down=false;if(SP.P.st==="cuddle"){SP.lickEnd();SP.setSt("sit",1)}});
+  hit.addEventListener("contextmenu",e=>{e.preventDefault();clearTimeout(timer);down=false;SP.menu(e.clientX,e.clientY)});
+};
+SP.menu=(x,y)=>{const S=SP.S,on=SP.L&&S.mode!=="away";
+  ctxMenu(x,y,[
+    {t:"Give Sophia a treat",ic:"paw",fn:()=>SP.treat(),dis:!on},
+    {t:S.mode==="bed"?"Wake Sophia up":"Send Sophia to bed",fn:()=>SP.setMode(S.mode==="bed"?"up":"bed"),dis:!on},
+    {t:S.mode==="away"?"Call Sophia back":"Dismiss Sophia",fn:()=>SP.setMode(S.mode==="away"?"up":"away")},
+    "-",
+    {t:"Sophia's notebook",ic:"paw",fn:()=>OS.open("sophia")}])};
+SP.setMode=(m)=>{const S=SP.S;S.mode=m;SP.save();SP.apply();if(m==="away")toast("Sophia is resting out of sight. Call her back from her icon in the tray.");if(m==="bed"&&SP.L){SP.q.length=0;SP.setSt("sit",.1,()=>SP.think())}if(m==="up"&&SP.L&&SP.P.st==="sleep"){SP.wake()}SP.refreshUI()};
+SP.setOn=(on)=>{SP.S.on=!!on;SP.save();if(on)SP.mountAll();else SP.destroy();SP.refreshUI()};
+SP.apply=()=>{if(!SP.S.on||!SP.L)return;const vis=SP.visible();SP.L.style.display=vis?"":"none";if(vis&&!SP.run){SP.run=true;SP.last=0;requestAnimationFrame(SP.frame)}else if(!vis)SP.run=false};
+SP.mountAll=()=>{SP.build();SP.apply()};
+
+/* ---------- each frame ---------- */
+SP.frame=(ts)=>{if(!SP.run||!SP.L)return;requestAnimationFrame(SP.frame);if(document.hidden)return;
+  const P=SP.P,gap=P.st==="sleep"&&!SP.fxBusy?220:((["walk","hop","fall","cuddle","happy","pet","eat","bark"].includes(P.st)||(SP.lk&&(SP.lk.on||SP.lk.k>0||SP.lk.pts.length)))?33:80);
+  if(ts-SP.last<gap)return;const dt=Math.min(.12,(ts-(SP.last||ts-gap))/1000);SP.last=ts;
+  try{SP.step(dt);SP.render()}catch(e){console.error(e)}};
+SP.step=(dt)=>{
+  const P=SP.P,Sz=SP.Sz();P.t+=dt;P.t2=(P.t2||0)+dt;if(P.earT>0)P.earT-=dt;
+  /* follow the window she is standing on */
+  if(P.plat.k==="w"){const w=P.plat.win;if(w.dead||w.min||!w.el.isConnected){if(!["fall","hop"].includes(P.st)){SP.fall()}}else{const rc=SP.rect(w);if(P.lwx!=null&&P.st!=="hop")P.x+=rc.x-P.lwx;P.lwx=rc.x;if(P.st!=="hop"&&P.st!=="fall")P.fy=SP.platY(P.plat)}}else P.lwx=null;
+  if(P.plat.k==="f"&&P.st!=="hop"&&P.st!=="fall"&&P.st!=="sleep")P.fy=SP.platY(P.plat);
+  const sz2=SP.Sz();if(!SP.W||Math.abs($("#desk").clientWidth-SP.W)>1||Math.abs($("#desk").clientHeight-SP.H)>1){SP.size()}
+  /* never stuck: if she is somewhere impossible, or a move has dragged on, put her back to normal */
+  if(!isFinite(P.x)||!isFinite(P.fy)||P.x<-Sz||P.x>SP.W+Sz||P.fy>SP.H+Sz||P.fy<-Sz){P.plat=SP.floor;P.x=SP.home().bag;P.fy=SP.bagY();SP.setSt("sit",.5)}
+  else if(P.t>40&&["walk","hop","sniff","alert","eat","bark","happy","pet","fall","stretch","look"].includes(P.st)){P.plat=P.plat.k==="w"&&P.plat.win&&!P.plat.win.dead&&!P.plat.win.min?P.plat:SP.floor;P.fy=SP.platY(P.plat);SP.setSt("sit",.5)}
+  /* blinking */
+  P.blinkT-=dt;if(P.blinkT<=0){P.blink=.13;P.blinkT=SP.rand(2.2,5.5)}if(P.blink>0)P.blink-=dt;
+  const st=P.st;
+  if(st==="walk"){const rg=SP.platR(P.plat);P.tx=Math.max(rg[0],Math.min(rg[1],P.tx));const sp=SP.speed(P.fast)*dt,d=P.tx-P.x;P.ph+=dt*(P.fast?3.2:2.1);P.wag+=dt*4;if(Math.abs(d)<=sp||P.t>(P.wlim||20)){P.x=Math.abs(d)<=sp?P.tx:P.x;SP.fit();return SP.done()}P.x+=Math.sign(d)*sp;SP.fit();return}
+  if(st==="hop"){const h=P.hp,u=Math.min(1,P.t/h.d);P.x=h.x0+(h.x1-h.x0)*u;P.fy=h.y0+(h.y1-h.y0)*u-4*h.peak*u*(1-u);P.wag+=dt*8;if(u>=1){P.plat=h.pl;P.x=h.x1;P.fy=SP.platY(h.pl);P.lwx=h.pl.k==="w"?SP.rect(h.pl.win).x:null;SP.done()}return}
+  if(st==="fall"){P.vy=(P.vy||0)+900*dt;P.fy+=P.vy*dt;const fl=SP.platY(SP.floor);if(P.fy>=fl){P.fy=fl;P.plat=SP.floor;P.vy=0;P.earT=1;SP.say("oh!",1100);return SP.setSt("sit",1.2)}return}
+  if(st==="cuddle"){P.wag+=dt*10;if(P.t>1.2&&SP.lk&&!SP.lk.on)SP.lickStart();else if(!SP.lk.on&&P.t>.9&&Math.floor(P.t*1.2)!==Math.floor((P.t-dt)*1.2))SP.fx("♡");return}
+  if(st==="sleep"){if(Math.floor(P.t/3.2)!==Math.floor((P.t-dt)/3.2))SP.fx("z","z");if(P.t>=P.dur){return SP.done()}return}
+  if(st==="happy"||st==="pet"||st==="eat"||st==="bark"||st==="alert")P.wag+=dt*(st==="eat"?5:13);
+  else P.wag+=dt*(st==="stare"?1:2.4);
+  if(P.t>=P.dur)SP.done()};
+/* the real lick: she leans right up to the screen, paws on the glass, and licks it, leaving a wet trail that fades */
+SP.lickStart=()=>{const lk=SP.lk;if(!lk||lk.on)return;lk.on=true;lk.t=0;lk.pts=[];SP.q.length=0;
+  const Cs=Math.round(Math.max(170,Math.min(520,Math.min(SP.W,SP.H)*.64))),dpr=Math.min(1.5,window.devicePixelRatio||1);lk.Cs=Cs;
+  for(const c of[SP.cl,SP.sm]){c.width=c.height=Math.round(Cs*dpr);c.style.width=c.style.height=Cs+"px"}
+  SP.cl.style.display="";SP.cv.style.display="none";SP.say_el.classList.remove("on")};
+SP.lickEnd=()=>{if(SP.lk)SP.lk.on=false};
+SP.renderLick=(dt)=>{
+  const lk=SP.lk,P=SP.P,mo=SP.motion(),Sz=SP.Sz(),Cs=lk.Cs;lk.t+=dt;
+  lk.k=lk.on?Math.min(1,lk.k+dt/(mo?.02:.4)):Math.max(0,lk.k-dt/(mo?.02:.3));
+  const e=1-Math.pow(1-lk.k,3),hx=P.x,hy=P.fy-Sz*.5,fx=Math.max(Cs/2,Math.min(SP.W-Cs/2,hx)),fy=Math.max(Cs/2,Math.min(SP.H-Cs/2,hy));
+  const cx=hx+(fx-hx)*e,cy=hy+(fy-hy)*e,sz=Math.max(10,Sz*.8+(Cs-Sz*.8)*e);
+  SP.cl.style.width=SP.cl.style.height=Math.round(sz)+"px";SP.cl.style.transform="translate("+Math.round(cx-sz/2)+"px,"+Math.round(cy-sz/2)+"px)";
+  SP.sm.style.transform="translate("+Math.round(fx-Cs/2)+"px,"+Math.round(fy-Cs/2)+"px)";
+  if(lk.k>0){const licking=lk.on&&lk.k>=1&&lk.t>.7;const tip=SPA.close(SP.cl,{t:lk.t,eye:lk.t<.8||!lk.on?"open":"happy",lick:licking});
+    if(tip&&licking){lk.pts.push({x:tip.x,y:tip.y,age:0});if(lk.pts.length>140)lk.pts.shift();if(Math.floor(lk.t*2)!==Math.floor((lk.t-dt)*2))SP.snd("yip")}}
+  for(const q of lk.pts)q.age+=dt;while(lk.pts.length&&lk.pts[0].age>2.4)lk.pts.shift();
+  if(lk.pts.length){SP.sm.style.display="";SPA.smear(SP.sm,lk.pts)}else SP.sm.style.display="none";
+  if(!lk.on&&lk.k<=0){SP.cl.style.display="none";SP.cv.style.display=""}
+};
+SP.render=()=>{if(SP.lk&&(SP.lk.on||SP.lk.k>0||SP.lk.pts.length))SP.renderLick(Math.max(.001,(performance.now()-(SP.lk.last||performance.now()))/1000)),SP.lk.last=performance.now();else if(SP.lk)SP.lk.last=0;
+  const P=SP.P,S=SP.S,Sz=SP.Sz(),st=P.st;let o={t:P.t2,face:P.face,wag:P.wag,ph:P.ph,ear:.62,eye:P.blink>0?"blink":"open",mouth:"closed",pose:"side",still:true};
+  const happyBounce=(st==="happy"||st==="pet"||st==="eat")?Math.abs(Math.sin(P.t*10)):0;
+  switch(st){
+    case"sleep":o.pose="sleep";break;
+    case"sit":case"look":o.pose="front";o.look=Math.sin(P.t*.7)*.9;if(Math.floor(P.t/2.4)%2)o.tilt=.1;break;
+    case"alert":o.pose="front";o.ear=1;o.tilt=.08;break;
+    case"stare":o.pose="front";o.ear=.45;o.tilt=-.06;o.look=-1;o.face=P.face;break;
+    case"stretch":o.pose="front";o.eye="closed";o.mouth=P.t>.4&&P.t<1.3?"open":"closed";o.bob=Math.sin(P.t*3)*1.2;break;
+    case"walk":o.pose="side";o.still=false;o.ph=P.ph;o.ear=.55;break;
+    case"hop":o.pose="side";o.still=false;o.jump=1;o.ear=.9;break;
+    case"fall":o.pose="side";o.jump=1;o.ear=1;o.mouth="open";break;
+    case"sniff":o.pose="side";o.hy=11;o.hx=7;o.tilt=.3;o.ear=.45+Math.sin(P.t*6)*.1;o.look=.4;break;
+    case"bark":o.pose="side";o.hy=-4;o.mouth=P.t%.4<.2?"open":"closed";o.ear=1;break;
+    case"eat":o.pose="side";o.hy=14;o.hx=8;o.tilt=.34;o.mouth="open";o.still=true;break;
+    case"happy":o.pose="front";o.eye="happy";o.mouth="tongue";o.bob=-happyBounce*3;o.ear=.9;break;
+    case"pet":o.pose="front";o.eye="happy";o.mouth="tongue";o.bob=-happyBounce*1.5;o.ear=.5;o.paw=Math.sin(P.t*8)*.5;break;
+    case"cuddle":o.pose="front";o.eye=P.t>.45?"happy":"open";o.mouth=P.t>2?"lick":"tongue";o.ear=.4;o.bob=P.t>2?-1.5:0;o.tilt=P.t>2?Math.sin(P.t*5)*.06:0;o.paw=.6;break;
+  }
+  if(P.earT>0&&st!=="sleep")o.ear=1;
+  if(o.pose==="side"&&["walk","hop","fall"].includes(st)===false)o.still=true;
+  SPA.draw(SP.cv,o);
+  /* the happy bounce lifts her off the ground a touch */
+  const lift=(st==="happy"||st==="eat")?happyBounce*(st==="happy"?6:0)*S.size:0;
+  const bx=Math.round(P.x-Sz/2),by=Math.round(P.fy-Sz*.94-lift);
+  SP.cv.style.transform="translate("+bx+"px,"+by+"px)";
+  const h=SP.hit.style;h.left=Math.round(P.x-Sz*.3)+"px";h.top=Math.round(P.fy-Sz*.82)+"px";h.width=Math.round(Sz*.6)+"px";h.height=Math.round(Sz*.8)+"px";
+  if(SP.say_el.classList.contains("on"))SP.placeSay();
+};
+
+/* ---------- the tray icon and the start-up ---------- */
+function sophiaTray(tr){if(typeof NEST!=="undefined"&&NEST)return;const sp=h("span",{id:"sptray",title:"Sophia",onclick:e=>{const r=e.currentTarget.getBoundingClientRect();SP.menu(r.left,Math.max(10,r.top-150))}},ic("paw"));const ref=tr.querySelector("#bkt");ref?tr.insertBefore(sp,ref):tr.append(sp)}
+SP.refreshUI=()=>{for(const f of SP.ui||[])try{f()}catch(e){}};
+function sophiaInit(){
+  if(typeof NEST!=="undefined"&&NEST)return;if(SP.S)return;
+  SP.S=SP.load();SP.ui=[];
+  OS.on("wins",SP.onWins);
+  window.addEventListener("error",()=>{try{SP.onErr()}catch(e){}});window.addEventListener("unhandledrejection",()=>{try{SP.onErr()}catch(e){}});
+  const act=()=>{SP.lastActive=Date.now()};["pointerdown","keydown"].forEach(ev=>document.addEventListener(ev,act,true));
+  document.addEventListener("pointermove",()=>{if(Date.now()-(SP.lastActive||0)>2000)SP.lastActive=Date.now()},true);
+  SP.onWins();
+  addEventListener("resize",()=>{if(SP.L){SP.size();SP.apply()}});
+  OS.on("wins",()=>{if(SP.L)SP.apply()});
+  if(SP.S.on)SP.mountAll();
+}
+
+/* ===================== SOPHIA, part 3: her notebook. It is her patrol log: only facts the browser really knows, kept for two weeks and then cleared out automatically, like a system log. Plus her controls. ===================== */
+defApp("sophia",{name:"Sophia",icon:"paw",cat:"Companions",w:600,h:660,single:true,desc:"Sophia, Chief of Defence: a tiny companion who lives on your desktop, plus her patrol notebook",kw:"sophia dog chihuahua pet companion hot dog chief defence notebook log stats system status health uptime storage battery",
+init(win,b){
+  const S=()=>SP.S;let tab=SP.tabSel||"Notebook";
+  const root=h("div",{class:"spn"});b.append(root);
+  const ago=(t)=>{if(!t)return"never";const m=Math.round((Date.now()-t)/60000);if(m<2)return"just now";if(m<90)return m+" minutes ago";const hh=Math.round(m/60);if(hh<36)return hh+" hours ago";return Math.round(hh/24)+" days ago"};
+  const dur=(ms)=>{const m=Math.floor(ms/60000);if(m<60)return m+" min";return Math.floor(m/60)+" h "+(m%60)+" min"};
+  const sys={};
+  const probe=()=>{try{navigator.storage&&navigator.storage.estimate&&navigator.storage.estimate().then(e=>{sys.stor=e;paintNote()}).catch(()=>{})}catch(e){}try{navigator.getBattery&&navigator.getBattery().then(bt=>{sys.bat=bt;paintNote()}).catch(()=>{})}catch(e){}};
+  const stat=()=>{const s=S();if(!s.on)return"Sophia is switched off.";if(s.mode==="away")return"Resting out of sight.";if(!SP.L||!SP.P)return"Getting ready.";const st=SP.P.st;
+    return({sleep:s.mode==="bed"?"Asleep in her corner (you sent her to bed).":"Napping in her corner.",sit:"Sitting and watching what you do.",look:"Looking around.",walk:"Out for a trot.",hop:"Hopping across.",sniff:"Sniffing around.",happy:"Very pleased with herself.",pet:"Loving the attention.",cuddle:"Having a cuddle.",eat:"Eating a treat.",bark:"Barking softly.",alert:"Ears up!",stretch:"Having a stretch.",fall:"Whoops."})[st]||"Being Sophia."};
+  const portrait=h("canvas",{width:184,height:184});
+  const drawPortrait=()=>{const o={pose:S().on&&S().mode==="bed"?"sleep":"front",face:1,wag:performance.now()/260,eye:S().on?"open":"closed",mouth:"closed",ear:.75,t:performance.now()/1000};SPA.draw(portrait,o)};
+  const stEl=h("div",{class:"st"});
+  const bTreat=h("button",{class:"pri",onclick:()=>SP.treat()},"Give a treat");
+  const bBed=h("button",{onclick:()=>SP.setMode(S().mode==="bed"?"up":"bed")},"");
+  const bAway=h("button",{onclick:()=>SP.setMode(S().mode==="away"?"up":"away")},"");
+  const top=h("div",{class:"top"},portrait,h("div",{class:"who"},h("h2",{},"Sophia"),h("div",{class:"sub"},"Chief of Defence of Republicka. Guardian of the perimeter."),stEl,h("div",{class:"btns"},bTreat,bBed,bAway)));
+  const tabs=h("div",{class:"tabs"});const pg=h("div",{class:"pg"});
+  root.append(top,tabs,pg);
+  const tabBtn=(n)=>h("button",{class:tab===n?"on":"",onclick:()=>{tab=n;SP.tabSel=n;paint()}},n);
+  let noteEl=null;
+  const tile=(n,l)=>h("div",{class:"tile"},h("b",{},String(n)),h("span",{},l));
+  const row=(a,v)=>h("div",{class:"row"},h("span",{},a),h("span",{},v));
+  const lastDays=()=>{const a=[],now=new Date();for(let i=13;i>=0;i--){const d=new Date(now);d.setDate(now.getDate()-i);const k=spDay(d);a.push([k,(S().days[k]||{}).win||0])}return a};
+  const paintNote=()=>{if(tab!=="Notebook"||!noteEl)return;noteEl.innerHTML="";
+    const up=performance.now()-OS.boot,st=sys.stor,bt=sys.bat,mem=performance.memory,bk=LS.get("tvos_backup_last",0);
+    noteEl.append(row("This session has been running for",dur(up)));
+    noteEl.append(row("Your saved data",st&&st.usage!=null?fmtBytes(st.usage)+(st.quota?" of "+fmtBytes(st.quota)+" available":""):"not reported by this browser"));
+    if(mem&&mem.usedJSHeapSize)noteEl.append(row("Memory used by the OS",fmtBytes(mem.usedJSHeapSize)));
+    if(bt)noteEl.append(row("Battery",Math.round(bt.level*100)+"%"+(bt.charging?", charging":"")));
+    noteEl.append(row("Connection",navigator.onLine?"online":"offline"));
+    noteEl.append(row("Last backup",bk?ago(bk):"none yet"));
+    noteEl.append(row("Windows open right now",String(OS.wins.filter(w=>!w.dead&&w.app!=="sophia").length)))};
+  const paint=()=>{
+    tabs.innerHTML="";tabs.append(tabBtn("Notebook"),tabBtn("Her settings"));pg.innerHTML="";const s=S();
+    if(!s.on){pg.append(h("div",{class:"off"},h("div",{},"Sophia is switched off. She is not loaded, so she costs your computer nothing."),h("div",{style:"margin-top:14px"},h("button",{class:"pri",onclick:()=>SP.setOn(true)},"Switch Sophia on"))));return}
+    if(tab==="Notebook"){
+      const d=SP.day(),apps=d.a?Object.keys(d.a).length:0;
+      pg.append(h("h3",{},"Today's patrol"),h("div",{class:"tiles"},tile(d.win||0,"windows opened"),tile(d.safe||0,"checked and safe"),tile(apps,"different apps used"),tile(d.err||0,"errors she barked at"),tile(d.pet||0,"pets"),tile(d.cuddle||0,"cuddles"),tile(d.treat||0,"treats"),tile(d.nap||0,"naps")));
+      pg.append(h("h3",{},"The system right now"));noteEl=h("div",{class:"rows"});pg.append(noteEl);paintNote();probe();
+      const days=lastDays(),mx=Math.max(1,...days.map(x=>x[1]));
+      pg.append(h("h3",{},"Windows opened, last 14 days"),h("div",{class:"bars"},...days.map(([k,v])=>h("i",{class:v?"":"z",title:k+": "+v,style:"height:"+Math.max(4,Math.round(v/mx*100))+"%"}))));
+      const apl=d.a?Object.entries(d.a).sort((a,b)=>b[1]-a[1]).slice(0,5):[];
+      if(apl.length){pg.append(h("h3",{},"Busiest apps today"),h("div",{class:"rows"},...apl.map(([id,n])=>row((OS.apps[id]&&OS.apps[id].name)||id,n+" time"+(n>1?"s":"")))))}
+      pg.append(h("h3",{},"All time"),h("div",{class:"rows"},row("Windows she has checked",String(s.tot.safe)),row("Pets and cuddles",s.tot.pet+" and "+s.tot.cuddle),row("Treats eaten",String(s.tot.treat)),row("Errors barked at",String(s.tot.err))));
+      pg.append(h("div",{class:"note"},"Sophia keeps this notebook for 14 days and then clears the old pages by herself. It only holds what the browser really knows, and it never leaves this computer."),h("div",{style:"margin-top:10px"},h("button",{onclick:()=>{if(confirm("Clear Sophia's notebook? Her totals and today's page will start again.")){s.days={};s.tot=SP.def().tot;SP.save();paint()}}},"Clear the notebook")));
+    }else{
+      const opt=(t,sub,ctl)=>h("div",{class:"opt"},h("div",{},t,sub?h("small",{},sub):null),ctl);
+      const sel=h("select",{onchange:e=>{s.size=+e.target.value;SP.save();if(SP.L){SP.size();SP.fit()}}},...[[1,"Tiny"],[1.4,"Small"],[2,"Big"],[2.8,"Bigger"],[3.6,"Huge"]].map(([v,t])=>h("option",{value:v,selected:v===s.size},t)));
+      const snd=h("input",{type:"checkbox",checked:s.snd,onchange:e=>{s.snd=e.target.checked;SP.save();if(s.snd)SP.snd("bark");paint()}});
+      const rng=(k,mn,mx,st2)=>h("input",{type:"range",min:mn,max:mx,step:st2,value:s[k],oninput:e=>{s[k]=+e.target.value;SP.save()},onchange:()=>SP.snd("bark")});
+      pg.append(h("h3",{},"How to play with her"),h("div",{class:"note",style:"margin:0 0 6px;color:var(--fg)"},"Tap Sophia to pet her. Press and hold for a cuddle. Right-click her (or use the paw in the tray) for a menu. Open any app and she will trot over to check that it is safe."));
+      pg.append(h("h3",{},"Her settings"));
+      pg.append(opt("Her size","Big is her default. Tiny is closer to her real size.",sel),opt("Sounds","Off by default. When on, her barks are soft and short.",snd));
+      if(s.snd)pg.append(opt("Sound volume","Kept low on purpose.",rng("vol",.05,1,.05)),opt("Bark pitch","Tune it by ear.",rng("pitch",.6,1.5,.05)),opt("Bark softness","Lower is rounder and duller.",rng("soft",0,1,.05)));
+      pg.append(h("h3",{},"Not in the mood for a dog?"),h("div",{class:"note",style:"margin:0 0 8px"},"Send her to bed and she sleeps quietly in her corner. Dismiss her and she is out of sight until you call her back. Or switch her off completely and she is not even loaded."),h("button",{onclick:()=>{if(confirm("Switch Sophia off completely? You can switch her back on here any time.")){SP.setOn(false)}}},"Switch Sophia off"));
+    }
+  };
+  const sync=()=>{const s=S();stEl.textContent=stat();bBed.textContent=s.mode==="bed"?"Wake her up":"Send to bed";bAway.textContent=s.mode==="away"?"Call her back":"Dismiss her";bTreat.disabled=!s.on||s.mode==="away";bBed.disabled=!s.on||s.mode==="away";bAway.disabled=!s.on;top.querySelector(".btns").style.display=s.on?"":"none";drawPortrait()};
+  paint();sync();
+  const ui=()=>{sync();paint()};SP.ui.push(ui);
+  const tm=setInterval(()=>{sync();if(tab==="Notebook")paintNote()},1500);
+  win.on.close=()=>{clearInterval(tm);const i=SP.ui.indexOf(ui);if(i>=0)SP.ui.splice(i,1)};
+}});
+
 /* ===================== CLEANER: see everything this OS has saved in your browser, and clear what you no longer want ===================== */
 IP.broom="M14 3l-4.5 8.5 M7 11.5l9 4.5-1.5 5.5H5.5L4 17z M8.5 15.5l-1 4.5 M12 17.5l-.5 3.5";
 const CL={
@@ -8595,6 +9091,7 @@ const CL={
   tvos_session:["Open windows","Which windows were open last time, so they can come back at start.","Housekeeping"],
   tvos_diary:["Diary","Every page you wrote in the Diary, its colours and its PIN.","Your writing and creations","This is your writing. Deleting it removes every Diary page and the PIN."],
   tvos_circuit:["Circuit Temple progress","Your Circuit Temple game: money, boards repaired, shop upgrades, the repair kits you have given away with their thank-you notes, your shelf and the repair you are in the middle of.","Your writing and creations","Deleting it restarts Circuit Temple from the beginning."],
+  tvos_sophia:["Sophia","Sophia's settings (size, sounds, whether she is out or in bed) and her patrol notebook: counts of windows, pets, treats and the last two weeks of days.","Your writing and creations","Deleting it resets Sophia to a fresh start. She will keep living on the desktop."],
   tvos_sysadmin:["SysAdmin progress","Your SysAdmin game: credits, jobs finished, stats, workshop items, the servers you have given away with their thank-you notes, your shelf of finished servers and the job you are in the middle of.","Your writing and creations","Deleting it restarts SysAdmin from the beginning."],
   tvos_theseus:["Theseus ships","Your Theseus game: the ship on your bench and every finished ship on your shelf, with names, share codes and your bottle and plank choices.","Your writing and creations","Deleting it empties your shelf and clears the ship on the bench."],
   tvos_mysky:["My Sky progress","Your My Sky game: every system, world and animal you named, your bookmarks, claimed systems, paradise finds, home star and ship name.","Your writing and creations","Deleting it restarts My Sky from the beginning."],
@@ -9343,6 +9840,7 @@ const BKT={
   const bm=BKT.json("tvos_bm",[]);if(Array.isArray(bm)){const u=bm.filter(x=>x&&x.u&&x.u!=="https://republicka.life");add("bm","Bookmarks","settings",u.length,BKT.hs(JSON.stringify(u)))}
   const pg=BKT.json("tvos_apps",[]);if(Array.isArray(pg)&&pg.length){let s=BKT.raw("tvos_apps")||"";for(let i=0;i<localStorage.length;i++){const k=localStorage.key(i);if(k.startsWith("tvos_app_")||k.startsWith("tvos_appd_"))s+="|"+k+BKT.hs(BKT.raw(k)||"")}add("progs","Programs","settings",pg.length,BKT.hs(s))}
   const ct=BKT.json("tvos_circuit",null);if(ct&&(ct.done>0||ct.gave>0))add("circuit","Circuit Temple","settings",ct.done||ct.gave,BKT.hs(JSON.stringify([ct.done,ct.earned,ct.tiers,ct.decor,ct.gave,ct.hearts])));
+  const sph=BKT.json("tvos_sophia",null);if(sph&&typeof sph==="object"&&sph.tot&&(sph.tot.pet>0||sph.tot.treat>0||sph.tot.win>0))add("sophia","Sophia","settings",sph.tot.pet+sph.tot.treat,BKT.hs(JSON.stringify([sph.on,sph.mode,sph.size,sph.snd,sph.tot])));
   const sa=BKT.json("tvos_sysadmin",null);if(sa&&typeof sa==="object"){const n=sa.best?Object.keys(sa.best).length:0;if(n>0||sa.gave>0||(sa.decor&&Object.keys(sa.decor).length))add("sysadmin","SysAdmin","settings",n||sa.gave,BKT.hs(JSON.stringify([sa.best,sa.credits,sa.earned,sa.decor,sa.parts,sa.secs,sa.gave,sa.hearts])))}
   const ts=BKT.json("tvos_theseus",null);if(ts&&typeof ts==="object"){const sv=Array.isArray(ts.shelf)?ts.shelf:[],pr=ts.proj&&ts.proj.jar>0?1:0;if(sv.length||pr)add("theseus","Theseus","settings",sv.length||pr,BKT.hs(JSON.stringify([sv.map(e=>[e.id,e.nm,e.code||(e.json&&e.json.seed)]),pr?ts.proj.cur:0])))}
   const ms=BKT.json("tvos_mysky",null);if(ms&&ms.visited){const nv=Object.keys(ms.visited).length,nn=ms.names?Object.keys(ms.names).length:0;if(nn>0||nv>1)add("mysky","My Sky","settings",nn||nv,BKT.hs(JSON.stringify([ms.names,ms.pins,ms.claim,ms.home,ms.ship,ms.para,ms.strange,ms.rev,Object.keys(ms.visited).length])))}
@@ -9474,7 +9972,7 @@ async function boot(){
  pb.style.width="72%";
  await step("game: verifying embedded Terminal Velocity...",()=>{const el=document.getElementById("tvgame");const len=el?el.textContent.length:0;if(len>1000&&/terminal_velocity_v3/.test(el.textContent))ok("Terminal Velocity",fmtBytes(len)+" embedded, sandboxed in its own window");else no("embedded game missing")},78);
  await step("game: checking for an existing save in this browser...",()=>{try{const s=localStorage.getItem("terminal_velocity_v3");s?ok("existing Terminal Velocity save found",fmtBytes(s.length)+" - will be continued"):line("  no save yet - a fresh game will start","dm")}catch(e){no("save check",e.message)}},82);
- await step("compositor: window manager, taskbar, tray, start menu, spotlight...",()=>{buildTray();buildStart();spBind();buildDesk();OS.renderTasks();const m=MAN.json;const a=$("#arc");a&&(a.textContent=m?"archive: "+MAN.files.toLocaleString()+" files":"archive: none")},90);
+ await step("compositor: window manager, taskbar, tray, start menu, spotlight...",()=>{buildTray();buildStart();spBind();buildDesk();OS.renderTasks();try{sophiaInit()}catch(e){console.error(e)}const m=MAN.json;const a=$("#arc");a&&(a.textContent=m?"archive: "+MAN.files.toLocaleString()+" files":"archive: none")},90);
  await step("apps: registered "+Object.keys(OS.apps).length+" ("+Object.values(OS.apps).filter(a=>!a.hidden).map(a=>a.name).join(", ")+")",null,94);
  await step("ship: counting planks...",()=>{OS.shipUp=1;ok("rebuilt from its own text","windows, hearth, engine, archive")},96);
  await step("notes: checking for unsaved drafts...",async()=>{const s=await DB.get("np_session");s&&s.tabs&&s.tabs.length?ok(s.tabs.length+" unsaved note(s) will be restored when Notepad opens"):line("  none","dm")},97);
