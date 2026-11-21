@@ -879,7 +879,11 @@ SysAdmin (server icon, Games)
   The Lounge is the resting screen: your rank, jobs finished, servers built
   and fixed, credits, time at the bench, jobs finished per star level,
   recent servers (every finished job gets a photo on the Shelf) and a fun
-  fact. Credits pay for cozy workshop items in the Shop. The NEXT bar
+  fact. Credits pay for cozy workshop items in the Shop. When the
+  workshop is full the Shop has a second tab, Give a server: you send a
+  server to a school, library, clinic or shelter, as often as you like, and
+  they write back with a thank-you note. Gifts earn hearts, and hearts earn
+  kind titles, so credits are always worth earning. The NEXT bar
   always tells you what to do; Settings can turn the hints off.
   Your job is remembered: close the window or the whole OS and the same
   machine comes back as you left it.
