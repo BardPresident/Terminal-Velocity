@@ -856,6 +856,27 @@ Circuit Temple (chip icon, Games)
   Saved on this device under tvos_circuit, so it is included in Backup
   and Restore, and shows in Clean-up as "Circuit Temple progress".
 
+My Sky (sparkle icon, Games)
+  A cozy star-hunting game with no sound. You fly a small ship across a
+  map of invented stars, visit systems, and name what you find: the
+  system, each world, and each animal. Every star is a place on the map,
+  so a seed (shown as MS2 and a code like Q2C5-VRPG) always shows the
+  same system, and you can share one so a friend can fly to it.
+  The Ship is the home screen: your stats, your places, your journal and
+  the seed sheet. The Star chart is a real map. Tap a star, then Fly. You
+  can only jump so far at a time, shown by the dashed ring.
+  The scanner hears faint signals before you arrive: a purple diamond
+  means something strange (a paradox or two worlds merged into one), a
+  green sparkle means a paradise world. Paradise worlds are mild, lush and
+  full of animals, and are common enough to hunt.
+  Saved (star) is only a bookmark so you can fly back. Claimed (flag)
+  means the system is yours: naming anything there claims it for you.
+  Make home sets a system you can fly back to from anywhere. There is no
+  home until you choose one. The Places sheet lists your saved, claimed,
+  paradise and strange systems and where you have been recently.
+  Saved on this device under tvos_mysky, so it is included in Backup and
+  Restore, and shows in Clean-up as "My Sky progress".
+
 
 =====================================================================
 5. YOUR DATA: SAVING, BACKUP, CLEANER, REBOOT
