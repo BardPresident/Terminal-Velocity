@@ -1258,7 +1258,7 @@ const fmtDate=t=>{const d=new Date(t),hm=" "+pad(d.getHours())+":"+pad(d.getMinu
 const sleep=ms=>new Promise(r=>setTimeout(r,ms));
 const LS={get(k,d){try{const v=localStorage.getItem(k);return v==null?d:JSON.parse(v)}catch(e){return d}},set(k,v){try{localStorage.setItem(k,JSON.stringify(v));return true}catch(e){try{window.tvosStorageFull&&window.tvosStorageFull(e)}catch(_){}return false}}};
 const fmtUp=s=>{s=Math.max(0,Math.round(s));const d=Math.floor(s/86400),hr=Math.floor(s%86400/3600),m=Math.floor(s%3600/60),sc=s%60;if(d)return d+" d "+hr+" h";if(hr)return hr+" h "+m+" min";if(m)return m+" min "+sc+" s";return sc+" s"};
-const OS={apps:{},wins:[],z:10,bus:{},boot:performance.now(),ver:"1.0 build 1121-0049"};
+const OS={apps:{},wins:[],z:10,bus:{},boot:performance.now(),ver:"1.0 build 1121-0131"};
 OS.on=(ev,f)=>{(OS.bus[ev]=OS.bus[ev]||[]).push(f);return f};
 OS.off=(ev,f)=>{OS.bus[ev]=(OS.bus[ev]||[]).filter(x=>x!==f)};
 /* reboot that always fetches the newest copy of this page (like Ctrl+Shift+R), then reloads */
@@ -6576,7 +6576,7 @@ DJ.css=()=>{const old=document.getElementById("dj-css");if(old)old.remove();cons
 .dj .xy .lab{position:absolute;font-size:11px;opacity:.7;pointer-events:none}
 .dj .xy .dot{position:absolute;width:30px;height:30px;margin:-15px 0 0 -15px;border-radius:50%;background:var(--dj,#b388ff);box-shadow:0 0 20px var(--dj,#b388ff);left:50%;top:92%;pointer-events:none;opacity:.7}
 .dj .xy.dn .dot{opacity:1}
-.dj .bld{position:relative;min-height:84px;border-radius:18px;border:2px solid var(--dj,#b388ff);background:rgba(8,6,20,.6);font-weight:800;font-size:19px;letter-spacing:.06em;overflow:hidden;touch-action:none}
+.dj .bld{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none;position:relative;min-height:84px;border-radius:18px;border:2px solid var(--dj,#b388ff);background:rgba(8,6,20,.6);font-weight:800;font-size:19px;letter-spacing:.06em;overflow:hidden;touch-action:none}
 .dj .bld i{position:absolute;left:0;bottom:0;top:0;width:0;background:var(--dj,#b388ff);opacity:.5}
 .dj .bld span{position:relative;display:block;line-height:1.15}.dj .bld small{display:block;font-size:11px;font-weight:600;letter-spacing:.02em;opacity:.85}
 .dj .bld.dn{background:var(--dj,#b388ff);color:#10061f}
@@ -6712,8 +6712,15 @@ defApp("deejay",{name:"DeeJay",icon:"deejay",cat:"Media",w:940,h:660,single:true
   const xyMove=ev=>{if(xyOn&&E)xyAt(ev)};
   window.addEventListener("pointermove",xyMove);window.addEventListener("pointerup",xyUp);window.addEventListener("pointercancel",xyUp);
   /* BUILD: stays held until you let go anywhere on the screen */
+  /* Android: a long press makes the browser cancel the pointer (context menu, text selection). So touch is tracked with touch events, which end only when the finger really lifts. */
+  let bTouch=null;
   bldBtn.addEventListener("pointerdown",ev=>{ev.preventDefault();buildDown()});
-  bUp=()=>buildUp();window.addEventListener("pointerup",bUp);window.addEventListener("pointercancel",bUp);
+  bldBtn.addEventListener("touchstart",ev=>{ev.preventDefault();if(bTouch==null&&ev.changedTouches[0])bTouch=ev.changedTouches[0].identifier;buildDown()},{passive:false});
+  bldBtn.addEventListener("contextmenu",ev=>ev.preventDefault());
+  bUp=()=>buildUp();window.addEventListener("pointerup",bUp);
+  const bCancel=ev=>{if(ev.pointerType==="touch"&&bTouch!=null)return;bUp()};window.addEventListener("pointercancel",bCancel);
+  const tEnd=ev=>{if(bTouch==null)return;for(const t of ev.changedTouches)if(t.identifier===bTouch){bTouch=null;bUp();return}};
+  window.addEventListener("touchend",tEnd);window.addEventListener("touchcancel",tEnd);
   /* vibe picker and help */
   function buildPop(help){pop.textContent="";if(help){pop.className="pop help";
    pop.append(h("p",{},h("b",{},"Easy way: "),"press ",h("b",{},"Auto DJ"),". It puts records on for you and plays a whole night: a quiet start, a groove, a build, the big drop, a calm part, a bigger drop and a goodbye."),
@@ -6777,7 +6784,7 @@ defApp("deejay",{name:"DeeJay",icon:"deejay",cat:"Media",w:940,h:660,single:true
   colors();paint();requestAnimationFrame(()=>{try{root.focus({preventScroll:true})}catch(_){}kick()});
   DJ.dbg=win.api={S,decks,get ctx(){return ctx},get E(){return E},get Q(){return Q},stopAll,tapDeck,setTune,fxTap,setAuto,chooseMood,buildDown,buildUp,paint,recStart,recStop,saveTake,openCrate,get take(){return take},get rec(){return rec}};
   win.on.close=()=>{dead=true;clearInterval(tickT);clearInterval(tmT);clearTimeout(idleT);clearTimeout(saveT);cancelAnimationFrame(raf);RO.disconnect();document.removeEventListener("visibilitychange",vis);root.removeEventListener("keydown",kd);root.removeEventListener("keyup",ku);
-   window.removeEventListener("pointermove",xyMove);window.removeEventListener("pointerup",xyUp);window.removeEventListener("pointercancel",xyUp);window.removeEventListener("pointerup",bUp);window.removeEventListener("pointercancel",bUp);
+   window.removeEventListener("pointermove",xyMove);window.removeEventListener("pointerup",xyUp);window.removeEventListener("pointercancel",xyUp);window.removeEventListener("pointerup",bUp);window.removeEventListener("pointercancel",bCancel);window.removeEventListener("touchend",tEnd);window.removeEventListener("touchcancel",tEnd);window.removeEventListener("pointercancel",bUp);
    try{if(Q)Q.stop()}catch(e){}if(rec){try{rec.q.stop()}catch(e){}rec=null;REC.guard(false)}if(take&&!take.saved)REC.guard(false);try{LS.set("tvos_deejay",keep())}catch(e){}
    if(ctx)try{ctx.close()}catch(e){}ctx=null;E=null;Q=null}
  }});
