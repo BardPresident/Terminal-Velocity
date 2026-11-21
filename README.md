@@ -953,6 +953,34 @@ Sophia (paw icon, Companions)
     backup, and how many windows are open.
   - Windows opened over the last 14 days, the busiest apps today, and
     all-time totals.
+  Sophia Internet Security (the joke, and the lore):
+  Sophia is also the OS's antivirus and spyware monitor. This is a joke,
+  and it is meant to be an obvious one. Terminal Velocity is a single
+  text file running inside a browser tab. There is nothing installed to
+  infect, so it cannot catch a virus. That is why it is funny: she guards
+  it every day, finds nothing, and keeps a perfect record. In the lore,
+  that record is her doing.
+  - Where: the "Security" tab in her app, and "Run a security scan (a
+    joke)" in her right-click menu. Her subtitle calls her "Antivirus,
+    spyware monitor and good girl."
+  - Scans: Quick, Full and Deep. She walks to each open window (Full and
+    Deep also patrol the floor), sniffs, and hands in a report. The
+    progress, the patrol and the verdicts are theatre. The result is
+    always zero viruses and zero spyware, and the threat level is
+    "cuddles".
+  - What is real: the lines marked "Actually checked" are facts the page
+    can see. They are: how many windows are open, whether the camera or
+    recorder is listening right now, which outside web addresses the page
+    has contacted, what the browser says about camera, microphone,
+    location and notification permission, and saved items in this
+    browser that the OS does not recognise. The lines marked "Sophia's
+    findings" are the joke.
+  - Honest limit: a web page cannot scan your computer, your files or
+    other tabs, and she does not protect anything outside this tab. Do
+    not rely on her for real security. Use a real antivirus for that.
+  - Her record (viruses found, spyware found, windows cleared, alarms
+    raised, suspects befriended, bribes accepted, scans completed) is
+    saved with the rest of her notebook.
   Saved on this device under tvos_sophia, so it is included in Backup and
   Restore (as its own area), and shows in Clean-up as "Sophia".
 
