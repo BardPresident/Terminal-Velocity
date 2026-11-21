@@ -1258,7 +1258,7 @@ const fmtDate=t=>{const d=new Date(t),hm=" "+pad(d.getHours())+":"+pad(d.getMinu
 const sleep=ms=>new Promise(r=>setTimeout(r,ms));
 const LS={get(k,d){try{const v=localStorage.getItem(k);return v==null?d:JSON.parse(v)}catch(e){return d}},set(k,v){try{localStorage.setItem(k,JSON.stringify(v));return true}catch(e){try{window.tvosStorageFull&&window.tvosStorageFull(e)}catch(_){}return false}}};
 const fmtUp=s=>{s=Math.max(0,Math.round(s));const d=Math.floor(s/86400),hr=Math.floor(s%86400/3600),m=Math.floor(s%3600/60),sc=s%60;if(d)return d+" d "+hr+" h";if(hr)return hr+" h "+m+" min";if(m)return m+" min "+sc+" s";return sc+" s"};
-const OS={apps:{},wins:[],z:10,bus:{},boot:performance.now(),ver:"1.0 build 1121-0813"};
+const OS={apps:{},wins:[],z:10,bus:{},boot:performance.now(),ver:"1.0 build 1121-0823"};
 OS.on=(ev,f)=>{(OS.bus[ev]=OS.bus[ev]||[]).push(f);return f};
 OS.off=(ev,f)=>{OS.bus[ev]=(OS.bus[ev]||[]).filter(x=>x!==f)};
 /* reboot that always fetches the newest copy of this page (like Ctrl+Shift+R), then reloads */
@@ -5289,6 +5289,7 @@ function tapSlot(s){
  if(RUN.lid){toast("Slide the lid off first.");return}
  const u=RUN.inst[s.id];
  if(u){
+  if(s.kind==="cpu"&&!RUN.inst["hs"+s.cpu]&&RUN.sel&&RUN.items[RUN.sel]&&PARTS[RUN.items[RUN.sel].pid].kind==="hs"){tryPlace(RUN.sel,s);refresh();return}
   if(s.kind==="cpu"&&!RUN.inst["hs"+s.cpu]&&RUN.paste[s.cpu]==="ok"&&!RUN.sel){RUN.focus="hs"+s.cpu;refresh();return}
   showPop(s,u);return}
  if(s.kind==="cpu"&&RUN.inst["cpu"+s.cpu]){RUN.focus="hs"+s.cpu;refresh();return}
@@ -5431,7 +5432,7 @@ function boot(){
  requestAnimationFrame(function L(ts){if(DEAD)return;if(PAUSED()){setTimeout(()=>requestAnimationFrame(L),300);last=0;return}const dt=Math.min(.2,(ts-last)/1000||0);last=ts;render(ts);
   if(view==="bench"&&RUN&&$("modal").className.indexOf("show")<0){G.secs+=dt;acc+=dt;if(acc>8){acc=0;gsave()}}
   requestAnimationFrame(L)});
- host.RT={BOARDS,fitsBoard,genJob,GENJ,freshJob,lvlOf,G:()=>G,RUN:()=>RUN,JOB:()=>JOB,LAY:()=>LAY,begin:id=>begin(id,true),install,takeOut,tryPlace,newItem,nextStep,runPost,reqs,power,balance,doPower,toggleLid,tapSlot,refresh,PARTS,JOBS,finishPost,setView,faultCleared,perf,fit,useTool,setTool:t=>{tool=t},offer,jobCard,showOS,osName,osInstall,afterOS,qty,buildLounge}}
+ host.RT={view:viewS,BOARDS,fitsBoard,genJob,GENJ,freshJob,lvlOf,G:()=>G,RUN:()=>RUN,JOB:()=>JOB,LAY:()=>LAY,begin:id=>begin(id,true),install,takeOut,tryPlace,newItem,nextStep,runPost,reqs,power,balance,doPower,toggleLid,tapSlot,refresh,PARTS,JOBS,finishPost,setView,faultCleared,perf,fit,useTool,setTool:t=>{tool=t},offer,jobCard,showOS,osName,osInstall,afterOS,qty,buildLounge}}
 
 
 boot();
