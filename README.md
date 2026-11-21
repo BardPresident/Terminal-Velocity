@@ -877,6 +877,30 @@ My Sky (sparkle icon, Games)
   Saved on this device under tvos_mysky, so it is included in Backup and
   Restore, and shows in Clean-up as "My Sky progress".
 
+Theseus (bottle icon, Games)
+  A cozy ship-in-a-bottle game about the Ship of Theseus. An old, mossy ship
+  is sealed in a bottle. Replace it one part at a time until nothing
+  original remains, then answer the question it asks: is it the same ship?
+  The Lounge is the main menu: continue your ship, start a new one, open
+  your shelf, use a seed or code, or read how it works.
+  On the Bench, tap a glowing plank (or press the gold button) and the
+  tweezers take it out through the neck. Drag the new plank to the glowing
+  slot to glue it in. A plank can only come out when the planks beside it
+  are firmly set, so the order matters. Quick fit skips the dragging.
+  Masts, sails and the flag are replaced by choosing a look and then
+  pressing and holding the big button at the top of that tab. The
+  figurehead and rudder have their own gold button. Everything you build
+  can be repainted afterwards. The Bottle tab changes the glass, stopper,
+  sky, sea, scenery and stand at any time.
+  Seal the bottle when you are done. You answer the question, and the ship
+  goes on your Shelf with a code starting TS1 that anyone can paste under
+  Seeds to see your ship. An old ship comes from a seed starting TH1, so a
+  friend can start with the very same ship. From the shelf you can refit a
+  ship and replace it all again, or build a second ship from the planks you
+  pulled out.
+  Saved on this device under tvos_theseus, so it is included in Backup and
+  Restore (as its own area), and shows in Clean-up as "Theseus ships".
+
 
 =====================================================================
 5. YOUR DATA: SAVING, BACKUP, CLEANER, REBOOT
