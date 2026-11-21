@@ -1258,7 +1258,7 @@ const fmtDate=t=>{const d=new Date(t),hm=" "+pad(d.getHours())+":"+pad(d.getMinu
 const sleep=ms=>new Promise(r=>setTimeout(r,ms));
 const LS={get(k,d){try{const v=localStorage.getItem(k);return v==null?d:JSON.parse(v)}catch(e){return d}},set(k,v){try{localStorage.setItem(k,JSON.stringify(v));return true}catch(e){try{window.tvosStorageFull&&window.tvosStorageFull(e)}catch(_){}return false}}};
 const fmtUp=s=>{s=Math.max(0,Math.round(s));const d=Math.floor(s/86400),hr=Math.floor(s%86400/3600),m=Math.floor(s%3600/60),sc=s%60;if(d)return d+" d "+hr+" h";if(hr)return hr+" h "+m+" min";if(m)return m+" min "+sc+" s";return sc+" s"};
-const OS={apps:{},wins:[],z:10,bus:{},boot:performance.now(),ver:"1.0 build 1121-1013"};
+const OS={apps:{},wins:[],z:10,bus:{},boot:performance.now(),ver:"1.0 build 1121-1148"};
 OS.on=(ev,f)=>{(OS.bus[ev]=OS.bus[ev]||[]).push(f);return f};
 OS.off=(ev,f)=>{OS.bus[ev]=(OS.bus[ev]||[]).filter(x=>x!==f)};
 /* reboot that always fetches the newest copy of this page (like Ctrl+Shift+R), then reloads */
@@ -7639,11 +7639,11 @@ const LY={
   {id:"aurora",name:"Aurora",fx:"aurora",sky:["#071a2e","#02070f"],c:{bg:"#030b14",pn:"#0a1a2a",pn2:"#102740",fg:"#d9fff1",dim:"#80b9a6",ac:"#5df2c2",bd:"#1f4f56",er:"#ff7a8a"}},
   {id:"blossom",name:"Cherry Blossom",fx:"petals",pc:["#ffd3e2","#ffb3cd","#fff0f5"],sky:["#2b1a3a","#150a1e"],orb:[.8,.2,.07,"#fff1f6"],c:{bg:"#140a1c",pn:"#22122f",pn2:"#2e193f",fg:"#ffe9f1",dim:"#c59ab0",ac:"#ff9ec4",bd:"#512c68",er:"#ff6b86"}},
   {id:"desert",name:"Desert Sunset",fx:"dust",sky:["#2a1642","#c9582c"],orb:[.5,.82,.2,"#ffc070"],c:{bg:"#1d0f1f",pn:"#331628",pn2:"#431c2b",fg:"#ffead2",dim:"#d7a98a",ac:"#ffb454",bd:"#7a3a35",er:"#ff5a4a"}}],
- def(){return{v:5,scale:0,root:7,oct:3,n:11,sus:.7,soft:.6,room:.45,vol:.8,pat:0,bpm:46,hum:25,voice:false,more:false,nar:false,narVol:.5,volOff:.8,mood:"Lullaby",look:"gold",amb:true,sleep:0}},
+ def(){return{v:5,scale:0,root:7,oct:3,n:11,sus:.7,soft:.6,room:.45,vol:.8,pat:0,bpm:46,hum:25,voice:false,more:false,nar:false,narVol:.5,volOff:.8,mood:"Lullaby",look:"gold",amb:true,sleep:0,cyc:5}},
  load(){let o=LS.get("tvos_lyre",null);const d=LY.def();if(o&&typeof o==="object"){if(![3,4,5].includes(o.v))o={v:3,vol:o.vol,voice:o.voice};if(o.v<5&&o.vol!=null){/* older saves used other slider curves; keep the loudness they had */const x=Math.max(0,+o.vol||0),g=o.v===4?.8*Math.pow(x/.8,2):x;o.vol=g<=0?0:Math.max(0,Math.min(1,g>.8?.8+(g-.8)/.45*.2:.8+Math.log10(g/.8)/3.5))}for(const k of Object.keys(d))if(o[k]!=null)d[k]=o[k]}
   d.scale=Math.max(0,Math.min(LY.scales.length-1,d.scale|0));d.root=((d.root|0)%12+12)%12;d.oct=Math.max(1,Math.min(5,d.oct|0));d.n=Math.max(7,Math.min(13,d.n|0));d.pat=Math.max(0,Math.min(LY.pats.length-1,d.pat|0));
   d.sus=Math.max(0,Math.min(1,+d.sus||0));d.soft=Math.max(0,Math.min(1,+d.soft||0));d.room=Math.max(0,Math.min(1,+d.room||0));d.vol=Math.max(0,Math.min(1,+d.vol));d.bpm=Math.max(20,Math.min(160,Math.round(+d.bpm)||46));d.hum=Math.max(0,Math.min(100,+d.hum||0));
-  d.voice=!!d.voice;d.nar=!!d.nar;d.narVol=Math.max(0,Math.min(1,+d.narVol||.5));d.volOff=Math.max(0,Math.min(1,+d.volOff||.8));d.more=!!d.more;d.amb=d.amb!==false;d.sleep=[0,10,20,30,45,60].includes(+d.sleep)?+d.sleep:0;if(!LY.looks.some(l=>l.id===d.look))d.look="gold";d.mood=typeof d.mood==="string"&&LY.mood(d.mood)?d.mood:"";return d},
+  d.voice=!!d.voice;d.nar=!!d.nar;d.narVol=Math.max(0,Math.min(1,+d.narVol||.5));d.volOff=Math.max(0,Math.min(1,+d.volOff||.8));d.more=!!d.more;d.amb=d.amb!==false;d.sleep=[0,10,20,30,45,60].includes(+d.sleep)?+d.sleep:0;d.cyc=[0,2,5,10,20].includes(+d.cyc)?+d.cyc:5;if(!LY.looks.some(l=>l.id===d.look))d.look="gold";d.mood=typeof d.mood==="string"&&LY.mood(d.mood)?d.mood:"";return d},
  /* the volume slider is in decibels: each step down is the same drop in loudness, so the Lyre can sit far behind a voice */
  gain(v){return v<=0?0:v>=.8?.8+(v-.8)/.2*.45:.8*Math.pow(10,(v-.8)*3.5)},
  paceWord(b){return b<32?"Very slow":b<50?"Slow":b<72?"Gentle":b<105?"Steady":"Lively"},
@@ -7761,7 +7761,7 @@ const LY={
 defApp("lyre",{name:"Lyre",icon:"lyre",cat:"Media",w:900,h:640,single:true,desc:"play a lyre, or let it play itself",kw:"lyre harp strings instrument music pluck calm ambient relax ancient greek kithara arpeggio scale record wav story",
  init(win,b,arg){
   LY.css();
-  const S=LY.load();let ctx=null,E=null,dead=false,auto=false,autoT=0,nextT=0,idleT=0,raf=0,saveT=0,rebuildT=0;
+  const S=LY.load();let cycAt=0,ctx=null,E=null,dead=false,auto=false,autoT=0,nextT=0,idleT=0,raf=0,saveT=0,rebuildT=0;
   const vz=[];const ptr=new Map();
   /* recording state: rec = what is being recorded now, take = the finished recording waiting to be played or saved */
   let rec=null,take=null,play=null,tmT=0,playT=0;
@@ -7787,10 +7787,12 @@ defApp("lyre",{name:"Lyre",icon:"lyre",cat:"Media",w:900,h:640,single:true,desc:
   function autoTick(){if(dead||!auto)return;const now=ctx.currentTime;if(nextT<now-.5)nextT=now+.05;
    if(sleepEnd){const left=sleepEnd-performance.now();if(left<=0){sleepDone();return}if(left<16000)E.m.gain.setTargetAtTime(LY.gain(S.vol)*Math.pow(left/16000,2),now,.15)}
    let guard=0;
-   while(nextT<now+.2&&guard++<40){if(!q.length)q=LY.phrase(S,st);const it=q.shift(),hum=S.hum/100,bt=beat();
+   while(nextT<now+.2&&guard++<40){if(!q.length){if(S.cyc&&cycAt&&performance.now()>=cycAt){cycMood();return}q=LY.phrase(S,st)}const it=q.shift(),hum=S.hum/100,bt=beat();
     if(it.i>=0&&!(S.nar&&it.v<.5&&Math.random()<.3)){const jit=(Math.random()*2-1)*hum*Math.min(.09,bt*.12),vv=Math.max(.12,Math.min(1,it.v*(1+(Math.random()*2-1)*hum*.3)*(S.nar?.75:1)));pluckAt(it.i,vv,nextT+Math.max(0,jit))}
     nextT+=it.s!=null?it.s:it.g*bt}}
-  async function autoStart(){await ensure();if(auto)return;auto=true;resetSt();nextT=ctx.currentTime+.08;sleepEnd=S.sleep?performance.now()+S.sleep*60000:0;
+  /* every few minutes, hop to a different mood chosen at random from all of them, at the end of a phrase */
+  function cycMood(){const all=[];for(const g of LY.moods)for(const k of Object.keys(g[1]))if(k!==S.mood)all.push(k);cycAt=performance.now()+S.cyc*60000;if(!all.length)return;const k=all[Math.floor(Math.random()*all.length)];Object.assign(S,LY.mood(k));S.mood=k;syncCtl();applyScale()}
+  async function autoStart(){await ensure();if(auto)return;auto=true;resetSt();cycAt=S.cyc?performance.now()+S.cyc*60000:0;nextT=ctx.currentTime+.08;sleepEnd=S.sleep?performance.now()+S.sleep*60000:0;
    E.setVol(S.vol);autoT=setInterval(autoTick,40);clearInterval(uiT);uiT=setInterval(paint,1000);autoTick();paint();kick()}
   function autoStop(keepVol){if(sleepEnd&&!keepVol&&E)E.setVol(S.vol);auto=false;sleepEnd=0;clearInterval(autoT);clearInterval(uiT);paint()}
   function sleepDone(){autoStop(true);fadeAll(.4);toast("The Lyre has stopped by itself.");setTimeout(()=>{if(!dead&&E)E.setVol(S.vol)},2500)}
@@ -7907,6 +7909,7 @@ defApp("lyre",{name:"Lyre",icon:"lyre",cat:"Media",w:900,h:640,single:true,desc:
   const selPre=h("select",{class:"t",title:"Pick a mood. It sets the notes, the sound, the playing style and the pace.",onchange:e=>{const p=LY.mood(e.target.value);if(!p)return;Object.assign(S,p);S.mood=e.target.value;syncCtl();applyScale()}},h("option",{value:""},"Choose a mood..."),...LY.moods.map(g=>h("optgroup",{label:g[0]},...Object.keys(g[1]).map(k=>h("option",{value:k,selected:k===S.mood},k)))));
   const selPat=h("select",{class:"t",title:"How the Lyre plays by itself",onchange:e=>{S.pat=+e.target.value;S.mood="";selPre.value="";q=[];st={bar:0};sv()}},...LY.pats.map((p,i)=>h("option",{value:i,selected:i===S.pat,title:LY.patTip[i]},p+": "+LY.patTip[i])));
   const selLook=h("select",{class:"t",title:"Change how the Lyre looks (key T). This does not change your desktop.",onchange:e=>{S.look=e.target.value;sv();applyLook()}},...LY.looks.map(l=>h("option",{value:l.id,selected:l.id===S.look},l.name)));
+  const selCyc=h("select",{class:"t",title:"While the Lyre plays for you, it moves to a different mood from time to time",onchange:e=>{S.cyc=+e.target.value;cycAt=auto&&S.cyc?performance.now()+S.cyc*60000:0;sv()}},...[[0,"Stay on this mood"],[2,"Every 2 minutes"],[5,"Every 5 minutes"],[10,"Every 10 minutes"],[20,"Every 20 minutes"]].map(([v,t])=>h("option",{value:v,selected:v===S.cyc},t)));
   const selSleep=h("select",{class:"t",title:"The Lyre fades out slowly, then stops",onchange:e=>{S.sleep=+e.target.value;if(auto)sleepEnd=S.sleep?performance.now()+S.sleep*60000:0;sv();paint()}},...[[0,"Never"],[10,"10 minutes"],[20,"20 minutes"],[30,"30 minutes"],[45,"45 minutes"],[60,"1 hour"]].map(([v,t])=>h("option",{value:v,selected:v===S.sleep},t)));
   const ambChk=h("input",{type:"checkbox",checked:S.amb,onchange:e=>{S.amb=e.target.checked;sv();draw();kick()}});
   const ambLab=h("label",{class:"chk",title:"Gentle moving things in the background, like stars or petals. Turn off for a very slow computer."},ambChk,"Moving background");
@@ -7933,7 +7936,7 @@ defApp("lyre",{name:"Lyre",icon:"lyre",cat:"Media",w:900,h:640,single:true,desc:
   const btnSave=h("button",{class:"btn big pri",onclick:saveTake},"Save as WAV");
   const btnDrop=h("button",{class:"btn",onclick:dropTake},"Throw away");
   const resBar=h("div",{class:"bar res"},resMsg,btnPlay,btnSave,btnDrop);
-  const more=h("div",{class:"bar more"},fld("Scale",selScale),fld("Starting note",selRoot),fld("Lowest octave",selOct),fld("Number of strings",selN),sSus,sSoft,sRoom,fld("Playing style",selPat),sHum,fld("Stop by itself after",selSleep),ambLab);
+  const more=h("div",{class:"bar more"},fld("Scale",selScale),fld("Starting note",selRoot),fld("Lowest octave",selOct),fld("Number of strings",selN),sSus,sSoft,sRoom,fld("Playing style",selPat),sHum,fld("When playing for me, change mood",selCyc),fld("Stop by itself after",selSleep),ambLab);
   /* Narration mode: soft, light and steady, so your voice comes first. It remembers its own volume. */
   const narChk=h("input",{type:"checkbox",checked:S.nar,onchange:e=>setNar(e.target.checked)});
   const narLab=h("label",{class:"chk",title:"Keeps the music quiet and light so your voice comes first: softer, fewer notes, a lighter echo and a steadier sound for recording. Narration has its own volume. Your normal volume comes back when you turn it off."},narChk,"Narration mode");
