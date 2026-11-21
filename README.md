@@ -921,7 +921,9 @@ Sophia (paw icon, Companions)
     the OS catches an error, and at most once every 20 seconds.
   - Tap her to pet her. Press and hold for a cuddle; keep holding and she
     leans right up to the screen, looks at you, and licks the glass for
-    real, leaving a wet trail that fades. Let go and she steps back.
+    real, leaving a wet trail that fades. Let go (or tap anywhere else)
+    and she steps back. She also gets tired and steps back by herself
+    after a few seconds, so she can never get stuck licking.
     Right-click her, or tap the paw in the tray, for a menu: Give a treat,
     Send to bed, Dismiss, Notebook. After six treats in ten minutes she is
     full and goes for a nap.
