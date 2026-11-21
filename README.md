@@ -847,12 +847,20 @@ Circuit Temple (chip icon, Games)
   The Job board lets you pick any star level at any time (1 to 5 stars,
   nothing is locked). Each level has several jobs; "Show different
   boards" brings new ones. More stars pay more.
+  A part you lift off that is bad (dead, burnt, shorted or the wrong
+  value) goes to the Parts tray marked "bad" in red, with the reason, and
+  you get a warning if you put a bad part back on the board.
   Your repair is remembered: close the window or the whole OS and the
   same board comes back exactly as you left it.
   The NEXT bar always tells you what to do. In Settings you can turn the
   tutorial hints off once you know the game, and turn off auto-solder.
   Keys while the window is focused: 1 to 9 pick a tool, P power, T heat
   view, B parts, M map, U or Ctrl+Z undo, 0 fit the board.
+  Money never runs out of uses: the Shop has a Give a repair kit card. You
+  send a toolkit, a repair bench or a whole repair lab to a school, club or
+  workshop, as often as you like, and they write back with a thank-you
+  note. Gifts earn hearts, and hearts earn kind titles. Once every tool and
+  workshop item is bought, the card moves to the top of the Shop.
   Saved on this device under tvos_circuit, so it is included in Backup
   and Restore, and shows in Clean-up as "Circuit Temple progress".
 
