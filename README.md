@@ -902,6 +902,58 @@ SysAdmin (server icon, Games)
   Saved on this device under tvos_sysadmin, so it is included in Backup and
   Restore (as its own area), and shows in Clean-up as "SysAdmin progress".
 
+Sophia (paw icon, Companions)
+  Sophia is a long-haired Chihuahua, black with a white chest, tan
+  eyebrow dots, tan legs and big, bright eyes, and she lives on your
+  desktop. She is Chief of Defence of Republicka and guards the
+  perimeter. She is tiny, she cannot be hurt, she cannot go hungry, and she never wants anything. She
+  is always content.
+  She has no window. She walks on the bottom of the screen and along the
+  top edge of your open windows, and she does not block clicks: only her
+  own body does. She has no furniture or props: her sleeping spot is just
+  the bottom-right corner of the desktop.
+  - Naps: she sleeps a lot, in that corner, and more at night or when you
+    have been away from the keyboard for a while.
+  - Checks every new window: when you open an app she trots over, sniffs
+    along the top of the window and says "all clear". Open several at once
+    and she just nods at the extras. She never covers the window itself.
+  - Barks (a speech bubble, and a soft sound if you turn sounds on) when
+    the OS catches an error, and at most once every 20 seconds.
+  - Tap her to pet her. Press and hold for a cuddle; keep holding and she
+    leans right up to the screen, looks at you, and licks the glass for
+    real, leaving a wet trail that fades. Let go and she steps back.
+    Right-click her, or tap the paw in the tray, for a menu: Give a treat,
+    Send to bed, Dismiss, Notebook. After six treats in ten minutes she is
+    full and goes for a nap.
+  - Out of the way: Send to bed keeps her asleep in her corner. Dismiss
+    hides her until you call her back. "Switch Sophia off" in her app
+    unloads her completely. The paw in the tray always works.
+  - Size: Tiny, Small, Big, Bigger or Huge, in her settings. Big is the
+    default.
+  - Sounds: off until you turn them on. They are soft and short, and have
+    their own volume, pitch and softness sliders to tune by ear.
+  - Always in front: she stays on top of every window, and she keeps
+    herself fully on the screen when you make the window smaller.
+  - Phones and small screens: she shrinks to fit (never more than about
+    a third of the screen width), stays in front of open apps, and still
+    wakes up, hops onto each new app and checks it. Apps fill the whole
+    screen there, so she sniffs along the top of the app and then goes
+    back down to the bottom edge.
+  - Reduced motion: if your system asks for less motion she stays on one
+    surface and moves slowly instead of hopping.
+  Her notebook is a patrol log that keeps only what the browser really
+  knows, and clears pages older than 14 days by itself:
+  - Today: windows opened, windows she checked, different apps used,
+    errors she barked at, pets, cuddles, treats, naps.
+  - The system right now: how long this session has run, how much storage
+    your saved data uses, memory used by the OS and battery (only where
+    the browser reports them), online or offline, time since your last
+    backup, and how many windows are open.
+  - Windows opened over the last 14 days, the busiest apps today, and
+    all-time totals.
+  Saved on this device under tvos_sophia, so it is included in Backup and
+  Restore (as its own area), and shows in Clean-up as "Sophia".
+
 My Sky (sparkle icon, Games)
   A cozy star-hunting game with no sound. You fly a small ship across a
   map of invented stars, visit systems, and name what you find: the
