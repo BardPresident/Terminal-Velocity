@@ -1258,7 +1258,7 @@ const fmtDate=t=>{const d=new Date(t),hm=" "+pad(d.getHours())+":"+pad(d.getMinu
 const sleep=ms=>new Promise(r=>setTimeout(r,ms));
 const LS={get(k,d){try{const v=localStorage.getItem(k);return v==null?d:JSON.parse(v)}catch(e){return d}},set(k,v){try{localStorage.setItem(k,JSON.stringify(v));return true}catch(e){try{window.tvosStorageFull&&window.tvosStorageFull(e)}catch(_){}return false}}};
 const fmtUp=s=>{s=Math.max(0,Math.round(s));const d=Math.floor(s/86400),hr=Math.floor(s%86400/3600),m=Math.floor(s%3600/60),sc=s%60;if(d)return d+" d "+hr+" h";if(hr)return hr+" h "+m+" min";if(m)return m+" min "+sc+" s";return sc+" s"};
-const OS={apps:{},wins:[],z:10,bus:{},boot:performance.now(),ver:"1.0 build 1121-0520"};
+const OS={apps:{},wins:[],z:10,bus:{},boot:performance.now(),ver:"1.0 build 1121-0736"};
 OS.on=(ev,f)=>{(OS.bus[ev]=OS.bus[ev]||[]).push(f);return f};
 OS.off=(ev,f)=>{OS.bus[ev]=(OS.bus[ev]||[]).filter(x=>x!==f)};
 /* reboot that always fetches the newest copy of this page (like Ctrl+Shift+R), then reloads */
@@ -4410,6 +4410,1006 @@ defApp("circuit",{name:"Circuit Temple",icon:"chip",cat:"Games",w:980,h:660,sing
  }});
 })();
 
+/* ===================== SYSADMIN (build and fix servers; Wendell's standalone game, built in) =====================
+   Build a server from scratch or fix a broken one, forever: hand-made jobs first, then endless generated jobs (1 to 5 stars).
+   Runs inside a shadow root so its styles never touch the OS. Hardware is drawn on canvas; there are no images and no sound.
+   Save: localStorage "tvos_sysadmin": covered by the system Backup (own area) and listed in Clean-up. */
+(()=>{
+IP.sysadmin="M4 4.5h16v5.5H4z M4 14h16v5.5H4z M7.5 7.25h.01 M7.5 16.75h.01 M11.5 7.25h5 M11.5 16.75h5";
+const SA_CSS=":root,:host{--bg:#1f1429;--panel:rgba(46,31,62,.94);--line:rgba(255,255,255,.12);--ink:#fff1f9;--dim:#c9b3d8;--amber:#ff8fcf;--amber2:#ff6fb5;--good:#8ff0c4;--bad:#ff8a9a}\n*{box-sizing:border-box}html,body,:host,#ctw{margin:0;height:100%;background:var(--bg);color:var(--ink);font:14px/1.4 ui-rounded,'SF Pro Rounded',Nunito,Quicksand,'Segoe UI',system-ui,-apple-system,Roboto,sans-serif;-webkit-user-select:none;user-select:none;overscroll-behavior:none}\n#ctw{position:absolute;inset:0;overflow:hidden;container-type:size;container-name:sa}:host{display:block;flex:1;min-height:0;position:relative;overflow:hidden;width:100%;height:100%}button{font:inherit;color:inherit;cursor:pointer}\nsection{position:absolute;inset:0;display:none;flex-direction:column}\n.btn{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:8px 12px}.btn:hover{border-color:rgba(255,143,207,.55)}.btn.on{border-color:var(--amber);color:var(--amber);background:rgba(255,143,207,.12)}\n.big{display:block;width:100%;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:14px 18px;font-size:16px;font-weight:650}.big.sm{font-size:14px;font-weight:500;padding:10px}.big.pri{background:linear-gradient(#ffb8de,#ff6fb5);color:#3a1230;border:0}\n.dim{color:var(--dim)}\n.pulse{animation:pl 1.2s infinite;border-color:var(--amber)!important}@keyframes pl{50%{box-shadow:0 0 0 6px rgba(255,143,207,.45)}}\n/* board */\n#board{background:var(--bg);overflow:auto}.bh{display:flex;gap:12px;align-items:center;padding:10px 12px;background:#180f22;border-bottom:1px solid var(--line);position:sticky;top:0;z-index:2}.bh b{color:var(--amber);font-size:16px}\n#bjobs{padding:8px 14px 40px;max-width:640px;margin:0 auto;width:100%}#bjobs h3{margin:18px 0 8px;color:var(--amber);font-size:13px;letter-spacing:.1em;text-transform:uppercase}.jobs{display:grid;grid-template-columns:repeat(auto-fill,minmax(270px,1fr));gap:10px}\n.job{text-align:left;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:12px 14px;display:flex;flex-direction:column;gap:3px}.job:hover{border-color:rgba(255,143,207,.6)}.jt{font-weight:700;font-size:15px;color:var(--ink)}.jw{color:var(--amber);font-size:12px}.js{color:var(--dim);font-size:12.5px;margin:4px 0}.jf{display:flex;gap:10px;align-items:center;font-size:12px;flex-wrap:wrap}.jf .st{color:var(--amber);letter-spacing:2px}.jf i{font-style:normal;border:1px solid var(--line);border-radius:6px;padding:0 6px;color:var(--dim)}.jf em{color:var(--good);font-style:normal}.jf u{margin-left:auto;text-decoration:none;color:var(--dim)}\n/* bench */\n#bench{background:var(--bg)}#top{flex:none;display:flex;align-items:center;gap:8px;padding:6px 8px;background:#180f22;border-bottom:1px solid var(--line)}#tk{flex:1;min-width:0}#tk>b{display:block;color:var(--amber);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}#tk span{display:block;font-size:12px;color:var(--dim);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}#money{padding:6px 10px;font-weight:700;color:var(--amber);border:1px solid var(--line);border-radius:10px;font-variant-numeric:tabular-nums}#bTicket b{color:var(--amber)}\n#stage{flex:1;min-height:0;position:relative;overflow:hidden;background:radial-gradient(ellipse at 50% 40%,#4a2b63,#1a1026)}#cv{position:absolute;inset:0;width:100%;height:100%;touch-action:none;display:block}\n#tools{position:absolute;left:8px;top:8px;display:flex;flex-direction:column;gap:6px;z-index:4}#zoom{position:absolute;right:8px;bottom:70px;display:flex;flex-direction:column;gap:6px;z-index:4}#zoom .btn{width:38px;height:38px;padding:0;font-size:20px}\n.pwr{position:absolute;right:8px;bottom:8px;z-index:4;padding:14px 20px;font-weight:800;font-size:15px;background:linear-gradient(#ffb8de,#ff6fb5);color:#3a1230;border:0;border-radius:14px}\n#meter{position:absolute;right:8px;top:8px;z-index:4;width:190px;background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:8px 10px;display:none}.mrow{display:flex;align-items:center;gap:6px;font-size:12px}.mtr{flex:1;height:8px;background:#3b2b4b;border-radius:5px;overflow:hidden}#mbar{display:block;height:100%;border-radius:5px;background:var(--good)}#mbar.tight{background:var(--amber)}#mbar.over{background:var(--bad)}#mbar.none{background:#444}#mtxt{font-size:11px;min-width:54px;text-align:right}#mem{font-size:11.5px;margin-top:4px;color:var(--good)}#mem.uneven{color:var(--amber)}\n#ticket{position:absolute;left:84px;top:8px;width:min(330px,calc(100% - 100px));background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:10px 12px;z-index:5;display:none;max-height:calc(100% - 16px);overflow:auto}#ticket.open{display:block}#ticket h2{margin:0;font-size:15px;color:var(--amber)}.who{font-size:12px;color:var(--dim)}#ticket p{margin:6px 0;font-size:13px}.row2{display:flex;gap:8px;font-size:13px;padding:2px 0;color:var(--dim)}.row2.ok{color:var(--good)}.row2 i{font-style:normal;width:14px}.mach{margin-top:8px;font-size:11.5px;color:var(--dim);border-top:1px solid var(--line);padding-top:6px}.tip{color:var(--amber)!important;font-size:12.5px!important}\n#pop{position:absolute;display:none;z-index:7;background:#1b221e;border:1px solid var(--amber);border-radius:12px;padding:9px 11px;min-width:170px}#pop b{display:block}#pop small{color:var(--dim)}.warn{color:var(--bad);font-size:12.5px;margin-top:4px}.pb{display:flex;gap:6px;margin-top:8px}.pb .btn{flex:1;padding:6px}\n#toasts{position:absolute;left:50%;transform:translateX(-50%);top:8px;display:flex;flex-direction:column;gap:5px;align-items:center;pointer-events:none;z-index:9;width:100%}.toast{background:rgba(20,24,22,.96);border:1px solid var(--line);border-radius:10px;padding:6px 12px;font-size:13px;max-width:min(520px,90%);text-align:center}.toast.bad{border-color:rgba(255,122,106,.6);color:#ffc9c1}\n#post{position:absolute;inset:0;background:rgba(0,0,0,.7);z-index:8;display:none;align-items:center;justify-content:center;padding:12px}.mon{width:min(560px,100%);background:#020504;border:3px solid #2d3a33;border-radius:14px;padding:14px;box-shadow:0 0 40px rgba(80,255,150,.12) inset}#pl{margin:0;font:13px/1.55 ui-monospace,Consolas,monospace;color:#9dffc0;white-space:pre-wrap;min-height:120px}#pl .ok{color:#9dffc0}#pl .bad{color:#ff7a6a}#pl .dim{color:#68806f}#pl .amb{color:var(--amber)}#pb{margin-top:12px}\n#next{flex:none;display:flex;align-items:center;gap:10px;padding:8px 12px;background:#2b1b3a;border-top:1px solid var(--line)}#next .lab{font:800 10px system-ui;letter-spacing:.12em;color:#3a1230;background:var(--amber);padding:3px 7px;border-radius:6px}#next .txt{flex:1;font-size:14px;color:var(--ink)}\n#tray{flex:none;height:176px;background:#1b1227;border-top:1px solid var(--line);display:flex;flex-direction:column}.th{display:flex;align-items:center;gap:8px;padding:6px 10px;font-size:13px;color:var(--dim)}.th>span{flex:1}.th b{color:var(--amber)}.shopb{padding:5px 10px;font-size:13px}.tl{flex:1;display:flex;gap:8px;overflow-x:auto;overflow-y:hidden;padding:0 10px 8px;touch-action:pan-x;align-items:stretch}.empty{color:var(--dim);font-size:13px;align-self:center;padding:0 6px}.mini{background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:4px 9px;font-size:12px}\n.card{flex:none;width:118px;background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:6px 7px;display:flex;flex-direction:column;align-items:center;gap:1px;text-align:center;cursor:grab}.card.sel{border-color:var(--amber);box-shadow:0 0 0 2px rgba(255,143,207,.35)}.card b{font-size:11.5px;line-height:1.15}.card small{font-size:10px;color:var(--dim);line-height:1.15}.card em{font-size:9.5px;color:var(--good);font-style:normal;margin-top:auto}.ci{display:block;height:50px;margin-bottom:2px}\n#ghost{position:absolute;z-index:50;pointer-events:none;transform:translate(-50%,-70%);filter:drop-shadow(0 8px 10px rgba(0,0,0,.6))}\n/* modal */\n#modal{position:absolute;inset:0;z-index:20;background:rgba(5,8,6,.78);display:none;align-items:center;justify-content:center;padding:14px}#modal.show{display:flex}.mbox{width:min(560px,100%);max-height:100%;overflow:auto;background:#2a1c39;border:1px solid var(--line);border-radius:18px;padding:18px}.mbox h2{margin:0 0 8px;color:var(--amber)}.mb{display:flex;gap:10px;margin-top:14px;flex-wrap:wrap}.mb .big{flex:1;min-width:130px}.how{padding-left:20px}.how li{margin:7px 0}\n.bigstars{font-size:40px;color:var(--amber);letter-spacing:6px;text-align:center}.pay{color:var(--good);font-weight:700;font-size:18px;text-align:center}#modal.res p{text-align:center}.row{display:flex;align-items:center;gap:10px;justify-content:space-between;margin:8px 0}.sw{flex:none;width:52px;height:30px;border-radius:16px;border:1px solid var(--line);background:#3b2b4b;position:relative;padding:0}.sw i{position:absolute;top:3px;left:3px;width:22px;height:22px;border-radius:50%;background:#9db0a5;transition:.15s}.sw.on{background:#2f6b45;border-color:var(--good)}.sw.on i{left:25px;background:#e8f7ee}\n.tabs{display:flex;gap:6px;flex-wrap:wrap;margin:8px 0}.tab{background:transparent;border:1px solid var(--line);border-radius:9px;padding:5px 10px;font-size:13px}.tab.on{border-color:var(--amber);color:var(--amber)}.shl{display:flex;flex-direction:column;gap:6px;max-height:44cqh;overflow:auto}.shr{display:flex;align-items:center;gap:10px;background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:6px 10px}.shr .ic{flex:none;width:78px;display:block}.shr .tx{flex:1;display:flex;flex-direction:column}.shr small{color:var(--dim)}.shr .no{font-size:12px;color:var(--bad);max-width:130px;text-align:right}.chk{display:block;margin-top:10px;font-size:12.5px;color:var(--dim)}\n@container sa (max-width:640px){#meter{width:150px}#tray{height:186px}#ticket{left:8px;top:140px;width:calc(100% - 16px)}.mtr{display:none}#tools{flex-direction:row;left:8px}#zoom{bottom:64px}}\n\n/* v2 interface */\n.ib{width:40px;height:40px;border-radius:12px;background:var(--panel);border:1px solid var(--line);font-size:15px}\n#tk>b{font-size:16px}.sf{color:var(--amber);font-weight:400;letter-spacing:1px}.se{color:#5b665f;font-style:normal;letter-spacing:1px}#sub{display:flex;gap:6px;align-items:center}\n#tools{top:10px;left:10px;gap:8px}\n.tb{display:flex;flex-direction:column;align-items:center;gap:3px;width:74px;padding:9px 4px 7px;background:var(--panel);border:1px solid var(--line);border-radius:14px;font-size:12px}.tb em{font-style:normal;color:var(--ink)}.tb svg{width:26px;height:26px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}.tb:hover{border-color:rgba(255,143,207,.55)}.tb.on{border-color:var(--amber);background:rgba(255,143,207,.16);color:var(--amber)}\n.pwr{display:flex;align-items:center;gap:8px;padding:12px 18px 12px 14px}.pwr svg{width:22px;height:22px;fill:none;stroke:#3a1230;stroke-width:2.2;stroke-linecap:round}.pwr em{font-style:normal}\n#tip{position:absolute;left:50%;transform:translateX(-50%);bottom:10px;z-index:5;background:var(--amber);color:#3a1230;font-weight:700;padding:8px 16px;border-radius:12px;display:none;pointer-events:none;white-space:nowrap}\n#next{padding:10px 14px;border-top:2px solid rgba(255,143,207,.25);background:#2b1b3a}#next .txt{font-size:15.5px;font-weight:500}\n.shopb{display:flex;align-items:center;gap:6px}.shopb svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}\n.card{width:128px}.card b{font-size:12px}.card small{font-size:10.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}\n.th{padding:7px 12px}\n#modal .st{font-size:15px;margin-bottom:2px}.who{font-size:13px;color:var(--amber);margin-bottom:6px}.mbox p{margin:8px 0;line-height:1.5}.cl{background:rgba(255,255,255,.04);border-radius:12px;padding:10px 12px;margin:10px 0}.cl>b{display:block;margin-bottom:4px}.mach{font-size:12px;color:var(--dim)}.tip{color:var(--amber)}\n.row2{display:flex;gap:8px;padding:2px 0;color:var(--dim)}.row2.ok{color:var(--good)}.row2 i{font-style:normal;width:16px}\n#modal.offer .mbox,#modal.jc .mbox{width:min(520px,100%)}\n/* board */\n.pick{margin:14px 0 10px;font-size:15px}.cont{display:block;width:100%;text-align:left;background:linear-gradient(#ffb8de,#ff6fb5);color:#3a1230;border:0;border-radius:14px;padding:12px 16px}.cont b{display:block;font-size:16px}.cont span{font-size:13px}\n.lvl{display:flex;align-items:center;gap:14px;width:100%;text-align:left;background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:16px 18px;margin-bottom:10px}.lvl:hover{border-color:rgba(255,143,207,.6)}.lvl .ls{font-size:22px;min-width:130px}.lvl .ln{flex:1;font-weight:700;font-size:17px}.lvl .lc{color:var(--dim);font-size:13px}.lvl.all .lc{color:var(--good)}\n#bjobs{max-width:640px}\n@container sa (max-width:640px){.tb{width:64px}#tools{top:8px;left:8px}.lvl .ls{min-width:112px;font-size:19px}}\n\n/* v3: cute and cozy */\n.btn,.mini,.tab,.big,.cont,.lvl,.tb,.pwr,.ib{border-radius:999px}.big{border-radius:22px}.lvl,.cont{border-radius:22px}.tb{border-radius:20px}.mbox{border-radius:26px}.card{border-radius:18px}.shr,.dc,.sh,.st{border-radius:18px}\n.big.pri,.cont,.go,.pwr{box-shadow:0 4px 0 #c24a93,0 8px 18px rgba(255,111,181,.3)}\nh1,h2{letter-spacing:.01em}\n#ctw{background:radial-gradient(ellipse at 50% 0,#3b2552,#1f1429 70%)}\nsection{background:var(--bg)}\n#lounge,#board,#store,#shelf{overflow:auto;background:radial-gradient(ellipse at 50% 0,#4a2b63 0,#1f1429 70%)}\n#lounge{background-image:repeating-linear-gradient(0deg,rgba(255,255,255,.07) 0 1px,transparent 1px 28px),repeating-linear-gradient(90deg,rgba(255,255,255,.07) 0 1px,transparent 1px 28px);background-attachment:local}\n#lcont{position:relative}.lw{max-width:880px;margin:0 auto;padding:22px 16px 60px;display:flex;flex-direction:column;gap:18px}\n.lhead{display:flex;align-items:center;gap:16px}.mascot{width:130px;flex:none}.bob{animation:bob 2.8s ease-in-out infinite;transform-origin:center bottom}@keyframes bob{50%{transform:translateY(-5px)}}\n.lw h1{margin:0;font-size:clamp(26px,6cqw,38px);color:#ffb8de;text-shadow:0 0 24px rgba(255,111,181,.45)}.tag{color:var(--dim)}\n.msg{background:rgba(255,255,255,.06);border:1px solid var(--line);border-radius:20px;padding:14px 16px;line-height:1.5}.msg b{color:#ffb8de}\n.btns{display:flex;gap:10px;flex-wrap:wrap}.btns .btn,.btns .go{padding:12px 20px;font-size:15px;font-weight:700}.go{background:linear-gradient(#ffb8de,#ff6fb5);color:#3a1230;border:0;border-radius:999px}\n.stats{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px}.st{background:rgba(255,255,255,.06);border:1px solid var(--line);padding:12px;display:flex;flex-direction:column;gap:3px}.st b{font-size:20px;color:#ffb8de}.st span{font-size:12px;color:var(--dim)}\n.sec{font-weight:800;letter-spacing:.06em;text-transform:uppercase;font-size:12px;color:var(--dim);margin-bottom:8px}\n.bar{display:flex;align-items:center;gap:10px;margin:6px 0}.bar u{text-decoration:none;min-width:118px;white-space:nowrap}.bar s{flex:1;height:10px;background:rgba(255,255,255,.1);border-radius:6px;overflow:hidden}.bar s i{display:block;height:100%;background:linear-gradient(90deg,#ff8fcf,#c9a3ff);border-radius:6px}.bar em{font-style:normal;color:var(--dim);font-size:12px;min-width:56px;text-align:right}\n.deco{font-size:34px;letter-spacing:8px}.shelfrow{display:flex;gap:10px;overflow-x:auto;padding-bottom:6px}.shelfrow figure{margin:0;flex:none;width:170px}.shelfrow img{width:100%;border-radius:14px;border:2px solid rgba(255,255,255,.18);display:block}.shelfrow figcaption{font-size:12px;color:var(--dim);margin-top:4px;text-align:center}\n.fact{background:rgba(255,255,255,.05);border-radius:16px;padding:12px 16px;color:var(--dim);font-size:13.5px}\n.bh{display:flex;gap:12px;align-items:center;padding:10px 12px;background:#180f22;border-bottom:1px solid var(--line);position:sticky;top:0;z-index:2}.bh b{color:#ffb8de;font-size:17px}.grow{flex:1}.wallet{color:#ffb8de;font-weight:800;border:1px solid var(--line);border-radius:999px;padding:5px 12px}\n.home{display:flex;align-items:center;gap:6px}.home svg,.ib svg{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round}.ib{display:flex;align-items:center;justify-content:center}\n.bwrap{max-width:760px;width:100%;margin:0 auto;padding:6px 14px 50px}\n.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:12px;margin-top:12px}.grid.g2{grid-template-columns:repeat(auto-fill,minmax(250px,1fr))}\n.dc{background:var(--panel);border:1px solid var(--line);padding:14px;display:flex;flex-direction:column;align-items:center;gap:4px;text-align:center}.dc .de{font-size:44px}.dc small{color:var(--dim)}.dc.own{border-color:#ff8fcf}.owned{color:#ffb8de;font-size:13px;margin-top:4px}.dc .mini{margin-top:6px;background:linear-gradient(#ffb8de,#ff6fb5);color:#3a1230;border:0;font-weight:800;padding:6px 16px}.dc .mini.no{background:#3b2b4b;color:var(--dim)}\n.sh{margin:0;background:var(--panel);border:1px solid var(--line);overflow:hidden}.sh img{width:100%;display:block}.sh figcaption{padding:8px 12px;display:flex;flex-direction:column;gap:2px}.sh em{font-style:normal;color:var(--dim);font-size:12px}\n.banner{background:rgba(255,143,207,.12);border:1px solid rgba(255,143,207,.4);border-radius:14px;padding:8px 12px;font-size:13.5px}.banner b{color:#ffb8de}\n.shr .mini{margin-left:2px}\n/* OS installer */\n#os{position:absolute;inset:0;z-index:15;display:none;align-items:center;justify-content:center;background:rgba(20,10,30,.88);padding:14px}.osw{width:min(640px,100%);background:#2a1c39;border:2px solid rgba(255,143,207,.5);border-radius:26px;padding:20px;text-align:center}\n.ost{font-size:22px;font-weight:800;color:#ffb8de;margin-bottom:6px}.osp{margin:6px 0 14px;color:var(--ink)}.oscards{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:10px}\n.osc{background:var(--panel);border:1px solid var(--line);border-radius:20px;padding:14px 10px;display:flex;flex-direction:column;align-items:center;gap:6px}.osc:hover{border-color:#ff8fcf}.osc small{color:var(--dim);font-size:12px}.osb{width:52px;height:52px;border-radius:16px;display:flex;align-items:center;justify-content:center;font-size:26px;font-weight:900;color:#3a1230}\n#host{width:100%;font:inherit;font-size:20px;text-align:center;padding:12px;border-radius:16px;border:2px solid rgba(255,143,207,.5);background:#180f22;color:var(--ink);-webkit-user-select:text;user-select:text}\n.pbar{height:14px;background:rgba(255,255,255,.12);border-radius:8px;overflow:hidden;margin:14px 0}.pbar i{display:block;height:100%;width:0;background:linear-gradient(90deg,#ff8fcf,#c9a3ff);transition:width .6s}.plines{text-align:left;color:var(--good);font-size:14px;line-height:1.8;min-height:130px}\n.bigstars{font-size:30px;color:#ffb8de;text-align:center;letter-spacing:2px;font-weight:800}\n.st2{font-size:15px}\n@container sa (max-width:640px){.mascot{width:96px}.stats{grid-template-columns:repeat(2,1fr)}}\n\n.modes{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;margin:4px 0 12px}\n.mode{border:2px solid #ffb3de;background:#fff;color:#7a3b66;border-radius:999px;padding:10px 16px;font:inherit;font-weight:700;cursor:pointer}\n.mode.on{background:linear-gradient(#ff8fcf,#ff6fb8);color:#fff;border-color:#ff6fb8}\n\n/* short windows (small OS window, phone on its side): give the machine the room */\n#tray{height:152px}\n@container sa (max-height:560px){#tray{height:116px}.card{width:108px;padding:4px 6px}.card canvas{height:46px!important;width:auto!important}.th{padding:3px 10px}#next{padding:6px 12px}#next .txt{font-size:14px}#top{padding:4px 8px}#tk span{display:none}.pwr{padding:9px 14px}#zoom{bottom:54px}.tb{padding:6px 4px 5px}.tb svg{width:22px;height:22px}}\n@container sa (max-height:400px){#tray{height:92px}.card{width:96px}.card canvas{height:34px!important}.card small{display:none}#meter{width:150px;padding:5px 8px}#zoom{display:none}#tk>b{font-size:14px}.ib{width:38px;height:38px}}\n";
+const SA_HTML="<div id=\"ctw\">\n<section id=\"lounge\"><div id=\"lcont\"></div></section>\n<section id=\"board\"></section>\n<section id=\"store\"></section>\n<section id=\"shelf\"></section>\n<section id=\"bench\">\n <div id=\"top\"><button class=\"ib\" data-a=\"lounge\" aria-label=\"Lounge\"><span data-ico=\"home\"></span></button><div id=\"tk\"><b id=\"ttl\"></b><span id=\"sub\"></span></div><button class=\"btn\" data-a=\"jobcard\">Job card</button><div id=\"money\"></div></div>\n <div id=\"stage\"><canvas id=\"cv\"></canvas>\n  <div id=\"tools\"><button class=\"tb\" id=\"bLid\" data-a=\"lid\"><span data-ico=\"lid\"></span><em id=\"bLidT\">Open lid</em></button><button class=\"tb\" id=\"bPaste\" data-tool=\"paste\" style=\"display:none\"><span data-ico=\"paste\"></span><em>Paste</em></button><button class=\"tb\" id=\"bBrush\" data-tool=\"brush\" style=\"display:none\"><span data-ico=\"brush\"></span><em>Brush</em></button></div>\n  <div id=\"tip\"></div>\n  <div id=\"meter\"><div class=\"mrow\"><span>Power</span><div class=\"mtr\"><i id=\"mbar\"></i></div><b id=\"mtxt\"></b></div><div id=\"mem\"></div></div>\n  <div id=\"zoom\"><button class=\"btn\" data-a=\"zin\">+</button><button class=\"btn\" data-a=\"zout\">\u2212</button></div>\n  <button id=\"bPower\" class=\"pwr\" data-a=\"power\"><span data-ico=\"power\"></span><em id=\"bPowerT\">Power on</em></button>\n  <div id=\"pop\"></div><div id=\"toasts\"></div><div id=\"post\"></div>\n </div>\n <div id=\"next\"></div><div id=\"tray\"></div>\n</section>\n<div id=\"os\"></div>\n<div id=\"modal\"></div>\n</div>";
+function SAGAME(root,host,win){
+const document={getElementById:i=>root.getElementById(i),querySelector:s=>root.querySelector(s),querySelectorAll:s=>root.querySelectorAll(s),createElement:t=>window.document.createElement(t),addEventListener:(a,b,c)=>root.addEventListener(a,b,c)};
+/* ===== SYSADMIN data: parts, boards, jobs, rules (no maths for the player: the game checks everything) ===== */
+const CAT=[
+ {k:"cpu",n:"Processors",ic:"cpu"},{k:"hs",n:"Heatsinks",ic:"hs"},{k:"ram",n:"Memory",ic:"ram"},
+ {k:"drive",n:"Drives",ic:"drive"},{k:"psu",n:"Power supplies",ic:"psu"},{k:"card",n:"Cards",ic:"card"}];
+const PARTS={};
+function P(id,o){o.id=id;PARTS[id]=o;return o}
+// processors (socket decides everything)
+P("xs4210",{kind:"cpu",name:"Xeon Silver 4210",sub:"10 cores · socket LGA3647",socket:"LGA3647",w:85,gen:"DDR4"});
+P("xg6230",{kind:"cpu",name:"Xeon Gold 6230",sub:"20 cores · socket LGA3647",socket:"LGA3647",w:125,gen:"DDR4"});
+P("ep7302",{kind:"cpu",name:"EPYC 7302",sub:"16 cores · socket SP3",socket:"SP3",w:155,gen:"DDR4"});
+P("ep7543",{kind:"cpu",name:"EPYC 7543",sub:"32 cores · socket SP3",socket:"SP3",w:225,gen:"DDR4"});
+P("xg6430",{kind:"cpu",name:"Xeon Gold 6430",sub:"32 cores · socket LGA4677",socket:"LGA4677",w:270,gen:"DDR5"});
+P("i712700",{kind:"cpu",name:"Core i7-12700",sub:"desktop chip · socket LGA1700",socket:"LGA1700",w:65,gen:"DDR5",desk:1});
+// heatsinks match the socket too
+P("hs3647",{kind:"hs",name:"Heatsink LGA3647",sub:"fits socket LGA3647",socket:"LGA3647"});
+P("hssp3",{kind:"hs",name:"Heatsink SP3",sub:"fits socket SP3",socket:"SP3"});
+P("hs4677",{kind:"hs",name:"Heatsink LGA4677",sub:"fits socket LGA4677",socket:"LGA4677"});
+P("hs1700",{kind:"hs",name:"Heatsink LGA1700",sub:"desktop cooler",socket:"LGA1700"});
+// memory: type + ECC
+P("d4e16",{kind:"ram",name:"16GB DDR4 ECC",sub:"server memory · DDR4",type:"DDR4",ecc:1,gb:16});
+P("d4e32",{kind:"ram",name:"32GB DDR4 ECC",sub:"server memory · DDR4",type:"DDR4",ecc:1,gb:32});
+P("d5e32",{kind:"ram",name:"32GB DDR5 ECC",sub:"server memory · DDR5",type:"DDR5",ecc:1,gb:32});
+P("d5e64",{kind:"ram",name:"64GB DDR5 ECC",sub:"server memory · DDR5",type:"DDR5",ecc:1,gb:64});
+P("d4u16",{kind:"ram",name:"16GB DDR4 desktop",sub:"no ECC · desktop memory",type:"DDR4",ecc:0,gb:16});
+// drives: bay size + connector
+P("ssd480",{kind:"drive",name:"SATA SSD 480GB",sub:"small drive · SATA",form:"SFF",iface:"SATA",gb:480});
+P("sas1t",{kind:"drive",name:"SAS drive 1.2TB",sub:"small drive · SAS",form:"SFF",iface:"SAS",gb:1200});
+P("hdd8",{kind:"drive",name:"Hard drive 8TB",sub:"big drive · SAS",form:"LFF",iface:"SAS",gb:8000});
+P("hdd4s",{kind:"drive",name:"Hard drive 4TB",sub:"big drive · SATA",form:"LFF",iface:"SATA",gb:4000});
+P("nvme16",{kind:"drive",name:"NVMe SSD 1.6TB",sub:"small drive · NVMe",form:"SFF",iface:"NVMe",gb:1600});
+// power supplies
+P("psu550",{kind:"psu",name:"Power supply 550W",sub:"small · hot-swap",watts:550});
+P("psu750",{kind:"psu",name:"Power supply 750W",sub:"medium · hot-swap",watts:750});
+P("psu1100",{kind:"psu",name:"Power supply 1100W",sub:"large · hot-swap",watts:1100});
+P("psu1600",{kind:"psu",name:"Power supply 1600W",sub:"huge · hot-swap",watts:1600});
+// cards
+P("raid",{kind:"card",name:"RAID controller",sub:"keeps drives safe together",ctype:"raid",w:25});
+P("nic10",{kind:"card",name:"10GbE network card",sub:"fast network · SFP+",ctype:"nic",w:20});
+
+/* a board = what the customer's machine is built on. Everything the player may put in is checked against it. */
+const BOARDS={
+ b1:{name:"RT-S1 single socket",sockets:1,socket:"LGA3647",mem:"DDR4",bays:{n:4,form:"LFF",iface:"SAS"},pcie:2,psu:2,u:1},
+ b2:{name:"RT-S1 small bays",sockets:1,socket:"LGA3647",mem:"DDR4",bays:{n:8,form:"SFF",iface:"SAS"},pcie:2,psu:2,u:2},
+ b3:{name:"RT-E1 EPYC",sockets:1,socket:"SP3",mem:"DDR4",bays:{n:8,form:"SFF",iface:"SAS"},pcie:3,psu:2,u:2},
+ b4:{name:"RT-D2 dual socket",sockets:2,socket:"LGA4677",mem:"DDR5",bays:{n:8,form:"SFF",iface:"NVMe"},pcie:3,psu:2,u:2}
+};
+
+/* WHY a part does not fit a slot, in plain words (null = fits) */
+function whyNot(part,slot,B,ctx){
+ const k=part.kind;
+ if(slot.kind!==k&&!(slot.kind==="card"&&k==="card"))return "That goes in a different place.";
+ if(k==="cpu"){ if(part.socket!==B.socket)return "This chip is for socket "+part.socket+". This board has socket "+B.socket+"."; return null}
+ if(k==="hs"){ if(part.socket!==B.socket)return "This heatsink is for socket "+part.socket+". This board has socket "+B.socket+".";
+   if(!ctx.cpuAt(slot.cpu))return "Put the processor in first.";
+   if(ctx.paste(slot.cpu)!=="ok")return "Put thermal paste on the processor first."; return null}
+ if(k==="ram"){ if(part.type!==B.mem)return "This is "+part.type+" memory. This board takes "+B.mem+".";
+   if(!part.ecc)return "Desktop memory has no ECC. Servers need ECC server memory.";
+   if(!ctx.cpuAt(slot.cpu))return "Memory belongs to a processor. Put the processor in first."; return null}
+ if(k==="drive"){ if(part.form!==B.bays.form)return "This bay takes "+(B.bays.form==="LFF"?"big (3.5\")":"small (2.5\")")+" drives. This one is "+(part.form==="LFF"?"big":"small")+".";
+   if(B.bays.iface==="NVMe"&&part.iface!=="NVMe")return "These bays only take NVMe drives.";
+   if(B.bays.iface!=="NVMe"&&part.iface==="NVMe")return "NVMe drives need NVMe bays. These are SATA/SAS bays."; return null}
+ if(k==="psu"||k==="card")return null;
+ return null}
+/* is a part something this board could ever use (for the shop filter) */
+function fitsBoard(part,B){
+ const k=part.kind;
+ if(k==="cpu"||k==="hs")return part.socket===B.socket&&!part.desk;
+ if(k==="ram")return part.type===B.mem&&part.ecc;
+ if(k==="drive")return part.form===B.bays.form&&((B.bays.iface==="NVMe")===(part.iface==="NVMe"));
+ return true}
+
+/* ====== JOBS: d = difficulty, 1 to 5 stars ====== */
+const LEVELS=["","Beginner","Easy","Medium","Hard","Expert"];
+const JOBS=[
+ {id:"j1",d:1,type:"build",title:"First Web Host",who:"Priya, runs a bakery website",
+  story:"Priya needs a small web server for her bakery's online orders. She brought some parts, but not all of them are right. When it is built, she wants Debian 12 installed on it.",
+  board:"b1",tray:["i712700","d4u16","xs4210"],need:{cpu:1,ram:2,drive:2,psu:1},os:"Debian 12",host:"bakery-web",
+  tip:"Start with the processor. Matching the socket is the whole trick."},
+ {id:"j2",d:1,type:"fix",title:"Blinking Amber",who:"Marcus, a small accounting firm",
+  story:"One drive light is blinking amber. That means that drive has failed. Swap it for a fresh one.",
+  board:"b2",pre:{cpu:["xs4210"],ram:["d4e16","d4e16"],drive:["ssd480","ssd480","ssd480","ssd480"],psu:["psu750","psu750"]},
+  fault:{drive:2},tray:[],need:{cpu:1,ram:2,drive:4,psu:1}},
+ {id:"j3",d:1,type:"fix",title:"Dusty Rack",who:"Lin, a school's IT room",
+  story:"The fans roar and the server keeps shutting down. The fans are clogged with dust. Clean them with the brush.",
+  board:"b1",pre:{cpu:["xs4210"],ram:["d4e16","d4e16"],drive:["hdd4s","hdd4s"],psu:["psu550"]},
+  fault:{dust:1},tray:[],need:{cpu:1,ram:2,drive:2,psu:1}},
+ {id:"j9",d:1,type:"build",title:"Room for More",who:"Sam, a photo studio",
+  story:"Sam's photo studio is running out of space. Add two more hard drives to the server.",
+  board:"b1",pre:{cpu:["xs4210"],ram:["d4e16","d4e16"],drive:["hdd4s"],psu:["psu550"]},
+  tray:[],need:{cpu:1,ram:2,drive:3,psu:1},tip:"These bays take big drives. The shop only shows ones that fit."},
+ {id:"j4",d:2,type:"fix",title:"Hot Chip",who:"Dana, a podcast studio",
+  story:"The processor runs very hot. The thermal paste has dried out. Take the heatsink off, put on fresh paste, and fit the heatsink again.",
+  board:"b2",pre:{cpu:["xg6230"],ram:["d4e32","d4e32"],drive:["ssd480","ssd480"],psu:["psu750"]},
+  fault:{paste:1},tray:[],need:{cpu:1,ram:2,drive:2,psu:1}},
+ {id:"j10",d:2,type:"build",title:"More Memory",who:"Tessa, a video editor",
+  story:"Tessa's server is slow because it has too little memory. Add four more sticks.",
+  board:"b3",pre:{cpu:["ep7302"],ram:["d4e16","d4e16"],drive:["ssd480","ssd480"],psu:["psu750","psu750"]},
+  tray:[],need:{cpu:1,ram:6,drive:2,psu:2},tip:"Spread the sticks across the A, B, C and D positions."},
+ {id:"j5",d:3,type:"fix",title:"Memory Gremlin",who:"Omar, an online shop",
+  story:"The server randomly freezes. One memory stick is faulty. Power it on and read what the screen says.",
+  board:"b3",pre:{cpu:["ep7302"],ram:["d4e16","d4e16","d4e16","d4e16"],drive:["ssd480","ssd480"],psu:["psu750","psu750"],card:["raid"]},
+  fault:{ram:2},tray:[],need:{cpu:1,ram:4,drive:2,psu:1}},
+ {id:"j7",d:3,type:"fix",title:"Power Cut Risk",who:"Gus, a radio station",
+  story:"The server crashes when it gets busy. It does not have enough power. Check the power meter, then swap the power supply and add a second one.",
+  board:"b3",pre:{cpu:["ep7543"],ram:["d4e32","d4e32","d4e32","d4e32"],drive:["ssd480","ssd480","sas1t","sas1t"],psu:["psu550"],card:["raid"]},
+  fault:{power:1},tray:[],need:{cpu:1,ram:4,drive:4,psu:2}},
+ {id:"j11",d:3,type:"build",title:"Safe Storage",who:"Ravi, an accountant",
+  story:"Ravi cannot lose his files. Add more drives and a RAID card to keep them safe, and a second power supply.",
+  board:"b2",pre:{cpu:["xg6230"],ram:["d4e32","d4e32"],drive:["ssd480","ssd480"],psu:["psu750"]},
+  tray:[],need:{cpu:1,ram:2,drive:4,psu:2,card:["raid"]}},
+ {id:"j6",d:4,type:"build",title:"Busy Shop Server",who:"Noor, a busy online shop",
+  story:"Noor's shop gets crowded on sale days. Build a stronger server: lots of memory, four drives kept safe by a RAID card, and two power supplies in case one fails. Noor wants AlmaLinux 9 on it.",
+  board:"b3",tray:["ep7302","d4e16","hssp3"],need:{cpu:1,ram:6,drive:4,psu:2,card:["raid"]},os:"AlmaLinux 9",host:"shop-big",
+  tip:"Fill memory evenly. Watch the power meter."},
+ {id:"j12",d:4,type:"fix",title:"Double Trouble",who:"Ines, a game server host",
+  story:"Two things are wrong: the processor runs hot and a memory stick is failing. Find both and fix them.",
+  board:"b3",pre:{cpu:["ep7543"],ram:["d4e32","d4e32","d4e32","d4e32"],drive:["ssd480","ssd480","sas1t","sas1t"],psu:["psu1100","psu1100"],card:["raid"]},
+  fault:{ram:1,paste:1},tray:[],need:{cpu:1,ram:4,drive:4,psu:2}},
+ {id:"j8",d:5,type:"build",title:"Two-Socket Workhorse",who:"Hannah, a research lab",
+  story:"A lab needs a monster: two processors, loads of fast memory, fast NVMe drives, a 10GbE network card and redundant power. Hannah wants FreeBSD 14 on it. Take your time.",
+  board:"b4",tray:["xg6430"],need:{cpu:2,ram:8,drive:4,psu:2,card:["raid","nic"]},os:"FreeBSD 14",host:"lab-one",
+  tip:"Both processors need memory. Share it out evenly."},
+ {id:"j13",d:5,type:"fix",title:"Datacentre Disaster",who:"A very bad Monday",
+  story:"Everything is going wrong: dusty fans, a failed drive, a bad memory stick and not enough power. Work through it one problem at a time.",
+  board:"b4",pre:{cpu:["xg6430","xg6430"],ram:["d5e32","d5e32","d5e32","d5e32","d5e32","d5e32","d5e32","d5e32"],drive:["nvme16","nvme16","nvme16","nvme16"],psu:["psu750","psu750"],card:["raid","nic10"]},
+  fault:{dust:1,ram:5,drive:2,power:1},tray:[],need:{cpu:2,ram:8,drive:4,psu:2}}
+];
+const JBY={};JOBS.forEach(j=>JBY[j.id]=j);
+const BASEPAY=[0,40,70,110,170,260];
+function payOf(j,perf){return Math.round(BASEPAY[j.d]*(perf>1?1.4:1))}
+
+/* operating systems (kept very simple) */
+const OSES=[
+ {n:"Debian 12",c:"#ff8fb8",l:"D",d:"Steady and simple. Great for small websites."},
+ {n:"AlmaLinux 9",c:"#b79bff",l:"A",d:"Rock-solid. Popular for busy web hosting."},
+ {n:"FreeBSD 14",c:"#ff7f8f",l:"F",d:"Very fast networking. Used by huge sites."}];
+/* things to buy for your workshop with credits */
+const DECOR=[
+ {id:"lights",n:"Fairy lights",e:"✨",p:40,d:"Sparkly lights over your bench."},
+ {id:"cupcake",n:"Cupcake",e:"🧁",p:45,d:"A treat for long builds."},
+ {id:"mug",n:"Tea mug",e:"☕",p:50,d:"Always warm. Never spilled."},
+ {id:"lamp",n:"Desk lamp",e:"💡",p:55,d:"A cozy glow."},
+ {id:"plant",n:"Little plant",e:"🪴",p:60,d:"Grows without any water."},
+ {id:"poster",n:"Heart poster",e:"💖",p:70,d:"Cheers up the wall."},
+ {id:"radio",n:"Radio",e:"📻",p:80,d:"Looks lovely. (No sound in here.)"},
+ {id:"bear",n:"Cuddly bear",e:"🧸",p:90,d:"Your debugging buddy."},
+ {id:"cat",n:"Workshop cat",e:"🐈",p:150,d:"Sleeps on warm servers."}];
+const RANKS=[[0,"New apprentice"],[1,"Rack helper"],[3,"Cable tamer"],[6,"Server whisperer"],[9,"Rack boss"],[13,"Data-centre star"],[20,"Cloud queen"],[35,"Rack royalty"],[60,"Legend of the rack"],[100,"Server goddess"]];
+const FACTS=["A server is just a computer that is always on, ready to answer other computers.","ECC memory fixes tiny errors by itself. That is why servers use it.","A RAID card lets several drives work together, so one can fail without losing anything.","Servers have two power supplies so the machine keeps running if one breaks.","Thermal paste fills tiny gaps between a chip and its heatsink so heat can escape.","Dust is a server's enemy. It blocks airflow and makes everything run hot.","DDR4 and DDR5 memory look alike, but they do not fit each other's slots.","An operating system is the software that lets you use the hardware.","A heatsink with lots of thin fins has more surface area to shed heat.","Hot-swap means you can replace a part while the server is still running."];
+
+/* ====== endless jobs: a seeded generator, so every star level never runs out ====== */
+const NAMES=["Aisha","Ben","Carla","Dev","Elena","Farid","Grace","Hiro","Isla","Jamal","Kiri","Leo","Mina","Nate","Olive","Pia","Quinn","Rosa","Sam","Tara","Uma","Vik","Wren","Yuki","Zara","Noah","Maya","Theo","Ivy","Omar"];
+const BIZ=["a florist","a bakery","a vet clinic","a bookshop","a dance school","a surf shop","a yoga studio","a café","a record label","a tiny bank","a game studio","a toy shop","a radio station","a pottery studio","a bike repair shop","a film school","a garden centre","a pet hotel","a comic shop","a music school","a bubble tea shop","a nail salon"];
+const PURPOSE=["the website","online orders","customer photos","a game server","company email","video storage","the booking system","the online shop"];
+const CPUS={LGA3647:["xs4210","xg6230"],SP3:["ep7302","ep7543"],LGA4677:["xg6430"]};
+const RAMS={DDR4:["d4e16","d4e32"],DDR5:["d5e32","d5e64"]};
+const DRIVES={b1:["hdd4s","hdd8"],b2:["ssd480","sas1t"],b3:["ssd480","sas1t"],b4:["nvme16"]};
+const HSOF={LGA3647:"hs3647",SP3:"hssp3",LGA4677:"hs4677"};
+const PSUS=["psu550","psu750","psu1100","psu1600"];
+const TITLES={build:["Fresh Build","New Rack","Starter Server","A Home for the Website","Brand New Box"],up:["Room for More","Bigger and Better","Upgrade Day","Growing Pains"],
+ drive:["Blinking Amber","Sick Drive","Amber Alert"],ram:["Memory Gremlin","Forgetful Server","Frozen Solid"],dust:["Dusty Rack","Fluffy Fans","Spring Clean"],paste:["Hot Chip","Toasty Processor","Overheating Again"],power:["Power Cut Risk","Brown-out Blues","Hungry Server"],multi:["Double Trouble","Everything at Once","A Very Bad Day","Full Meltdown"]};
+function drawOf(sockets,cpu,ram,drives,cards,gen){let d=150;for(let i=0;i<sockets;i++)d+=PARTS[cpu].w*1.5;d+=ram*(gen==="DDR5"?14:12)+drives*15;cards.forEach(c=>d+=PARTS[c].w+5);return d}
+function genJob(dif,seed,want){
+ const R=rngOf((seed*2654435761)>>>0||7),pick=a=>a[Math.floor(R()*a.length)],ri=(a,b)=>a+Math.floor(R()*(b-a+1));
+ const name=pick(NAMES),biz=pick(BIZ),bizs=biz.replace(/^an? /,"");
+ const bd={1:["b1","b2"],2:["b2","b3"],3:["b2","b3","b3"],4:["b3","b4"],5:["b4"]}[dif];
+ const bid=pick(bd),B=BOARDS[bid];
+ const type=want==="build"||want==="fix"?want:(R()<.5?"build":"fix");
+ const cpu=pick(CPUS[B.socket]),rid=pick(RAMS[B.mem]),did=pick(DRIVES[bid]);
+ const dual=B.sockets>1;
+ const ramN=dual?8:({1:2,2:4,3:pick([4,6]),4:pick([6,8]),5:8}[dif]);
+ const maxDr=Math.min(B.bays.n,B.bays.form==="LFF"?4:8);
+ const driveN=Math.min(maxDr,{1:2,2:pick([2,3,4]),3:4,4:pick([4,6]),5:pick([4,6,8])}[dif]);
+ const cards=(dif>=3?["raid"]:[]).concat(dif>=5?["nic10"]:[]);
+ const draw=drawOf(B.sockets,cpu,ramN,driveN,cards,B.mem);
+ const okPsu=PSUS.find(p=>PARTS[p].watts>=draw*1.25)||"psu1600";
+ const id="g"+dif+(type==="build"?"b":"f")+seed;
+ const J={id,d:dif,type,who:name+", "+biz,board:bid,gen:1,tray:[],need:{cpu:B.sockets,ram:ramN,drive:driveN,psu:dif>=3?2:ri(1,dif),card:cards.map(c=>c==="raid"?"raid":"nic")}};
+ if(!J.need.card.length)delete J.need.card;
+ const full={cpu:Array(B.sockets).fill(cpu),ram:Array(ramN).fill(rid),drive:Array(driveN).fill(did),psu:[okPsu,okPsu],card:cards};
+ if(type==="build"){
+  const up=dif<=3&&want!=="build"&&R()<.4;
+  if(up){ // an upgrade: the machine already has most of it
+   const dim=pick(["ram","drive"]),base={cpu:full.cpu,ram:Array(2).fill(rid),drive:Array(2).fill(did),psu:[okPsu,okPsu],card:[]};
+   if(B.sockets>1)base.ram=Array(4).fill(rid);
+   if(dim==="ram"){J.need.ram=Math.max(base.ram.length+2,Math.min(ramN,base.ram.length+pick([2,4])));if(J.need.ram>(dual?16:8))J.need.ram=base.ram.length+2}else J.need.drive=Math.min(maxDr,Math.max(3,Math.min(driveN+1,base.drive.length+pick([1,2,2]))));
+   J.need.psu=1;delete J.need.card;J.pre=base;
+   J.title=pick(TITLES.up);
+   J.story=name+"'s "+bizs+" has outgrown its server. "+(dim==="ram"?"Add memory sticks until it has "+J.need.ram+" in total.":"Add drives until it has "+J.need.drive+" in total.")}
+  else{
+   J.title=pick(TITLES.build);
+   const os=pick(OSES).n;J.os=os;J.host=name.toLowerCase()+"-"+pick(["web","shop","one","box","pi"]);
+   if(R()<.5)J.tray.push(cpu);if(R()<.35)J.tray.push(HSOF[B.socket]);if(R()<.6)J.tray.push(rid);
+   J.tray.push(pick(["i712700","d4u16"]));
+   J.story=name+"'s "+bizs+" needs a new server for "+pick(PURPOSE)+". "+(J.tray.length>1?"Some parts were brought along, but not all of them are right. ":"")+"When it is built, "+name+" wants "+os+" installed."}
+ }else{
+  J.pre=full;
+  const pool=["drive","ram","dust","paste","power"].filter(f=>f!=="power"||draw>=560);
+  const nF=dif<=2?1:dif===3?pick([1,1,2]):dif===4?2:ri(3,4);
+  const faults=[];while(faults.length<Math.min(nF,pool.length)){const f=pick(pool);if(faults.indexOf(f)<0)faults.push(f)}
+  J.fault={};
+  faults.forEach(f=>{if(f==="drive")J.fault.drive=Math.floor(R()*driveN);else if(f==="ram")J.fault.ram=Math.floor(R()*ramN);else J.fault[f]=1});
+  if(J.fault.power){const lower=PSUS.filter(p=>PARTS[p].watts<draw);const small=lower[lower.length-1];J.pre.psu=dif>=4?[small,small]:[small];J.need.psu=2;if(dif<4)J.need.psu=2}
+  else J.need.psu=Math.min(J.need.psu,2);
+  J.need.card&&delete J.need.card;
+  const sym={drive:"a drive light is blinking amber",ram:"it keeps freezing",dust:"the fans roar and it shuts itself down",paste:"the processor runs very hot",power:"it crashes when it gets busy"};
+  J.title=faults.length>1?pick(TITLES.multi):pick(TITLES[faults[0]]);
+  J.story=name+"'s "+bizs+" has a sick server: "+faults.map(f=>sym[f]).join(", and ")+". "+(faults.length>1?"There is more than one problem. Take them one at a time.":faults[0]==="ram"?"Power it on and read what the screen says.":faults[0]==="power"?"Check the power meter.":"")}
+ return J}
+
+/* ===== SYSADMIN drawing: hand-built vector hardware on 2D canvas ===== */
+const LW=1000,LH=580;
+function rr(c,x,y,w,h,r){c.beginPath();c.moveTo(x+r,y);c.arcTo(x+w,y,x+w,y+h,r);c.arcTo(x+w,y+h,x,y+h,r);c.arcTo(x,y+h,x,y,r);c.arcTo(x,y,x+w,y,r);c.closePath()}
+function lg(c,x0,y0,x1,y1,stops){const g=c.createLinearGradient(x0,y0,x1,y1);stops.forEach((s,i)=>g.addColorStop(s[0],s[1]));return g}
+function rngOf(seed){let a=seed>>>0||1;return()=>{a|=0;a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296}}
+function orient(c,w,h,fn){ if(h>=w){fn(w,h);return} c.save();c.translate(w,0);c.rotate(Math.PI/2);fn(h,w);c.restore()}
+
+/* slot layout for a board (logical 1000x580 chassis, front of the machine at the bottom) */
+function layoutOf(B){
+ const L={slots:[],fans:[],B};
+ for(let i=0;i<B.psu;i++)L.slots.push({id:"psu"+i,kind:"psu",x:44+i*176,y:36,w:166,h:90,label:"Power "+(i+1)});
+ for(let i=0;i<B.pcie;i++)L.slots.push({id:"pci"+i,kind:"card",x:650,y:34+i*32,w:300,h:27,label:"Card slot "+(i+1)});
+ for(let k=0;k<B.sockets;k++){
+  const cx=B.sockets===1?500:(k?700:300);
+  L.slots.push({id:"cpu"+k,kind:"cpu",cpu:k,x:cx-50,y:218,w:100,h:100,label:"Processor "+(k+1)});
+  L.slots.push({id:"hs"+k,kind:"hs",cpu:k,x:cx-58,y:210,w:116,h:116,label:"Heatsink "+(k+1)});
+  for(let b=0;b<2;b++)for(let i=0;i<4;i++){
+   const x=b?cx+62+i*20:cx-142+i*20;
+   L.slots.push({id:"m"+k+(b?"R":"L")+i,kind:"ram",cpu:k,ch:i,bank:b,x,y:172,w:16,h:192,
+     label:"Memory "+"ABCD"[i]+(b+1)+(B.sockets>1?" (CPU "+(k+1)+")":"")});
+  }
+ }
+ for(let i=0;i<B.bays.n;i++){
+  const n=B.bays.n,g=8,bw=(924-g*(n-1))/n;
+  L.slots.push({id:"bay"+i,kind:"drive",x:38+i*(bw+g),y:478,w:bw,h:78,label:"Drive bay "+(i+1)});
+ }
+ for(let i=0;i<6;i++)L.fans.push({x:118+i*128,y:410,w:58,h:58});
+ L.by={};L.slots.forEach(s=>L.by[s.id]=s);
+ return L}
+
+/* ---------- the static layer: chassis floor, board, empty sockets ---------- */
+function drawStatic(c,L){
+ const B=L.B,R=rngOf(11);
+ // chassis floor with brushed steel
+ c.fillStyle=lg(c,0,0,0,LH,[[0,"#30373c"],[1,"#1b2024"]]);rr(c,6,6,LW-12,LH-12,16);c.fill();
+ c.save();rr(c,6,6,LW-12,LH-12,16);c.clip();
+ for(let i=0;i<340;i++){const y=R()*LH,x=R()*LW,l=60+R()*320;c.strokeStyle=R()<.5?"rgba(255,255,255,"+(.015+R()*.03)+")":"rgba(0,0,0,"+(.05+R()*.07)+")";c.lineWidth=.6+R();c.beginPath();c.moveTo(x,y);c.lineTo(x+l,y+(R()-.5)*1.2);c.stroke()}
+ c.restore();
+ c.strokeStyle="#434b52";c.lineWidth=3;rr(c,6,6,LW-12,LH-12,16);c.stroke();
+ c.strokeStyle="rgba(0,0,0,.55)";c.lineWidth=2;rr(c,12,12,LW-24,LH-24,12);c.stroke();
+ [[26,26],[LW-26,26],[26,LH-26],[LW-26,LH-26]].forEach(p=>screw(c,p[0],p[1],5));
+ // board
+ const bx=36,by=146,bw=928,bh=252;
+ c.save();c.shadowColor="rgba(0,0,0,.6)";c.shadowBlur=18;c.shadowOffsetY=6;c.fillStyle="#0c3328";rr(c,bx,by,bw,bh,10);c.fill();c.restore();
+ c.fillStyle=lg(c,0,by,0,by+bh,[[0,"#14473a"],[1,"#0b2f25"]]);rr(c,bx,by,bw,bh,10);c.fill();
+ c.save();rr(c,bx,by,bw,bh,10);c.clip();
+ // traces: orthogonal buses with 45-degree bends
+ c.lineCap="round";
+ for(let i=0;i<70;i++){let x=bx+R()*bw,y=by+8+R()*(bh-16);const hz=R()<.55;c.strokeStyle="rgba(76,200,150,"+(.06+R()*.12)+")";c.lineWidth=1+R()*1.2;c.beginPath();c.moveTo(x,y);
+  for(let s=0;s<3;s++){const l=40+R()*140;if(hz){x+=l;c.lineTo(x,y);y+=(R()<.5?-1:1)*(8+R()*18);x+=Math.abs(y)>0?0:0;c.lineTo(x+6,y)}else{y+=(R()<.5?-1:1)*l;c.lineTo(x,y);x+=(R()<.5?-1:1)*(8+R()*18);c.lineTo(x,y+6)}}
+  c.stroke()}
+ c.restore();
+ for(let i=0;i<150;i++){c.fillStyle="rgba(120,230,190,"+(.08+R()*.1)+")";c.beginPath();c.arc(bx+10+R()*(bw-20),by+8+R()*(bh-16),1.2+R()*1.2,0,6.3);c.fill()}
+ c.strokeStyle="rgba(255,255,255,.1)";c.lineWidth=1;rr(c,bx+2,by+2,bw-4,bh-4,9);c.stroke();
+ [[bx+16,by+16],[bx+bw-16,by+16],[bx+16,by+bh-16],[bx+bw-16,by+bh-16],[bx+bw/2,by+bh-14]].forEach(p=>{c.fillStyle="#0a1f19";c.beginPath();c.arc(p[0],p[1],6,0,6.3);c.fill();c.strokeStyle="#c9a24f";c.lineWidth=1.6;c.stroke()});
+ c.fillStyle="rgba(255,255,255,.22)";c.font="600 11px ui-monospace,Consolas,monospace";c.textAlign="left";c.fillText(B.name.toUpperCase()+"  ·  REV 1.0",bx+30,by+bh-10);
+ // coin battery, BMC, chipset, io block
+ c.fillStyle="#9aa3a9";c.beginPath();c.arc(bx+60,by+60,17,0,6.3);c.fill();c.fillStyle="#cfd6da";c.beginPath();c.arc(bx+60,by+60,13,0,6.3);c.fill();
+ c.fillStyle="#222";c.font="700 8px system-ui";c.textAlign="center";c.fillText("CR2032",bx+60,by+63);
+ chip(c,bx+30,by+120,44,44,"BMC");
+ chipsetHS(c,bx+bw-86,by+96,66,66);
+ // per-cpu board furniture
+ for(let k=0;k<B.sockets;k++){const cx=B.sockets===1?500:(k?700:300);
+  for(let r=0;r<2;r++)for(let i=0;i<7;i++)cap(c,cx-45+i*14,by+22+r*17,5.5);
+  for(let i=0;i<4;i++)choke(c,cx-48+i*25,by+bh-40,20,17);
+  // channel letters
+  c.fillStyle="rgba(255,255,255,.28)";c.font="700 10px ui-monospace,monospace";c.textAlign="center";
+  for(let i=0;i<4;i++){c.fillText("ABCD"[i],cx-142+i*20+8,by+16);c.fillText("ABCD"[i],cx+62+i*20+8,by+16)}
+  socketEmpty(c,cx-50,218,100,100,B.socket);
+  for(let b=0;b<2;b++)for(let i=0;i<4;i++)dimmEmpty(c,b?cx+62+i*20:cx-142+i*20,172,16,192,b)}
+ // PSU bays, PCIe slots, drive bays, fans
+ L.slots.forEach(s=>{if(s.kind==="psu")psuBay(c,s);if(s.kind==="card")pciSlot(c,s);if(s.kind==="drive")bayEmpty(c,s)});
+ L.fans.forEach(f=>fanHousing(c,f));
+ // front panel strip
+ c.fillStyle=lg(c,0,0,0,40,[[0,"#262c31"],[1,"#1a1f23"]]);rr(c,26,LH-30,LW-52,16,5);c.fill();
+ c.fillStyle="rgba(255,255,255,.25)";c.font="700 9px ui-monospace,monospace";c.textAlign="center";c.fillText("FRONT  ▼",LW/2,LH-18);
+ c.fillText("REAR  ▲",LW/2,22)}
+function screw(c,x,y,r){c.fillStyle=lg(c,x-r,y-r,x+r,y+r,[[0,"#7d878e"],[1,"#2c3338"]]);c.beginPath();c.arc(x,y,r,0,6.3);c.fill();c.strokeStyle="rgba(0,0,0,.6)";c.lineWidth=1;c.beginPath();c.moveTo(x-r*.7,y);c.lineTo(x+r*.7,y);c.moveTo(x,y-r*.7);c.lineTo(x,y+r*.7);c.stroke()}
+function chip(c,x,y,w,h,t){c.fillStyle="#111";rr(c,x,y,w,h,3);c.fill();c.fillStyle="#1d1d1f";rr(c,x+2,y+2,w-4,h-4,2);c.fill();c.fillStyle="rgba(255,255,255,.5)";c.font="700 9px ui-monospace,monospace";c.textAlign="center";c.fillText(t,x+w/2,y+h/2+3);
+ c.fillStyle="#bbb";for(let i=0;i<7;i++){c.fillRect(x-3,y+4+i*(h-8)/7,3,2);c.fillRect(x+w,y+4+i*(h-8)/7,3,2)}}
+function chipsetHS(c,x,y,w,h){c.fillStyle=lg(c,x,y,x+w,y+h,[[0,"#3a4046"],[1,"#15191c"]]);rr(c,x,y,w,h,6);c.fill();c.strokeStyle="rgba(255,255,255,.12)";c.lineWidth=1;for(let i=1;i<9;i++){c.beginPath();c.moveTo(x+i*w/9,y+3);c.lineTo(x+i*w/9,y+h-3);c.stroke()}}
+function cap(c,x,y,r){c.fillStyle="#0a0e0c";c.beginPath();c.arc(x,y,r+1,0,6.3);c.fill();c.fillStyle=lg(c,x-r,y-r,x+r,y+r,[[0,"#c9cfd2"],[1,"#6a7478"]]);c.beginPath();c.arc(x,y,r,0,6.3);c.fill();c.strokeStyle="#2b2f31";c.lineWidth=1;c.beginPath();c.moveTo(x-r*.5,y);c.lineTo(x+r*.5,y);c.moveTo(x,y-r*.5);c.lineTo(x,y+r*.5);c.stroke()}
+function choke(c,x,y,w,h){c.fillStyle="#17191a";rr(c,x,y,w,h,2);c.fill();c.fillStyle=lg(c,x,y,x+w,y,[[0,"#b87333"],[.5,"#e0a060"],[1,"#8d5a2b"]]);rr(c,x+3,y+3,w-6,h-6,2);c.fill();c.strokeStyle="rgba(0,0,0,.4)";c.beginPath();c.moveTo(x+w/2,y+3);c.lineTo(x+w/2,y+h-3);c.stroke()}
+function socketEmpty(c,x,y,w,h,lab){c.fillStyle="#0a0e0d";rr(c,x-6,y-6,w+12,h+12,5);c.fill();
+ c.fillStyle=lg(c,x,y,x+w,y+h,[[0,"#a9b1b6"],[.5,"#6f787e"],[1,"#9aa2a8"]]);rr(c,x-3,y-3,w+6,h+6,4);c.fill();
+ c.fillStyle="#1a1f1d";rr(c,x+4,y+4,w-8,h-8,3);c.fill();
+ c.fillStyle="#caa85a";for(let i=0;i<14;i++)for(let j=0;j<14;j++){c.fillRect(x+10+i*(w-22)/13,y+10+j*(h-22)/13,1.7,1.7)}
+ c.fillStyle="rgba(255,255,255,.55)";c.font="700 8px ui-monospace,monospace";c.textAlign="center";c.fillText(lab,x+w/2,y-9);
+ c.fillStyle="#9aa2a8";c.fillRect(x+w/2-10,y+h+1,20,4)}
+function dimmEmpty(c,x,y,w,h,b){c.fillStyle="#0a0a0a";rr(c,x,y,w,h,3);c.fill();c.fillStyle=b?"#1c1c1e":"#2a3b52";rr(c,x+1,y+1,w-2,h-2,3);c.fill();
+ c.fillStyle="#0a0a0a";rr(c,x+w/2-2.5,y+8,5,h-16,2);c.fill();c.fillStyle="#c9a24f";for(let i=0;i<h/6-3;i++)c.fillRect(x+w/2-1.2,y+10+i*6,2.4,3);
+ c.fillStyle=b?"#d8dbdc":"#e5e8ea";rr(c,x+1,y-5,w-2,7,2);c.fill();rr(c,x+1,y+h-2,w-2,7,2);c.fill()}
+function psuBay(c,s){c.fillStyle="#0b0d0f";rr(c,s.x-4,s.y-4,s.w+8,s.h+8,6);c.fill();c.fillStyle=lg(c,0,s.y,0,s.y+s.h,[[0,"#14181b"],[1,"#0d1012"]]);rr(c,s.x,s.y,s.w,s.h,4);c.fill();
+ c.strokeStyle="rgba(255,255,255,.07)";c.lineWidth=1;for(let i=1;i<6;i++){c.beginPath();c.moveTo(s.x+6,s.y+i*s.h/6);c.lineTo(s.x+s.w-6,s.y+i*s.h/6);c.stroke()}
+ c.fillStyle="rgba(255,255,255,.3)";c.font="700 10px system-ui";c.textAlign="center";c.fillText("POWER "+(+s.id.slice(3)+1),s.x+s.w/2,s.y+s.h/2+4)}
+function pciSlot(c,s){c.fillStyle="#0a0b0c";rr(c,s.x-3,s.y-3,s.w+6,s.h+6,4);c.fill();c.fillStyle="#1d2023";rr(c,s.x,s.y,s.w,s.h,3);c.fill();c.fillStyle="#c9a24f";for(let i=0;i<46;i++)c.fillRect(s.x+14+i*5.8,s.y+8,2.2,s.h-16);
+ c.fillStyle="rgba(255,255,255,.3)";c.font="700 8px ui-monospace,monospace";c.textAlign="right";c.fillText("PCIe",s.x-8,s.y+s.h/2+3)}
+function bayEmpty(c,s){c.fillStyle="#08090a";rr(c,s.x-3,s.y-3,s.w+6,s.h+6,5);c.fill();c.fillStyle=lg(c,0,s.y,0,s.y+s.h,[[0,"#15181b"],[1,"#0c0e10"]]);rr(c,s.x,s.y,s.w,s.h,4);c.fill();
+ c.strokeStyle="rgba(255,255,255,.06)";for(let i=1;i<5;i++){c.beginPath();c.moveTo(s.x+4,s.y+i*s.h/5);c.lineTo(s.x+s.w-4,s.y+i*s.h/5);c.stroke()}
+ c.fillStyle="rgba(255,255,255,.28)";c.font="700 10px system-ui";c.textAlign="center";c.fillText("BAY "+(+s.id.slice(3)+1),s.x+s.w/2,s.y+s.h/2+3)}
+function fanHousing(c,f){c.fillStyle="#0b0d0e";rr(c,f.x-5,f.y-5,f.w+10,f.h+10,6);c.fill();c.fillStyle=lg(c,f.x,f.y,f.x+f.w,f.y+f.h,[[0,"#2e353a"],[1,"#171b1e"]]);rr(c,f.x,f.y,f.w,f.h,5);c.fill();
+ c.fillStyle="#08090a";c.beginPath();c.arc(f.x+f.w/2,f.y+f.h/2,f.w/2-4,0,6.3);c.fill()}
+
+/* ---------- parts (drawn at (0,0,w,h); used in slots and in tray icons) ---------- */
+const DP={};
+DP.ram=(c,p,w,h,o)=>orient(c,w,h,(w,h)=>{
+ c.fillStyle="#0d3b2a";rr(c,0,0,w,h,2);c.fill();
+ c.fillStyle=lg(c,0,0,w,0,[[0,"#1c6b4d"],[1,"#0f4a35"]]);rr(c,.5,.5,w-1,h-1,2);c.fill();
+ const n=Math.max(4,Math.round(h/30));
+ for(let i=0;i<n;i++){const y=10+i*(h-24-14)/n,cw=w-4;c.fillStyle="#0c0c0d";rr(c,2,y,cw,(h-40)/n-3,1.5);c.fill();c.fillStyle="rgba(255,255,255,.18)";c.fillRect(3,y+1,cw-2,1)}
+ // heat spreader label band
+ c.fillStyle=o&&o.bad&&o.glow?"rgba(255,90,70,.6)":"rgba(255,255,255,.1)";c.fillRect(0,h-34,w,1);
+ c.fillStyle="#c9a24f";for(let i=0;i<Math.floor(h/6)-2&&w>10;i++)c.fillRect(w/2-1.2,6+i*6,2.4,3);
+ c.fillStyle=p.type==="DDR5"?"#ff9d2e":"#8fd0ff";c.fillRect(0,h-6,w,4);
+ c.fillStyle="#f4f4f4";rr(c,-1,-1,w+2,6,2);c.fill();rr(c,-1,h-5,w+2,6,2);c.fill();
+ if(w>=14){c.save();c.translate(w/2,h/2);c.rotate(-Math.PI/2);c.fillStyle="rgba(255,255,255,.75)";const tx=p.gb+"GB "+(p.ecc?"ECC ":"")+p.type;let fs=Math.min(9,w*.55);c.font="700 "+fs+"px system-ui";const mw=c.measureText(tx).width,av=h-26;if(mw>av){fs=Math.max(3,fs*av/mw);c.font="700 "+fs+"px system-ui"}c.textAlign="center";c.fillText(tx,0,fs*.35);c.restore()}
+ else{c.fillStyle=p.ecc?"#fff":"#888";c.fillRect(2,h/2-1,w-4,2)}});
+DP.cpu=(c,p,w,h)=>{c.fillStyle="#0e1111";rr(c,0,0,w,h,5);c.fill();
+ c.fillStyle=lg(c,0,0,w,h,[[0,"#d8dde0"],[.5,"#aeb6bb"],[1,"#8f989e"]]);rr(c,3,3,w-6,h-6,4);c.fill();
+ c.fillStyle=lg(c,0,0,w,h,[[0,"#c28f4a"],[1,"#8a5f2a"]]);rr(c,w*.14,h*.14,w*.72,h*.72,3);c.fill();
+ c.strokeStyle="rgba(0,0,0,.25)";for(let i=0;i<6;i++){c.beginPath();c.moveTo(w*.14,h*.14+i*h*.144);c.lineTo(w*.86,h*.14+i*h*.144);c.stroke()}
+ c.fillStyle="rgba(20,20,20,.85)";c.font="700 "+Math.max(6,w*.075)+"px ui-monospace,monospace";c.textAlign="center";c.fillText(p.name.toUpperCase(),w/2,h/2+2);
+ c.font="600 "+Math.max(5,w*.06)+"px ui-monospace,monospace";c.fillText(p.socket,w/2,h/2+w*.12);
+ c.fillStyle="#222";c.beginPath();c.moveTo(3,3);c.lineTo(3+w*.11,3);c.lineTo(3,3+w*.11);c.fill()};
+DP.hs=(c,p,w,h,o)=>{c.save();c.shadowColor="rgba(0,0,0,.55)";c.shadowBlur=10;c.shadowOffsetY=4;c.fillStyle="#5d666c";rr(c,0,0,w,h,4);c.fill();c.restore();
+ c.fillStyle=lg(c,0,0,w,0,[[0,"#aab3b9"],[.5,"#e2e7ea"],[1,"#9aa3a9"]]);rr(c,1.5,1.5,w-3,h-3,3);c.fill();
+ const n=Math.max(6,Math.round(w/7));for(let i=0;i<n;i++){const x=3+i*(w-6)/n;c.fillStyle=i%2?"rgba(0,0,0,.18)":"rgba(255,255,255,.3)";c.fillRect(x,3,(w-6)/n*.5,h-6)}
+ c.fillStyle="rgba(40,46,50,.85)";rr(c,w*.34,h*.34,w*.32,h*.32,4);c.fill();c.fillStyle="#c8cfd3";c.font="700 "+Math.max(6,w*.08)+"px system-ui";c.textAlign="center";c.fillText("COOL",w/2,h/2+3);
+ [[5,5],[w-5,5],[5,h-5],[w-5,h-5]].forEach(q=>{c.fillStyle="#30373b";c.beginPath();c.arc(q[0],q[1],2.6,0,6.3);c.fill()});
+ if(o&&o.hot){c.fillStyle="rgba(255,70,40,"+(.18+.14*Math.sin(o.t*5))+")";rr(c,0,0,w,h,4);c.fill()}};
+DP.drive=(c,p,w,h,o)=>{c.fillStyle="#0b0c0d";rr(c,0,0,w,h,4);c.fill();
+ c.fillStyle=lg(c,0,0,0,h,[[0,"#3b4147"],[1,"#23282c"]]);rr(c,1.5,1.5,w-3,h-3,3.5);c.fill();
+ // vent holes
+ c.fillStyle="#0f1214";const cols=Math.floor((w-52)/9);for(let i=0;i<cols;i++)for(let j=0;j<Math.floor((h-14)/9);j++){rr(c,10+i*9,8+j*9,5,6,1.5);c.fill()}
+ // handle latch
+ c.fillStyle=p.iface==="NVMe"?"#4ea3ff":p.iface==="SAS"?"#e9c46a":"#9fb2a8";rr(c,w-40,6,32,h-12,4);c.fill();c.fillStyle="rgba(0,0,0,.25)";rr(c,w-34,h/2-3,20,6,3);c.fill();
+ // label
+ c.fillStyle="rgba(235,240,243,.85)";c.font="700 "+Math.max(7,Math.min(10,h*.12))+"px system-ui";c.textAlign="left";c.fillText(p.iface+" "+(p.gb>=1000?(p.gb/1000)+"TB":p.gb+"GB"),8,h-7);
+ const bad=o&&o.bad&&o.glow,on=o&&o.on;c.fillStyle=bad?"#ffb020":on?"#4cff9a":"#2a3a31";c.shadowColor=bad?"#ffb020":on?"#4cff9a":"transparent";c.shadowBlur=bad||on?8:0;
+ c.beginPath();c.arc(w-52,11,3.4,0,6.3);c.fill();c.shadowBlur=0};
+DP.psu=(c,p,w,h,o)=>{c.fillStyle="#0b0c0d";rr(c,0,0,w,h,5);c.fill();c.fillStyle=lg(c,0,0,0,h,[[0,"#454d53"],[1,"#262b2f"]]);rr(c,1.5,1.5,w-3,h-3,4);c.fill();
+ // fan grille
+ const fx=w*.28,fy=h/2,fr=h*.38;c.fillStyle="#0a0b0c";c.beginPath();c.arc(fx,fy,fr,0,6.3);c.fill();
+ c.save();c.translate(fx,fy);c.rotate(o&&o.spin?o.t*14:0);c.fillStyle="#2f363b";for(let i=0;i<7;i++){c.rotate(6.283/7);c.beginPath();c.ellipse(fr*.5,0,fr*.46,fr*.17,.3,0,6.3);c.fill()}c.restore();
+ c.strokeStyle="rgba(255,255,255,.18)";c.lineWidth=1.2;for(let i=1;i<4;i++){c.beginPath();c.arc(fx,fy,fr*i/4,0,6.3);c.stroke()}
+ c.fillStyle="#101315";rr(c,w*.52,h*.2,w*.42,h*.6,4);c.fill();c.fillStyle="#d0d6d9";c.font="800 "+Math.round(h*.2)+"px system-ui";c.textAlign="center";c.fillText(p.watts+"W",w*.73,h*.5+h*.07);
+ c.font="600 "+Math.round(h*.1)+"px system-ui";c.fillStyle="#8fa09a";c.fillText("HOT-SWAP",w*.73,h*.72);
+ const bad=o&&o.bad&&o.glow;c.fillStyle=bad?"#ffb020":(o&&o.on)?"#4cff9a":"#2a3a31";c.shadowColor=c.fillStyle;c.shadowBlur=(bad||(o&&o.on))?8:0;c.beginPath();c.arc(w-12,12,4,0,6.3);c.fill();c.shadowBlur=0};
+DP.card=(c,p,w,h)=>{const wide=w/h>5,L=wide?w:w,hh=h;
+ c.fillStyle="#0c0d0e";rr(c,0,0,w,h,3);c.fill();
+ c.fillStyle=lg(c,0,0,0,h,[[0,"#1f6a4c"],[1,"#12452f"]]);rr(c,wide?24:6,1.5,w-(wide?28:10),h-3,2);c.fill();
+ c.fillStyle="#cfd5d9";rr(c,0,0,wide?18:Math.min(8,w*.12),h,2);c.fill();
+ if(p.ctype==="raid"){c.fillStyle=lg(c,0,0,0,h,[[0,"#5f6a70"],[1,"#2b3338"]]);rr(c,w*.34,h*.12,w*.2,h*.76,3);c.fill();chip(c,w*.6,h*.2,Math.min(w*.1,40),h*.6,"");
+  c.fillStyle="#c9a24f";for(let i=0;i<4;i++)c.fillRect(w*.8+i*Math.max(3,w*.03),h*.25,Math.max(2,w*.018),h*.5)}
+ else{for(let i=0;i<2;i++){c.fillStyle="#b9c0c4";rr(c,wide?4:w*.04,h*.1+i*h*.45,wide?12:w*.16,h*.36,1.5);c.fill();c.fillStyle="#111";rr(c,wide?6:w*.07,h*.15+i*h*.45,wide?8:w*.1,h*.26,1);c.fill()}
+  c.fillStyle=lg(c,0,0,0,h,[[0,"#5f6a70"],[1,"#2b3338"]]);rr(c,w*.34,h*.14,w*.22,h*.72,3);c.fill();chip(c,w*.62,h*.25,Math.min(w*.1,36),h*.5,"")}
+ c.fillStyle="rgba(255,255,255,.7)";c.font="700 "+Math.max(6,Math.min(9,h*.3))+"px system-ui";c.textAlign="left";c.fillText(p.ctype==="raid"?"RAID":"10GbE",wide?w*.72:w*.2,h*.62)};
+
+/* draw one installed or tray part: kind decides the style */
+function drawPart(c,p,w,h,o){(DP[p.kind]||DP.card)(c,p,w,h,o||{})}
+function iconOf(part,sz){
+ const cv=document.createElement("canvas"),W=sz*2,H=Math.round(sz*1.5)*1.0;cv.width=W;cv.height=H*2/2;cv.style.width=sz+"px";cv.style.height=Math.round(H/2)+"px";
+ const c=cv.getContext("2d");c.scale(2,2);const w=sz,h=H/2;
+ c.save();
+ if(part.kind==="ram"){const rw=Math.min(w-8,76);c.translate((w-rw)/2,h/2-10);drawPart(c,part,rw,20)}
+ else if(part.kind==="cpu"){const s=Math.min(w,h)-6;c.translate((w-s)/2,(h-s)/2);drawPart(c,part,s,s)}
+ else if(part.kind==="hs"){const s=Math.min(w,h)-4;c.translate((w-s)/2,(h-s)/2);drawPart(c,part,s,s)}
+ else if(part.kind==="drive"){const dw=w-6,dh=Math.min(h-6,dw*.7);c.translate(3,(h-dh)/2);drawPart(c,part,dw,dh)}
+ else if(part.kind==="psu"){const dw=w-6,dh=dw*.55;c.translate(3,(h-dh)/2);drawPart(c,part,dw,dh)}
+ else {const dw=w-6,dh=Math.min(h-8,dw*.42);c.translate(3,(h-dh)/2);drawPart(c,part,dw,dh)}
+ c.restore();return cv}
+
+/* lid */
+function drawLid(c){c.save();c.shadowColor="rgba(0,0,0,.7)";c.shadowBlur=26;c.shadowOffsetY=10;c.fillStyle="#3a4147";rr(c,8,8,LW-16,LH-16,16);c.fill();c.restore();
+ c.fillStyle=lg(c,0,0,LW,LH,[[0,"#59626a"],[.5,"#434b52"],[1,"#2e353a"]]);rr(c,8,8,LW-16,LH-16,16);c.fill();
+ const R=rngOf(5);for(let i=0;i<300;i++){const y=R()*LH,x=R()*LW;c.strokeStyle=R()<.5?"rgba(255,255,255,.05)":"rgba(0,0,0,.08)";c.lineWidth=.8;c.beginPath();c.moveTo(x,y);c.lineTo(x+60+R()*260,y);c.stroke()}
+ for(let r=0;r<3;r++)for(let i=0;i<34;i++){c.fillStyle="rgba(8,10,12,.9)";rr(c,500+i*14.5,60+r*18,9,10,3);c.fill()}
+ c.fillStyle="#cfd6da";rr(c,70,230,300,120,6);c.fill();c.fillStyle="#1b1f22";c.font="900 38px system-ui";c.textAlign="center";c.fillText("SYSADMIN ♡",220,285);c.font="700 14px ui-monospace,monospace";c.fillText("1U / 2U  ·  SERVER",220,312);
+ c.fillStyle="rgba(0,0,0,.35)";rr(c,LW-170,LH/2-34,60,68,10);c.fill();c.fillStyle="#b9c1c6";rr(c,LW-166,LH/2-30,52,60,8);c.fill();c.fillStyle="rgba(0,0,0,.3)";rr(c,LW-158,LH/2-6,36,12,6);c.fill();
+ [[26,26],[LW-26,26],[26,LH-26],[LW-26,LH-26]].forEach(p=>screw(c,p[0],p[1],6));
+ c.fillStyle="rgba(0,0,0,.6)";c.font="700 11px system-ui";c.fillText("◀ slide",LW-140,LH/2+50)}
+
+/* ===== SYSADMIN game state and rules ===== */
+const SAVE="tvos_sysadmin";
+let STEPX=null,DEAD=false;const WLS=[];const WL=(ev,fn,o)=>{window.addEventListener(ev,fn,o);WLS.push([ev,fn,o])};let PAUSED=()=>false;
+const G0=()=>({credits:0,earned:0,bestPay:0,secs:0,parts:0,best:{},decor:{},shelf:[],hints:true,run:null,tut:{}});
+let G=G0();
+function gsave(){try{localStorage.setItem(SAVE,JSON.stringify(G))}catch(e){}}
+function gload(){try{const s=JSON.parse(localStorage.getItem(SAVE)||"null");if(s&&typeof s==="object"){G=Object.assign(G,s);if(G.run&&!G.run.job&&!JBY[G.run.id])G.run=null}}catch(e){}}
+let saveT=0;function saveSoon(){clearTimeout(saveT);saveT=setTimeout(gsave,250)}
+
+let JOB=null,RUN=null,BD=null,LAY=null;
+const MEMORDER=[["L",0],["L",1],["L",2],["L",3],["R",0],["R",1],["R",2],["R",3]];
+function ramOrder(L,k){return MEMORDER.map(m=>"m"+k+m[0]+m[1]).filter(id=>L.by[id])}
+function newItem(pid,src,bad){const u=RUN.nu++;RUN.items[u]={pid,src,bad:bad?1:0};return u}
+function part(u){return PARTS[RUN.items[u].pid]}
+function startRun(id,jobObj){
+ const job=jobObj||JBY[id];JOB=job;BD=BOARDS[job.board];LAY=layoutOf(BD);
+ RUN={id,job:job,items:{},inst:{},tray:[],lid:1,lidSeen:0,paste:{},pp:{},dust:[0,0,0,0,0,0],os:"",osReady:0,powered:0,post:null,an:{paste:null,brush:{}},nu:1,passed:0,done:0,hot:0,diag:0,tries:0,sel:0,focus:""};
+ for(let k=0;k<BD.sockets;k++)RUN.paste[k]="none";
+ const pre=job.pre||{},f=job.fault||{};
+ (pre.cpu||[]).forEach((pid,k)=>{RUN.inst["cpu"+k]=newItem(pid,"cust");const hs=Object.keys(PARTS).find(x=>PARTS[x].kind==="hs"&&PARTS[x].socket===PARTS[pid].socket);RUN.inst["hs"+k]=newItem(hs,"cust");RUN.paste[k]="ok"});
+ if(f.paste)RUN.paste[0]="dry";
+ let ri=0;(pre.ram||[]).forEach((pid,i)=>{const k=i<4*(BD.sockets>1?1:2)?0:1;const ord=ramOrder(LAY,Math.min(k,BD.sockets-1));const sid=ord[i%ord.length];RUN.inst[sid]=newItem(pid,"cust",f.ram===i)});
+ (pre.drive||[]).forEach((pid,i)=>{RUN.inst["bay"+i]=newItem(pid,"cust",f.drive===i)});
+ (pre.psu||[]).forEach((pid,i)=>{RUN.inst["psu"+i]=newItem(pid,"cust")});
+ (pre.card||[]).forEach((pid,i)=>{RUN.inst["pci"+i]=newItem(pid,"cust")});
+ (job.tray||[]).forEach(pid=>RUN.tray.push(newItem(pid,"cust")));
+ if(f.dust)RUN.dust=[.95,.8,.9,.85,.95,.8];
+ if(!job.pre)RUN.lid=1;
+ G.run=RUN;gsave()}
+function runJob(r){return r.job||JBY[r.id]}
+function resumeRun(){RUN=G.run;RUN.an={paste:null,brush:{}};RUN.pp={};JOB=runJob(RUN);BD=BOARDS[JOB.board];LAY=layoutOf(BD)}
+const isFix=()=>JOB.type==="fix";
+
+/* ---------- reading the machine ---------- */
+function itemAt(sid){const u=RUN.inst[sid];return u?{u,it:RUN.items[u],p:PARTS[RUN.items[u].pid]}:null}
+function countKind(kind){return LAY.slots.filter(s=>s.kind===kind&&RUN.inst[s.id]).length}
+function installed(kind){return LAY.slots.filter(s=>s.kind===kind&&RUN.inst[s.id]).map(s=>itemAt(s.id))}
+function cpuReady(k){return RUN.inst["cpu"+k]&&RUN.inst["hs"+k]&&RUN.paste[k]==="ok"}
+function power(){
+ let d=150;const cp=installed("cpu");cp.forEach(x=>d+=x.p.w*1.5);
+ installed("ram").forEach(x=>d+=x.p.type==="DDR5"?14:12);installed("drive").forEach(x=>d+=15);installed("card").forEach(x=>d+=x.p.w+5);
+ const ps=installed("psu").map(x=>x.p.watts),cap=ps.length?Math.min.apply(0,ps):0;
+ const r=cap?d/cap:(d?9:0);return{d,cap,r,state:!cap?"none":r>1?"over":r>.8?"tight":"ok"}}
+function balance(){
+ const n=countKind("ram");if(!n)return"na";
+ let tot=[];
+ for(let k=0;k<BD.sockets;k++){const ch=[0,0,0,0];LAY.slots.forEach(s=>{if(s.kind==="ram"&&s.cpu===k&&RUN.inst[s.id])ch[s.ch]++});
+  const hi=Math.max.apply(0,ch),lo=Math.min.apply(0,ch);if(BD.sockets===1&&n<4){ if(hi>1)return"uneven" } else if(hi-lo>1)return"uneven";tot.push(ch.reduce((a,b)=>a+b,0))}
+ if(tot.length>1&&Math.abs(tot[0]-tot[1])>1)return"uneven";
+ return"ok"}
+function faultCleared(){
+ const f=JOB.fault||{};
+ if(f.drive!==undefined){ if(RUN.items[RUN.inst["bay"+f.drive]]&&RUN.items[RUN.inst["bay"+f.drive]].bad)return 0; if(!RUN.inst["bay"+f.drive])return 0 }
+ if(f.ram!==undefined){ if(installed("ram").some(x=>RUN.items[x.u].bad))return 0; if(countKind("ram")<(JOB.pre.ram||[]).length)return 0 }
+ if(f.dust&&RUN.dust.some(d=>d>.18))return 0;
+ if(f.paste&&!(RUN.paste[0]==="ok"&&RUN.inst["hs0"]))return 0;
+ if(f.power&&(power().state==="over"||countKind("psu")<2))return 0;
+ return 1}
+function reqs(){
+ const n=JOB.need,R=[];
+ if(isFix())R.push({t:"Find and fix the fault",ok:faultCleared()});
+ let c=0;for(let k=0;k<BD.sockets;k++)if(cpuReady(k))c++;
+ R.push({t:"Processor"+(n.cpu>1?"s":"")+" with paste and heatsink: "+Math.min(c,n.cpu)+" of "+n.cpu,ok:c>=n.cpu});
+ const cnt=(label,k,need)=>{const h=countKind(k);R.push({t:label+": "+Math.min(h,need)+" of "+need,ok:h>=need})};
+ cnt("Memory sticks","ram",n.ram);cnt("Drives","drive",n.drive);cnt(n.psu>1?"Power supplies (so one can fail)":"Power supply","psu",n.psu);
+ (n.card||[]).forEach(t=>R.push({t:t==="raid"?"RAID controller":"10GbE network card",ok:installed("card").some(x=>x.p.ctype===t)}));
+ if(JOB.os)R.push({t:"Install "+JOB.os,ok:RUN.os===JOB.os,os:1});
+ R.push({t:"Lid on, power on, and it boots",ok:!!RUN.passed,final:1});
+ return R}
+function allBuilt(){return reqs().filter(r=>!r.final).every(r=>r.ok)}
+/* how many of a kind does the job still need? (so the player never has to guess) */
+function qty(kind){const n=JOB.need;const need=kind==="hs"?n.cpu:n[kind]||0;const have=kind==="hs"?LAY.slots.filter(s=>s.kind==="hs"&&RUN.inst[s.id]).length:countKind(kind);const tray=RUN.tray.filter(u=>PARTS[RUN.items[u].pid].kind===kind).length;return{need,have,tray,order:Math.max(0,need-have-tray)}}
+
+/* ---------- power-on self test ---------- */
+function runPost(){
+ const L=[],bad=[];let fail=0;
+ installed("ram").concat(installed("drive"),installed("psu")).forEach(x=>{RUN.items[x.u].glow=0});
+ L.push({t:"SYSADMIN BIOS v1.0",c:""});
+ let cp=0;for(let k=0;k<BD.sockets;k++){
+  if(!RUN.inst["cpu"+k]){ if(k===0){L.push({t:"CPU 1 ........ NOT FOUND",c:"bad"});fail=1}continue}
+  cp++;
+  if(!RUN.inst["hs"+k]){L.push({t:"CPU "+(k+1)+" ........ NO HEATSINK! TOO HOT",c:"bad"});fail=1;RUN.hot=1}
+  else if(RUN.paste[k]==="dry"){L.push({t:"CPU "+(k+1)+" ........ TEMPERATURE CRITICAL (thermal paste dried out)",c:"bad"});fail=1;RUN.hot=1}
+  else if(RUN.paste[k]!=="ok"){L.push({t:"CPU "+(k+1)+" ........ TEMPERATURE CRITICAL (no thermal paste)",c:"bad"});fail=1;RUN.hot=1}
+  else L.push({t:"CPU "+(k+1)+" ........ OK",c:"ok"})}
+ const avg=RUN.dust.reduce((a,b)=>a+b,0)/6;
+ if(avg>.35){L.push({t:"FANS ........ AIRFLOW LOW (dust clogging the fans)",c:"bad"});fail=1}else L.push({t:"FANS ........ OK",c:"ok"});
+ const rams=installed("ram");
+ if(!rams.length){L.push({t:"MEMORY ........ NONE FOUND",c:"bad"});fail=1}
+ else{const br=rams.filter(x=>RUN.items[x.u].bad);
+  if(br.length){br.forEach(x=>{const s=LAY.slots.find(s=>RUN.inst[s.id]===x.u);RUN.items[x.u].glow=1;L.push({t:"MEMORY TEST FAILED at "+s.label.toUpperCase(),c:"bad"})});fail=1}
+  else L.push({t:"MEMORY ........ "+rams.reduce((a,x)=>a+x.p.gb,0)+" GB OK",c:"ok"})}
+ const dr=installed("drive"),bd=dr.filter(x=>RUN.items[x.u].bad);
+ if(bd.length){bd.forEach(x=>{const s=LAY.slots.find(s=>RUN.inst[s.id]===x.u);RUN.items[x.u].glow=1;L.push({t:"DRIVE FAILED in "+s.label.toUpperCase(),c:"bad"})});fail=1}
+ else L.push({t:"DRIVES ........ "+dr.length+" FOUND",c:dr.length?"ok":"dim"});
+ const pw=power();
+ if(pw.state==="none"){L.push({t:"POWER ........ NO POWER SUPPLY",c:"bad"});fail=1}
+ else if(pw.state==="over"){L.push({t:"POWER ........ OVERLOAD (needs a bigger power supply)",c:"bad"});fail=1}
+ else L.push({t:"POWER ........ OK",c:"ok"});
+ const out={lines:L,fail,reqLeft:[]};
+ if(!fail){const miss=reqs().filter(r=>!r.final&&!r.os&&!r.ok);
+  if(miss.length)out.reqLeft=miss.map(r=>r.t);
+  else if(JOB.os&&RUN.os!==JOB.os){out.needOS=1;RUN.osReady=1}
+  else if(RUN.lid===0)out.open=1}
+ out.pass=!fail&&!out.reqLeft.length&&!out.needOS&&!out.open;
+ return out}
+function perf(){return balance()!=="uneven"&&power().state==="ok"?2:1}
+
+/* ---------- parts & slots ---------- */
+function ctxFor(){return{cpuAt:k=>!!RUN.inst["cpu"+k],paste:k=>RUN.paste[k]}}
+function fitReason(u,sid){return whyNot(PARTS[RUN.items[u].pid],LAY.by[sid],BD,ctxFor())}
+function slotFree(sid){return !RUN.inst[sid]}
+function fitSlots(u){return LAY.slots.filter(s=>slotFree(s.id)&&s.kind===PARTS[RUN.items[u].pid].kind&&!fitReason(u,s.id))}
+function bestSlot(u){const p=PARTS[RUN.items[u].pid],f=fitSlots(u);if(!f.length)return null;
+ if(p.kind==="ram"){const k0=f.filter(s=>s.cpu===firstFewCpu());const ord=[];for(let k=0;k<BD.sockets;k++)ord.push.apply(ord,ramOrder(LAY,k));
+  // balanced: pick the free fitting slot whose channel has the fewest sticks, bank L first, CPU with fewest sticks first
+  let best=null,bs=1e9;f.forEach(s=>{let chc=0,cc=0;LAY.slots.forEach(t=>{if(t.kind==="ram"&&t.cpu===s.cpu&&RUN.inst[t.id]){cc++;if(t.ch===s.ch)chc++}});const sc=cc*100+chc*10+s.bank*2+s.ch*.1;if(sc<bs){bs=sc;best=s}});return best}
+ return f[0]}
+function firstFewCpu(){return 0}
+function install(u,sid){
+ const why=fitReason(u,sid);if(why)return why;
+ const i=RUN.tray.indexOf(u);if(i>=0)RUN.tray.splice(i,1);
+ RUN.inst[sid]=u;G.parts++;RUN.items[u].glow=0;RUN.items[u].t0=perfNow();RUN.powered=0;RUN.post=null;RUN.passed=0;RUN.tries++;
+ const kind=LAY.by[sid].kind;
+ if(kind==="cpu")RUN.paste[LAY.by[sid].cpu]="none";
+ return null}
+function takeOut(sid){
+ const u=RUN.inst[sid],s=LAY.by[sid];if(!u)return"";
+ if(s.kind==="cpu"&&RUN.inst["hs"+s.cpu])return"Take the heatsink off first.";
+ if(s.kind==="ram"||s.kind==="drive"||s.kind==="psu"||s.kind==="card"||s.kind==="hs"||s.kind==="cpu"){
+  delete RUN.inst[sid];RUN.powered=0;RUN.post=null;RUN.passed=0;
+  if(RUN.items[u].bad){delete RUN.items[u];return"bin"}
+  RUN.items[u].glow=0;RUN.tray.push(u);
+  if(s.kind==="cpu")RUN.paste[s.cpu]="none"}
+ return""}
+function perfNow(){return(typeof performance!=="undefined"?performance.now():Date.now())/1000}
+
+/* ===== SYSADMIN scene painting, coach, and input ===== */
+const $=id=>document.getElementById(id);
+let STC=null,STK="",cv,cx2,CW=0,CH=0,DPR=1,V={z:1,x:0,y:0},T=0,lidX=0,shake={sid:"",t:0};
+function staticFor(L,key){ if(STK===key&&STC)return STC;
+ const c=document.createElement("canvas");c.width=LW*2;c.height=LH*2;const g=c.getContext("2d");g.scale(2,2);drawStatic(g,L);STC=c;STK=key;return c}
+let LIDC=null;function lidCanvas(){if(LIDC)return LIDC;const c=document.createElement("canvas");c.width=(LW+40)*2;c.height=(LH+40)*2;const g=c.getContext("2d");g.scale(2,2);g.translate(20,20);drawLid(g);LIDC=c;return c}
+
+function paintParts(c,L,run,t){
+ const o0=run.powered?1:0;
+ L.fans.forEach((f,i)=>{const fx=f.x+f.w/2,fy=f.y+f.h/2,r=f.w/2-4;c.save();c.translate(fx,fy);c.rotate(o0?t*(9+i*.5):i*.6);
+  c.fillStyle="#434c53";for(let b=0;b<7;b++){c.rotate(6.2832/7);c.beginPath();c.ellipse(r*.52,0,r*.5,r*.19,.35,0,6.3);c.fill()}
+  c.fillStyle="#1c2125";c.beginPath();c.arc(0,0,r*.28,0,6.3);c.fill();c.restore();
+  c.strokeStyle="rgba(255,255,255,.1)";c.lineWidth=1.2;c.beginPath();c.arc(fx,fy,r,0,6.3);c.stroke();
+  const d=run.dust[i]||0;if(d>.02){const R=rngOf(i*77+3);c.save();c.beginPath();c.arc(fx,fy,r+2,0,6.3);c.clip();
+   const g=c.createRadialGradient(fx,fy,2,fx,fy,r);g.addColorStop(0,"rgba(150,140,125,"+d*.5+")");g.addColorStop(1,"rgba(120,112,100,"+d*.8+")");c.fillStyle=g;c.fillRect(fx-r,fy-r,r*2,r*2);
+   for(let k=0;k<22;k++){c.fillStyle="rgba("+(170+R()*40|0)+","+(160+R()*30|0)+","+(145+R()*30|0)+","+d*(.25+R()*.3)+")";c.beginPath();c.arc(fx+(R()-.5)*r*2,fy+(R()-.5)*r*2,2+R()*5,0,6.3);c.fill()}c.restore()}});
+ const age=u=>{const it=run.items[u];const a=t-(it.t0||-9);return a<.22?1-a/.22:0};
+ const draw=(sid,extra)=>{const u=run.inst[sid];if(!u)return;const it=run.items[u],p=PARTS[it.pid],s=L.by[sid],e=age(u);
+  c.save();c.translate(s.x,s.y-e*18);c.globalAlpha=1-e*.5;
+  drawPart(c,p,s.w,s.h,{bad:it.bad,glow:it.glow,on:o0,spin:o0,t,hot:run.hot&&o0});c.restore()};
+ for(let k=0;k<L.B.sockets;k++){
+  const s=L.by["cpu"+k];draw("cpu"+k);
+  if(run.inst["cpu"+k]&&!run.inst["hs"+k]){const st=run.paste[k],pr=run.pp[k]||0,cx=s.x+s.w/2,cy=s.y+s.h/2;
+   if(st==="dry"){const R=rngOf(9);c.fillStyle="rgba(120,92,60,.92)";c.beginPath();c.ellipse(cx,cy,s.w*.34,s.h*.34,0,0,6.3);c.fill();for(let i=0;i<26;i++){c.fillStyle="rgba(70,50,30,"+(.3+R()*.3)+")";c.beginPath();c.arc(cx+(R()-.5)*s.w*.6,cy+(R()-.5)*s.h*.6,1+R()*3,0,6.3);c.fill()}}
+   else if(st==="ok"||pr>0){const rad=st==="ok"?.37:.08+.3*Math.min(1,pr);const g=c.createRadialGradient(cx-6,cy-6,2,cx,cy,s.w*rad);g.addColorStop(0,"#f2f4f5");g.addColorStop(1,"#a9b1b6");c.fillStyle=g;c.beginPath();c.ellipse(cx,cy,s.w*rad,s.h*rad,0,0,6.3);c.fill();c.strokeStyle="rgba(255,255,255,.7)";c.lineWidth=1.2;c.stroke()}
+   else if(st==="none"&&pr===0){ /* bare chip waiting for paste */ }}
+  draw("hs"+k)}
+ L.slots.forEach(s=>{if(s.kind==="ram")draw(s.id)});
+ L.slots.forEach(s=>{if(s.kind==="drive"||s.kind==="psu"||s.kind==="card")draw(s.id)})}
+
+function ring(c,s,col,t,w){const a=.55+.35*Math.sin(t*5);c.save();c.strokeStyle=col;c.globalAlpha=a;c.lineWidth=w||3.4;c.shadowColor=col;c.shadowBlur=14;
+ const pad=3+((t*14)%5);rr(c,s.x-pad,s.y-pad,s.w+pad*2,s.h+pad*2,8);c.stroke();c.restore()}
+
+function targetSlots(step){const out=[];if(!step||!step.tgt)return out;const L=LAY;
+ if(L.by[step.tgt])out.push(L.by[step.tgt]);return out}
+
+function render(ts){
+ T=ts/1000;
+ if(!cv||!RUN||$("bench").style.display==="none"){return}
+ const c=cx2;c.setTransform(DPR,0,0,DPR,0,0);c.clearRect(0,0,CW,CH);
+ const bs=Math.min(CW/LW,CH/LH)*.985,s=bs*V.z,ox=(CW-LW*s)/2+V.x,oy=(CH-LH*s)/2+V.y;
+ c.translate(ox,oy);c.scale(s,s);
+ c.drawImage(staticFor(LAY,JOB.board),0,0,LW,LH);
+ paintParts(c,LAY,RUN,T);
+ const lidOpen=!RUN.lid;
+ // fit hints
+ if(lidOpen){
+  if(RUN.sel&&RUN.items[RUN.sel]){fitSlots(RUN.sel).forEach(sl=>{ring(c,sl,"#8ff0c4",T,2.4)});const b=bestSlot(RUN.sel);if(b)ring(c,b,"#ff8fcf",T,4)}
+  if(RUN.focus&&LAY.by[RUN.focus]&&!RUN.inst[RUN.focus])ring(c,LAY.by[RUN.focus],"#ff8fcf",T,3.4);
+  if(G.hints){const st=STEPX;if(st){targetSlots(st).forEach(sl=>ring(c,sl,"#ff8fcf",T,4.2))}}
+  // failing parts glow red
+  Object.keys(RUN.inst).forEach(sid=>{const it=RUN.items[RUN.inst[sid]];if(it&&it.glow&&it.bad){const sl=LAY.by[sid];c.save();c.globalAlpha=.55+.4*Math.sin(T*6);c.strokeStyle="#ff6a55";c.lineWidth=3;c.shadowColor="#ff6a55";c.shadowBlur=14;rr(c,sl.x-3,sl.y-3,sl.w+6,sl.h+6,6);c.stroke();c.restore()}});
+  if(RUN.hot&&!RUN.powered){/* nothing */}
+ }
+ if(shake.t>0){shake.t-=.016}
+ // tool targets + animations
+ if(lidOpen&&tool==="paste")for(let k=0;k<BD.sockets;k++)if(RUN.inst["cpu"+k]&&!RUN.inst["hs"+k]&&RUN.paste[k]!=="ok")ring(c,LAY.by["cpu"+k],"#ff8fcf",T,4);
+ if(lidOpen&&tool==="brush")LAY.fans.forEach((f,i)=>{if(RUN.dust[i]>.02)ring(c,{x:f.x,y:f.y,w:f.w,h:f.h},"#ff8fcf",T,3)});
+ const an=RUN.an;
+ if(an){let ch=0;
+  if(an.paste){const p=Math.min(1,(T-an.paste.t0)/.9);RUN.pp[an.paste.k]=p;
+   if(p>=1){const k=an.paste.k;RUN.paste[k]="ok";delete RUN.pp[k];an.paste=null;RUN.powered=0;RUN.post=null;RUN.passed=0;tool="";toast("Fresh paste spread. Now fit the heatsink.");ch=1}}
+  for(const i in an.brush){const b=an.brush[i],p=Math.min(1,(T-b.t0)/.8),f=LAY.fans[i];RUN.dust[i]=b.from*(1-p);
+   const fx=f.x+f.w/2+Math.sin(p*Math.PI*5)*f.w*.45,fy=f.y+f.h/2;c.save();c.translate(fx,fy);c.rotate(-.5);
+   c.fillStyle="#8a5a2b";rr(c,-6,-34,12,26,4);c.fill();c.fillStyle="#cdb48a";rr(c,-9,-10,18,14,3);c.fill();c.fillStyle="#efe2c4";for(let q=-8;q<=8;q+=3)c.fillRect(q,2,1.6,9);c.restore();
+   if(p>=1){RUN.dust[i]=0;delete an.brush[i];ch=1;if(RUN.dust.every(d=>d<.02)){tool="";toast("Spotless!")}}}
+  if(ch)refresh()}
+ // lid slides off to the right
+ const want=RUN.lid?0:(LW+60);lidX+=(want-lidX)*.16;if(Math.abs(want-lidX)<.5)lidX=want;
+ if(lidX<LW+40){c.save();c.translate(lidX-20,-20);const lc=lidCanvas();c.drawImage(lc,0,0,LW+40,LH+40);
+  if(G.hints&&STEPX&&STEPX.tgt==="lid"){c.strokeStyle="#ff8fcf";c.globalAlpha=.5+.4*Math.sin(T*5);c.lineWidth=5;rr(c,30,30,LW-20,LH-20,18);c.stroke()}c.restore()}
+}
+function loop(ts){render(ts);requestAnimationFrame(loop)}
+function fit(){if(!cv)return;const r=cv.getBoundingClientRect();DPR=Math.min(2.5,window.devicePixelRatio||1);CW=r.width;CH=r.height;cv.width=Math.max(2,Math.round(CW*DPR));cv.height=Math.max(2,Math.round(CH*DPR))}
+function viewS(){const bs=Math.min(CW/LW,CH/LH)*.985,s=bs*V.z;return{s,ox:(CW-LW*s)/2+V.x,oy:(CH-LH*s)/2+V.y}}
+function toL(e){const r=cv.getBoundingClientRect(),v=viewS();return{x:(e.clientX-r.left-v.ox)/v.s,y:(e.clientY-r.top-v.oy)/v.s}}
+function toScr(lx,ly){const v=viewS();return{x:lx*v.s+v.ox,y:ly*v.s+v.oy}}
+function clampPan(){const lim=Math.max(0,(V.z-1))*Math.max(CW,CH)*.55+30;V.x=Math.max(-lim,Math.min(lim,V.x));V.y=Math.max(-lim,Math.min(lim,V.y))}
+function zoomBy(f,cx,cy){const old=V.z;V.z=Math.max(1,Math.min(3.2,V.z*f));if(cx!==undefined){const k=V.z/old;V.x=(V.x-(cx-CW/2))*k+(cx-CW/2);V.y=(V.y-(cy-CH/2))*k+(cy-CH/2)}if(V.z===1){V.x=0;V.y=0}clampPan()}
+
+/* ---------- toast ---------- */
+function toast(t,bad){const d=document.createElement("div");d.className="toast"+(bad?" bad":"");d.textContent=t;$("toasts").appendChild(d);setTimeout(()=>d.remove(),bad?4200:3000);while($("toasts").children.length>3)$("toasts").firstChild.remove()}
+
+/* ---------- coach: what to do next ---------- */
+function trayParts(kind){return RUN.tray.filter(u=>PARTS[RUN.items[u].pid].kind===kind)}
+function placeStep(kind,label,slotPick){
+ const empties=LAY.slots.filter(s=>s.kind===kind&&slotFree(s.id));if(!empties.length)return null;
+ let cand=trayParts(kind);
+ if(kind==="psu"){const d=power().d;cand=cand.sort((a,b)=>PARTS[RUN.items[b].pid].watts-PARTS[RUN.items[a].pid].watts);
+  if(cand.length&&PARTS[RUN.items[cand[0]].pid].watts<d)return{t:"That power supply is too small for this machine (the meter would go red). Order a bigger one.",tgt:"shop:psu"}}
+ let tgtSlot=slotPick?slotPick(empties):empties[0];
+ for(const u of cand){const b=bestSlot(u);if(b&&(!slotPick||true))return{t:"Pick the "+label+" from your tray and put it in the glowing spot.",tgt:(kind==="ram"?b.id:tgtSlot.id),sel:u}}
+ if(cand.length){const why=fitReason(cand[0],tgtSlot.id);return{t:(why||"That part will not fit.")+" Order one that fits instead.",tgt:"shop:"+kind}}
+ const q=qty(kind);const more=q.need?"Order "+(q.order>1?q.order+" more ":"1 more ")+label+(q.order>1?"s":"")+". The job needs "+q.need+" and the machine has "+q.have+".":"Order a "+label+".";
+ return{t:more+" The shop only shows parts that fit.",tgt:"shop:"+kind}}
+function nextStep(){
+ if(!RUN)return null;
+ if(RUN.done)return{t:"Job done! Take the next job, or visit the lounge.",tgt:"lounge"};
+ if(RUN.lid&&!RUN.lidSeen)return{t:"Slide the lid off. Tap the lid or the Lid button.",tgt:"lid"};
+ const f=JOB.fault||{};
+ if(isFix()&&!faultCleared()){
+  if(f.drive!==undefined){const sid="bay"+f.drive,it=RUN.inst[sid]&&RUN.items[RUN.inst[sid]];
+   if(it&&it.bad)return{t:"One drive has an amber light: it has failed. Tap that drive, then Take out.",tgt:sid};
+   if(!RUN.inst[sid]){const r=placeStep("drive","drive",e=>LAY.by[sid]);if(r){r.tgt=r.tgt==="shop:drive"?r.tgt:sid;return r}}}
+  if(f.ram!==undefined){
+   const bad=installed("ram").find(x=>RUN.items[x.u].bad);
+   if(!RUN.diag&&bad)return{t:"The server freezes. Press Power on: the screen will say which memory stick is bad.",tgt:"power"};
+   if(bad){const sid=LAY.slots.find(s=>RUN.inst[s.id]===bad.u).id;return{t:"That red-glowing stick is the bad one. Tap it, then Take out.",tgt:sid}}
+   if(countKind("ram")<(JOB.pre.ram||[]).length){const r=placeStep("ram","memory stick");if(r)return r}}
+  if(f.dust&&RUN.dust.some(d=>d>.18))return{t:"The fans are clogged with dust. Tap Brush, then tap each dusty fan.",tgt:"tool:brush"};
+  if(f.paste){
+   if(RUN.inst.hs0&&RUN.paste[0]!=="ok")return{t:"The thermal paste has dried out. Tap the heatsink, then Take off.",tgt:"hs0"};
+   if(RUN.paste[0]!=="ok")return{t:"Tap Paste, then tap the processor to spread fresh paste.",tgt:"tool:paste"};
+   if(!RUN.inst.hs0){const r=placeStep("hs","heatsink");if(r)return r}}
+  if(f.power){
+   if(!RUN.diag)return{t:"It crashes when busy. Press Power on and look at the power line.",tgt:"power"};
+   const pw=power();if(pw.state==="over"){const ps=installed("psu").sort((a,b)=>a.p.watts-b.p.watts)[0];
+    if(ps)return{t:"The power supply is too small for this machine. Tap it and Take out, then order a bigger one.",tgt:LAY.slots.find(s=>RUN.inst[s.id]===ps.u).id}}}}
+ const n=JOB.need;
+ for(let k=0;k<n.cpu;k++)if(!RUN.inst["cpu"+k]){const r=placeStep("cpu","processor",e=>LAY.by["cpu"+k]);if(r)return r}
+ for(let k=0;k<n.cpu;k++)if(RUN.inst["cpu"+k]&&!RUN.inst["hs"+k]&&RUN.paste[k]!=="ok")return{t:"Spread thermal paste on the processor. Tap Paste, then tap the chip.",tgt:"tool:paste"};
+ for(let k=0;k<n.cpu;k++)if(RUN.inst["cpu"+k]&&!RUN.inst["hs"+k]){const r=placeStep("hs","heatsink",e=>LAY.by["hs"+k]);if(r)return r}
+ if(countKind("ram")<n.ram){const r=placeStep("ram","memory stick");if(r)return r}
+ if(countKind("drive")<n.drive){const r=placeStep("drive","drive");if(r)return r}
+ if(countKind("psu")<n.psu){const r=placeStep("psu","power supply");if(r)return r}
+ for(const t of (n.card||[]))if(!installed("card").some(x=>x.p.ctype===t)){
+  const cand=trayParts("card").find(u=>PARTS[RUN.items[u].pid].ctype===t);const emp=LAY.slots.find(s=>s.kind==="card"&&slotFree(s.id));
+  if(cand&&emp)return{t:"Put the "+(t==="raid"?"RAID controller":"network card")+" into a card slot.",tgt:emp.id,sel:cand};
+  return{t:"Order the "+(t==="raid"?"RAID controller":"10GbE network card")+" from the shop.",tgt:"shop:card"}}
+ if(isFix()&&!faultCleared())return{t:"Look at the machine: something still needs fixing.",tgt:""};
+ if(JOB.os&&RUN.os!==JOB.os&&RUN.osReady)return{t:"It boots but has no operating system yet. Install "+JOB.os+".",tgt:"os"};
+ if(RUN.lid===0)return{t:"Everything is in. Slide the lid back on.",tgt:"lid"};
+ if(!RUN.passed)return{t:"Press Power on!",tgt:"power"};
+ return{t:"It works!",tgt:""}}
+
+/* ===== SYSADMIN interface ===== */
+let view="lounge",tool="",ICONS={};
+const SVG={
+ lid:'<svg viewBox="0 0 24 24"><path d="M3 10h18v9H3z M7 10V6h10v4"/></svg>',
+ paste:'<svg viewBox="0 0 24 24"><path d="M8 3h8l-1.2 6H9.2z M10 9h4v8l-2 4-2-4z"/></svg>',
+ brush:'<svg viewBox="0 0 24 24"><path d="M15 3l6 6-4 2-4-4z M12 8l4 4-5 7c-2 2-5 2-7 1 1-2 1-4 3-6z"/></svg>',
+ power:'<svg viewBox="0 0 24 24"><path d="M12 3v9 M6.6 6.6a8 8 0 1 0 10.8 0"/></svg>',
+ home:'<svg viewBox="0 0 24 24"><path d="M4 11l8-7 8 7 M6 10v10h12V10"/></svg>',
+ cart:'<svg viewBox="0 0 24 24"><path d="M3 4h3l2 11h10l2-8H7"/><circle cx="9" cy="19.5" r="1.4"/><circle cx="17" cy="19.5" r="1.4"/></svg>'};
+const MASCOT='<svg viewBox="0 0 160 120" class="mascot"><g class="bob"><ellipse cx="80" cy="112" rx="46" ry="6" fill="rgba(0,0,0,.25)"/><rect x="22" y="30" width="116" height="70" rx="18" fill="#ffc2e2" stroke="#fff" stroke-width="3"/><rect x="34" y="40" width="92" height="10" rx="5" fill="#ff9ccf" opacity=".6"/><circle cx="58" cy="68" r="7" fill="#3a1230"/><circle cx="102" cy="68" r="7" fill="#3a1230"/><circle cx="60" cy="65" r="2.4" fill="#fff"/><circle cx="104" cy="65" r="2.4" fill="#fff"/><ellipse cx="44" cy="80" rx="8" ry="5" fill="#ff7fbf" opacity=".55"/><ellipse cx="116" cy="80" rx="8" ry="5" fill="#ff7fbf" opacity=".55"/><path d="M70 80q10 10 20 0" stroke="#3a1230" stroke-width="3.5" fill="none" stroke-linecap="round"/><circle cx="118" cy="45" r="3.5" fill="#8ff0c4"/><circle cx="108" cy="45" r="3.5" fill="#ffe27a"/><path d="M80 30V16" stroke="#fff" stroke-width="3" stroke-linecap="round"/><circle cx="80" cy="13" r="5" fill="#ff7fbf" stroke="#fff" stroke-width="2"/><rect x="34" y="98" width="20" height="8" rx="4" fill="#fff"/><rect x="106" y="98" width="20" height="8" rx="4" fill="#fff"/></g></svg>';
+function icon(pid,sz){const k=pid+"_"+sz;if(!ICONS[k])ICONS[k]=iconOf(PARTS[pid],sz);const c=document.createElement("canvas");c.width=ICONS[k].width;c.height=ICONS[k].height;c.style.width=ICONS[k].style.width;c.style.height=ICONS[k].style.height;c.getContext("2d").drawImage(ICONS[k],0,0);return c}
+function esc(s){return String(s).replace(/[&<>"]/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[m]))}
+const stars=n=>'<b class="sf">'+"★".repeat(n)+'</b><i class="se">'+"☆".repeat(5-n)+"</i>";
+const VIEWS=["lounge","board","store","shelf","bench"];
+function setView(v){view=v;VIEWS.forEach(x=>$(x).style.display=x===v?"flex":"none");closeModal();$("os").style.display="none";
+ if(v==="bench"){fit();refresh()}
+ if(v==="lounge")buildLounge();if(v==="board")buildBoard();if(v==="store")buildStore();if(v==="shelf")buildShelf()}
+const hdr=(t,sub)=>'<div class="bh"><button class="btn home" data-a="lounge">'+SVG.home+" Lounge</button><b>"+t+'</b><span class="dim grow">'+(sub||"")+'</span><span class="wallet">'+G.credits+" cr</span></div>";
+
+/* ---------- the Lounge: a cozy place to rest and see how you are doing ---------- */
+function doneCount(){return Object.keys(G.best).length}
+const GENJ={},OFFC={};let MODE="any";try{MODE=G.mode||"any"}catch(e){}
+function okMode(j){return MODE==="any"||(MODE==="fix"?j.type==="fix":(j.type==="build"&&!j.pre))}
+function lvlOf(id){return JBY[id]?JBY[id].d:+id[1]}
+function typeOf(id){return JBY[id]?JBY[id].type:(id[2]==="f"?"fix":"build")}
+function getJob(id){return JBY[id]||GENJ[id]||(G.run&&G.run.job&&G.run.job.id===id?G.run.job:null)}
+function offerJob(d,i){const k=MODE+d+"_"+i;if(OFFC[k])return OFFC[k];const un=JOBS.filter(j=>j.d===d&&!G.best[j.id]&&okMode(j));let j;
+ if(i<un.length)j=un[i];else{j=genJob(d,Math.floor(Math.random()*1e9)+1,MODE);GENJ[j.id]=j}
+ return OFFC[k]=j}
+function freshJob(d){const un=JOBS.find(j=>j.d===d&&!G.best[j.id]&&okMode(j));if(un)return un;const j=genJob(d,Math.floor(Math.random()*1e9)+1,MODE);GENJ[j.id]=j;return j}
+function rankOf(n){let r=RANKS[0][1];RANKS.forEach(x=>{if(n>=x[0])r=x[1]});return r}
+function fmtTime(s){s=Math.round(s);const h=Math.floor(s/3600),m=Math.floor(s%3600/60);return h?h+"h "+m+"m":m?m+" min":s+" sec"}
+function buildLounge(){
+ const done=doneCount(),cont=G.run&&!G.run.done?runJob(G.run):null,perfect=Object.keys(G.best).filter(k=>G.best[k]>1).length,rank=rankOf(done);
+ const msg=cont?"Your <b>"+esc(cont.title)+"</b> for <b>"+esc(cont.who.split(",")[0])+"</b> is waiting on the bench. Carry on when you are ready, or rest here as long as you like.":done?"Nothing on the bench right now. Put your feet up. You are a <b>"+rank+"</b>.":"Welcome! Your bench is clear. Choose a job when you are ready. Any star level you like.";
+ const dec=DECOR.filter(d=>G.decor[d.id]).map(d=>d.e).join(" ");
+ const shelf=G.shelf.slice(-6).reverse();
+ const cnt=[0,0,0,0,0,0],built=[0,0];Object.keys(G.best).forEach(k=>{cnt[lvlOf(k)]++;built[typeOf(k)==="fix"?1:0]++});const mx=Math.max(5,...cnt);
+ let h='<div class="lw"><div class="lhead">'+MASCOT+'<div><h1>✦ SysAdmin ✦</h1><div class="tag">Build servers. Fix servers. Take your time.</div></div></div>';
+ h+='<div class="msg">'+msg+'</div><div class="btns">'+(cont?'<button class="go" data-a="cont">Continue your job</button><button class="btn" data-a="board">Choose a job</button>':'<button class="go" data-a="board">Choose a job</button>')+'<button class="btn" data-a="store">Shop</button><button class="btn" data-a="shelf">Shelf</button><button class="btn" data-a="help">How to play</button><button class="btn" data-a="settings">Settings</button></div>';
+ const S=(b,s)=>'<div class="st"><b>'+b+"</b><span>"+s+"</span></div>";
+ h+='<div class="stats">'+S(rank,"Your rank")+S(done,"Jobs finished")+S(built[0],"Servers built")+S(built[1],"Servers fixed")+S(perfect,"Perfect jobs ✦")+S(G.credits+" cr","In your wallet")+S(G.earned+" cr","Earned in total")+S(G.bestPay+" cr","Best payday")+S(fmtTime(G.secs),"Time at the bench")+S(G.parts,"Parts fitted")+S(DECOR.filter(d=>G.decor[d.id]).length+" / "+DECOR.length,"Workshop items")+"</div>";
+ h+='<div><div class="sec">Jobs finished by difficulty</div>'+[1,2,3,4,5].map(d=>{const n=cnt[d];return'<div class="bar"><u>'+stars(d)+'</u><s><i style="width:'+Math.round(n/mx*100)+'%"></i></s><em>'+n+"</em></div>"}).join("")+"</div>";
+ if(dec)h+='<div><div class="sec">Your workshop</div><div class="deco">'+dec+"</div></div>";
+ if(shelf.length)h+='<div><div class="sec">Recent servers</div><div class="shelfrow">'+shelf.map(e=>'<figure><img src="'+e.img+'" alt=""><figcaption>'+esc(e.t)+" "+(e.perf>1?"✦":"✓")+"</figcaption></figure>").join("")+"</div></div>";
+ h+='<div class="fact">💡 '+FACTS[(3*done+Math.floor(Math.random()*FACTS.length))%FACTS.length]+"</div></div>";
+ $("lcont").innerHTML=h}
+
+/* ---------- job board: pick a star level, then you are offered one job ---------- */
+function buildBoard(){MODE=G.mode||MODE;
+ let h=hdr("Job board","One job at a time");
+ h+='<div class="bwrap">';
+ if(G.run&&!G.run.done){const cj=runJob(G.run);h+='<button class="cont" data-a="cont"><b>Continue your job</b><span>'+esc(cj.title)+" · "+esc(cj.who)+"</span></button>"}
+ h+='<p class="dim pick">What kind of job?</p><div class="modes">'+[["build","🔧 Build a server"],["fix","🩹 Fix a server"],["any","✨ Surprise me"]].map(m=>'<button class="mode'+(MODE===m[0]?" on":"")+'" data-a="mode" data-m="'+m[0]+'">'+m[1]+"</button>").join("")+'</div><p class="dim pick">How hard do you want it?</p>';
+ const cn=[0,0,0,0,0,0];Object.keys(G.best).forEach(k=>cn[lvlOf(k)]++);
+ for(let d=1;d<=5;d++){h+='<button class="lvl" data-a="offer" data-d="'+d+'" data-i="0"><span class="ls">'+stars(d)+'</span><span class="ln">'+LEVELS[d]+'</span><span class="lc">'+(cn[d]?cn[d]+" done":"New")+"</span></button>"}
+ $("board").innerHTML=h+"</div>"}
+function offer(d,i){const j=offerJob(d,i),b=G.best[j.id];
+ modal('<div class="st2">'+stars(j.d)+" "+LEVELS[j.d]+'</div><h2>'+esc(j.title)+'</h2><div class="who">'+esc(j.who)+" · "+(j.type==="fix"?"Fix it":"Build it")+(b?" · "+(b>1?"Done, perfect ✦":"Done ✓"):"")+"</div><p>"+esc(j.story)+'</p><div class="mb">'+'<button class="big" data-a="offer" data-d="'+d+'" data-i="'+(i+1)+'">Another job</button>'+'<button class="big pri" data-a="job" data-id="'+j.id+'">Start this job</button></div><div class="mb"><button class="big sm" data-a="close">Back</button></div>',"offer")}
+
+/* ---------- workshop shop and shelf ---------- */
+function buildStore(){
+ let h=hdr("Workshop shop","Spend your credits on cozy things")+'<div class="bwrap"><div class="grid">';
+ DECOR.forEach(d=>{const own=G.decor[d.id],can=G.credits>=d.p;h+='<div class="dc'+(own?" own":"")+'"><div class="de">'+d.e+'</div><b>'+d.n+"</b><small>"+d.d+"</small>"+(own?'<span class="owned">In your workshop ♡</span>':'<button class="mini'+(can?"":" no")+'" data-a="buyd" data-id="'+d.id+'">'+d.p+" cr</button>")+"</div>"});
+ $("store").innerHTML=h+"</div></div>"}
+function buildShelf(){
+ let h=hdr("Shelf","Every server you finish gets a photo")+'<div class="bwrap">';
+ if(!G.shelf.length)h+='<p class="dim pick">Nothing here yet. Finish a job and it will be photographed for your shelf.</p>';
+ h+='<div class="grid g2">'+G.shelf.slice().reverse().map(e=>'<figure class="sh"><img src="'+e.img+'" alt=""><figcaption><b>'+esc(e.t)+"</b><span>"+stars(e.d)+"</span><em>"+(e.perf>1?"Perfect ✦":"Done ✓")+(e.host?" · "+esc(e.host):"")+"</em></figcaption></figure>").join("")+"</div>";
+ $("shelf").innerHTML=h+"</div>"}
+function snapshot(){const c=document.createElement("canvas");c.width=480;c.height=278;const g=c.getContext("2d");g.fillStyle="#2a1d35";g.fillRect(0,0,480,278);g.scale(480/LW,278/LH);g.drawImage(staticFor(LAY,JOB.board),0,0,LW,LH);paintParts(g,LAY,RUN,T);return c.toDataURL("image/jpeg",.72)}
+
+/* ---------- modals ---------- */
+function modal(html,cls){$("modal").className="show "+(cls||"");$("modal").innerHTML='<div class="mbox">'+html+'</div>'}
+function closeModal(){$("modal").className="";$("modal").innerHTML=""}
+function openHelp(){modal('<h2>How to play</h2><ol class="how"><li><b>Choose a job.</b> A customer brings a server to build or fix.</li><li><b>Slide the lid off</b> and look inside. The <b>NEXT</b> bar always tells you what to do.</li><li><b>Tap an empty spot.</b> Your tray then shows only the parts that fit it. Tap a part to put it in, or drag it onto the machine.</li><li><b>Need a part?</b> Tap <b>Order parts</b>. The shop shows how many you still need. The customer pays, so there is no budget and no maths.</li><li><b>Tap a part in the machine</b> to take it out.</li><li><b>Close the lid and press Power on.</b> If the server has no operating system yet, you get to install one.</li></ol><p class="dim"><b>Paste</b>: tap it, then tap the processor. <b>Brush</b>: tap it, then tap each dusty fan.</p><div class="mb"><button class="big pri" data-a="close">Got it</button></div>')}
+function openSettings(){modal('<h2>Settings</h2><div class="row"><span>Show what to do next</span><button class="sw'+(G.hints?" on":"")+'" data-a="hints"><i></i></button></div><div class="row"><span class="dim">Turn this off once you know the game.</span></div><div class="mb"><button class="big" data-a="reset">Erase all progress</button><button class="big pri" data-a="close">Done</button></div>')}
+let shopCat="ram",shopAll=false;
+function shopBanner(){const k=shopCat;
+ if(k==="card"){const need=(JOB.need.card||[]);if(!need.length)return"This job does not need a card.";const miss=need.filter(t=>!installed("card").some(x=>x.p.ctype===t)&&!RUN.tray.some(u=>PARTS[RUN.items[u].pid].ctype===t));return miss.length?"Still needed: "+miss.map(t=>t==="raid"?"a RAID controller":"a 10GbE network card").join(" and ")+".":"You have the cards you need."}
+ const q=qty(k),nm={cpu:"processor",hs:"heatsink",ram:"memory stick",drive:"drive",psu:"power supply"}[k];
+ if(!q.need)return"This job does not need any more "+nm+"s.";
+ return"The job needs <b>"+q.need+" "+nm+(q.need>1?"s":"")+"</b>. In the machine: "+q.have+". In your tray: "+q.tray+". "+(q.order>0?"<b>Order "+q.order+" more.</b>":"<b>You have enough!</b> Put them in the machine.")}
+function openShop(kind){if(kind)shopCat=kind;if(!RUN)return;
+ const tabs=CAT.map(c=>'<button class="tab'+(c.k===shopCat?" on":"")+'" data-a="shopcat" data-k="'+c.k+'">'+c.n+'</button>').join("");
+ const items=Object.keys(PARTS).filter(id=>PARTS[id].kind===shopCat).filter(id=>shopAll||fitsBoard(PARTS[id],BD));
+ const q=shopCat==="card"?{order:1}:qty(shopCat);
+ const rows=items.map(id=>{const p=PARTS[id],ok=fitsBoard(p,BD);let why="";if(!ok){why=shopCat==="cpu"||shopCat==="hs"?"Wrong socket for this board":shopCat==="ram"?(p.ecc?"Wrong memory type":"Desktop memory (no ECC)"):"Does not fit these bays"}
+  return'<div class="shr"><span class="ic" data-ic="'+id+'"></span><span class="tx"><b>'+esc(p.name)+'</b><small>'+esc(p.sub)+'</small></span>'+(ok?'<button class="mini" data-a="buy" data-id="'+id+'" data-n="1">Add 1</button>'+(q.order>1?'<button class="mini" data-a="buy" data-id="'+id+'" data-n="'+q.order+'">Add '+q.order+"</button>":""):'<span class="no">'+why+'</span>')+'</div>'}).join("");
+ modal('<h2>Parts shop</h2><p class="banner">'+shopBanner()+'</p><div class="tabs">'+tabs+'</div><div class="shl">'+rows+'</div><label class="chk"><input type="checkbox" data-a="shopall"'+(shopAll?" checked":"")+'> Show everything (to learn what does not fit)</label><div class="mb"><button class="big pri" data-a="close">Back to the bench</button></div>',"shop");
+ document.querySelectorAll("[data-ic]").forEach(e=>e.appendChild(icon(e.dataset.ic,78)))}
+function jobCard(start){
+ const R=reqs();
+ modal('<div class="st2">'+stars(JOB.d)+" "+LEVELS[JOB.d]+"</div><h2>"+esc(JOB.title)+'</h2><div class="who">'+esc(JOB.who)+" · "+(JOB.type==="fix"?"Fix it":"Build it")+"</div><p>"+esc(JOB.story)+"</p>"+
+  '<div class="cl"><b>The job:</b>'+R.map(r=>'<div class="row2 '+(r.ok?"ok":"")+'"><i>'+(r.ok?"✓":"○")+"</i>"+esc(r.t)+"</div>").join("")+"</div>"+
+  '<div class="mach">This machine: socket '+BD.socket+", "+BD.mem+" memory, "+BD.bays.n+" "+(BD.bays.form==="LFF"?"big":"small")+" "+BD.bays.iface+" drive bays"+(BD.sockets>1?", 2 processors":"")+".</div>"+(JOB.tip?'<p class="tip">Tip: '+esc(JOB.tip)+"</p>":"")+
+  '<div class="mb"><button class="big pri" data-a="close">'+(start?"Let's go":"Back to the bench")+"</button></div>","jc")}
+
+/* ---------- the operating system installer ---------- */
+let osT=0;
+function showOS(){
+ RUN.osReady=1;const o=$("os");o.style.display="flex";
+ o.innerHTML='<div class="osw"><div class="ost">Install an operating system</div><p class="osp">'+esc(JOB.who.split(",")[0])+' wants <b>'+esc(JOB.os)+'</b> on this server. Tap it.</p><div class="oscards">'+OSES.map(s=>'<button class="osc" data-a="ospick" data-n="'+s.n+'"><span class="osb" style="background:'+s.c+'">'+s.l+'</span><b>'+s.n+'</b><small>'+s.d+'</small></button>').join("")+'</div><div class="mb"><button class="big sm" data-a="osx">Not now</button></div></div>';refresh()}
+function osName(n){const o=$("os");
+ o.innerHTML='<div class="osw"><div class="ost">Name your server</div><p class="osp">Every server needs a name. Pick one, or keep this one.</p><input id="host" maxlength="18" value="'+esc(JOB.host||"server-01")+'" spellcheck="false"><div class="mb"><button class="big pri" data-a="osgo" data-n="'+n+'">Install '+esc(n)+'</button></div></div>'}
+function osInstall(n){
+ const host=($("host").value||"server-01").trim().replace(/[^a-z0-9-]/gi,"-").toLowerCase()||"server-01";
+ const steps=["Checking the drives","Making space for the system","Copying files","Setting up the network","Adding the finishing touches"];
+ const o=$("os");o.innerHTML='<div class="osw"><div class="ost">Installing '+esc(n)+'…</div><div class="pbar"><i id="pfill"></i></div><div id="plines" class="plines"></div></div>';
+ let i=0;clearTimeout(osT);
+ const go=()=>{if(i<steps.length){$("plines").innerHTML+="<div>✓ "+steps[i]+"</div>";i++;$("pfill").style.width=Math.round(i/steps.length*100)+"%";osT=setTimeout(go,650);return}
+  RUN.os=n;RUN.host=host;RUN.osReady=1;
+  o.innerHTML='<div class="osw"><div class="bigstars">✦ All set ✦</div><p class="osp"><b>'+esc(host)+'</b> is running '+esc(n)+'. Lovely work!</p><div class="mb"><button class="big pri" data-a="osdone">Finish</button></div></div>';refresh()};
+ osT=setTimeout(go,500)}
+function afterOS(){
+ $("os").style.display="none";const out=runPost();RUN.post=out;RUN.diag=1;
+ if(out.pass){RUN.powered=1;finishPost(1)}
+ else{RUN.powered=0;toast("Installed! "+(out.open?"Now slide the lid back on and press Power on.":"Press Power on to finish."));refresh()}}
+
+/* ---------- bench UI ---------- */
+function refresh(){
+ if(!RUN)return;
+ const st=nextStep();STEPX=st;
+ $("ttl").textContent=JOB.title;$("sub").innerHTML=stars(JOB.d)+" · "+esc(JOB.who);
+ $("money").textContent=G.credits+" cr";
+ const nb=$("next");nb.style.display=G.hints?"flex":"none";
+ const act=!st?"":st.tgt==="lid"?'<button class="btn pulse" data-a="lid">'+(RUN.lid?"Open lid":"Close lid")+"</button>":st.tgt==="power"?'<button class="btn pulse" data-a="power">Power on</button>':st.tgt&&st.tgt.indexOf("shop:")===0?'<button class="btn pulse" data-a="shop" data-k="'+st.tgt.slice(5)+'">Order parts</button>':st.tgt==="os"?'<button class="btn pulse" data-a="os">Install OS</button>':st.tgt==="lounge"?'<button class="btn pulse" data-a="lounge">Lounge</button>':"";
+ nb.innerHTML='<span class="lab">NEXT</span><span class="txt">'+esc(st?st.t:"")+"</span>"+act;
+ const needPaste=Object.keys(RUN.inst).some(s=>s.indexOf("cpu")===0&&!RUN.inst["hs"+s.slice(3)]&&RUN.paste[s.slice(3)]!=="ok"),needBrush=RUN.dust.some(d=>d>.02);
+ const hint=k=>st&&st.tgt==="tool:"+k&&G.hints?" pulse":"";
+ $("bLid").className="tb"+(st&&st.tgt==="lid"&&G.hints?" pulse":"");$("bLidT").textContent=RUN.lid?"Open lid":"Close lid";
+ $("bPaste").style.display=needPaste||tool==="paste"?"flex":"none";$("bPaste").className="tb"+(tool==="paste"?" on":"")+hint("paste");
+ $("bBrush").style.display=needBrush||tool==="brush"?"flex":"none";$("bBrush").className="tb"+(tool==="brush"?" on":"")+hint("brush");
+ $("bPower").className="pwr"+(st&&st.tgt==="power"&&G.hints?" pulse":"");$("bPowerT").textContent=RUN.powered?"Power off":"Power on";
+ $("tip").textContent=tool==="paste"?"Tap the processor to spread paste":tool==="brush"?"Tap each dusty fan to brush it":"";$("tip").style.display=tool?"block":"none";
+ const pw=power(),bal=balance();
+ $("meter").style.display=countKind("psu")||pw.d>150?"block":"none";
+ $("mbar").style.width=Math.min(100,pw.r*100)+"%";$("mbar").className=pw.state;
+ $("mtxt").textContent=pw.state==="none"?"No power":pw.state==="over"?"Overload!":pw.state==="tight"?"Tight":"Plenty";
+ $("mem").textContent=bal==="na"?"":("Memory: "+(bal==="ok"?"balanced":"uneven"));$("mem").className=bal;
+ buildTray(st);
+ saveSoon()}
+function buildTray(st){
+ const T=$("tray"),f=RUN.focus&&LAY.by[RUN.focus]&&!RUN.inst[RUN.focus]?LAY.by[RUN.focus]:null;
+ let head="",list=RUN.tray.slice();
+ if(f){list=list.filter(u=>!fitReason(u,f.id));head='Parts that fit <b>'+esc(f.label)+'</b>'}
+ else head="Parts tray";
+ let h='<div class="th"><span>'+head+'</span>'+(f?'<button class="mini" data-a="unfocus">Show all</button>':"")+'<button class="btn shopb'+(st&&st.tgt&&st.tgt.indexOf("shop:")===0&&G.hints?" pulse":"")+'" data-a="shop" data-k="'+(f?f.kind:"")+'">'+SVG.cart+" Order parts</button></div><div class=\"tl\">";
+ if(!list.length)h+='<div class="empty">'+(f?"Nothing in your tray fits here. Tap <b>Order parts</b>: the shop shows only parts that fit.":"Your tray is empty. Tap <b>Order parts</b> to get what you need.")+"</div>";
+ list.forEach(u=>{const it=RUN.items[u],p=PARTS[it.pid];h+='<div class="card'+(RUN.sel===u?" sel":"")+'" data-u="'+u+'"><span class="ci" data-pid="'+it.pid+'"></span><b>'+esc(p.name)+"</b><small>"+esc(p.sub)+"</small></div>"});
+ T.innerHTML=h+"</div>";T.querySelectorAll("[data-pid]").forEach(e=>e.appendChild(icon(e.dataset.pid,66)))}
+
+/* ---------- actions ---------- */
+function tryPlace(u,slot){
+ let s=slot;if(PARTS[RUN.items[u].pid].kind==="hs"&&s.kind==="cpu")s=LAY.by["hs"+s.cpu];
+ if(PARTS[RUN.items[u].pid].kind==="cpu"&&s.kind==="hs")s=LAY.by["cpu"+s.cpu];
+ const why=install(u,s.id);
+ if(why){toast(why,1);shake={sid:s.id,t:.4};return false}
+ RUN.focus="";const same=RUN.tray.find(x=>RUN.items[x].pid===RUN.items[u].pid);RUN.sel=same||0;
+ return true}
+function hitSlot(lx,ly){
+ const hit=s=>lx>=s.x-3&&lx<=s.x+s.w+3&&ly>=s.y-3&&ly<=s.y+s.h+3;
+ for(const s of LAY.slots)if(s.kind==="ram"&&hit(s))return s;
+ for(let k=0;k<BD.sockets;k++){const h=LAY.by["hs"+k];if(RUN.inst["hs"+k]&&hit(h))return h}
+ for(const s of LAY.slots)if(s.kind!=="ram"&&s.kind!=="hs"&&hit(s))return s;
+ return null}
+function tapSlot(s){
+ if(RUN.lid){toast("Slide the lid off first.");return}
+ const u=RUN.inst[s.id];
+ if(u){
+  if(s.kind==="cpu"&&!RUN.inst["hs"+s.cpu]&&RUN.paste[s.cpu]==="ok"&&!RUN.sel){RUN.focus="hs"+s.cpu;refresh();return}
+  showPop(s,u);return}
+ if(s.kind==="cpu"&&RUN.inst["cpu"+s.cpu]){RUN.focus="hs"+s.cpu;refresh();return}
+ if(RUN.sel&&RUN.items[RUN.sel]){tryPlace(RUN.sel,s);refresh();return}
+ RUN.focus=s.id;RUN.sel=0;refresh()}
+function showPop(s,u){const it=RUN.items[u],p=PARTS[it.pid],pt=toScr(s.x+s.w/2,s.y);
+ const o=$("pop");o.dataset.sid=s.id;
+ o.innerHTML="<b>"+esc(p.name)+"</b><small>"+esc(p.sub)+"</small>"+(it.glow&&it.bad?'<div class="warn">⚠ This one failed.</div>':"")+'<div class="pb"><button class="btn" data-a="out">'+(s.kind==="hs"?"Take off":"Take out")+'</button><button class="btn" data-a="popx">Close</button></div>';
+ o.style.display="block";const w=o.offsetWidth,h=o.offsetHeight;
+ o.style.left=Math.max(6,Math.min(CW-w-6,pt.x-w/2))+"px";o.style.top=Math.max(6,Math.min(CH-h-6,pt.y-h-12<6?pt.y+s.h*viewS().s+12:pt.y-h-12))+"px"}
+function hidePop(){$("pop").style.display="none"}
+function toggleLid(){RUN.lid=RUN.lid?0:1;RUN.lidSeen=1;if(RUN.lid){tool="";RUN.focus="";RUN.sel=0;hidePop()}refresh()}
+function doPower(){
+ if(RUN.lid&&!RUN.lidSeen){toast("Slide the lid off first and have a look inside.");return}
+ if(RUN.powered){RUN.powered=0;refresh();return}
+ const out=runPost();RUN.diag=1;RUN.powered=1;RUN.post=out;showPost(out)}
+function showPost(out){
+ const p=$("post");p.style.display="flex";p.innerHTML='<div class="mon"><pre id="pl"></pre><div id="pb"></div></div>';
+ let i=0;const pl=$("pl");
+ const step=()=>{if(i<out.lines.length){const l=out.lines[i++];pl.innerHTML+='<div class="'+l.c+'">'+esc(l.t)+"</div>";setTimeout(step,300);return}
+  let msg="",btn='<button class="big pri" data-a="postok" data-ok="0">OK</button>';
+  if(out.fail)msg='<div class="bad">SYSTEM HALTED. Fix the problem, then try again.</div>';
+  else if(out.needOS){msg='<div class="ok">BOOT OK.</div><div class="amb">No operating system found. Let\'s install one!</div>';btn='<button class="big pri" data-a="os">Install the operating system</button>'}
+  else if(out.open)msg='<div class="ok">BOOT OK.</div><div class="amb">Everything works. Slide the lid back on, then power on again.</div>';
+  else if(out.reqLeft.length)msg='<div class="ok">BOOT OK.</div><div class="amb">It boots, but the job still needs:<br>'+out.reqLeft.map(esc).join("<br>")+"</div>";
+  else{msg='<div class="ok">BOOT OK. Welcome to the server.</div>';btn='<button class="big pri" data-a="postok" data-ok="1">See the result</button>'}
+  pl.innerHTML+=msg;$("pb").innerHTML=btn};
+ step()}
+function finishPost(ok){
+ $("post").style.display="none";
+ if(!RUN.post.pass){RUN.powered=0;RUN.hot=0;refresh();return}
+ RUN.passed=1;const pf=perf(),pay=payOf(JOB,pf),prev=G.best[JOB.id]||0;let gain=0;
+ if(pf>prev){gain=pay-(prev?payOf(JOB,prev):0);G.credits+=gain;G.earned+=gain;G.bestPay=Math.max(G.bestPay,gain);G.best[JOB.id]=pf}
+ RUN.done=1;
+ try{const img=snapshot();G.shelf=G.shelf.filter(e=>e.id!==JOB.id);G.shelf.push({id:JOB.id,t:JOB.title,d:JOB.d,perf:pf,host:RUN.host||"",img});while(G.shelf.length>12)G.shelf.shift()}catch(e){}
+ gsave();refresh();
+ const pw=power(),bal=balance(),tips=[];
+ if(bal==="uneven")tips.push("Spread the memory evenly across A, B, C and D for a perfect job.");
+ if(pw.state!=="ok")tips.push("The power meter was tight. A bigger power supply gives more room.");
+ const nid=freshJob(JOB.d).id;
+ modal('<div class="bigstars">'+(pf>1?"✦ Perfect ✦":"✓ Done")+'</div><h2 style="text-align:center">'+esc(JOB.title)+'</h2><p>'+esc(JOB.who.split(",")[0])+' is delighted.</p><p class="pay">+'+gain+' credits'+(gain?"":" (already earned)")+"</p>"+(tips.length?'<p class="dim">'+tips.join(" ")+"</p>":"")+'<div class="mb"><button class="big" data-a="stay">Stay at the bench</button><button class="big" data-a="lounge">Lounge</button><button class="big pri" data-a="job" data-id="'+nid+'">Next job</button></div>',"res")}
+function begin(id,quiet){const jb=getJob(id);for(const k in OFFC)delete OFFC[k];startRun(id,jb);$("toasts").innerHTML="";RUN.focus="";tool="";hidePop();lidX=0;V={z:1,x:0,y:0};setView("bench");if(!quiet)jobCard(true)}
+
+/* ---------- events ---------- */
+function onClick(e){
+ const b=e.target.closest("[data-a]");if(!b)return;const a=b.dataset.a;
+ if(a==="close"||a==="stay")closeModal();
+ else if(a==="cont"){closeModal();resumeRun();setView("bench")}
+ else if(a==="startnext")begin(freshJob(1).id);
+ else if(a==="board")setView("board");
+ else if(a==="store")setView("store");
+ else if(a==="shelf")setView("shelf");
+ else if(a==="lounge")setView("lounge");
+ else if(a==="help")openHelp();
+ else if(a==="settings")openSettings();
+ else if(a==="jobcard")jobCard(false);
+ else if(a==="mode"){MODE=b.dataset.m;G.mode=MODE;gsave();for(const k in OFFC)delete OFFC[k];buildBoard()}
+ else if(a==="offer")offer(+b.dataset.d,+b.dataset.i);
+ else if(a==="hints"){G.hints=!G.hints;gsave();openSettings();if(RUN)refresh()}
+ else if(a==="reset"){if(confirm("Erase all progress? This cannot be undone.")){G=G0();RUN=null;gsave();setView("lounge")}}
+ else if(a==="job"){const id=b.dataset.id;if(G.run&&!G.run.done&&G.run.id!==id&&!b.dataset.sure){modal('<h2>Switch jobs?</h2><p>The job on your bench will be put away and its progress lost.</p><div class="mb"><button class="big" data-a="cont">Keep my current job</button><button class="big pri" data-a="job" data-id="'+id+'" data-sure="1">Switch</button></div>');return}
+  begin(id)}
+ else if(a==="lid"){toggleLid()}
+ else if(a==="power"){doPower()}
+ else if(a==="postok"){finishPost(b.dataset.ok==="1")}
+ else if(a==="os"){$("post").style.display="none";closeModal();showOS()}
+ else if(a==="osx"){$("os").style.display="none";refresh()}
+ else if(a==="ospick"){const n=b.dataset.n;if(n!==JOB.os){toast(JOB.who.split(",")[0]+" asked for "+JOB.os+". Tap that one.",1);return}osName(n)}
+ else if(a==="osgo")osInstall(b.dataset.n);
+ else if(a==="osdone")afterOS();
+ else if(a==="shop"){openShop(b.dataset.k||(RUN.focus&&LAY.by[RUN.focus]?LAY.by[RUN.focus].kind:""))}
+ else if(a==="shopcat"){shopCat=b.dataset.k;openShop()}
+ else if(a==="shopall"){shopAll=!shopAll;openShop()}
+ else if(a==="buy"){const n=+b.dataset.n||1;let u=0;for(let i=0;i<n;i++){u=newItem(b.dataset.id,"shop");RUN.tray.push(u)}RUN.sel=u;RUN.focus="";toast(n>1?"Added "+n+" to your tray.":"Added to your tray.");refresh();openShop()}
+ else if(a==="buyd"){const d=DECOR.find(x=>x.id===b.dataset.id);if(!d||G.decor[d.id])return;if(G.credits<d.p){toast("Not enough credits yet. Finish more jobs!",1);return}G.credits-=d.p;G.decor[d.id]=1;gsave();buildStore();toast("Added to your workshop!")}
+ else if(a==="unfocus"){RUN.focus="";refresh()}
+ else if(a==="out"){const sid=$("pop").dataset.sid;const r=takeOut(sid);hidePop();if(r==="bin")toast("The faulty part went in the bin.");else if(r)toast(r,1);refresh()}
+ else if(a==="popx")hidePop();
+ else if(a==="tool"){tool=tool===b.dataset.k?"":b.dataset.k;if(RUN.lid&&tool){toast("Slide the lid off first.");tool=""}RUN.focus="";RUN.sel=0;hidePop();refresh()}
+ else if(a==="zin")zoomBy(1.3);else if(a==="zout")zoomBy(1/1.3);
+}
+let PT={},down=null;
+function fanAt(p,pad){return LAY.fans.findIndex(f=>p.x>=f.x-pad&&p.x<=f.x+f.w+pad&&p.y>=f.y-pad&&p.y<=f.y+f.h+pad)}
+function brushFan(i){if(i<0||RUN.dust[i]<=.02||RUN.an.brush[i])return;RUN.an.brush[i]={t0:T,from:RUN.dust[i]}}
+function useTool(p){
+ if(tool==="brush"){const i=fanAt(p,14);if(i>=0)brushFan(i);else toast("Tap a dusty fan.");return}
+ if(tool==="paste"){for(let k=0;k<BD.sockets;k++){const s=LAY.by["cpu"+k];if(RUN.inst["cpu"+k]&&p.x>s.x-12&&p.x<s.x+s.w+12&&p.y>s.y-12&&p.y<s.y+s.h+12){
+   if(RUN.inst["hs"+k]){toast("Take the heatsink off first: tap it, then Take off.",1);return}
+   if(RUN.paste[k]==="ok"){toast("It already has fresh paste.");return}
+   if(!RUN.an.paste)RUN.an.paste={k,t0:T};return}}
+  toast("Tap the processor (the silver chip).")}}
+function bindCanvas(){
+ cv.addEventListener("pointerdown",e=>{if(!RUN)return;cv.setPointerCapture(e.pointerId);PT[e.pointerId]={x:e.clientX,y:e.clientY};const n=Object.keys(PT).length;
+  down=n>1?{pinch:1,d:pdist(),z:V.z}:{x:e.clientX,y:e.clientY,t:performance.now(),moved:0};
+  if(!down.pinch&&tool&&!RUN.lid){hidePop();useTool(toL(e));down.tooled=1}});
+ cv.addEventListener("pointermove",e=>{if(!PT[e.pointerId]||!down)return;const prev=PT[e.pointerId];PT[e.pointerId]={x:e.clientX,y:e.clientY};
+  if(down.pinch){if(Object.keys(PT).length>1){const d=pdist();V.z=Math.max(1,Math.min(3.2,down.z*d/down.d));clampPan();if(V.z===1){V.x=0;V.y=0}}return}
+  const dx=e.clientX-prev.x,dy=e.clientY-prev.y;down.moved+=Math.abs(dx)+Math.abs(dy);
+  if(tool&&!RUN.lid){if(tool==="brush"){const i=fanAt(toL(e),6);if(i>=0)brushFan(i)}return}
+  if(V.z>1&&down.moved>6){V.x+=dx;V.y+=dy;clampPan()}});
+ const up=e=>{if(!PT[e.pointerId])return;delete PT[e.pointerId];if(down&&down.pinch){if(!Object.keys(PT).length)down=null;return}
+  const d=down;down=null;if(!d||d.tooled||d.moved>8||performance.now()-d.t>700)return;
+  if(RUN.lid){toggleLid();return}
+  hidePop();const l=toL(e),s=hitSlot(l.x,l.y);
+  if(s)tapSlot(s);else{RUN.focus="";RUN.sel=0;refresh()}};
+ cv.addEventListener("pointerup",up);cv.addEventListener("pointercancel",e=>{delete PT[e.pointerId];down=null});
+ cv.addEventListener("wheel",e=>{e.preventDefault();const r=cv.getBoundingClientRect();zoomBy(e.deltaY<0?1.15:1/1.15,e.clientX-r.left,e.clientY-r.top)},{passive:false})}
+function pdist(){const k=Object.keys(PT);if(k.length<2)return 1;const a=PT[k[0]],b=PT[k[1]];return Math.max(10,Math.hypot(a.x-b.x,a.y-b.y))}
+/* tray: tap to select, or drag a card up onto the machine */
+function bindTray(){const T=$("tray");let dr=null;
+ T.addEventListener("pointerdown",e=>{const c=e.target.closest(".card");if(!c)return;dr={u:+c.dataset.u,x:e.clientX,y:e.clientY,go:0}});
+ WL("pointermove",e=>{if(!dr)return;const dy=e.clientY-dr.y,dx=e.clientX-dr.x;
+  if(!dr.go&&dy<-18&&Math.abs(dx)<Math.abs(dy)*3){dr.go=1;const g=document.createElement("div");g.id="ghost";g.appendChild(icon(RUN.items[dr.u].pid,92));$("ctw").appendChild(g);dr.g=g;dr.o=$("ctw").getBoundingClientRect()}
+  if(dr.go){dr.g.style.left=(e.clientX-dr.o.left)+"px";dr.g.style.top=(e.clientY-dr.o.top)+"px"}});
+ WL("pointerup",e=>{if(!dr)return;const d=dr;dr=null;
+  if(d.go){d.g.remove();const r=cv.getBoundingClientRect();
+   if(RUN.lid){toast("Slide the lid off first.");return}
+   if(e.clientX>=r.left&&e.clientX<=r.right&&e.clientY>=r.top&&e.clientY<=r.bottom){const l=toL(e);let s=hitSlot(l.x,l.y);
+    if(!s){toast("Drop it onto a spot in the machine.",1);return}
+    tryPlace(d.u,s);refresh()}return}
+  if(Math.abs(e.clientX-d.x)<8&&Math.abs(e.clientY-d.y)<8){
+   if(RUN.lid){toast("Slide the lid off first.");return}
+   const f=RUN.focus&&LAY.by[RUN.focus];
+   if(f&&!RUN.inst[f.id]){tryPlace(d.u,f);refresh();return}
+   RUN.sel=RUN.sel===d.u?0:d.u;RUN.focus="";refresh()}});
+ WL("pointercancel",()=>{const g=$("ghost");if(g)g.remove();dr=null})}
+
+function boot(){
+ gload();cv=$("cv");cx2=cv.getContext("2d");
+ document.querySelectorAll("[data-ico]").forEach(e=>e.insertAdjacentHTML("afterbegin",SVG[e.dataset.ico]));
+ document.addEventListener("click",onClick);
+ document.querySelectorAll("[data-tool]").forEach(b=>{b.dataset.a="tool";b.dataset.k=b.dataset.tool});
+ bindCanvas();bindTray();
+ WL("resize",()=>{if(view==="bench")fit()});
+ if(window.ResizeObserver)new ResizeObserver(()=>{if(view==="bench")fit()}).observe($("stage"));
+ setView("lounge");
+ let last=0,acc=0;
+ requestAnimationFrame(function L(ts){if(DEAD)return;if(PAUSED()){setTimeout(()=>requestAnimationFrame(L),300);last=0;return}const dt=Math.min(.2,(ts-last)/1000||0);last=ts;render(ts);
+  if(view==="bench"&&RUN&&$("modal").className.indexOf("show")<0){G.secs+=dt;acc+=dt;if(acc>8){acc=0;gsave()}}
+  requestAnimationFrame(L)});
+ host.RT={BOARDS,fitsBoard,genJob,GENJ,freshJob,lvlOf,G:()=>G,RUN:()=>RUN,JOB:()=>JOB,LAY:()=>LAY,begin:id=>begin(id,true),install,takeOut,tryPlace,newItem,nextStep,runPost,reqs,power,balance,doPower,toggleLid,tapSlot,refresh,PARTS,JOBS,finishPost,setView,faultCleared,perf,fit,useTool,setTool:t=>{tool=t},offer,jobCard,showOS,osName,osInstall,afterOS,qty,buildLounge}}
+
+
+boot();
+PAUSED=()=>!!(win&&win.min)||!host.isConnected;
+win.on.focus=()=>{try{host.focus({preventScroll:true})}catch(e){}};
+win.on.close=()=>{DEAD=true;WLS.forEach(x=>window.removeEventListener(x[0],x[1],x[2]));try{gsave()}catch(e){}};
+}
+defApp("sysadmin",{name:"SysAdmin",icon:"sysadmin",cat:"Games",w:1000,h:680,single:true,desc:"a cosy server-building game: build servers from scratch or fix broken ones, with endless jobs from 1 to 5 stars, then keep a shelf of everything you finish",kw:"sysadmin server build fix repair pc building simulator hardware rack cpu ram drive power supply heatsink thermal paste dust job customer game cozy cute",
+ init(win,b){
+  const host=h("div",{tabindex:"0"});b.append(host);
+  const sh=host.attachShadow({mode:"open"});sh.innerHTML="<style>"+SA_CSS+"</style>"+SA_HTML;
+  SAGAME(sh,host,win);
+ }});
+})();
+
 /* ===================== MY SKY (a cozy field journal of invented skies; Wendell's standalone game, built in) =====================
    Runs inside a shadow root so its styles can never touch the OS (and the OS styles never touch it). No sound on purpose.
    Save: localStorage "tvos_mysky": covered by the system Backup (listed as its own area). Generator version MS2 is frozen: a seed always shows the same sky. */
@@ -7545,6 +8545,7 @@ const CL={
   tvos_session:["Open windows","Which windows were open last time, so they can come back at start.","Housekeeping"],
   tvos_diary:["Diary","Every page you wrote in the Diary, its colours and its PIN.","Your writing and creations","This is your writing. Deleting it removes every Diary page and the PIN."],
   tvos_circuit:["Circuit Temple progress","Your Circuit Temple game: money, boards repaired, shop upgrades, your shelf and the repair you are in the middle of.","Your writing and creations","Deleting it restarts Circuit Temple from the beginning."],
+  tvos_sysadmin:["SysAdmin progress","Your SysAdmin game: credits, jobs finished, stats, workshop items, your shelf of finished servers and the job you are in the middle of.","Your writing and creations","Deleting it restarts SysAdmin from the beginning."],
   tvos_theseus:["Theseus ships","Your Theseus game: the ship on your bench and every finished ship on your shelf, with names, share codes and your bottle and plank choices.","Your writing and creations","Deleting it empties your shelf and clears the ship on the bench."],
   tvos_mysky:["My Sky progress","Your My Sky game: every system, world and animal you named, your bookmarks, claimed systems, paradise finds, home star and ship name.","Your writing and creations","Deleting it restarts My Sky from the beginning."],
   tvos_seq:["Sequencer patterns","Your drum patterns A to D, tempo and mixer settings.","Your writing and creations","Deleting it erases your drum patterns."],
@@ -8292,6 +9293,7 @@ const BKT={
   const bm=BKT.json("tvos_bm",[]);if(Array.isArray(bm)){const u=bm.filter(x=>x&&x.u&&x.u!=="https://republicka.life");add("bm","Bookmarks","settings",u.length,BKT.hs(JSON.stringify(u)))}
   const pg=BKT.json("tvos_apps",[]);if(Array.isArray(pg)&&pg.length){let s=BKT.raw("tvos_apps")||"";for(let i=0;i<localStorage.length;i++){const k=localStorage.key(i);if(k.startsWith("tvos_app_")||k.startsWith("tvos_appd_"))s+="|"+k+BKT.hs(BKT.raw(k)||"")}add("progs","Programs","settings",pg.length,BKT.hs(s))}
   const ct=BKT.json("tvos_circuit",null);if(ct&&ct.done>0)add("circuit","Circuit Temple","settings",ct.done,BKT.hs(JSON.stringify([ct.done,ct.earned,ct.tiers,ct.decor])));
+  const sa=BKT.json("tvos_sysadmin",null);if(sa&&typeof sa==="object"){const n=sa.best?Object.keys(sa.best).length:0;if(n>0||(sa.decor&&Object.keys(sa.decor).length))add("sysadmin","SysAdmin","settings",n,BKT.hs(JSON.stringify([sa.best,sa.credits,sa.earned,sa.decor,sa.parts,sa.secs])))}
   const ts=BKT.json("tvos_theseus",null);if(ts&&typeof ts==="object"){const sv=Array.isArray(ts.shelf)?ts.shelf:[],pr=ts.proj&&ts.proj.jar>0?1:0;if(sv.length||pr)add("theseus","Theseus","settings",sv.length||pr,BKT.hs(JSON.stringify([sv.map(e=>[e.id,e.nm,e.code||(e.json&&e.json.seed)]),pr?ts.proj.cur:0])))}
   const ms=BKT.json("tvos_mysky",null);if(ms&&ms.visited){const nv=Object.keys(ms.visited).length,nn=ms.names?Object.keys(ms.names).length:0;if(nn>0||nv>1)add("mysky","My Sky","settings",nn||nv,BKT.hs(JSON.stringify([ms.names,ms.pins,ms.claim,ms.home,ms.ship,ms.para,ms.strange,ms.rev,Object.keys(ms.visited).length])))}
   const gm=BKT.raw("terminal_velocity_v3");if(gm)add("game","Game save","game",1,BKT.hs(gm));
