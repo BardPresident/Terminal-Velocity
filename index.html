@@ -1258,7 +1258,7 @@ const fmtDate=t=>{const d=new Date(t),hm=" "+pad(d.getHours())+":"+pad(d.getMinu
 const sleep=ms=>new Promise(r=>setTimeout(r,ms));
 const LS={get(k,d){try{const v=localStorage.getItem(k);return v==null?d:JSON.parse(v)}catch(e){return d}},set(k,v){try{localStorage.setItem(k,JSON.stringify(v));return true}catch(e){try{window.tvosStorageFull&&window.tvosStorageFull(e)}catch(_){}return false}}};
 const fmtUp=s=>{s=Math.max(0,Math.round(s));const d=Math.floor(s/86400),hr=Math.floor(s%86400/3600),m=Math.floor(s%3600/60),sc=s%60;if(d)return d+" d "+hr+" h";if(hr)return hr+" h "+m+" min";if(m)return m+" min "+sc+" s";return sc+" s"};
-const OS={apps:{},wins:[],z:10,bus:{},boot:performance.now(),ver:"1.0 build 1121-0131"};
+const OS={apps:{},wins:[],z:10,bus:{},boot:performance.now(),ver:"1.0 build 1121-0520"};
 OS.on=(ev,f)=>{(OS.bus[ev]=OS.bus[ev]||[]).push(f);return f};
 OS.off=(ev,f)=>{OS.bus[ev]=(OS.bus[ev]||[]).filter(x=>x!==f)};
 /* reboot that always fetches the newest copy of this page (like Ctrl+Shift+R), then reloads */
@@ -4929,6 +4929,752 @@ defApp("mysky",{name:"My Sky",icon:"sky",cat:"Games",w:980,h:680,single:true,des
  }});
 })();
 
+/* ===================== THESEUS (a ship in a bottle; Wendell's standalone game, built in) =====================
+   Replace an old ship plank by plank, mast by mast, through the neck of a bottle until nothing original remains, then ask whether it is the same ship.
+   Runs inside a shadow root so its styles never touch the OS. Finished ships live on your shelf with a shareable code (TS1-...); old ships come from seeds (TH1).
+   Save: localStorage "tvos_theseus": covered by the system Backup (own area). Codec TS1 and generator TH1 are frozen: a code always shows the same ship. */
+(()=>{
+IP.theseus="M9.5 2h5v2.2l-.9.9v2.4c2.9 1.2 4.9 3.7 4.9 6.7V19a3 3 0 0 1-3 3H8.5a3 3 0 0 1-3-3v-5.8c0-3 2-5.5 4.9-6.7V5.1l-.9-.9zM12 10.2v4.6h3.6zM11.2 10.8 8.4 14.8h2.8zM7.5 16h9v1.6c-1.5.9-2.8-.2-4.5 0-1.700.2-3-.9-4.500 0z";
+const TH_CSS=":host{display:block;position:relative;flex:1;min-height:0;width:100%;height:100%;overflow:hidden;outline:0;--bg:#17100a;--bg2:#21170e;--pan:#2a1d12;--pan2:#33251a;--ln:#4a3724;--tx:#efe3cf;--mu:#b6a58a;--ac:#e8b25a;--ac2:#ffd27a;--ok:#8fcf9a;--r:12px}\n*{box-sizing:border-box}\n#mw{position:absolute;inset:0;container-type:size;container-name:th;overflow:hidden;background:radial-gradient(1200px 700px at 50% -10%,#3a2816,#17100a 70%);color:var(--tx);font:15px/1.45 Georgia,\"Iowan Old Style\",\"Palatino Linotype\",serif;-webkit-tap-highlight-color:transparent}#msc{position:absolute;inset:0;overflow:auto;-webkit-overflow-scrolling:touch}\nbutton{font:inherit;color:inherit;cursor:pointer}button:disabled{opacity:.45;cursor:default}\n.top{display:flex;align-items:center;gap:14px;padding:10px 18px;border-bottom:1px solid var(--ln);background:rgba(23,16,10,.7);position:sticky;top:0;z-index:5;backdrop-filter:blur(6px)}\n.logo{font-size:22px;letter-spacing:.14em;text-transform:uppercase;color:var(--ac2);display:flex;align-items:center;gap:10px}\n.logo i{width:14px;height:14px;border:2px solid var(--ac);border-radius:50% 50% 40% 40%/60% 60% 40% 40%;display:inline-block}\n.tabs2{display:flex;gap:4px;margin-left:12px;flex:1}.tr{display:flex;gap:6px}\n.tab{background:none;border:0;padding:8px 14px;border-radius:99px;color:var(--mu)}.tab.on{background:var(--pan2);color:var(--tx)}\n.btn{background:var(--pan2);border:1px solid var(--ln);border-radius:99px;padding:9px 16px;min-height:40px;transition:.15s}\n.btn:hover:not(:disabled){border-color:var(--ac);background:#3b2b1d}.btn.on{border-color:var(--ac);color:var(--ac2)}\n.btn.pri{background:linear-gradient(#e8b25a,#c98f35);color:#2a1a08;border-color:#e8b25a;font-weight:bold}.btn.pri:hover:not(:disabled){background:linear-gradient(#f4c26e,#d99d40)}\n.btn.sm{padding:5px 12px;min-height:32px;font-size:13px}.btn.big{padding:13px 24px;font-size:17px}.btn.ghost{background:none}\n.row{display:flex;flex-wrap:wrap;gap:8px;margin:10px 0}.row.end{justify-content:flex-end}.row.between{justify-content:space-between;align-items:center}\n.bench{display:grid;grid-template-columns:minmax(0,1fr) 380px;gap:16px;padding:16px;max-width:1500px;margin:0 auto}\n.stagew{min-width:0}.stage{position:relative;margin:0 auto;min-width:300px;background:#120c07;border:1px solid var(--ln);border-radius:var(--r);overflow:hidden;box-shadow:0 10px 40px #0008}\n#sv{display:block;width:100%;height:auto;touch-action:none;user-select:none;-webkit-user-select:none}\n.zoomb{position:absolute;right:10px;top:10px;display:flex;gap:6px}\n.nextbar{margin-top:10px;padding:12px 16px;background:var(--pan);border:1px solid var(--ln);border-left:4px solid var(--ac);border-radius:var(--r);min-height:50px;font-size:16px}\n.nextbar b{color:var(--ac2)}\n.progw{display:flex;align-items:center;gap:12px;margin-top:10px;color:var(--mu);font-size:13px}.prog{flex:1;height:8px;background:var(--pan);border-radius:9px;overflow:hidden}.prog i{display:block;height:100%;width:0;background:linear-gradient(90deg,#8a6a3a,var(--ac2));transition:width .5s}\n.panelw{background:var(--pan);border:1px solid var(--ln);border-radius:var(--r);display:flex;flex-direction:column;min-height:0;max-height:calc(100cqh - 90px);position:sticky;top:66px}\n.ptabs{display:flex;flex-wrap:wrap;gap:4px;padding:10px;border-bottom:1px solid var(--ln)}\n.pt2{background:none;border:1px solid transparent;border-radius:99px;padding:6px 11px;color:var(--mu);font-size:13px}.pt2.on{background:var(--pan2);border-color:var(--ac);color:var(--tx)}\n.pt2 b{background:var(--ac);color:#2a1a08;border-radius:99px;font-size:11px;padding:0 6px;margin-left:5px}\n.panel{padding:14px;overflow:auto;flex:1}\n.ph2{display:flex;align-items:baseline;justify-content:space-between;gap:8px}.ph2 h3,h2{margin:0;font-weight:normal;color:var(--ac2);letter-spacing:.04em}.ph2 h3{font-size:20px}h2{font-size:24px;margin-bottom:6px}\n.sub,.note,.hint2,.lab2{color:var(--mu)}.sub{font-size:13px}.note{margin:8px 0}.hint2{font-size:13px;margin:6px 0}\n.lab2{font-size:12px;letter-spacing:.09em;text-transform:uppercase;margin:12px 0 6px}.lab2 b{color:var(--tx);text-transform:none;letter-spacing:0}\n.seg{display:flex;background:var(--bg2);border-radius:99px;padding:3px;margin:10px 0}.seg button{flex:1;background:none;border:0;border-radius:99px;padding:7px}.seg .on{background:var(--pan2);color:var(--ac2)}\n.swg{display:grid;grid-template-columns:repeat(auto-fill,minmax(34px,1fr));gap:6px}\n.sw{aspect-ratio:1;border-radius:50%;border:2px solid #0006;background:var(--c);box-shadow:inset 0 -4px 6px #0004,inset 0 2px 3px #fff3}.sw.on{outline:3px solid var(--ac2);outline-offset:2px}\n.chs{display:flex;flex-wrap:wrap;gap:6px}.ch{background:var(--bg2);border:1px solid var(--ln);border-radius:99px;padding:6px 12px;font-size:13px}.ch.on{border-color:var(--ac);color:var(--ac2);background:var(--pan2)}\n.dot{display:inline-block;width:12px;height:12px;border-radius:50%;margin-right:6px;vertical-align:-1px;border:1px solid #0008}\n.rows{display:flex;flex-direction:column;gap:5px}.rw{display:flex;justify-content:space-between;align-items:center;background:var(--bg2);border:1px solid var(--ln);border-radius:10px;padding:8px 12px}.rw.on{border-color:var(--ac)}\n.st{font-style:normal;font-size:11px;border-radius:99px;padding:1px 8px}.st.old{background:#5a4a38;color:#d8c8ac}.st.new{background:#2f5a3a;color:#bfe8c8}\n.chk{display:flex;gap:8px;align-items:center;margin-top:10px;color:var(--mu);font-size:14px}\n.hold{position:sticky;bottom:6px;z-index:2;box-shadow:0 6px 20px #000a;position:sticky;overflow:hidden;width:100%;margin-top:12px;min-height:54px;touch-action:none;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none}.hold span{position:relative}.hold i{position:absolute;left:0;top:0;bottom:0;width:0;background:#fff4}\n.prevrow{display:flex;gap:12px;margin:10px 0;align-items:flex-start}.pv{width:120px;flex:none;background:#120c07;border-radius:8px;border:1px solid var(--ln)}\n.flagprev{background:#120c07;border:1px solid var(--ln);border-radius:10px;padding:8px;margin:10px 0}.flagprev svg{width:100%;height:110px;display:block}\n.pgrid,.egrid,.fgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(52px,1fr));gap:6px}\n.pt,.em,.fgb{background:var(--bg2);border:1px solid var(--ln);border-radius:8px;padding:4px;display:flex;align-items:center;justify-content:center;min-height:42px}.pt.on,.em.on,.fgb.on{border-color:var(--ac2);box-shadow:0 0 0 2px #e8b25a55}.pt svg,.fgb svg{width:100%;height:auto}.none{font-size:11px;color:var(--mu)}\n.field{width:100%;background:var(--bg);border:1px solid var(--ln);border-radius:10px;color:var(--tx);padding:10px 12px;font:inherit}.field:focus{outline:2px solid var(--ac);border-color:var(--ac)}.field.big{font-size:24px;background:none;border-color:transparent;padding:4px 0;color:var(--ac2)}.field.big:hover,.field.big:focus{border-color:var(--ln);padding:4px 10px}\n.field.code{font:12px/1.4 ui-monospace,Menlo,Consolas,monospace;word-break:break-all;resize:vertical}\n.sealbox{margin-top:16px;padding:14px;border:1px dashed var(--ac);border-radius:var(--r);background:#e8b25a0f}\n.hero{display:grid;grid-template-columns:1.2fr 1fr;gap:28px;align-items:center;max-width:1300px;margin:30px auto;padding:0 20px}.herov svg{width:100%;height:auto;border-radius:16px;box-shadow:0 14px 50px #000a;background:#120c07}.herot h1{font-weight:normal;font-size:40px;line-height:1.1;margin:0 0 14px;color:var(--ac2)}.herot p{font-size:17px;color:#d8c9ad}\n.shelf{max-width:1300px;margin:0 auto;padding:20px}.cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:16px;margin-top:14px}\n.card{text-align:left;background:linear-gradient(#2d2014,#211710);border:1px solid var(--ln);border-radius:var(--r);padding:10px;display:flex;flex-direction:column;gap:2px;transition:.2s}.card:hover{transform:translateY(-3px);border-color:var(--ac)}.card b{font-size:17px;font-weight:normal;color:var(--ac2);margin-top:6px}.card span{font-size:12px;color:var(--mu)}.cs svg{width:100%;height:auto;display:block;border-radius:8px;background:#120c07}\n.mov{position:absolute;inset:0;background:#000b;display:none;align-items:center;justify-content:center;z-index:20;padding:12px}.mov.show{display:flex}\n.sheet{background:var(--pan);border:1px solid var(--ac);border-radius:16px;padding:20px;width:min(520px,100%);max-height:94cqh;overflow:auto;box-shadow:0 20px 80px #000}.sheet.wide{width:min(760px,100%)}\n.dview svg{width:100%;height:auto;border-radius:10px;background:#120c07;display:block}.dtop{margin:8px 0}\n.q{font-size:19px;color:var(--ac2);margin:14px 0 6px}.refl{display:grid;gap:8px;margin:8px 0}.how{padding-left:20px}.how li{margin:10px 0}\n.toast{position:absolute;left:50%;bottom:22px;transform:translate(-50%,30px);background:#000d;border:1px solid var(--ac);padding:10px 18px;border-radius:99px;opacity:0;transition:.3s;pointer-events:none;z-index:30;max-width:92cqw;text-align:center}.toast.show{opacity:1;transform:translate(-50%,0)}\n.pick{cursor:pointer}.pick:hover{filter:brightness(1.3)}.hit{cursor:pointer}.pnt{cursor:pointer}\n@keyframes wob{0%,100%{transform:rotate(0)}30%{transform:rotate(-.5deg)}60%{transform:rotate(.4deg)}}.wob{animation:wob .5s;transform-box:fill-box;transform-origin:center}\n@keyframes glow{0%,100%{opacity:.55}50%{opacity:1}}.glow{animation:glow 1.6s infinite}\n@container th (max-width:900px){.bench{grid-template-columns:1fr;padding:10px}.panelw{position:static;max-height:none}.hero{grid-template-columns:1fr}.herot h1{font-size:32px}}\n@container th (max-width:560px){.top{padding:8px 10px;gap:6px}.logo{font-size:16px}.tabs2{margin-left:0}.tab{padding:7px 10px}.panel{padding:10px}.sheet{padding:14px}}\n@media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}\npath.hit{fill:transparent;stroke:none}\npath.hit.pick{fill:rgba(255,225,150,.32);stroke:#ffe9a8;stroke-width:2;animation:glow 1.6s infinite}\npath.hit.slot{fill:rgba(255,210,122,.08);stroke:#ffd27a;stroke-width:1.6;stroke-dasharray:4 3;animation:glow 1.2s infinite}\npath.hit.pnt:hover{fill:rgba(255,255,255,.22)}\n\n.topact{position:sticky;top:-14px;z-index:3;background:var(--pan);padding:8px 0 4px;margin:0 -2px}\n.topact .hold{position:relative;bottom:auto;margin-top:8px;min-height:60px;font-size:17px}\n.stepbox{background:#e8b25a14;border:1px solid var(--ac);border-radius:10px;padding:8px 12px;font-size:14px;color:var(--tx);margin:8px 0}.stepbox b{color:var(--ac2)}\nbutton.logo{font:inherit;cursor:pointer}\n.lounge{display:grid;grid-template-columns:minmax(300px,430px) minmax(0,1fr);gap:28px;max-width:1300px;margin:0 auto;padding:26px 20px;align-items:start}\n.ltitle{font-size:46px;letter-spacing:.2em;color:var(--ac2);line-height:1}.ltag{color:#d8c9ad;font-size:17px;margin:10px 0 18px}\n.lbtn{display:block;width:100%;text-align:left;margin:0 0 10px;padding:14px 18px;border-radius:14px;background:var(--pan);border:1px solid var(--ln);transition:.15s}.lbtn:hover{border-color:var(--ac);transform:translateX(4px)}\n.lbtn b{display:block;font-weight:normal;font-size:20px;color:var(--tx)}.lbtn span{display:block;color:var(--mu);font-size:13px;margin-top:2px}\n.lbtn.pri{background:linear-gradient(#e8b25a,#c98f35);border-color:#e8b25a}.lbtn.pri b{color:#2a1a08;font-weight:bold}.lbtn.pri span{color:#4a3010}\n.lbench{display:block;width:100%;text-align:left;background:var(--pan);border:1px solid var(--ln);border-radius:14px;padding:12px}.lbench:hover{border-color:var(--ac)}.lbench.empty{color:var(--mu);padding:28px;text-align:center}\n.lroom svg{width:100%;height:auto;display:block;border-radius:8px;background:#120c07}\n.lshelf{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;padding:14px 14px 0;background:linear-gradient(#1b120b,#241810);border:1px solid var(--ln);border-bottom:0;border-radius:12px 12px 0 0;min-height:120px}\n.lship{background:none;border:0;padding:0;text-align:center}.lship:hover{transform:translateY(-3px)}.lship span{display:block;font-size:12px;color:var(--mu);margin:2px 0 6px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}\n.none2{display:flex;align-items:center;justify-content:center;color:var(--mu);grid-template-columns:none}.lboard{height:16px;background:linear-gradient(#8a6a3a,#5a4326);border-radius:0 0 8px 8px;box-shadow:0 8px 20px #0008}\n@container th (max-width:900px){.lounge{grid-template-columns:1fr}.ltitle{font-size:34px}.lshelf{grid-template-columns:repeat(2,1fr)}}\n";
+const TH_HTML="<div id=\"mw\"><div id=\"msc\"><div id=\"app\"></div></div><div class=\"mov\" id=\"mov\"><div class=\"sheet\" id=\"msheet\"></div></div><div class=\"toast\" id=\"toast\" role=\"status\"></div></div>";
+function THGAME(root,host){"use strict";
+"use strict";
+/* ================================================================
+   THESEUS: a ship in a bottle. An old ship is found; you replace it
+   plank by plank until not one original part remains, then keep it.
+   Generator version TH1 is frozen: a seed always finds the same old ship.
+   ================================================================ */
+const VER="TH1";
+function xmur(str){let h=1779033703^str.length;for(let i=0;i<str.length;i++){h=Math.imul(h^str.charCodeAt(i),3432918353);h=h<<13|h>>>19}return function(){h=Math.imul(h^h>>>16,2246822507);h=Math.imul(h^h>>>13,3266489909);return(h^=h>>>16)>>>0}}
+function rngFrom(str){const s=xmur(str);let a=s(),b=s(),c=s(),d=s();return function(){a>>>=0;b>>>=0;c>>>=0;d>>>=0;let t=(a+b)|0;a=b^b>>>9;b=c+(c<<3)|0;c=c<<21|c>>>11;d=d+1|0;t=t+d|0;c=c+t|0;return(t>>>0)/4294967296}}
+const B32="0123456789ABCDEFGHJKMNPQRSTVWXYZ";
+const clamp=(x,a,b)=>x<a?a:x>b?b:x,lerp=(a,b,t)=>a+(b-a)*t,sstep=(a,b,x)=>{const t=clamp((x-a)/(b-a),0,1);return t*t*(3-2*t)};
+function pickW(r,list){let t=0;for(const o of list)t+=o.p;let x=r()*t;for(const o of list){x-=o.p;if(x<0)return o}return list[list.length-1]}
+const rint=(r,a,b)=>a+Math.floor(r()*(b-a+1)),rpick=(r,arr)=>arr[Math.floor(r()*arr.length)];
+function newSeed(){const a=new Uint8Array(8);try{crypto.getRandomValues(a)}catch(e){for(let i=0;i<8;i++)a[i]=Math.random()*256}let s="";for(let i=0;i<8;i++)s+=B32[a[i]&31];return s.slice(0,4)+"-"+s.slice(4)}
+function normSeed(t){const raw=String(t||"").toUpperCase().replace(/^TH\d[\s·:_\-\/]*/,"").replace(/O/g,"0").replace(/[IL]/g,"1").replace(/U/g,"V").replace(/[^0-9A-Z]/g,"");
+  if(raw.length===8&&[...raw].every(c=>B32.indexOf(c)>=0))return raw.slice(0,4)+"-"+raw.slice(4);
+  const r=rngFrom("word|"+String(t||"").trim().toLowerCase());let s="";for(let i=0;i<8;i++)s+=B32[(r()*32)|0];return s.slice(0,4)+"-"+s.slice(4)}
+/* ---------- share codes: a ship becomes a short string of letters and numbers ---------- */
+function BW(){const b=[];return{b,w(v,n){for(let i=n-1;i>=0;i--)b.push((v>>>i)&1)}}}
+function BR(bits){let p=0;return{pos:()=>p,r(n){let v=0;for(let i=0;i<n;i++){if(p>=bits.length)throw new Error("short");v=(v<<1)|bits[p++]}return v>>>0}}}
+function chk(bits){let h=7;for(const b of bits)h=(h*31+b+1)&1023;return h}
+function bitsToCode(bits){const b=bits.slice();b.push(...[9,8,7,6,5,4,3,2,1,0].map(i=>(chk(bits)>>>i)&1));while(b.length%5)b.push(0);let s="";for(let i=0;i<b.length;i+=5){s+=B32[b[i]<<4|b[i+1]<<3|b[i+2]<<2|b[i+3]<<1|b[i+4]]}return "TS1-"+s.match(/.{1,5}/g).join("-")}
+function codeToBits(code){const raw=String(code||"").toUpperCase().replace(/^TS\d[\s·:_\-]*/,"").replace(/O/g,"0").replace(/[IL]/g,"1").replace(/U/g,"V").replace(/[^0-9A-Z]/g,"");if(raw.length<10)return null;const b=[];for(const ch of raw){const v=B32.indexOf(ch);if(v<0)return null;for(let i=4;i>=0;i--)b.push((v>>>i)&1)}return b}
+/* ---------- colours: one shared box of 32 woods, paints and metals ---------- */
+const PAL=[
+ ["Pine","#d8b878",1],["Birch","#e7d6ad",1],["Oak","#b98c58",1],["Teak","#b27a34",1],["Cherry","#a3552f",1],["Mahogany","#7b3223",1],["Walnut","#664329",1],["Ebony","#2d2521",1],["Driftwood","#9b9087",1],["Ash","#cdbf9f",1],["Bamboo","#b5b35e",1],["Cedar","#c0764a",1],
+ ["Navy","#243b6e"],["Forest","#2f5e47"],["Crimson","#ab3430"],["Ivory","#f0e7d1"],["Mustard","#dba62b"],["Teal","#2b8c8b"],["Plum","#6b3b70"],["Sky","#7fb5da"],["Rose","#db8c9c"],["Charcoal","#3a3e45"],["Orange","#dc7430"],["Seafoam","#8fceb2"],
+ ["Gold","#dcb54e"],["Silver","#c8cfd8"],["Copper","#b96a48"],["Black","#1d1d22"],["White","#f7f6f1"],["Lavender","#a99ddb"],["Lime","#a9c85b"],["Coral","#ee7f6a"]];
+const hx=h=>[parseInt(h.slice(1,3),16),parseInt(h.slice(3,5),16),parseInt(h.slice(5,7),16)];
+const toHex=a=>"#"+a.map(v=>Math.round(clamp(v,0,255)).toString(16).padStart(2,"0")).join("");
+function mix(a,b,t){const x=hx(a),y=hx(b);return toHex([lerp(x[0],y[0],t),lerp(x[1],y[1],t),lerp(x[2],y[2],t)])}
+const lite=(h,t)=>mix(h,"#ffffff",t),dark=(h,t)=>mix(h,"#000000",t);
+function weather(h,t){const g=hx(h),l=(g[0]*.3+g[1]*.55+g[2]*.15);return mix(mix(h,toHex([l,l*.97,l*.9]),.55*t+.1),"#5d5448",.3*t)}
+const col=i=>PAL[((i%32)+32)%32][1];
+const INLAY=[null,"#f3e7c6","#2a1c14","#dcb54e"],INLAYN=["None","Light","Dark","Gold"];
+const SAILP=["Plain","Stripes","Bands","Check","Diamonds","Patches","Faded","Stars"];
+const FLAGSH=["Banner","Swallowtail","Pennant","Round end"];
+const FLAGPT=["Solid","Halves","Sides","Stripes","Bars","Cross","Saltire","Sash","Slant","Quarters","Chevron","Border","Disc","Wedge","Rays","Checks"];
+/* emblems, drawn in a 24 by 24 box. f = filled, else stroked */
+const EM=[null,
+ {n:"Star",f:1,d:"M12 2.5l2.8 6.2 6.7.7-5 4.6 1.4 6.6L12 17.2 6.1 20.6l1.4-6.6-5-4.6 6.7-.7z"},
+ {n:"Moon",f:1,d:"M15.5 3a9 9 0 1 0 5.5 14.5A7.5 7.5 0 0 1 15.5 3z"},
+ {n:"Sun",f:1,d:"M12 7a5 5 0 1 0 0 10 5 5 0 0 0 0-10z M11 1.5h2v3h-2z M11 19.5h2v3h-2z M1.5 11h3v2h-3z M19.5 11h3v2h-3z M4.2 2.9l2.1 2.1-1.4 1.4-2.1-2.1z M19.1 17.6l2.1 2.1-1.4 1.4-2.1-2.1z M17.7 5l2.1-2.1 1.4 1.4-2.1 2.1z M2.9 19.8l2.1-2.1 1.4 1.4-2.1 2.1z"},
+ {n:"Anchor",d:"M12 6v15 M8 10h8 M4.5 14c.5 4 3.5 6.5 7.5 6.5s7-2.5 7.5-6.5 M12 6m-2.2 0a2.2 2.2 0 1 0 4.4 0a2.2 2.2 0 1 0-4.4 0"},
+ {n:"Wheel",d:"M12 12m-3.5 0a3.5 3.5 0 1 0 7 0a3.5 3.5 0 1 0-7 0 M12 12m-8 0a8 8 0 1 0 16 0a8 8 0 1 0-16 0 M12 1.5v21 M1.5 12h21 M4.6 4.6l14.8 14.8 M19.4 4.6L4.6 19.4"},
+ {n:"Gull",d:"M2 13c3-6 7-7 10 0 3-7 7-6 10 0"},
+ {n:"Fish",f:1,d:"M2.5 12c4-6.5 11-6.5 15 0-4 6.5-11 6.5-15 0z M16.5 12l5-4.5v9z"},
+ {n:"Crown",f:1,d:"M3 18.5V7.5l5 4.5 4-7 4 7 5-4.5v11z"},
+ {n:"Key",d:"M7.5 12m-4 0a4 4 0 1 0 8 0a4 4 0 1 0-8 0 M11.5 12H22 M18 12v4 M21.5 12v3"},
+ {n:"Tree",f:1,d:"M12 2l6.5 8.5h-3.2L20 17H4l4.7-6.5H5.5z M11 17h2v5h-2z"},
+ {n:"Waves",d:"M2 9c3-4 5-4 8 0s5 4 8 0 M2 15c3-4 5-4 8 0s5 4 8 0 M18 9c1.3-1.5 2.7-1.5 4 0 M18 15c1.3-1.5 2.7-1.5 4 0"},
+ {n:"Eye",d:"M2 12c3-5 7-7 10-7s7 2 10 7c-3 5-7 7-10 7s-7-2-10-7z M12 12m-3 0a3 3 0 1 0 6 0a3 3 0 1 0-6 0"},
+ {n:"Spiral",d:"M12 12c0-1 1-2 2-1s0 3-2 3-4-2-3-4 4-4 6-3 4 5 2 8-6 4-9 2-4-8-1-11"},
+ {n:"Compass",f:1,d:"M12 1.5l3 10.5-3 10.5L9 12z M1.5 12L12 9l10.5 3L12 15z"},
+ {n:"Laurel",d:"M7 21C2 16 2 9 7.5 3 M17 21c5-5 5-12-.5-18 M7.5 7.5l2.5.7 M5.6 11.5l2.8.2 M5.5 15.5l2.8-.5 M16.5 7.5l-2.5.7 M18.4 11.5l-2.8.2 M18.5 15.5l-2.8-.5"},
+ {n:"Lyre",d:"M7 3c-2.5 7-1 12 5 15 6-3 7.5-8 5-15 M9.5 8.5v8 M12 7v10.5 M14.5 8.5v8 M8.5 21h7"},
+ {n:"Flame",f:1,d:"M12 2c1 4 6 6 6 12a6 6 0 0 1-12 0c0-3 2-4 3-7 1 2 2 2 3 1-1-3-1-4 0-6z"},
+ {n:"Feather",d:"M20 3C9 3 5 10 5 16l-2 5 M5 16c5 0 10-3 15-13 M9 13h6 M7 17l8-1"},
+ {n:"Book",d:"M3.5 5c3-1.2 6-1 8.5 1 2.5-2 5.500-2.200 8.500-1v13.500c-3-1.200-6-1-8.500 1-2.500-2-5.500-2.200-8.500-1z M12 6v13.500"},
+ {n:"Hourglass",d:"M6 3h12 M6 21h12 M7 3c0 6 5 6 5 9s-5 3-5 9 M17 3c0 6-5 6-5 9s5 3 5 9"},
+ {n:"Planks",f:1,d:"M2.500 4h19v4h-19z M2.500 10h19v4h-19z M2.500 16h19v4h-19z"},
+ {n:"Bottle",f:1,d:"M10 2h4v4l3 4v12H7V10l3-4z"},
+ {n:"Ship",f:1,d:"M2.500 15h19l-3.500 5H6z M11.200 3h1.600v11h-1.600z M13 4l6 8h-6z M11 6L5.500 13H11z"},
+ {n:"Lighthouse",f:1,d:"M8.500 22l2-13h3l2 13z M9.500 8h5V5l-2.500-2.500L9.500 5z M2 9l5 1.200 M22 9l-5 1.200"},
+ {n:"Heart",f:1,d:"M12 21C4 14 3 9 6 6c2-2 5-1 6 1 1-2 4-3 6-1 3 3 2 8-6 15z"},
+ {n:"Diamond",f:1,d:"M12 2l8 10-8 10L4 12z"},
+ {n:"Triangle",f:1,d:"M12 3l9.500 17H2.500z"}];
+const FIGN=["None","Dolphin","Swan","Lion","Dragon","Star","Owl","Wave crest"];
+const BSHAPE=["Classic","Round flask","Decanter","Square","Long neck","Jug","Teardrop","Tall"];
+const BTINT=["Clear","Green","Blue","Amber","Violet","Rose","Smoke","Aqua"];
+const BCORK=["Cork","Red wax","Blue wax","Gold wax","Wooden ball","Glass stopper","Rope wrap","Open"];
+const BSEA=["Blue","Teal","Deep navy","Emerald","Slate","Lavender","Golden","Ice"];
+const BSKY=["Clear day","Dawn","Sunset","Night stars","Storm","Twilight","Aurora","Overcast"];
+const BSCN=["None","Lighthouse","Island","Rocks","Iceberg","Big moon","Setting sun","Gulls"];
+const BCR=["Wooden blocks","Brass ring","Rope cradle","Driftwood","Stone","Pedestal","Iron wire","None"];
+const SKY=[ // top, mid, bottom, stars?, orb
+ ["#7fb6e4","#a9d2ef","#e6f1f4",0,"sun"],["#e9a98b","#f4c9a2","#fbe9c9",0,"sun"],["#3f3a73","#c4627b","#f5a56b",0,"sun"],["#080d26","#16224c","#2a3a6c",1,"moon"],
+ ["#3d4756","#59677a","#8793a3",0,0],["#2a2f63","#5f5b99","#d29aa6",1,"moon"],["#06142a","#0c3a45","#1c6a5c",1,"aur"],["#8e99a3","#aab4bc","#cdd4d8",0,0]];
+const SEA=[["#2f78b0","#123c66"],["#2a9a9a","#0f4a56"],["#1b3a73","#0a1838"],["#2e9a70","#0e4a3a"],["#5a6e80","#26323e"],["#7b6cb8","#35295f"],["#d9a84c","#7a5420"],["#9fd3e6","#4a86a6"]];
+const TINT=["#cfe9f2","#8fd4a0","#7fb4ea","#e6b05a","#b18ae6","#ea9ab8","#9aa3ad","#7fe0e0"];
+const SUGG_A=["Patient","Quiet","Brass","Lantern","Hollow","Gentle","Salt","Amber","Mended","Slow","Little","Silver","Borrowed","Faithful","Wandering","Honest","Midnight","Tender","Ninth","Last"];
+const SUGG_N=["Hour","Tide","Kindness","Harbour","Morning","Promise","Wake","Heron","Compass","Thread","Sparrow","Anchor","Return","Voyage","Question","Plank","Lamp","Orchard","Answer","Winter"];
+function suggestName(r){return "The "+rpick(r,SUGG_A)+" "+rpick(r,SUGG_N)}
+/* ---------- the hull: every plank is a strip of one smooth curved surface ---------- */
+const TYPES={
+ sloop:{nm:"sloop",L:300,D:50,bl:12,sl:5,sov:6,rake:18,nst:4,ns:4,bs:46,masts:[{u:.44,h:205}],sails:[["gaff",0],["jib",0]]},
+ cutter:{nm:"cutter",L:330,D:54,bl:12,sl:6,sov:6,rake:20,nst:4,ns:4,bs:62,masts:[{u:.4,h:222}],sails:[["gaff",0],["jib",0],["stay",0]]},
+ schooner:{nm:"schooner",L:390,D:60,bl:16,sl:8,sov:8,rake:22,nst:5,ns:5,bs:56,masts:[{u:.36,h:205},{u:.68,h:222}],sails:[["gaff",0],["gaff",1],["jib",1]]},
+ brig:{nm:"brig",L:400,D:70,bl:22,sl:20,sov:12,rake:20,nst:5,ns:5,bs:60,gun:1,masts:[{u:.34,h:215},{u:.66,h:232}],sails:[["sq",0,0],["sq",0,1],["sq",1,0],["sq",1,1],["jib",1]]},
+ galleon:{nm:"galleon",L:430,D:94,bl:30,sl:60,sov:24,rake:30,nst:6,ns:5,bs:56,gun:1,castle:1,masts:[{u:.72,h:205},{u:.5,h:245},{u:.2,h:170}],sails:[["sq",0,0],["sq",0,1],["sq",1,0],["sq",1,1],["gaff",2]]},
+ clipper:{nm:"clipper",L:470,D:62,bl:14,sl:8,sov:8,rake:34,nst:5,ns:6,bs:64,masts:[{u:.74,h:250},{u:.49,h:275},{u:.24,h:235}],sails:[["sq",0,0],["sq",0,1],["sq",1,0],["sq",1,1],["sq",2,0],["sq",2,1],["jib",0]]},
+ longship:{nm:"longship",L:370,D:38,bl:46,sl:40,sov:8,rake:10,nst:4,ns:5,bs:0,dragon:1,masts:[{u:.5,h:185}],sails:[["sq",0,2]]}};
+const TKEYS=Object.keys(TYPES);
+const DEPTHK={def:[[0,.84],[.2,.97],[.5,1],[.78,.9],[.94,.5],[1,.12]],galleon:[[0,.92],[.2,1],[.5,1],[.8,.86],[.95,.45],[1,.12]],longship:[[0,.5],[.2,.9],[.5,1],[.8,.9],[.96,.5],[1,.3]]};
+function topY(H,u){return -(H.bl*Math.pow(u,3)+H.sl*Math.pow(1-u,2.4))+H.sag*Math.sin(Math.PI*u)}
+function depthF(H,u){const K=H.dk;for(let i=1;i<K.length;i++)if(u<=K[i][0]){const a=K[i-1],b=K[i],t=(u-a[0])/(b[0]-a[0]);return lerp(a[1],b[1],(1-Math.cos(Math.PI*t))/2)}return K[K.length-1][1]}
+function hpt(H,u,v){const t=topY(H,u),b=t+H.D*depthF(H,u),y=t+(b-t)*v,x=u*H.L-H.sov*(1-v)*Math.pow(1-u,3)+H.rake*(1-v)*sstep(.6,1,u);return[x,y]}
+const f1=n=>(Math.round(n*10)/10);
+function makeG(seed){
+  seed=normSeed(seed);const r=rngFrom(VER+"|"+seed);
+  const tp=pickW(r,TKEYS.map(k=>({k,p:{sloop:.15,cutter:.12,schooner:.16,brig:.16,galleon:.14,clipper:.14,longship:.13}[k]}))).k,T=TYPES[tp];
+  const j=(a,b)=>a+(b-a)*r();
+  const H={L:Math.round(T.L*j(.93,1.08)),D:Math.round(T.D*j(.92,1.1)),bl:T.bl*j(.8,1.25),sl:T.sl*j(.8,1.25),sov:T.sov,rake:T.rake*j(.8,1.2),bs:T.bs?Math.round(T.bs*j(.85,1.2)):0,sag:j(2,6),dk:DEPTHK[tp]||DEPTHK.def};
+  const nst=clamp(T.nst+(r()<.28?1:0)-(r()<.12?1:0),4,6),ns=clamp(T.ns+(r()<.3?-1:r()<.4?1:0),3,5);
+  const pl=[];for(let i=0;i<nst;i++){const b=[0];if(i%2===0){for(let k=1;k<ns;k++)b.push(k/ns)}else{for(let k=0;k<ns;k++)b.push((k+.5)/ns)}b.push(1);for(let k=0;k<b.length-1;k++){const u0=b[k],u1=b[k+1],v0=i/nst,v1=(i+1)/nst,n=Math.max(3,Math.ceil((u1-u0)*20));let top=[],bot=[];for(let q=0;q<=n;q++){const u=lerp(u0,u1,q/n);top.push(hpt(H,u,v0));bot.push(hpt(H,lerp(u1,u0,q/n),v1))}
+    const pts=top.concat(bot),d="M"+pts.map(p=>f1(p[0])+" "+f1(p[1])).join("L")+"Z",c=hpt(H,(u0+u1)/2,(v0+v1)/2);pl.push({i,j:k,u0,u1,v0,v1,d,cx:c[0],cy:c[1]})}}
+  const mdef=T.masts.map(m=>({u:clamp(m.u+(r()-.5)*.03,.12,.85),h:Math.round(m.h*j(.92,1.08))}));
+  const G={seed,type:tp,T,H,nst,ns,pl,mdef,sdef:T.sails,name:""};
+  G.rig=rigOf(G);
+  /* the old ship, as it was found: patched with mismatched wood, faded cloth, a worn flag */
+  const woods=[2,0,8,3,6,11,9],base=rpick(r,woods),alt=rpick(r,woods),cloth=rpick(r,[15,1,9,0,16,14,12,13]);
+  const flagCols=[12,13,14,15,16,17,18,21,22,28,24,27,19,20],fc=()=>rpick(r,flagCols);
+  const c1=fc();let c2=fc();while(c2===c1)c2=fc();let c3=fc();while(c3===c1||c3===c2)c3=fc();
+  const dark1=[12,13,14,18,21,27,17].includes(c1);
+  const O={pl:G.pl.map(()=>({c:r()<.78?base:alt,i:0,old:1,st:"ok"})),mk:G.rig.masts.map(()=>({c:base,old:1})),
+   sl:G.rig.sails.map(()=>({c:cloth,p:pickW(r,[{n:0,p:.4},{n:1,p:.14},{n:5,p:.2},{n:6,p:.16},{n:2,p:.05},{n:3,p:.05}]).n,old:1})),
+   fl:{sh:rint(r,0,3),pt:rint(r,0,15),c1,c2,c3,em:r()<.3?0:rint(r,1,25),ec:dark1?28:27,old:1},
+   fg:{k:T.dragon?4:(r()<.25?0:rint(r,1,7)),c:rpick(r,[base,24,26,15,14]),old:1},rd:{c:base,old:1},tr:rpick(r,[12,13,14,22,16,27,21,26]),
+   bt:{shape:rint(r,0,7),tint:rint(r,0,7),cork:rint(r,0,6),sea:rint(r,0,7),sky:rint(r,0,7),scn:rint(r,0,7),cr:rint(r,0,6),crc:rpick(r,[2,3,5,6,8,11])},nm:suggestName(r),rf:0};
+  G.orig=O;G.name=O.nm;return G}
+const clone=o=>JSON.parse(JSON.stringify(o));
+/* the rigging: where every mast and sail sits on the hull */
+function rigOf(G){const H=G.H,L=H.L;
+  const masts=G.mdef.map(d=>{const x=d.u*L,by=topY(H,d.u)+1;return{x,by,h:d.h,ty:by-d.h}});
+  const ord=masts.map((m,i)=>i).sort((a,b)=>masts[b].x-masts[a].x),names=masts.length===1?["Mast"]:masts.length===2?["Foremast","Mainmast"]:["Foremast","Mainmast","Mizzenmast"];
+  masts.forEach((m,i)=>{m.nm=names[ord.indexOf(i)];m.sp=masts.length>1?Math.min(...masts.filter(o=>o!==m).map(o=>Math.abs(o.x-m.x))):L*.6});
+  const bowY=topY(H,1),tipX=L+H.rake*.55+H.bs,tipY=bowY-20;
+  const sails=[];let nJ=0;
+  for(const s of G.sdef){const m=masts[s[1]],k=s[0],h=m.h;let o={k,m:s[1]};
+    if(k==="sq"){const lv=s[2],w=lv===2?Math.min(.9*h,L*.5):Math.min(.46*h,m.sp*.92)*(lv===1?.8:1),fb=[[.12,.5],[.54,.8],[.14,.88]][lv];o=Object.assign(o,{lv,mx:m.x,x0:m.x-w/2,x1:m.x+w/2,yT:m.by-fb[1]*h,yB:m.by-fb[0]*h});o.nm=lv===1?(masts.length>1?(m.nm.replace("mast","")+" topsail"):"Topsail"):lv===2?"Square sail":(masts.length>1?m.nm.replace("mast","")+"sail":"Course")}
+    else if(k==="gaff"){const aft=masts.filter(q=>q.x<m.x-1).sort((a,b)=>b.x-a.x)[0],sp=aft?m.x-aft.x-8:m.x+22,bl=Math.min(.62*h,sp);o=Object.assign(o,{mx:m.x,yb:m.by-.13*h,yp:m.by-.82*h,bx:m.x-bl,gx:m.x-bl*.7,gy:m.by-.58*h});o.nm=masts.length>1?(m.nm==="Mizzenmast"?"Mizzen":m.nm.replace("mast","")+" sail"):"Main sail"}
+    else if(k==="jib"){o=Object.assign(o,{hx:m.x+2,hy:m.by-.9*h,cx:lerp(m.x,tipX,.3),cy:m.by-.14*h,tx:tipX,ty:tipY});o.nm="Jib"}
+    else{const tx=lerp(m.x,tipX,.5);o=Object.assign(o,{hx:m.x+2,hy:m.by-.64*h,cx:m.x+16,cy:m.by-.13*h,tx,ty:bowY-6});o.nm="Staysail"}
+    sails.push(o)}
+  /* name sails twice the same way: add numbers to keep rows distinct */
+  const seen={};sails.forEach(s=>{seen[s.nm]=(seen[s.nm]||0)+1;if(seen[s.nm]>1)s.nm+=" "+seen[s.nm]});
+  const minY=Math.min(...masts.map(m=>m.ty))-40,bb={x0:-H.sov-18,x1:tipX+34,y0:Math.min(minY,topY(H,1)-60),y1:H.D+8};
+  return{masts,sails,tipX,tipY,bowY,bb}}
+/* ---------- a ship becomes a code, and a code becomes a ship ---------- */
+function newDesign(G){const D=clone(G.orig);return D}
+function encodeShip(G,D){const w=BW();const sd=seedKey(G.seed);w.w(1,3);for(const ch of sd)w.w(B32.indexOf(ch),5);
+  const anyOld=D.pl.some(p=>p.old)||D.mk.some(p=>p.old)||D.sl.some(p=>p.old)||D.fl.old||D.fg.old||D.rd.old?1:0;w.w(anyOld,1);const ob=o=>{if(anyOld)w.w(o.old?1:0,1)};
+  D.pl.forEach(p=>{w.w(p.c,5);w.w(p.i,2);ob(p)});D.mk.forEach(p=>{w.w(p.c,5);ob(p)});D.sl.forEach(p=>{w.w(p.c,5);w.w(p.p,3);ob(p)});
+  const F=D.fl;w.w(F.sh,2);w.w(F.pt,4);w.w(F.c1,5);w.w(F.c2,5);w.w(F.c3,5);w.w(F.em,5);w.w(F.ec,5);ob(F);
+  w.w(D.fg.k,3);w.w(D.fg.c,5);ob(D.fg);w.w(D.rd.c,5);ob(D.rd);w.w(D.tr,5);
+  const B=D.bt;w.w(B.shape,3);w.w(B.tint,3);w.w(B.cork,3);w.w(B.sea,3);w.w(B.sky,3);w.w(B.scn,3);w.w(B.cr,3);w.w(B.crc,5);w.w(D.rf||0,3);
+  const nb=Array.from(new TextEncoder().encode(String(D.nm||"").slice(0,40))).slice(0,30);w.w(nb.length,5);nb.forEach(v=>w.w(v,8));
+  return bitsToCode(w.b)}
+function seedKey(s){return String(s).replace(/[^0-9A-Z]/g,"")}
+function decodeShip(code){try{const bits=codeToBits(code);if(!bits)return null;const rd=BR(bits);if(rd.r(3)!==1)return null;let sd="";for(let i=0;i<8;i++)sd+=B32[rd.r(5)];sd=sd.slice(0,4)+"-"+sd.slice(4);
+  const G=makeG(sd),D=newDesign(G),anyOld=rd.r(1),ob=o=>{o.old=anyOld?rd.r(1):0};
+  D.pl.forEach(p=>{p.c=rd.r(5);p.i=rd.r(2);ob(p);p.st="ok"});D.mk.forEach(p=>{p.c=rd.r(5);ob(p)});D.sl.forEach(p=>{p.c=rd.r(5);p.p=rd.r(3);ob(p)});
+  const F=D.fl;F.sh=rd.r(2);F.pt=rd.r(4);F.c1=rd.r(5);F.c2=rd.r(5);F.c3=rd.r(5);F.em=rd.r(5);F.ec=rd.r(5);ob(F);
+  D.fg.k=rd.r(3);D.fg.c=rd.r(5);ob(D.fg);D.rd.c=rd.r(5);ob(D.rd);D.tr=rd.r(5);
+  const B=D.bt;B.shape=rd.r(3);B.tint=rd.r(3);B.cork=rd.r(3);B.sea=rd.r(3);B.sky=rd.r(3);B.scn=rd.r(3);B.cr=rd.r(3);B.crc=rd.r(5);D.rf=rd.r(3);
+  const n=rd.r(5),nb=[];for(let i=0;i<n;i++)nb.push(rd.r(8));D.nm=new TextDecoder().decode(new Uint8Array(nb));
+  const end=rd.pos(),pay=bits.slice(0,end);let ck=0;for(let i=0;i<10;i++)ck=ck<<1|rd.r(1);if(ck!==chk(pay))return null;
+  return{G,D}}catch(e){return null}}
+/* ================= drawing: everything is made from code, nothing is an image ================= */
+let UIDN=0;const nid=()=>"t"+(++UIDN);
+const P1=n=>Math.round(n*10)/10;
+function polyD(pts){return "M"+pts.map(p=>P1(p[0])+" "+P1(p[1])).join("L")}
+function hullLine(H,v,u0,u1,n){const a=[];for(let q=0;q<=n;q++)a.push(hpt(H,lerp(u0,u1,q/n),v));return a}
+/* ---------- a flag: shape, field pattern, three colours and an emblem ---------- */
+function flagSVG(F,w,h,uid,old,seed){
+  const c=i=>old?weather(col(i),.8):col(i),c1=c(F.c1),c2=c(F.c2),c3=c(F.c3),ce=c(F.ec),a=h*.075,wv=(x)=>a*Math.sin(x/w*5.2)*(x/w);
+  const N=12,top=[],bot=[];for(let q=0;q<=N;q++){const x=w*q/N;top.push([x,wv(x)]);bot.push([x,h+wv(x)])}
+  let pts;
+  if(F.sh===0){pts=top.concat(bot.slice().reverse())}
+  else if(F.sh===1){pts=top.concat([[w*.74,h/2+wv(w*.74)]],bot.slice().reverse())}
+  else if(F.sh===2){const tp=top.map(p=>[p[0],p[1]*.5+h*.5*p[0]/w]),bt=bot.map(p=>[p[0],p[1]*.5+h-h*.5*p[0]/w]);pts=tp.concat(bt.slice().reverse())}
+  else{const k=Math.floor(N*.78),tp=top.slice(0,k+1),bt=bot.slice(0,k+1),xr=tp[k][0],yt=tp[k][1],yb=bt[k][1],arc=[];for(let q=1;q<8;q++){const t=-Math.PI/2+Math.PI*q/8;arc.push([xr+(w-xr)*Math.cos(t),(yt+yb)/2+(yb-yt)/2*Math.sin(t)])}pts=tp.concat(arc,bt.slice().reverse())}
+  if(old){const r=rngFrom("fr|"+seed),out=[];for(let i=0;i<pts.length;i++){const p=pts[i];out.push(p);if(p[0]>w*.6&&r()<.45&&i<pts.length-1)out.push([p[0]-(2+r()*5),p[1]+(r()-.5)*5])}pts=out}
+  const id=uid+"f",d=polyD(pts)+"Z";let g='<defs><clipPath id="'+id+'"><path d="'+d+'"/></clipPath></defs><g clip-path="url(#'+id+')">';
+  const R=(x,y,ww,hh,f,o)=>'<rect x="'+P1(x)+'" y="'+P1(y)+'" width="'+P1(ww)+'" height="'+P1(hh)+'" fill="'+f+'"'+(o?' opacity="'+o+'"':"")+'/>',pt=F.pt;
+  g+=R(-2,-4,w+4,h+8+a*2,c1);
+  if(pt===1)g+=R(-2,h/2,w+4,h,c2);
+  else if(pt===2)g+=R(w/2,-4,w,h+8+a*2,c2);
+  else if(pt===3){g+=R(-2,h/3,w+4,h/3,c2)+R(-2,h*2/3,w+4,h,c3)}
+  else if(pt===4){g+=R(w/3,-4,w/3,h+10,c2)+R(w*2/3,-4,w,h+10,c3)}
+  else if(pt===5){g+=R(-2,h*.4,w+4,h*.2,c2)+R(w*.3,-4,w*.2,h+10,c2)+R(-2,h*.46,w+4,h*.08,c3)+R(w*.36,-4,w*.08,h+10,c3)}
+  else if(pt===6){g+='<path d="M0 0L'+w+' '+h+'M'+w+' 0L0 '+h+'" stroke="'+c2+'" stroke-width="'+h*.26+'"/><path d="M0 0L'+w+' '+h+'M'+w+' 0L0 '+h+'" stroke="'+c3+'" stroke-width="'+h*.08+'"/>'}
+  else if(pt===7){g+='<path d="M-4 '+h*1.1+'L'+w*.3+' '+h*1.1+'L'+(w+4)+' '+(-h*.1)+'L'+w*.7+' '+(-h*.1)+'Z" fill="'+c2+'"/><path d="M'+w*.38+' '+h*1.1+'L'+w*.62+' '+h*1.1+'L'+(w+4)+' '+(-h*.1)+'L'+w*.9+' '+(-h*.1)+'Z" fill="'+c3+'" opacity=".0"/>'}
+  else if(pt===8){g+='<path d="M0 0L'+w+' 0L0 '+h+'Z" fill="'+c2+'"/>'}
+  else if(pt===9){g+=R(0,0,w/2,h/2,c1)+R(w/2,0,w/2,h/2,c2)+R(0,h/2,w/2,h,c2)+R(w/2,h/2,w/2,h,c1)}
+  else if(pt===10){g+='<path d="M0 0L'+w*.55+' '+h/2+'L0 '+h+'Z" fill="'+c2+'"/><path d="M0 '+h*.2+'L'+w*.34+' '+h/2+'L0 '+h*.8+'Z" fill="'+c3+'"/>'}
+  else if(pt===11){g+='<rect x="'+h*.12+'" y="'+h*.12+'" width="'+(w-h*.24)+'" height="'+h*.76+'" fill="none" stroke="'+c2+'" stroke-width="'+h*.1+'"/><rect x="'+h*.3+'" y="'+h*.3+'" width="'+(w-h*.6)+'" height="'+h*.4+'" fill="none" stroke="'+c3+'" stroke-width="'+h*.05+'"/>'}
+  else if(pt===12){g+='<circle cx="'+w/2+'" cy="'+h/2+'" r="'+h*.36+'" fill="'+c2+'"/><circle cx="'+w/2+'" cy="'+h/2+'" r="'+h*.2+'" fill="'+c3+'"/>'}
+  else if(pt===13){g+='<path d="M0 0L'+w*.5+' '+h/2+'L0 '+h+'Z" fill="'+c2+'"/>'}
+  else if(pt===14){let s="";for(let k=0;k<12;k++){const a0=k*Math.PI/6,a1=a0+Math.PI/12,R2=w*1.4;s+='M'+w/2+' '+h/2+'L'+(w/2+R2*Math.cos(a0))+' '+(h/2+R2*Math.sin(a0))+'L'+(w/2+R2*Math.cos(a1))+' '+(h/2+R2*Math.sin(a1))+'Z'}g+='<path d="'+s+'" fill="'+c2+'"/>'}
+  else if(pt===15){const cx=Math.max(4,Math.round(w/(h/3))),cw=w/cx,ch=h/3;for(let i=0;i<cx;i++)for(let j=0;j<3;j++)if((i+j)%2)g+=R(i*cw,j*ch,cw+.3,ch+.3,c2)}
+  if(F.em>0&&EM[F.em]){const e=EM[F.em],sc=h*.52/24,ex=(pt===10||pt===13)?w*.2:w/2,ey=h/2;g+='<g transform="translate('+P1(ex-12*sc)+' '+P1(ey-12*sc)+') scale('+P1(sc*1000)/1000+')" '+(e.f?'fill="'+ce+'"':'fill="none" stroke="'+ce+'" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"')+'><path d="'+e.d+'"/></g>'}
+  let sh="";for(let q=0;q<6;q++)sh+=R(w*q/6,-4,w/6,h+10,q%2?"#000":"#fff",q%2?.07:.08);
+  g+=sh+"</g>";g+='<path d="'+d+'" fill="none" stroke="'+dark(c1,.45)+'" stroke-width=".6" stroke-opacity=".7"/>';return g}
+/* ---------- figureheads and little carved things, drawn in a 40 by 40 box facing right ---------- */
+function figSVG(k,hex,old,seed){
+  if(!k)return "";const c=old?weather(hex,.8):hex,dk=dark(c,.3),lt=lite(c,.25),e='#1c1410';let g="";
+  if(k===1)g='<path d="M3 27C8 14 18 8 30 10c4 0 7 2 8 5-4-1-7-1-9 1C22 22 14 27 3 26z" fill="'+c+'"/><path d="M3 27L-1 32l9-3zM18 10l2-8 5 7z" fill="'+dk+'"/><path d="M24 18c4 1 8 0 12-3" stroke="'+lt+'" stroke-width="1.3" fill="none"/><circle cx="31" cy="12.500" r="1.200" fill="'+e+'"/>';
+  else if(k===2)g='<ellipse cx="13" cy="30" rx="11" ry="6" fill="'+c+'"/><path d="M7 28C11 22 6 16 12 11c4-3 9 0 8 5" stroke="'+c+'" stroke-width="5.500" fill="none" stroke-linecap="round"/><circle cx="20.500" cy="15" r="3.500" fill="'+c+'"/><path d="M23 14l7 2-7 2z" fill="'+dk+'"/><circle cx="21" cy="14.200" r=".9" fill="'+e+'"/><path d="M4 30c4 4 14 4 19 0" stroke="'+lt+'" stroke-width="1.200" fill="none"/>';
+  else if(k===3)g='<circle cx="19" cy="21" r="14" fill="'+dk+'"/><circle cx="19" cy="21" r="8.500" fill="'+c+'"/><path d="M12 14l-2-7 6 4zM26 14l2-7-6 4z" fill="'+dk+'"/><circle cx="16" cy="19" r="1.200" fill="'+e+'"/><circle cx="22" cy="19" r="1.200" fill="'+e+'"/><path d="M17 24l2 2 2-2z" fill="'+e+'"/><path d="M19 26v2" stroke="'+e+'" stroke-width="1"/>';
+  else if(k===4)g='<path d="M3 38C4 24 9 12 20 10c7-1 13 1 19 6l-9 1 7 5-10 .5C23 28 17 33 12 38z" fill="'+c+'"/><path d="M14 12L9 1l11 7zM22 10l1-9 6 8z" fill="'+dk+'"/><circle cx="26" cy="15" r="1.600" fill="'+e+'"/><path d="M12 20c3 2 5 6 4 12" stroke="'+lt+'" stroke-width="1.300" fill="none"/><path d="M3 38c2-6 5-8 9-8" stroke="'+dk+'" stroke-width="2" fill="none"/>';
+  else if(k===5)g='<path d="M20 3l4.500 11 11.500.5-9 7.500 3 11.500L20 27l-10 6.500 3-11.500-9-7.500L15.500 14z" fill="'+c+'" stroke="'+dk+'" stroke-width="1"/>';
+  else if(k===6)g='<ellipse cx="19" cy="23" rx="11" ry="14" fill="'+c+'"/><path d="M9 12l2-8 6 6zM29 12l-2-8-6 6z" fill="'+dk+'"/><circle cx="15" cy="17" r="4.500" fill="'+lt+'"/><circle cx="24" cy="17" r="4.500" fill="'+lt+'"/><circle cx="15" cy="17" r="2" fill="'+e+'"/><circle cx="24" cy="17" r="2" fill="'+e+'"/><path d="M18 20l2 4 2-4z" fill="'+dk+'"/><path d="M12 28c3 3 11 3 14 0" stroke="'+dk+'" stroke-width="1" fill="none"/>';
+  else if(k===7)g='<path d="M2 36C6 22 18 12 29 15c6 2 8 9 2 11-4 1-6-3-3-4" stroke="'+c+'" stroke-width="5" fill="none" stroke-linecap="round"/><path d="M2 36C12 33 24 33 38 37z" fill="'+dk+'" opacity=".6"/><path d="M8 28C14 20 22 17 28 18" stroke="'+lt+'" stroke-width="1.300" fill="none"/>';
+  if(old){const r=rngFrom("fm|"+seed);for(let i=0;i<4;i++)g+='<ellipse cx="'+P1(6+r()*28)+'" cy="'+P1(8+r()*26)+'" rx="'+P1(2+r()*3)+'" ry="'+P1(1.500+r()*2)+'" fill="#5f7a45" opacity=".5"/>'}
+  return g}
+/* ---------- a plank, old or new ---------- */
+function plankPaint(G,k,D,O,uid,flags){
+  const P=G.pl[k],d=D.pl[k];
+  if(d.st==="out")return '<path d="'+P.d+'" fill="#120c08" opacity=".0"/>';
+  const old=d.old,src=old?O.pl[k]:d,hex=col(src.c),rk=rngFrom("pw|"+G.seed+"|"+k),H=G.H;let g="";
+  let base=hex;if(old){base=mix(weather(hex,.65+.3*rk()),rk()<.5?"#6f6a5c":"#7d6a52",.18*rk())}
+  g+='<path d="'+P.d+'" fill="'+base+'" stroke="'+dark(base,.42)+'" stroke-width=".8" stroke-linejoin="round"/>';
+  const vmid=(P.v0+P.v1)/2,span=P.v1-P.v0;
+  const line=(v,u0,u1,n)=>polyD(hullLine(H,v,u0,u1,n||5));
+  if(old||PAL[src.c][2]){const n=2+((rk()*2)|0);for(let q=0;q<n;q++){const v=P.v0+span*(.2+.6*rk()),a=P.u0+(P.u1-P.u0)*(.02+.1*rk()),b=P.u1-(P.u1-P.u0)*(.02+.15*rk());g+='<path d="'+line(v,a,b)+'" stroke="'+(rk()<.5?dark(base,.22):lite(base,.16))+'" stroke-width=".7" fill="none" opacity="'+(old?.55:.42)+'"/>'}}
+  if(!old&&!PAL[src.c][2])g+='<path d="'+line(P.v0+span*.18,P.u0+.004,P.u1-.004,5)+'" stroke="'+lite(base,.45)+'" stroke-width="1.100" fill="none" opacity=".5" stroke-linecap="round"/>';
+  if(!old&&PAL[src.c][2])g+='<path d="'+line(P.v0+span*.16,P.u0+.004,P.u1-.004,5)+'" stroke="'+lite(base,.35)+'" stroke-width=".9" fill="none" opacity=".45" stroke-linecap="round"/>';
+  if(!old&&d.i>0)g+='<path d="'+line(vmid,P.u0+.006,P.u1-.006,5)+'" stroke="'+INLAY[d.i]+'" stroke-width="1.500" fill="none" stroke-linecap="round" opacity=".95"/>';
+  if(old){const nm=(rk()*4)|0;for(let q=0;q<nm;q++){const u=lerp(P.u0,P.u1,.1+.8*rk()),v=P.v0+span*(.25+.5*rk()),p=hpt(H,u,v);g+='<ellipse cx="'+P1(p[0])+'" cy="'+P1(p[1])+'" rx="'+P1(3+rk()*6)+'" ry="'+P1(1.600+rk()*2.200)+'" fill="'+(rk()<.7?"#5f7a45":"#7d8f58")+'" opacity="'+P1(.3+rk()*.3)+'"/>'}
+    if(rk()<.45){const u=lerp(P.u0,P.u1,.2+.6*rk()),p=hpt(H,u,P.v0+span*.15),q2=hpt(H,u+.012,P.v1-span*.15);g+='<path d="M'+P1(p[0])+' '+P1(p[1])+'L'+P1(q2[0]+1)+' '+P1((p[1]+q2[1])/2)+'L'+P1(q2[0])+' '+P1(q2[1])+'" stroke="#2a1c12" stroke-width=".8" fill="none" opacity=".7"/>'}}
+  if(P.u1-P.u0>.12){for(const u of[P.u0+.014,P.u1-.014]){const p=hpt(H,u,vmid);g+='<circle cx="'+P1(p[0])+'" cy="'+P1(p[1])+'" r=".9" fill="'+dark(base,.5)+'" opacity=".75"/>'}}
+  if(d.st==="set")g+='<path d="'+P.d+'" fill="#ffd98a" opacity=".38" class="gl"/>';
+  return g}
+function hullSVG(G,D,O,uid,o){
+  const H=G.H,T=G.T;let s="";
+  const tp=hullLine(H,0,0,1,40),bt=hullLine(H,1,0,1,40).reverse();
+  s+='<path d="'+polyD(tp.concat(bt))+'Z" fill="#150e0a"/>';
+  const bset={};G.pl.forEach(p=>{bset[P1(p.u0)]=1;bset[P1(p.u1)]=1});
+  for(const u of Object.keys(bset)){const a=hpt(H,+u,.02),b=hpt(H,+u,.98);s+='<path d="M'+P1(a[0])+' '+P1(a[1])+'L'+P1(b[0])+' '+P1(b[1])+'" stroke="#3b2717" stroke-width="2.600" opacity=".8"/>'}
+  s+='<path d="'+polyD(hullLine(H,.5,0,1,30))+'" stroke="#2c1d12" stroke-width="2" opacity=".55" fill="none"/>';
+  for(let k=0;k<G.pl.length;k++)s+='<g>'+plankPaint(G,k,D,O,uid)+'</g>';
+  const trim=col(D.tr);
+  s+='<path d="'+polyD(hullLine(H,0,0,1,40).map(p=>[p[0],p[1]-.6]))+'" fill="none" stroke="'+dark(trim,.4)+'" stroke-width="4.600" stroke-linecap="round"/><path d="'+polyD(hullLine(H,0,0,1,40).map(p=>[p[0],p[1]-.8]))+'" fill="none" stroke="'+trim+'" stroke-width="3.200" stroke-linecap="round"/>';
+  s+='<path d="'+polyD(hullLine(H,1/G.nst,0,1,40))+'" fill="none" stroke="'+trim+'" stroke-width="1.300" opacity=".55"/>';
+  if(T.gun){const row=1,u0=.2,u1=.82,n=Math.max(3,Math.round(G.ns*1.3));for(let q=0;q<n;q++){const u=lerp(u0,u1,q/(n-1)),v=(row+.5)/G.nst,p=hpt(H,u,v),pk=G.pl.findIndex(pp=>pp.i===row&&u>=pp.u0&&u<pp.u1);if(pk>=0&&D.pl[pk].st==="out")continue;const hh=Math.min(6,H.D/G.nst*.5);s+='<rect x="'+P1(p[0]-4)+'" y="'+P1(p[1]-hh/2)+'" width="8" height="'+P1(hh)+'" rx="1" fill="#1a110b" stroke="'+trim+'" stroke-width=".9"/>'}}
+  if(T.castle){for(let q=0;q<3;q++){const p=hpt(H,.035+q*.045,.28);s+='<rect x="'+P1(p[0]-2.5)+'" y="'+P1(p[1]-3)+'" width="5" height="6" rx="1" fill="#ffd27a" stroke="'+trim+'" stroke-width=".7"/>'}const lp=hpt(H,.0,0);s+='<circle cx="'+P1(lp[0]-1)+'" cy="'+P1(lp[1]-8)+'" r="3" fill="#ffd27a" opacity=".9"/><path d="M'+P1(lp[0]-1)+' '+P1(lp[1]-5)+'v5" stroke="'+dark(trim,.3)+'" stroke-width="1.500"/>'}
+  if(o&&o.hits){const h=o.hits;G.pl.forEach((p,k)=>{const d=D.pl[k];let cl="hit";if(d.st==="out")cl+=" slot";else if(h.pick&&h.pick.has(k))cl+=" pick";else if(h.paint&&!d.old)cl+=" pnt";s+='<path class="'+cl+'" data-k="'+k+'" d="'+p.d+'"/>'})}
+  return s}
+/* ---------- masts, sails, flag, figurehead, rudder: the whole rig ---------- */
+function sailBody(sp){
+  if(sp.k==="sq"){const w=sp.x1-sp.x0,bu=Math.max(3,w*.06),mid=(sp.yT+sp.yB)/2;return 'M'+P1(sp.x0)+' '+P1(sp.yT)+'L'+P1(sp.x1)+' '+P1(sp.yT)+'Q'+P1(sp.x1-3)+' '+P1(mid)+' '+P1(sp.x1-w*.03)+' '+P1(sp.yB)+'Q'+P1(sp.mx)+' '+P1(sp.yB+bu*2.2)+' '+P1(sp.x0+w*.03)+' '+P1(sp.yB)+'Q'+P1(sp.x0+3)+' '+P1(mid)+' '+P1(sp.x0)+' '+P1(sp.yT)+'Z'}
+  if(sp.k==="gaff")return 'M'+P1(sp.mx)+' '+P1(sp.yb)+'L'+P1(sp.mx)+' '+P1(sp.yp)+'Q'+P1(sp.gx+4)+' '+P1(sp.gy-14)+' '+P1(sp.gx)+' '+P1(sp.gy)+'Q'+P1(sp.bx+3)+' '+P1(sp.yb-18)+' '+P1(sp.bx)+' '+P1(sp.yb)+'Q'+P1((sp.mx+sp.bx)/2)+' '+P1(sp.yb+5)+' '+P1(sp.mx)+' '+P1(sp.yb)+'Z';
+  return 'M'+P1(sp.hx)+' '+P1(sp.hy)+'L'+P1(sp.tx)+' '+P1(sp.ty)+'Q'+P1((sp.tx+sp.cx)/2+2)+' '+P1((sp.ty+sp.cy)/2+10)+' '+P1(sp.cx)+' '+P1(sp.cy)+'Q'+P1(sp.hx+8)+' '+P1((sp.hy+sp.cy)/2)+' '+P1(sp.hx)+' '+P1(sp.hy)+'Z'}
+function sailBox(sp){if(sp.k==="sq")return[sp.x0,sp.yT,sp.x1,sp.yB+8];if(sp.k==="gaff")return[sp.bx,sp.yp,sp.mx,sp.yb+4];const xs=[sp.hx,sp.tx,sp.cx],ys=[sp.hy,sp.ty,sp.cy];return[Math.min(...xs),Math.min(...ys),Math.max(...xs),Math.max(...ys)]}
+function sailSVG(G,i,sp,src,old,uid,seed){
+  const hex=col(src.c),base=old?weather(hex,.8):hex,id=uid+"s"+i,d=sailBody(sp),b=sailBox(sp),w=b[2]-b[0],h=b[3]-b[1],r=rngFrom("sp|"+seed+"|"+i);
+  let g='<defs><clipPath id="'+id+'"><path d="'+d+'"/></clipPath><linearGradient id="'+id+'g" x1="0" x2="1" y1="0" y2="0"><stop offset="0" stop-color="#fff" stop-opacity=".16"/><stop offset=".5" stop-color="#fff" stop-opacity="0"/><stop offset="1" stop-color="#000" stop-opacity=".2"/></linearGradient></defs>';
+  g+='<path d="'+d+'" fill="'+base+'"/><g clip-path="url(#'+id+')">';const p=src.p,lt=lite(base,.4),dk2=dark(base,.22);
+  const Rr=(x,y,ww,hh,f,o)=>'<rect x="'+P1(x)+'" y="'+P1(y)+'" width="'+P1(ww)+'" height="'+P1(hh)+'" fill="'+f+'" opacity="'+o+'"/>';
+  if(p===1){const n=7,s=w/n;for(let q=1;q<n;q+=2)g+=Rr(b[0]+q*s,b[1],s,h,lt,.6)}
+  else if(p===2){const n=6,s=h/n;for(let q=1;q<n;q+=2)g+=Rr(b[0],b[1]+q*s,w,s,lt,.6)}
+  else if(p===3){const n=7,s=w/n,m=Math.max(3,Math.round(h/s));for(let x=0;x<n;x++)for(let y=0;y<m;y++)if((x+y)%2)g+=Rr(b[0]+x*s,b[1]+y*(h/m),s,h/m,dk2,.45)}
+  else if(p===4){const n=4,s=w/n,m=Math.max(2,Math.round(h/s));for(let y=0;y<=m;y++)for(let x=0;x<=n;x++){const cx=b[0]+(x+(y%2?.5:0))*s,cy=b[1]+y*(h/m);g+='<path d="M'+P1(cx)+' '+P1(cy-h/m*.42)+'l'+P1(s*.38)+' '+P1(h/m*.42)+'l'+P1(-s*.38)+' '+P1(h/m*.42)+'l'+P1(-s*.38)+' '+P1(-h/m*.42)+'z" fill="'+lt+'" opacity=".55"/>'}}
+  else if(p===5){const n=3+((r()*2)|0);for(let q=0;q<n;q++){const pw=w*(.16+r()*.14),ph=h*(.12+r()*.12),px=b[0]+w*(.1+.7*r()),py=b[1]+h*(.15+.65*r()),pc=col(rint(r,0,31));g+='<rect x="'+P1(px)+'" y="'+P1(py)+'" width="'+P1(pw)+'" height="'+P1(ph)+'" fill="'+mix(pc,base,.35)+'" stroke="'+dark(base,.4)+'" stroke-width=".6" stroke-dasharray="2 1.500"/>'}}
+  else if(p===6){g+=Rr(b[0],b[1]+h*.45,w,h*.2,"#fff",.12)+Rr(b[0],b[1]+h*.65,w,h*.2,"#fff",.2)+Rr(b[0],b[1]+h*.85,w,h*.3,"#fff",.3)}
+  else if(p===7){const n=7;for(let q=0;q<n;q++){const sx=b[0]+w*(.1+.8*r()),sy=b[1]+h*(.12+.76*r()),z=Math.min(w,h)*(.05+.05*r());g+='<path d="M'+P1(sx)+' '+P1(sy-z)+'L'+P1(sx+z*.3)+' '+P1(sy-z*.3)+'L'+P1(sx+z)+' '+P1(sy)+'L'+P1(sx+z*.3)+' '+P1(sy+z*.3)+'L'+P1(sx)+' '+P1(sy+z)+'L'+P1(sx-z*.3)+' '+P1(sy+z*.3)+'L'+P1(sx-z)+' '+P1(sy)+'L'+P1(sx-z*.3)+' '+P1(sy-z*.3)+'Z" fill="#fff" opacity=".85"/>'}}
+  if(sp.k==="sq"||sp.k==="gaff"){const n=Math.max(3,Math.round(h/16));for(let q=1;q<n;q++){const y=b[1]+h*q/n;g+='<path d="M'+P1(b[0])+' '+P1(y)+'H'+P1(b[2])+'" stroke="'+dark(base,.35)+'" stroke-width=".5" opacity=".28"/>'}}
+  if(old){for(let q=0;q<3;q++)g+='<ellipse cx="'+P1(b[0]+w*r())+'" cy="'+P1(b[1]+h*r())+'" rx="'+P1(w*(.08+.1*r()))+'" ry="'+P1(h*(.05+.08*r()))+'" fill="#4a3a28" opacity=".13"/>';const px=b[0]+w*(.2+.5*r()),py=b[1]+h*(.25+.4*r());g+='<rect x="'+P1(px)+'" y="'+P1(py)+'" width="'+P1(w*.2)+'" height="'+P1(h*.16)+'" fill="'+mix(base,"#c8b896",.5)+'" stroke="#5a4a38" stroke-width=".5" stroke-dasharray="2 1.500" opacity=".85"/>'}
+  g+='<path d="'+d+'" fill="url(#'+id+'g)"/></g><path d="'+d+'" fill="none" stroke="'+dark(base,.42)+'" stroke-width=".9" stroke-linejoin="round"'+(old?' stroke-dasharray="6 1.500 2 1"':"")+'/>';
+  return g}
+function rigSVG(G,D,O,uid,o){
+  const R=G.rig,H=G.H;o=o||{};let s="";
+  const mkc=(i)=>(D.mk[i].old&&!(o.mastP&&o.mastP.i===i))?weather(col(O.mk[i].c),.8):col(D.mk[i].c);
+  /* standing rigging, thin lines behind the sails */
+  const tall=R.masts.reduce((a,m)=>m.h>a.h?m:a,R.masts[0]),bow=hpt(H,.98,0),ster=hpt(H,.0,0);let rg="";
+  R.masts.forEach(m=>{rg+='M'+P1(m.x)+' '+P1(m.ty+6)+'L'+P1(R.tipX-2)+' '+P1(R.tipY)+'M'+P1(m.x)+' '+P1(m.ty+6)+'L'+P1(ster[0]+6)+' '+P1(ster[1]-4);rg+='M'+P1(m.x)+' '+P1(m.by-m.h*.72)+'L'+P1(m.x-14)+' '+P1(m.by+1)+'M'+P1(m.x)+' '+P1(m.by-m.h*.72)+'L'+P1(m.x+14)+' '+P1(m.by+1)});
+  s+='<path d="'+rg+'" stroke="#2b1d12" stroke-width=".8" fill="none" opacity=".5"/>';
+  /* ladders on the shrouds */
+  R.masts.forEach(m=>{for(let q=1;q<=5;q++){const t=q/6,y=lerp(m.by-m.h*.72,m.by+1,t),xa=lerp(m.x,m.x-14,t),xb=lerp(m.x,m.x+14,t);s+='<path d="M'+P1(xa)+' '+P1(y)+'H'+P1(xb)+'" stroke="#2b1d12" stroke-width=".5" opacity=".35"/>'}});
+  /* bowsprit */
+  if(H.bs>0){const bsx=hpt(H,.96,.02);s+='<path d="M'+P1(bsx[0])+' '+P1(bsx[1]+1)+'L'+P1(R.tipX)+' '+P1(R.tipY)+'" stroke="'+dark(mkc(0),.2)+'" stroke-width="3.200" stroke-linecap="round"/>'}
+  R.masts.forEach((m,i)=>{const hexm=mkc(i);
+    let mp=o.mastP&&o.mastP.i===i?o.mastP.p:1;const old=D.mk[i].old&&!(o.mastP&&o.mastP.i===i);
+    let g='<polygon points="'+P1(m.x-3.200)+','+P1(m.by+2)+' '+P1(m.x+3.200)+','+P1(m.by+2)+' '+P1(m.x+1.600)+','+P1(m.ty)+' '+P1(m.x-1.600)+','+P1(m.ty)+'" fill="'+hexm+'" stroke="'+dark(hexm,.4)+'" stroke-width=".6"/><path d="M'+P1(m.x-1.200)+' '+P1(m.by)+'L'+P1(m.x-.7)+' '+P1(m.ty+2)+'" stroke="'+lite(hexm,.35)+'" stroke-width=".8" opacity=".6"/><circle cx="'+P1(m.x)+'" cy="'+P1(m.ty-1)+'" r="2.400" fill="'+dark(hexm,.15)+'"/>';
+    if(m.h>200)g+='<path d="M'+P1(m.x-7)+' '+P1(m.by-m.h*.74)+'h14l-2 6h-10z" fill="'+dark(hexm,.2)+'" stroke="'+dark(hexm,.5)+'" stroke-width=".6"/>';
+    if(old){const r=rngFrom("mw|"+G.seed+"|"+i);for(let q=0;q<3;q++){const y=m.by-m.h*(.1+.8*r());g+='<path d="M'+P1(m.x-2)+' '+P1(y)+'l3 '+P1(2+r()*2)+'" stroke="#2a1c12" stroke-width=".7" opacity=".6"/>'}}
+    if(mp<1){const ang=(1-mp)*84;g='<g transform="rotate('+(-ang)+' '+P1(m.x)+' '+P1(m.by+2)+')">'+g+'</g>'}
+    s+=g});
+  /* sails and the spars that carry them */
+  G.rig.sails.forEach((sp,i)=>{const d=D.sl[i],old=d.old,src=old?O.sl[i]:d,mi=D.mk[sp.m];if(o.mastP&&o.mastP.i===sp.m&&o.mastP.p<1)return;
+    let g=sailSVG(G,i,sp,src,old,uid,G.seed+"|"+(old?"o":"n")+"|"+(old?"":d.c));
+    if(o.sailP&&o.sailP.i===i&&o.sailP.p<1){const p=o.sailP.p,b=sailBox(sp);g='<g transform="translate(0 '+P1(b[1])+') scale(1 '+Math.max(.02,p)+') translate(0 '+P1(-b[1])+')" opacity="'+P1(.4+.6*p)+'">'+g+'</g>'}
+    const hexm=mkc(sp.m),spar=dark(hexm,.1);
+    if(sp.k==="sq")g+='<path d="M'+P1(sp.x0-4)+' '+P1(sp.yT)+'H'+P1(sp.x1+4)+'" stroke="'+spar+'" stroke-width="2.600" stroke-linecap="round"/>';
+    else if(sp.k==="gaff")g+='<path d="M'+P1(sp.mx)+' '+P1(sp.yb+1)+'L'+P1(sp.bx-2)+' '+P1(sp.yb+1)+'M'+P1(sp.mx)+' '+P1(sp.yp+2)+'L'+P1(sp.gx-2)+' '+P1(sp.gy)+'" stroke="'+spar+'" stroke-width="2.200" stroke-linecap="round"/>';
+    s+=g});
+  /* the flag, at the very top */
+  const F=D.fl,fo=F.old,Fx=fo?O.fl:F;const fw=40,fh=25;let fg='<path d="M'+P1(tall.x)+' '+P1(tall.ty)+'v-'+(fh+10)+'" stroke="'+dark(mkc(R.masts.indexOf(tall)),.2)+'" stroke-width="1.500"/><g transform="translate('+P1(tall.x+1)+' '+P1(tall.ty-fh-9)+')">'+flagSVG(Fx,fw,fh,uid+"fl",fo,G.seed)+'</g>';
+  if(o.flagP!=null&&o.flagP<1)fg='<g transform="translate(0 '+P1((1-o.flagP)*(tall.h*.7))+')">'+fg+'</g>';
+  s+=fg;return s}
+function bowAndStern(G,D,O,uid,o,front){
+  const H=G.H;let s="";
+  if(!front){const rd=D.rd,rc=rd.old?weather(col(O.rd.c),.8):col(rd.c),st=hpt(H,0,0),sb=hpt(H,0,1),y0=st[1]+H.D*.12;
+    return '<path d="M'+P1(st[0]+1)+' '+P1(y0)+'L'+P1(st[0]-9)+' '+P1(y0+5)+'L'+P1(st[0]-11)+' '+P1(sb[1]+3)+'L'+P1(sb[0])+' '+P1(sb[1]-2)+'Z" fill="'+rc+'" stroke="'+dark(rc,.45)+'" stroke-width=".8"/>'}
+  const fg=D.fg,fo=fg.old,fk=fo?O.fg.k:fg.k,fc=fo?O.fg.c:fg.c;
+  if(fk){const stem=hpt(H,1,0),sc=G.T.dragon?1.35:.82,sz=40*sc,gx=stem[0]-sz*.55,gy=G.T.dragon?stem[1]-sz*.78:stem[1]-sz*.08;s+='<g transform="translate('+P1(gx)+' '+P1(gy)+') scale('+sc+')">'+figSVG(fk,col(fc),fo,G.seed)+'</g>'}
+  return s}
+/* the whole ship, in its own coordinates (stern at 0, deck level at 0) */
+function shipSVG(G,D,O,uid,o){return '<g class="bs">'+bowAndStern(G,D,O,uid,o,0)+'</g><g class="hl">'+hullSVG(G,D,O,uid,o)+'</g><g class="rg">'+rigSVG(G,D,O,uid,o)+'</g><g class="ff">'+bowAndStern(G,D,O,uid,o,1)+'</g>'}
+/* ================= the bottle, the sea and sky inside it, the stand it rests on ================= */
+const CY=235;
+const BG=[{rn:17,xs:250,ws:110,rb:185,xe:860,lc:110,p:2.2},{rn:16,xs:190,ws:300,rb:195,xe:690,lc:190,p:2},{rn:19,xs:300,ws:70,rb:172,xe:880,lc:70,p:3.5},{rn:20,xs:300,ws:34,rb:178,xe:900,lc:28,p:6},{rn:13,xs:380,ws:130,rb:165,xe:870,lc:120,p:2.2},{rn:30,xs:150,ws:90,rb:190,xe:890,lc:100,p:2.6},{rn:15,xs:150,ws:430,rb:190,xe:830,lc:150,p:2.2},{rn:18,xs:260,ws:80,rb:150,xe:910,lc:70,p:3}];
+function rProf(g,x){if(x<40)return 0;if(x<=g.xs)return g.rn+(x<58?(58-x)/18*3.500:0);if(x<=g.xs+g.ws)return g.rn+(g.rb-g.rn)*sstep(0,1,(x-g.xs)/g.ws);if(x<=g.xe)return g.rb;const t=(x-g.xe)/g.lc;return t>=1?0:g.rb*Math.pow(1-Math.pow(t,g.p),1/g.p)}
+function bottlePath(g,inset){const top=[],bot=[],xe=g.xe+g.lc;for(let x=40;x<=xe;x+=x>xe-30||x<70?2:5){let r=rProf(g,x);r=r>0?Math.max(r-(r>40?inset:inset*.55),0):0;top.push([x,CY-r]);bot.push([x,CY+r])}return polyD(top.concat(bot.reverse()))+"Z"}
+function sceneParts(G,D,O,o){
+  o=o||{};const uid=o.uid||nid(),B=D.bt,g=BG[B.shape],xe=g.xe+g.lc,tint=TINT[B.tint],sky=SKY[B.sky],sea=SEA[B.sea],rb=g.rb,xa=g.xs+g.ws*.82,xb=g.xe+g.lc*.3;
+  const yS=CY+rb*.5,r=rngFrom("sc|"+G.seed+"|"+JSON.stringify(B));let defs="",back="",front="",glass="",table="";
+  defs+='<clipPath id="'+uid+'ic"><path d="'+bottlePath(g,9)+'"/></clipPath><linearGradient id="'+uid+'sk" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="'+sky[0]+'"/><stop offset=".55" stop-color="'+sky[1]+'"/><stop offset="1" stop-color="'+sky[2]+'"/></linearGradient><linearGradient id="'+uid+'se" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="'+sea[0]+'"/><stop offset="1" stop-color="'+sea[1]+'"/></linearGradient><linearGradient id="'+uid+'gl" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="'+tint+'" stop-opacity=".26"/><stop offset="1" stop-color="'+tint+'" stop-opacity=".08"/></linearGradient><radialGradient id="'+uid+'gw"><stop offset="0" stop-color="#fff6d0" stop-opacity=".9"/><stop offset="1" stop-color="#fff6d0" stop-opacity="0"/></radialGradient>';
+  /* the sky */
+  back+='<g clip-path="url(#'+uid+'ic)"><rect x="30" y="'+(CY-rb-4)+'" width="'+(xe-20)+'" height="'+(rb*2+8)+'" fill="url(#'+uid+'sk)"/>';
+  const ox=xa+(xb-xa)*.3;
+  if(sky[3])for(let i=0;i<46;i++)back+='<circle cx="'+P1(xa-60+r()*(xb-xa+120))+'" cy="'+P1(CY-rb+r()*rb*.95)+'" r="'+P1(.6+r()*1.2)+'" fill="#fff" opacity="'+P1(.4+r()*.6)+'"/>';
+  if(sky[4]==="sun"){const low=B.sky===1||B.sky===2,sy=low?yS-26:CY-rb*.45,rr=low?36:24;back+='<circle cx="'+P1(ox)+'" cy="'+P1(sy)+'" r="'+(rr*3.200)+'" fill="url(#'+uid+'gw)" opacity="'+(low?.7:.5)+'"/><circle cx="'+P1(ox)+'" cy="'+P1(sy)+'" r="'+rr+'" fill="'+(low?"#ffcf8a":"#fff4c8")+'"/>'}
+  if(sky[4]==="moon"){const my=CY-rb*.5;defs+='<mask id="'+uid+'mm"><rect x="0" y="0" width="1000" height="500" fill="#fff"/><circle cx="'+P1(ox+69)+'" cy="'+P1(my-4)+'" r="18" fill="#000"/></mask>';back+='<circle cx="'+P1(ox+60)+'" cy="'+P1(my)+'" r="60" fill="url(#'+uid+'gw)" opacity=".35"/><circle cx="'+P1(ox+60)+'" cy="'+P1(my)+'" r="21" fill="#f4f1dc" mask="url(#'+uid+'mm)"/>'}
+  if(sky[4]==="aur"){for(let q=0;q<3;q++){const y0=CY-rb*(.78-q*.12);let d="M"+(xa-40)+" "+P1(y0);for(let x=xa-40;x<=xb+40;x+=30)d+="L"+x+" "+P1(y0+Math.sin(x*.02+q)*16);d+="L"+(xb+40)+" "+P1(y0+70)+"L"+(xa-40)+" "+P1(y0+70)+"Z";back+='<path d="'+d+'" fill="'+["#5fe0b0","#7fd0ff","#c88aff"][q]+'" opacity=".16"/>'}}
+  const cloud=(cx,cy2,s,c,a)=>'<g fill="'+c+'" opacity="'+a+'"><ellipse cx="'+cx+'" cy="'+cy2+'" rx="'+60*s+'" ry="'+13*s+'"/><ellipse cx="'+(cx-22*s)+'" cy="'+(cy2-9*s)+'" rx="'+30*s+'" ry="'+14*s+'"/><ellipse cx="'+(cx+16*s)+'" cy="'+(cy2-11*s)+'" rx="'+34*s+'" ry="'+16*s+'"/></g>';
+  if(B.sky===0||B.sky===1)back+=cloud(xa+(xb-xa)*.62,CY-rb*.55,1,"#fff",.85)+cloud(xa+(xb-xa)*.12,CY-rb*.3,.7,"#fff",.7);
+  if(B.sky===2||B.sky===5)back+=cloud(xa+(xb-xa)*.7,CY-rb*.5,.9,"#f6a99b",.5)+cloud(xa+(xb-xa)*.2,CY-rb*.3,.7,"#f6a99b",.4);
+  if(B.sky===4){for(let q=0;q<6;q++)back+=cloud(xa+(xb-xa)*r(),CY-rb*(.4+.5*r()),1+r(),"#2b323d",.75);back+='<path d="M'+P1(xa+(xb-xa)*.82)+' '+P1(CY-rb*.7)+'l-12 34h10l-10 34 26-44h-12l12-24z" fill="#fff4b0" opacity=".6"/>'}
+  if(B.sky===7)for(let q=0;q<5;q++)back+=cloud(xa+(xb-xa)*r(),CY-rb*(.3+.55*r()),1+r()*.8,"#e4e9ec",.8);
+  /* things in the distance */
+  const sc=B.scn,mt0=fitShip(G,g,yS,xa,xb,rb),sh0=mt0.sx-24,sh1=mt0.sx+mt0.s*(G.H.L+46);
+  let sx0=xb-(xb-xa)*.2;{const cand=[sx0,sh1+62,sh1+90,sh0-62,sh0-90,xb-(xb-xa)*.05];let ok=false;for(const c of cand){if((c<sh0-48||c>sh1+48)&&rProf(g,c)>=125&&rProf(g,c+45)>=105&&rProf(g,c-45)>=105){sx0=c;ok=true;break}}if(!ok)sx0=Math.max(sh1+62,sx0)}
+  if(sc===1)back+='<path d="M'+(sx0-34)+' '+yS+'L'+(sx0-20)+' '+(yS-18)+'L'+(sx0+22)+' '+(yS-14)+'L'+(sx0+36)+' '+yS+'Z" fill="#5b5a5e"/><path d="M'+(sx0-9)+' '+(yS-14)+'L'+(sx0-5)+' '+(yS-84)+'H'+(sx0+5)+'L'+(sx0+9)+' '+(yS-14)+'Z" fill="#f2ede0"/><path d="M'+(sx0-8)+' '+(yS-40)+'l15 0 -1 -12 -13 0zM'+(sx0-6)+' '+(yS-68)+'l12 0 -1 -10 -10 0z" fill="#c9433a"/><rect x="'+(sx0-7)+'" y="'+(yS-94)+'" width="14" height="10" fill="#ffe08a"/><path d="M'+(sx0-8)+' '+(yS-94)+'h16l-8 -8z" fill="#3a3640"/><path d="M'+(sx0+7)+' '+(yS-89)+'L'+(sx0+120)+' '+(yS-110)+'V'+(yS-62)+'z" fill="#fff3b0" opacity="'+(B.sky===3||B.sky===5||B.sky===6?.28:.08)+'"/>';
+  if(sc===2)back+='<path d="M'+(sx0-90)+' '+yS+'C'+(sx0-70)+' '+(yS-34)+' '+(sx0-24)+' '+(yS-40)+' '+(sx0+4)+' '+(yS-26)+'C'+(sx0+24)+' '+(yS-36)+' '+(sx0+62)+' '+(yS-24)+' '+(sx0+84)+' '+yS+'Z" fill="#4a8a52"/><path d="M'+(sx0-90)+' '+yS+'C'+(sx0-40)+' '+(yS-6)+' '+(sx0+20)+' '+(yS-5)+' '+(sx0+84)+' '+yS+'V'+(yS+6)+'H'+(sx0-90)+'Z" fill="#e2c88a"/><path d="M'+(sx0+14)+' '+(yS-24)+'C'+(sx0+8)+' '+(yS-48)+' '+(sx0+14)+' '+(yS-62)+' '+(sx0+20)+' '+(yS-70)+'" stroke="#6a4a2c" stroke-width="3" fill="none"/><path d="M'+(sx0+20)+' '+(yS-70)+'q-20-4-30 10 M'+(sx0+20)+' '+(yS-70)+'q16-8 32 4 M'+(sx0+20)+' '+(yS-70)+'q-6-14-22-14 M'+(sx0+20)+' '+(yS-70)+'q10-12 26-8" stroke="#3a7a46" stroke-width="3.500" fill="none" stroke-linecap="round"/>';
+  if(sc===3){for(const [dx,s2] of[[-40,1.2],[10,.9],[44,1]])back+='<path d="M'+(sx0+dx-22*s2)+' '+(yS+2)+'L'+(sx0+dx-14*s2)+' '+(yS-20*s2)+'L'+(sx0+dx+6*s2)+' '+(yS-26*s2)+'L'+(sx0+dx+24*s2)+' '+(yS-8*s2)+'L'+(sx0+dx+28*s2)+' '+(yS+2)+'Z" fill="#6a6670"/><path d="M'+(sx0+dx-14*s2)+' '+(yS-20*s2)+'L'+(sx0+dx+6*s2)+' '+(yS-26*s2)+'L'+(sx0+dx+4*s2)+' '+(yS-10*s2)+'Z" fill="#8a8691"/>'}
+  if(sc===4)back+='<path d="M'+(sx0-60)+' '+(yS+2)+'L'+(sx0-34)+' '+(yS-30)+'L'+(sx0-16)+' '+(yS-24)+'L'+(sx0+6)+' '+(yS-74)+'L'+(sx0+34)+' '+(yS-36)+'L'+(sx0+52)+' '+(yS-44)+'L'+(sx0+70)+' '+(yS+2)+'Z" fill="#e8f3f8"/><path d="M'+(sx0+6)+' '+(yS-74)+'L'+(sx0+34)+' '+(yS-36)+'L'+(sx0+20)+' '+(yS+2)+'L'+(sx0+4)+' '+(yS-30)+'Z" fill="#b9d6e6"/>';
+  if(sc===5)back+='<circle cx="'+(sx0+10)+'" cy="'+(yS-86)+'" r="86" fill="url(#'+uid+'gw)" opacity=".4"/><circle cx="'+(sx0+10)+'" cy="'+(yS-86)+'" r="58" fill="#f1eedb"/><circle cx="'+(sx0-8)+'" cy="'+(yS-98)+'" r="9" fill="#d8d4bf" opacity=".7"/><circle cx="'+(sx0+22)+'" cy="'+(yS-70)+'" r="6" fill="#d8d4bf" opacity=".7"/><circle cx="'+(sx0+30)+'" cy="'+(yS-106)+'" r="5" fill="#d8d4bf" opacity=".7"/>';
+  if(sc===6)back+='<circle cx="'+sx0+'" cy="'+yS+'" r="90" fill="url(#'+uid+'gw)" opacity=".5"/><path d="M'+(sx0-54)+' '+yS+'A54 54 0 0 1 '+(sx0+54)+' '+yS+'Z" fill="#ffb25e"/>';
+  if(sc===7)for(const [dx,dy,s2] of[[-60,-120,1],[-10,-146,.8],[40,-110,1.1]])back+='<path d="M'+(sx0+dx-10*s2)+' '+(yS+dy)+'q10 '+(-10*s2)+' 10 0 q0 '+(-10*s2)+' 10 0" stroke="#3b3b44" stroke-width="2" fill="none" stroke-linecap="round" opacity=".7"/>';
+  /* the sea */
+  const wave=(y0,amp,per,ph,x0,x1)=>{let d="M"+x0+" "+P1(y0+Math.sin(ph)*amp);for(let x=x0;x<=x1;x+=8)d+="L"+x+" "+P1(y0+Math.sin(x/per*6.2832+ph)*amp);return d};
+  const W0=xa-340,W1=xb+340,per=140;
+  const anim=(dx,dur)=>o.bob?'<animateTransform attributeName="transform" type="translate" values="0 0;'+(-dx)+' 0" dur="'+dur+'s" repeatCount="indefinite"/>':"";
+  back+='<g>'+'<path d="'+wave(yS,3.500,per,0,W0,W1)+'L'+W1+' '+(CY+rb+20)+'L'+W0+' '+(CY+rb+20)+'Z" fill="url(#'+uid+'se)">'+'</path>'+anim(per,7)+'</g>';
+  for(let q=0;q<3;q++)back+='<g><path d="'+wave(yS+10+q*26,2.500,per*(1+q*.2),q*2,W0,W1)+'" stroke="#fff" stroke-width="1.100" fill="none" opacity="'+P1(.26-q*.06)+'"/>'+anim(per*(1+q*.2),9+q*2)+'</g>';
+  back+='</g>';
+  /* the glass */
+  const od=bottlePath(g,0),idp=bottlePath(g,9);
+  glass+='<path d="'+od+'" fill="url(#'+uid+'gl)"/><path d="'+od+'" fill="none" stroke="'+tint+'" stroke-opacity=".62" stroke-width="5" stroke-linejoin="round"/><path d="'+idp+'" fill="none" stroke="#fff" stroke-opacity=".2" stroke-width="1"/>';
+  const hy=CY-rb+17;
+  glass+='<path d="M'+(g.xs+g.ws+36)+' '+hy+'H'+(g.xe-24)+'" stroke="#fff" stroke-opacity=".42" stroke-width="7" stroke-linecap="round"/><path d="M'+(g.xe-6)+' '+(hy+3)+'H'+(g.xe+16)+'" stroke="#fff" stroke-opacity=".3" stroke-width="5" stroke-linecap="round"/><path d="M'+(g.xs+g.ws+60)+' '+(CY+rb-15)+'H'+(g.xe-90)+'" stroke="#fff" stroke-opacity=".16" stroke-width="4" stroke-linecap="round"/><path d="M'+(g.xs+8)+' '+(CY-g.rn+5)+'H'+(g.xs-60)+'" stroke="#fff" stroke-opacity=".4" stroke-width="3" stroke-linecap="round"/>';
+  const rr=rngFrom("bub|"+G.seed);for(let q=0;q<4;q++)glass+='<circle cx="'+P1(g.xs+g.ws+60+rr()*(g.xe-g.xs-g.ws-120))+'" cy="'+P1(CY-rb*.55+rr()*rb*1.1)+'" r="'+P1(.8+rr()*1.4)+'" fill="#fff" opacity=".25"/>';
+  /* the stand and the table */
+  const yb=CY+rb,cc=col(B.crc),dcc=dark(cc,.4),ty=yb+46;
+  table+='<rect x="0" y="'+ty+'" width="1000" height="'+(500-ty)+'" fill="url(#'+uid+'tb)"/><path d="M0 '+ty+'H1000" stroke="#ffd9a0" stroke-opacity=".18" stroke-width="1.500"/>';
+  defs+='<linearGradient id="'+uid+'tb" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#4a3322"/><stop offset="1" stop-color="#2a1b11"/></linearGradient>';
+  let st="";const fs0=g.xs+g.ws,fl=Math.min(34,(g.xe-fs0)*.18),cxm=(fs0+g.xe)/2,sxs=[Math.min(fs0+fl+34,cxm-92),Math.max(g.xe-fl-12,cxm+92)];
+  const shade='<ellipse cx="'+(xa/2+xb/2)+'" cy="'+(ty+2)+'" rx="'+(xb-xa)*.62+'" ry="9" fill="#000" opacity=".32"/>';
+  if(B.cr===0)for(const x of sxs)st+='<path d="M'+(x-62)+' '+ty+'L'+(x-50)+' '+(yb+3)+'Q'+x+' '+(yb-12)+' '+(x+50)+' '+(yb+3)+'L'+(x+62)+' '+ty+'Z" fill="'+cc+'" stroke="'+dcc+'" stroke-width="1.500"/><path d="M'+(x-44)+' '+(ty-8)+'Q'+x+' '+(yb+6)+' '+(x+44)+' '+(ty-8)+'" stroke="'+lite(cc,.25)+'" stroke-width="1.200" fill="none" opacity=".6"/>';
+  else if(B.cr===1)for(const x of sxs)st+='<path d="M'+(x-48)+' '+(yb-2)+'Q'+x+' '+(yb+22)+' '+(x+48)+' '+(yb-2)+'" stroke="#c8a34c" stroke-width="7" fill="none" stroke-linecap="round"/><path d="M'+(x-34)+' '+(yb+8)+'L'+(x-48)+' '+ty+'M'+(x+34)+' '+(yb+8)+'L'+(x+48)+' '+ty+'" stroke="#a98836" stroke-width="5" stroke-linecap="round"/>';
+  else if(B.cr===2){st+='<rect x="'+(xa-50)+'" y="'+(ty-8)+'" width="'+(xb-xa+100)+'" height="10" rx="3" fill="'+cc+'" stroke="'+dcc+'"/>';for(const x of sxs)st+='<path d="M'+(x-52)+' '+(yb-14)+'Q'+x+' '+(yb+14)+' '+(x+52)+' '+(yb-14)+'L'+(x+46)+' '+(ty-8)+'L'+(x-46)+' '+(ty-8)+'Z" fill="none" stroke="#c9b389" stroke-width="3.500" stroke-dasharray="5 2"/>'}
+  else if(B.cr===3)for(const x of sxs)st+='<path d="M'+(x-66)+' '+ty+'C'+(x-60)+' '+(yb+14)+' '+(x-30)+' '+(yb-6)+' '+x+' '+(yb+2)+'C'+(x+30)+' '+(yb-10)+' '+(x+58)+' '+(yb+12)+' '+(x+70)+' '+ty+'Z" fill="'+mix(cc,"#8b8278",.5)+'" stroke="'+dcc+'" stroke-width="1.200"/><path d="M'+(x-40)+' '+(ty-6)+'C'+(x-20)+' '+(yb+10)+' '+(x+20)+' '+(yb+6)+' '+(x+44)+' '+(ty-8)+'" stroke="'+dark(cc,.2)+'" stroke-width="1.200" fill="none" opacity=".6"/>';
+  else if(B.cr===4)for(const [x,s2] of[[sxs[0],1],[sxs[1],1.15]])st+='<path d="M'+(x-56*s2)+' '+ty+'C'+(x-60*s2)+' '+(yb+10)+' '+(x-30*s2)+' '+(yb-4)+' '+x+' '+(yb-2)+'C'+(x+34*s2)+' '+(yb-4)+' '+(x+62*s2)+' '+(yb+8)+' '+(x+58*s2)+' '+ty+'Z" fill="#8e8d94" stroke="#55545b" stroke-width="1.500"/><path d="M'+(x-20)+' '+(yb+6)+'l14 8 M'+(x+16)+' '+(yb+4)+'l-8 12" stroke="#6c6b73" stroke-width="1.200"/>';
+  else if(B.cr===5){const x=(xa+xb)/2;st+='<path d="M'+(x-150)+' '+ty+'L'+(x-132)+' '+(yb+14)+'H'+(x+132)+'L'+(x+150)+' '+ty+'Z" fill="'+cc+'" stroke="'+dcc+'"/><path d="M'+(x-120)+' '+(yb+14)+'Q'+x+' '+(yb-16)+' '+(x+120)+' '+(yb+14)+'Z" fill="'+dark(cc,.1)+'" stroke="'+dcc+'"/>'}
+  else if(B.cr===6)for(const x of sxs)st+='<path d="M'+(x-50)+' '+(yb-4)+'Q'+x+' '+(yb+20)+' '+(x+50)+' '+(yb-4)+'" stroke="#8a8a96" stroke-width="3.500" fill="none"/><path d="M'+(x-30)+' '+(yb+8)+'L'+(x-46)+' '+ty+'M'+(x+30)+' '+(yb+8)+'L'+(x+46)+' '+ty+'M'+(x-52)+' '+ty+'h12M'+(x+40)+' '+ty+'h12" stroke="#8a8a96" stroke-width="3.500" stroke-linecap="round" fill="none"/>';
+  /* the cork: in the neck when sealed, lying on the table while you work */
+  const cr=B.cork,rn=g.rn;let ck="";const cx0=sealedX(o);
+  const corkShape=(x,y,rot)=>{let s='<g transform="translate('+x+' '+y+') rotate('+rot+')">';
+    if(cr===0||cr===6)s+='<path d="M0 '+(-rn-4)+'L58 '+(-rn+1)+'L58 '+(rn-1)+'L0 '+(rn+4)+'Z" fill="#c9a26a" stroke="#8a6a3c" stroke-width="1.500"/><path d="M4 '+(-rn)+'v'+2*rn+'" stroke="#e0c08a" stroke-width="2" opacity=".6"/>'+[0,1,2,3,4,5].map(q=>'<circle cx="'+(10+q*8)+'" cy="'+((q%3-1)*rn*.6)+'" r="1.100" fill="#8a6a3c" opacity=".7"/>').join("")+'<rect x="-8" y="'+(-rn-8)+'" width="12" height="'+(2*rn+16)+'" rx="4" fill="#b88e56" stroke="#8a6a3c" stroke-width="1.500"/>';
+    else if(cr>=1&&cr<=3){const wc=["#b8312f","#2f5fa8","#d6a93a"][cr-1];s+='<path d="M20 '+(-rn-6)+'C-8 '+(-rn-10)+' -14 '+(rn+10)+' 20 '+(rn+6)+'L40 '+rn+'V'+(-rn)+'Z" fill="'+wc+'" stroke="'+dark(wc,.4)+'" stroke-width="1.200"/><path d="M-4 '+(-rn+2)+'C-2 '+(-rn-4)+' 6 '+(-rn-6)+' 12 '+(-rn-4)+'" stroke="#fff" stroke-opacity=".6" stroke-width="2.500" fill="none" stroke-linecap="round"/><path d="M6 '+(rn+6)+'q-2 12 2 16q4-6 0-16" fill="'+wc+'"/>'}
+    else if(cr===4)s+='<circle cx="10" cy="0" r="'+(rn+8)+'" fill="#8a5a34" stroke="#4e3320" stroke-width="1.500"/><path d="M0 '+(-rn)+'a'+(rn)+' '+rn+' 0 0 1 14 -2" stroke="#d9a878" stroke-width="3" fill="none" stroke-linecap="round" opacity=".7"/><rect x="14" y="'+(-rn+2)+'" width="34" height="'+(2*rn-4)+'" fill="#7a4e2c"/>';
+    else if(cr===5)s+='<ellipse cx="-4" cy="0" rx="12" ry="'+(rn+11)+'" fill="'+tint+'" fill-opacity=".5" stroke="'+tint+'" stroke-width="2"/><path d="M6 '+(-rn+3)+'H50V'+(rn-3)+'H6Z" fill="'+tint+'" fill-opacity=".45" stroke="'+tint+'" stroke-width="1.500"/><path d="M-10 -8q4-6 8-6" stroke="#fff" stroke-width="2" fill="none" opacity=".7"/>';
+    return s+"</g>"};
+  if(cr===6&&o.sealed)for(let q=0;q<7;q++)ck+='<path d="M'+(70+q*6)+' '+(CY-rn-3)+'l8 '+(2*rn+6)+'" stroke="#d2bd92" stroke-width="3.500" opacity=".95"/>';
+  if(o.sealed&&cr!==7)ck=corkShape(cx0,CY,0)+ck;
+  else if(!o.sealed&&cr!==7)ck=corkShape(70,ty-9,-8);
+  const meta=fitShip(G,g,yS,xa,xb,rb);
+  return{uid,defs,back,glass,table,stand:st,shade,cork:ck,meta,g,yS,rb,xa,xb,ty,yb,sea}}
+function sealedX(o){return 14}
+function fitShip(G,g,yS,xa,xb,rb){
+  const bb=G.rig.bb,H=G.H,wl=hpt(H,.5,.9)[1],w=bb.x1-bb.x0,top=CY-rb+22,avH=yS-top,avW=xb-xa;
+  const s=Math.min(avH/(wl-bb.y0),avW/w)*.97,sx=(xa+xb)/2-s*(bb.x0+bb.x1)/2,sy=yS-s*wl;
+  return{s,sx,sy,wl,box:{x0:sx+s*bb.x0,x1:sx+s*bb.x1,y0:sy+s*bb.y0,y1:sy+s*(H.D+8)}}}
+/* front waves wash over the lower hull, then the glass goes over everything */
+function frontWaves(P,o){const {uid,g,yS,xa,xb,rb,sea}=P,per=140,W0=xa-340,W1=xb+340;let d="M"+W0+" "+P1(yS+4);for(let x=W0;x<=W1;x+=8)d+="L"+x+" "+P1(yS+4+Math.sin(x/per*6.2832+1.2)*3);d+="L"+W1+" "+(CY+rb+20)+"L"+W0+" "+(CY+rb+20)+"Z";
+  const an=o.bob?'<animateTransform attributeName="transform" type="translate" values="0 0;'+(-per)+' 0" dur="5s" repeatCount="indefinite"/>':"";
+  return '<g clip-path="url(#'+uid+'ic)"><g><path d="'+d+'" fill="'+sea[0]+'" opacity=".42"/><path d="'+d.split("L"+W1+" "+(CY+rb+20))[0]+'" fill="none" stroke="#fff" stroke-width="1.200" opacity=".5"/>'+an+'</g></g>'}
+/* the whole picture; `parts` lets the app redraw only the ship while the bottle stays put */
+function sceneSVG(G,D,O,o){
+  o=o||{};const P=sceneParts(G,D,O,o),m=P.meta,u=P.uid;
+  const sh=shipSVG(G,D,O,u,o);
+  const bob=o.bob?'<animateTransform attributeName="transform" type="rotate" values="-.7 '+P1(m.sx+m.s*G.H.L/2)+' '+P1(P.yS)+';.7 '+P1(m.sx+m.s*G.H.L/2)+' '+P1(P.yS)+';-.7 '+P1(m.sx+m.s*G.H.L/2)+' '+P1(P.yS)+'" dur="6s" repeatCount="indefinite" calcMode="spline" keyTimes="0;.5;1" keySplines=".45 0 .55 1;.45 0 .55 1"/>':"";
+  const html='<defs>'+P.defs+'</defs>'+P.table+P.shade+P.stand+'<g>'+P.back+'</g><g class="shw"><g transform="translate('+P1(m.sx)+' '+P1(m.sy)+') scale('+P1(m.s*1000)/1000+')"><g class="shg">'+sh+'</g></g>'+bob+'</g>'+frontWaves(P,o)+'<g class="ovl" pointer-events="none"></g><g pointer-events="none">'+P.glass+P.cork+'</g>';
+  return{html,meta:m,P}}
+/* ================= the game: state, the bench, tweezers and planks ================= */
+const KEY="tvos_theseus";
+let ST={proj:null,shelf:[],set:{quick:0},sel:{c:2,i:0},seq:0,tab:"planks",view:"lounge",zoom:"ship",mode:"replace"};
+try{const o=JSON.parse(localStorage.getItem(KEY)||"null");if(o&&typeof o==="object")ST=Object.assign(ST,o)}catch(e){}
+let svT=0;function save(){clearTimeout(svT);svT=setTimeout(()=>{try{localStorage.setItem(KEY,JSON.stringify(ST))}catch(e){}},250)}
+const $=id=>root.getElementById(id),esc=s=>String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const REDUCE=!!(window.matchMedia&&matchMedia("(prefers-reduced-motion:reduce)").matches);
+let G=null,O=null,D=null,SM=null,BG0=null;
+function toast(t){const e=$("toast");e.textContent=t;e.classList.add("show");clearTimeout(toast.t);toast.t=setTimeout(()=>e.classList.remove("show"),2200)}
+/* ---------- the ship on the bench ---------- */
+function loadProj(){const p=ST.proj;G=O=D=null;if(!p)return;try{G=makeG(p.seed);O=p.orig;D=p.cur;if(!D||D.pl.length!==G.pl.length||O.pl.length!==G.pl.length||D.sl.length!==G.rig.sails.length)throw 0}catch(e){ST.proj=null;G=O=D=null}}
+function startProject(seed,from,orig,cur){
+  const g=makeG(seed);let o,d;
+  if(orig){o=clone(orig);d=clone(cur||orig)}else{o=clone(g.orig);d=clone(g.orig)}
+  if(o.fg.k===0)d.fg.old=0;
+  if(!orig)d.nm="";
+  ST.proj={seed:g.seed,orig:o,cur:d,jar:0,t:Date.now(),from:from||"seed",found:o.nm||g.name};ST.view="bench";ST.tab="planks";ST.mode="replace";BS.ph=null;BS.hold=null;
+  loadProj();save()}
+const total=()=>G.pl.length+D.mk.length+D.sl.length+3;
+function oldLeft(){let n=D.pl.filter(p=>p.old&&p.st==="ok").length+D.mk.filter(p=>p.old).length+D.sl.filter(p=>p.old).length;if(D.fl.old)n++;if(D.fg.old)n++;if(D.rd.old)n++;return n}
+function oldBy(kind){return kind==="pl"?D.pl.filter(p=>p.old&&p.st==="ok").length:kind==="mk"?D.mk.filter(p=>p.old).length:kind==="sl"?D.sl.filter(p=>p.old).length:(D.fl.old?1:0)+(D.fg.old?1:0)+(D.rd.old?1:0)}
+const emptySlots=()=>D.pl.map((p,k)=>p.st==="out"?k:-1).filter(k=>k>=0);
+/* a plank may come out only when the planks on either side of it are firmly in place */
+function eligible(k){const p=G.pl[k],d=D.pl[k];if(!d.old||d.st!=="ok")return false;for(const q of[k-1,k+1]){const n=G.pl[q];if(n&&n.i===p.i&&D.pl[q].st!=="ok")return false}return true}
+const eligibleSet=()=>{const s=new Set();if(BS.ph||ST.mode!=="replace")return s;G.pl.forEach((p,k)=>{if(eligible(k))s.add(k)});return s};
+/* ---------- drawing the bench ---------- */
+const VBW=1000,VBH=500;
+function vbFor(z){if(z==="bottle")return[0,0,VBW,VBH];const b=SM.box,pad=34;return[b.x0-pad,b.y0-pad-6,b.x1-b.x0+2*pad,b.y1-b.y0+2*pad+22]}
+let VB=[0,0,VBW,VBH];
+function setVB(v,svg){VB=v;svg=svg||$("sv");if(!svg)return;svg.setAttribute("viewBox",v.map(P1).join(" "));svg.style.aspectRatio=P1(v[2])+"/"+P1(v[3]);const st=svg.parentNode;if(st)st.style.maxWidth="calc((100cqh - 250px) * "+P1(v[2]/v[3])+")"}
+function hitOpts(){return{pick:eligibleSet(),paint:ST.mode==="paint"&&!BS.ph}}
+function renderScene(){
+  const st=$("stage");if(!st||!G)return;
+  const S=sceneSVG(G,D,O,{uid:"th",sealed:false,bob:0,hits:hitOpts()});SM=S.meta;BG0=S.P.g;
+  st.innerHTML='<svg id="sv" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="The bottle on your bench">'+S.html+'</svg><div class="zoomb"><button class="btn sm'+(ST.zoom==="ship"?" on":"")+'" data-act="zoom" data-v="ship">Close up</button><button class="btn sm'+(ST.zoom==="bottle"?" on":"")+'" data-act="zoom" data-v="bottle">Whole bottle</button></div>';
+  setVB(vbFor(ST.zoom));tickOvl()}
+function redrawHull(){const hl=root.querySelector("#sv .hl");if(hl)hl.innerHTML=hullSVG(G,D,O,"th",{hits:hitOpts()})}
+function rigOpts(){const o={};if(BS.hold){if(BS.hold.kind==="mast")o.mastP={i:BS.hold.i,p:BS.hold.p};if(BS.hold.kind==="sail")o.sailP={i:BS.hold.i,p:BS.hold.p};if(BS.hold.kind==="flag")o.flagP=BS.hold.p}return o}
+function redrawRig(){const rg=root.querySelector("#sv .rg");if(rg)rg.innerHTML=rigSVG(G,D,O,"th",rigOpts());const ff=root.querySelector("#sv .ff"),bs=root.querySelector("#sv .bs");if(ff)ff.innerHTML=bowAndStern(G,D,O,"th",{},1);if(bs)bs.innerHTML=bowAndStern(G,D,O,"th",{},0)}
+function redrawShip(){redrawHull();redrawRig()}
+function animVB(to){const from=VB.slice(),t0=performance.now(),dur=REDUCE?1:420,svg=$("sv");const f=t=>{const k=clamp((t-t0)/dur,0,1),e=k<.5?2*k*k:1-Math.pow(-2*k+2,2)/2;setVB(from.map((v,i)=>lerp(v,to[i],e)),svg);if(k<1)requestAnimationFrame(f)};requestAnimationFrame(f)}
+/* ---------- the long tweezers ---------- */
+const BS={ph:null,k:-1,t0:0,tp:{x:0,y:0},tt:null,drag:false,hold:null,held:null,pull:null};
+const ease=t=>t<.5?2*t*t:1-Math.pow(-2*t+2,2)/2;
+const rest=()=>({x:Math.max(80,Math.min(200,BG0.xs-40),VB[0]+VB[2]*.08),y:CY});
+const slotC=k=>({x:SM.sx+SM.s*G.pl[k].cx,y:SM.sy+SM.s*G.pl[k].cy});
+const neckSc=x=>.34+.66*sstep(BG0.xs+10,BG0.xs+BG0.ws*.9+40,x);
+function toolSVG(tp){
+  const P0={x:44,y:CY};let dx=tp.x-P0.x,dy=tp.y-P0.y;const L=Math.hypot(dx,dy)||1;dx/=L;dy/=L;const nx=-dy,ny=dx;
+  const h0={x:P0.x-dx*170,y:P0.y-dy*170},sp=Math.min(5,L*.04);
+  const a={x:tp.x-dx*46+nx*sp,y:tp.y-dy*46+ny*sp},b={x:tp.x-dx*46-nx*sp,y:tp.y-dy*46-ny*sp};
+  return '<path d="M'+P1(h0.x)+' '+P1(h0.y)+'L'+P1(tp.x-dx*46)+' '+P1(tp.y-dy*46)+'" stroke="#9aa3b0" stroke-width="3.400" stroke-linecap="round"/><path d="M'+P1(h0.x)+' '+P1(h0.y)+'L'+P1(P0.x-dx*40)+' '+P1(P0.y-dy*40)+'" stroke="#5a4636" stroke-width="7" stroke-linecap="round"/><path d="M'+P1(tp.x-dx*46)+' '+P1(tp.y-dy*46)+'L'+P1(tp.x-dx*46+dx*2)+' '+P1(tp.y-dy*46+dy*2)+'" stroke="#dfe4ec" stroke-width="3.400"/><path d="M'+P1(a.x)+' '+P1(a.y)+'L'+P1(tp.x+nx*1.200)+' '+P1(tp.y+ny*1.200)+'M'+P1(b.x)+' '+P1(b.y)+'L'+P1(tp.x-nx*1.200)+' '+P1(tp.y-ny*1.200)+'" stroke="#dfe4ec" stroke-width="2.200" stroke-linecap="round"/><path d="M'+P1(h0.x+dx*30)+' '+P1(h0.y+dy*30)+'L'+P1(tp.x-dx*50)+' '+P1(tp.y-dy*50)+'" stroke="#fff" stroke-opacity=".5" stroke-width="1"/>'}
+function heldSVG(k,old,tp,sc){const c=G.pl[k],tmp=[];tmp[k]=old?{c:0,i:0,old:1,st:"ok"}:{c:ST.sel.c,i:ST.sel.i,old:0,st:"ok"};const s=SM.s*sc;
+  return '<g transform="translate('+P1(tp.x)+' '+P1(tp.y)+') scale('+P1(s*1000)/1000+') translate('+P1(-c.cx)+' '+P1(-c.cy)+')" filter="none"><path d="'+c.d+'" fill="#000" opacity=".22" transform="translate(2 5)"/>'+plankPaint(G,k,{pl:tmp},O,"th")+'</g>'}
+function ovlSVG(){
+  if(!BS.ph&&!BS.hold){if(G&&ST.proj&&!ST.proj.jar&&ST.tab==="planks"&&ST.mode==="replace"&&!emptySlots().length){const e=[...eligibleSet()];if(e.length){const k=e.reduce((m,q)=>Math.abs(slotC(q).x-(SM.sx+SM.s*G.H.L*.5))<Math.abs(slotC(m).x-(SM.sx+SM.s*G.H.L*.5))?q:m,e[0]),c=slotC(k),r=Math.max(14,SM.s*13);return '<circle cx="'+P1(c.x)+'" cy="'+P1(c.y)+'" r="'+P1(r)+'" fill="none" stroke="#fff" stroke-width="3"><animate attributeName="r" values="'+P1(r)+';'+P1(r*1.9)+';'+P1(r)+'" dur="1.5s" repeatCount="indefinite"/><animate attributeName="opacity" values="1;.15;1" dur="1.5s" repeatCount="indefinite"/></circle><text x="'+P1(clamp(c.x,VB[0]+90,VB[0]+VB[2]-90))+'" y="'+P1(c.y-r*2.1)+'" text-anchor="middle" font-size="'+P1(Math.max(15,SM.s*15))+'" font-family="Georgia,serif" fill="#fff" stroke="#000" stroke-width="3" paint-order="stroke" font-weight="bold">Tap here to start</text>'}}return ""}let s="";
+  if(BS.ph){
+    if(BS.held)s+=heldSVG(BS.held.k,BS.held.old,BS.tp,BS.held.sc);
+    s+=toolSVG(BS.tp);
+    if(BS.ph==="place"&&BS.held){const c=slotC(BS.held.k);s+='<circle cx="'+P1(c.x)+'" cy="'+P1(c.y)+'" r="'+P1(Math.max(10,SM.s*7))+'" fill="none" stroke="#ffd27a" stroke-width="2" stroke-dasharray="4 4" opacity=".9"><animate attributeName="r" values="'+P1(Math.max(10,SM.s*7))+';'+P1(Math.max(16,SM.s*12))+';'+P1(Math.max(10,SM.s*7))+'" dur="1.4s" repeatCount="indefinite"/></circle>'}}
+  return s}
+function tickOvl(){const g=root.querySelector("#sv .ovl");if(g)g.innerHTML=ovlSVG()}
+let raf=0,lastT=0;
+function kick(){if(!raf){lastT=performance.now();raf=requestAnimationFrame(loop)}}
+function loop(t){raf=0;const dt=Math.min(64,t-lastT);lastT=t;let again=false;
+  if(BS.ph){again=true;stepPlank(t,dt)}
+  if(BS.hold){again=true;stepHold(dt)}
+  tickOvl();if(again)raf=requestAnimationFrame(loop)}
+function setNext(){const e=$("next");if(e)e.innerHTML=nextText()}
+function nextText(){
+  if(!G)return "";
+  const left=oldLeft(),em=emptySlots();
+  if(BS.ph==="pull")return "The tweezers are taking the old plank out through the neck…";
+  if(BS.ph==="place")return "<b>Drag the new plank to the glowing slot</b> and let go. Pick another finish any time. Press Put it back to stop.";
+  if(BS.ph==="snap")return "Gluing it in…";
+  if(BS.hold)return "Keep holding… let go early and it settles back down. Nothing is lost.";
+  if(em.length)return "<b>A slot is empty.</b> Tap the glowing dotted plank to fit a new one.";
+  if(ST.tab==="planks"){
+    if(ST.mode==="paint")return "<b>Paint mode:</b> tap any new plank to give it the finish you chose. Old planks have to be replaced first.";
+    const e=eligibleSet();if(e.size&&!ST.proj.jar)return "<b>Step 1: tap the glowing plank on the ship</b> (the ring shows where), or press the button. Tweezers will take it out for you.<div class='row'><button class='btn pri' data-act='pickme'>Take out a plank for me</button></div>";if(e.size)return "<b>Tap a glowing plank</b> to take it out, or press Pick one for me. A plank can only come out when its neighbours are firmly in.";
+    if(D.pl.some(p=>p.old&&p.st==="set"))return "The glue is still setting. A moment, and the next planks will glow.";
+    if(oldBy("pl")===0)return "<b>The whole hull is new.</b> Now open the other tabs: masts, sails, flag and fittings.";
+  }
+  if(ST.tab==="masts"&&oldBy("mk"))return "<b>Masts:</b> pick a colour in the panel, then <b>press and hold the big button</b> at the top of it.";
+  if(ST.tab==="sails"&&oldBy("sl"))return "<b>Sails:</b> pick a cloth colour and pattern, then <b>press and hold the big button</b> at the top of the panel.";
+  if(ST.tab==="flag"&&D.fl.old)return "<b>Flag:</b> design it in the panel, then <b>press and hold the big button</b> to run it up the mast.";
+  if(ST.tab==="fit"&&(D.fg.old||D.rd.old))return "<b>Fittings:</b> pick a look, then press the gold button to fit it.";
+  if(left>0)return "<b>"+left+" original part"+(left===1?"":"s")+" left.</b> Open a tab, pick something old and replace it. Everything you build can be repainted afterwards.";
+  return "<b>Every original part is gone.</b> Is it still the same ship? Name it in the last tab, then seal the bottle.";}
+function updateBars(){const t=total(),done=t-oldLeft(),pc=Math.round(done/t*100);const b=$("prog");if(b){b.firstElementChild.style.width=pc+"%";b.nextElementSibling.textContent=oldLeft()===0?"Nothing original remains":oldLeft()+" original of "+t+" parts left"}setNext();renderTabs()}
+/* ---------- plank steps: pull, place, snap ---------- */
+function startPull(k){
+  if(BS.ph||!eligible(k))return;BS.ph="pull";BS.k=k;BS.t0=performance.now();BS.tp=Object.assign({},rest());BS.held=null;BS.drag=false;BS.tt=null;BS.pull={phase:0};
+  if(ST.zoom==="bottle"&&false)animVB(vbFor("ship"));renderPanel();setNext();redrawHull();kick()}
+function startPlace(k){
+  if(BS.ph)return;BS.ph="place";BS.k=k;BS.tp=Object.assign({},rest());BS.tt=null;BS.drag=false;BS.held={k,old:0,sc:neckSc(BS.tp.x)};renderPanel();setNext();redrawHull();kick()}
+function stepPlank(t,dt){
+  const k=BS.k;
+  if(BS.ph==="pull"){const e=t-BS.t0,R=rest(),C=slotC(k),T1=REDUCE?1:620;
+    if(e<T1){BS.tp={x:lerp(R.x,C.x,ease(e/T1)),y:lerp(R.y,C.y,ease(e/T1))};BS.held=null}
+    else if(e<T1*2){if(!BS.pull.out){BS.pull.out=1;const d=D.pl[k];d.old=0;d.st="out";redrawHull();ST.proj.jar=(ST.proj.jar||0)+1;save();updateBars()}
+      const q=ease((e-T1)/T1);BS.tp={x:lerp(C.x,R.x,q),y:lerp(C.y,R.y,q)};BS.held={k,old:1,sc:neckSc(BS.tp.x)}}
+    else{BS.held=null;BS.pull=null;if(ST.set.quick){BS.ph="place";BS.held={k,old:0,sc:1};snapNow(k);return}BS.ph="place";BS.tp=Object.assign({},R);BS.held={k,old:0,sc:neckSc(R.x)};renderPanel();setNext()}return}
+  if(BS.ph==="place"){const R=rest(),tg=BS.tt||R,f=1-Math.pow(.0009,dt/1000);BS.tp.x+=(tg.x-BS.tp.x)*f;BS.tp.y+=(tg.y-BS.tp.y)*f;BS.held.sc=neckSc(BS.tp.x);
+    if(Math.hypot(tg.x-BS.tp.x,tg.y-BS.tp.y)<.5&&!BS.drag&&!BS.tt){}return}
+  if(BS.ph==="snap"){const e=t-BS.t0,T=REDUCE?1:240,C=slotC(k),f=ease(clamp(e/T,0,1));BS.tp={x:lerp(BS.s0.x,C.x,f),y:lerp(BS.s0.y,C.y,f)};BS.held.sc=lerp(BS.s0.sc,1,f);
+    if(e>=T){const d=D.pl[k];d.c=ST.sel.c;d.i=ST.sel.i;d.old=0;d.st="set";BS.ph=null;BS.held=null;BS.k=-1;redrawHull();save();setTimeout(()=>{if(D&&D.pl[k]&&D.pl[k].st==="set"){D.pl[k].st="ok";if(!BS.ph)redrawHull();updateBars();save()}},REDUCE?10:1500);renderPanel();updateBars();setNext();tickOvl()}}}
+function snapNow(k){BS.ph="snap";BS.t0=performance.now();BS.s0={x:BS.tp.x,y:BS.tp.y,sc:BS.held.sc};kick()}
+function putBack(){if(BS.ph!=="place")return;BS.ph=null;BS.held=null;BS.k=-1;BS.tt=null;BS.drag=false;redrawHull();renderPanel();setNext();tickOvl();toast("The slot stays empty. Tap it when you are ready to fit a plank.")}
+function svgPt(ev){const sv=$("sv"),pt=sv.createSVGPoint();pt.x=ev.clientX;pt.y=ev.clientY;const m=sv.getScreenCTM();if(!m)return{x:0,y:0};const r=pt.matrixTransform(m.inverse());return{x:r.x,y:r.y}}
+function nearestPick(p){const e=eligibleSet();let best=-1,bd=1e9;e.forEach(k=>{const c=slotC(k),d=Math.hypot(c.x-p.x,c.y-p.y);if(d<bd){bd=d;best=k}});return bd<SM.s*60?best:-1}
+function plankTap(k,p){
+  if(BS.ph)return;const d=D.pl[k];
+  if(d.st==="out"){startPlace(k);return}
+  if(ST.mode==="paint"){if(d.old){toast("Old planks can't be painted. Replace it first.");return}d.c=ST.sel.c;d.i=ST.sel.i;redrawHull();save();return}
+  if(!d.old){toast("That plank is already new. Use Paint mode to change its finish.");return}
+  if(d.st!=="ok")return;
+  if(!eligible(k)){wobble();toast("Careful: the planks beside it must be firmly in place first.");return}
+  startPull(k)}
+function wobble(){const g=root.querySelector("#sv .shw");if(!g||REDUCE)return;g.classList.remove("wob");void g.getBoundingClientRect();g.classList.add("wob")}
+function pickForMe(){if(BS.ph)return;const em=emptySlots();if(em.length){startPlace(em[0]);return}const e=[...eligibleSet()];if(!e.length){toast(oldBy("pl")?"The glue is still setting. One moment.":"No old planks are left.");return}const r=rngFrom("pk"+Date.now());startPull(e[(r()*e.length)|0])}
+/* ---------- hold-to-raise: masts, sails and the flag ---------- */
+function startHold(kind,i){if(BS.ph||BS.hold)return;BS.hold={kind,i,p:0,down:true};if(kind==="flag"||kind==="sail"||kind==="mast"){redrawRig()}kick();setNext()}
+function endHold(){if(BS.hold)BS.hold.down=false}
+function stepHold(dt){const h=BS.hold,dur=h.kind==="mast"?1700:h.kind==="flag"?1300:1100;if(REDUCE)h.p=h.down?1:0;else h.p=clamp(h.p+(h.down?dt/dur:-dt/dur*.9),0,1);
+  const bar=$("holdbar");if(bar)bar.style.width=Math.round(h.p*100)+"%";redrawRig();
+  if(h.p>=1){const k=h.kind,i=h.i;BS.hold=null;if(k==="mast")D.mk[i].old=0;else if(k==="sail")D.sl[i].old=0;else D.fl.old=0;redrawRig();save();renderPanel();updateBars();toast(k==="mast"?"The new mast is up.":k==="sail"?"The new sail is hung.":"The new flag is flying.");return}
+  if(h.p<=0&&!h.down){BS.hold=null;redrawRig();renderPanel();setNext()}}
+/* ---------- pointer handling on the picture ---------- */
+function onDown(ev){
+  const sv=$("sv");if(!sv||!G)return;const p=svgPt(ev);
+  if(BS.ph==="place"){ev.preventDefault();BS.drag=true;BS.tt=p;try{sv.setPointerCapture(ev.pointerId)}catch(e){}kick();return}
+  if(BS.ph)return;
+  const t=ev.target.closest&&ev.target.closest("[data-k]");let k=t?+t.dataset.k:-1;
+  if(k<0&&ST.mode==="replace")k=nearestPick(p);
+  if(k>=0)plankTap(k,p)}
+function onMove(ev){if(BS.ph==="place"&&BS.drag){BS.tt=svgPt(ev);kick()}}
+function onUp(ev){
+  if(BS.ph!=="place"||!BS.drag)return;BS.drag=false;const p=svgPt(ev),c=slotC(BS.held.k),tol=Math.max(34,SM.s*G.H.L/G.ns*.5);
+  if(Math.hypot(p.x-c.x,p.y-c.y)<tol){BS.tt=null;snapNow(BS.held.k)}else{BS.tt=null;toast("Almost. Bring it over the glowing slot.")}kick()}
+/* ================= the panels, the shelf, seeds and the finish ================= */
+let PM=0,PS=0,FS="c1";
+const chips=(list,cur,act,extra)=>'<div class="chs">'+list.map((n,i)=>'<button class="ch'+(i===cur?" on":"")+'" data-act="'+act+'" data-v="'+i+'"'+(extra||"")+'>'+esc(n)+'</button>').join("")+'</div>';
+function palGrid(cur,act){return [[0,12,"Woods"],[12,24,"Paints"],[24,32,"Metals and more"]].map(g=>'<div class="lab2">'+g[2]+'</div><div class="swg">'+PAL.slice(g[0],g[1]).map((p,j)=>{const i=g[0]+j;return '<button class="sw'+(i===cur?" on":"")+'" style="--c:'+p[1]+'" data-act="'+act+'" data-v="'+i+'" title="'+p[0]+'" aria-label="'+p[0]+'"></button>'}).join("")+'</div>').join("")}
+const rowsHTML=(items,cur,act)=>'<div class="rows">'+items.map((it,i)=>'<button class="rw'+(i===cur?" on":"")+'" data-act="'+act+'" data-v="'+i+'"><span>'+esc(it.n)+'</span><i class="st '+(it.old?"old":"new")+'">'+(it.old?"Old":"New")+'</i></button>').join("")+'</div>';
+const holdTop=(kind,i,label,what)=>'<div class="topact"><div class="stepbox"><b>How to replace it:</b> 1. Pick '+what+' below. 2. Press and hold this big button until the new one is fitted.</div>'+holdBtn(kind,i,label)+'</div>';
+const holdBtn=(kind,i,label)=>'<button class="btn pri hold" data-hold="'+kind+'" data-i="'+i+'"><i id="holdbar"></i><span>'+label+'</span></button><p class="hint2">Press and hold. Let go early and it settles back down.</p>';
+function panelPlanks(){
+  const left=oldBy("pl"),em=emptySlots().length;
+  return '<div class="ph2"><h3>Planks</h3><span class="sub">'+left+' old plank'+(left===1?"":"s")+' left · '+(ST.proj.jar||0)+' in the jar</span></div>'+
+  '<div class="seg"><button class="'+(ST.mode==="replace"?"on":"")+'" data-act="mode" data-v="replace">Replace</button><button class="'+(ST.mode==="paint"?"on":"")+'" data-act="mode" data-v="paint">Paint</button></div>'+
+  '<div class="lab2" style="margin-top:12px">Finish for the next plank: <b>'+PAL[ST.sel.c][0]+(ST.sel.i?", "+INLAYN[ST.sel.i].toLowerCase()+" stripe":"")+'</b></div>'+palGrid(ST.sel.c,"selc")+
+  '<div class="lab2">Inlay stripe</div>'+chips(INLAYN,ST.sel.i,"seli")+
+  '<div class="row"><button class="btn" data-act="dice">Surprise me</button><button class="btn pri" data-act="pickme"'+(BS.ph?" disabled":"")+'>'+(em?"Fit the empty slot":"Pick one for me")+'</button>'+(BS.ph==="place"?'<button class="btn" data-act="putback">Put it back</button>':"")+'</div>'+
+  '<label class="chk"><input type="checkbox" data-act="quick"'+(ST.set.quick?" checked":"")+'> Quick fit: skip the dragging</label>'}
+function panelMasts(){
+  const it=D.mk.map((m,i)=>({n:G.rig.masts[i].nm,old:m.old}));PM=Math.min(PM,it.length-1);const m=D.mk[PM];
+  return '<div class="ph2"><h3>Masts</h3><span class="sub">'+oldBy("mk")+' old</span></div>'+(m.old?holdTop("mast",PM,"HOLD to raise the new "+it[PM].n.toLowerCase(),"a colour"):'<p class="hint2">This mast is new. Choose another colour and it repaints.</p>')+'<div class="lab2">Which mast?</div>'+rowsHTML(it,PM,"mk")+
+  '<div class="lab2" style="margin-top:12px">Wood or paint for the '+esc(it[PM].n.toLowerCase())+'</div>'+palGrid(m.c,"mkc")}
+function sailPreview(i){const s=D.sl[i];return '<svg class="pv" viewBox="0 0 120 84">'+sailSVG(G,i,{k:"sq",mx:60,x0:12,x1:108,yT:6,yB:74},{c:s.c,p:s.p},false,"sp",G.seed+"|pv")+'</svg>'}
+function panelSails(){
+  const it=D.sl.map((s,i)=>({n:G.rig.sails[i].nm,old:s.old}));PS=Math.min(PS,it.length-1);const s=D.sl[PS];
+  return '<div class="ph2"><h3>Sails</h3><span class="sub">'+oldBy("sl")+' old</span></div>'+(s.old?holdTop("sail",PS,"HOLD to hang the new "+it[PS].n.toLowerCase(),"a cloth colour and pattern"):'<p class="hint2">This sail is new. Change the cloth or pattern and it updates.</p>')+'<div class="lab2">Which sail?</div>'+rowsHTML(it,PS,"sl")+
+  '<div class="prevrow">'+sailPreview(PS)+'<div><div class="lab2">Pattern</div>'+chips(SAILP,s.p,"slp")+'</div></div>'+
+  '<div class="lab2">Cloth colour</div>'+palGrid(s.c,"slc")}
+function emIcon(i,c){const e=EM[i];if(!e)return '<span class="none">none</span>';return '<svg viewBox="0 0 24 24" width="22" height="22" '+(e.f?'fill="'+c+'"':'fill="none" stroke="'+c+'" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"')+'><path d="'+e.d+'"/></svg>'}
+function panelFlag(){
+  const F=D.fl,slots=[["c1","Field"],["c2","Second"],["c3","Third"],["ec","Emblem"]];
+  let h='<div class="ph2"><h3>Flag</h3><span class="sub">'+(F.old?"old flag":"your design")+'</span></div>'+(F.old?holdTop("flag",0,"HOLD to run your flag up the mast","a shape, pattern and colours"):'<p class="hint2">Your flag is flying. Keep designing and it changes on the mast.</p>')+'<div class="flagprev"><svg viewBox="-6 -6 162 106">'+flagSVG(F,150,94,"fp",0,G.seed)+'</svg></div>';
+  h+='<div class="lab2">Shape</div>'+chips(FLAGSH,F.sh,"fsh")+'<div class="lab2">Pattern</div><div class="pgrid">'+FLAGPT.map((n,i)=>'<button class="pt'+(i===F.pt?" on":"")+'" data-act="fpt" data-v="'+i+'" title="'+n+'"><svg viewBox="-2 -2 48 32">'+flagSVG(Object.assign({},F,{pt:i,sh:0,em:0}),44,28,"pp"+i,0,G.seed)+'</svg></button>').join("")+'</div>';
+  h+='<div class="lab2">Colours: pick a slot, then a colour</div><div class="chs">'+slots.map(s=>'<button class="ch slot'+(FS===s[0]?" on":"")+'" data-act="fslot" data-v="'+s[0]+'"><i class="dot" style="background:'+col(F[s[0]])+'"></i>'+s[1]+'</button>').join("")+'</div>'+palGrid(F[FS],"fcol");
+  h+='<div class="lab2">Emblem</div><div class="egrid">'+EM.map((e,i)=>'<button class="em'+(i===F.em?" on":"")+'" data-act="fem" data-v="'+i+'" title="'+(e?e.n:"None")+'">'+emIcon(i,"#e9dcc6")+'</button>').join("")+'</div>';
+  return h}
+function panelFit(){
+  const fg=D.fg,rd=D.rd,fgNone=O.fg.k===0;
+  let h='<div class="ph2"><h3>Fittings</h3><span class="sub">'+oldBy("fit")+' old</span></div>'+((fg.old||rd.old)?'<div class="stepbox"><b>How to replace them:</b> pick a look, then press the gold button under it to fit it.</div>':"")+'<div class="lab2">Figurehead'+(fg.old?" (old)":"")+'</div><div class="fgrid">'+FIGN.map((n,i)=>'<button class="fgb'+(i===fg.k?" on":"")+'" data-act="fgk" data-v="'+i+'" title="'+n+'">'+(i?'<svg viewBox="-2 -2 44 44">'+figSVG(i,col(fg.c),0,G.seed)+'</svg>':'<span class="none">none</span>')+'</button>').join("")+'</div>';
+  h+='<div class="lab2">Figurehead colour</div>'+palGrid(fg.c,"fgc");
+  h+=fg.old?'<div class="row"><button class="btn pri" data-act="fitfg">Carve and fit the new figurehead</button></div>':(fgNone&&!fg.k?'<p class="hint2">The old ship had no figurehead. Add one if you like.</p>':'<p class="hint2">Your figurehead is fitted. Change it any time.</p>');
+  h+='<div class="lab2" style="margin-top:14px">Rudder'+(rd.old?" (old)":"")+'</div>'+palGrid(rd.c,"rdc");
+  h+=rd.old?'<div class="row"><button class="btn pri" data-act="fitrd">Fit the new rudder</button></div>':'<p class="hint2">New rudder fitted.</p>';
+  h+='<div class="lab2" style="margin-top:14px">Rail and gunports (just paint, no replacing)</div>'+palGrid(D.tr,"trc");return h}
+function panelBottle(){const B=D.bt;
+  return '<div class="ph2"><h3>Bottle</h3><span class="sub">free to change any time</span></div>'+
+  '<div class="lab2">Shape</div>'+chips(BSHAPE,B.shape,"bt:shape")+'<div class="lab2">Glass</div>'+chips(BTINT,B.tint,"bt:tint")+'<div class="lab2">Stopper</div>'+chips(BCORK,B.cork,"bt:cork")+
+  '<div class="lab2">Sky</div>'+chips(BSKY,B.sky,"bt:sky")+'<div class="lab2">Sea</div>'+chips(BSEA,B.sea,"bt:sea")+'<div class="lab2">In the distance</div>'+chips(BSCN,B.scn,"bt:scn")+
+  '<div class="lab2">Stand</div>'+chips(BCR,B.cr,"bt:cr")+'<div class="lab2">Stand colour</div>'+palGrid(B.crc,"btc")}
+function panelName(){
+  const left=oldLeft(),em=emptySlots().length,sug=suggestName(rngFrom("nm"+(ST.seq||0)+G.seed));
+  return '<div class="ph2"><h3>Name and seal</h3><span class="sub">'+(left?left+" original left":"nothing original remains")+'</span></div>'+
+  '<p class="note">The old ship was found as <b>'+esc(ST.proj.found||G.name)+'</b>. What will you call yours?</p><input id="nm" class="field" maxlength="30" placeholder="'+esc(sug)+'" value="'+esc(D.nm||"")+'" autocomplete="off" spellcheck="false"><div class="row"><button class="btn" data-act="suggest">Suggest a name</button></div>'+
+  '<div class="sealbox"><p class="note">'+(left===0?"<b>Every original part is gone.</b> Seal the bottle and keep it on your shelf. A share code lets anyone else see your ship.":left+" original part"+(left===1?" remains":"s remain")+". You can seal it now, and it will keep their worn look. Or keep replacing.")+'</p><button class="btn pri big" data-act="seal"'+(em?" disabled":"")+'>Seal the bottle</button>'+(em?'<p class="hint2">An empty slot is still open. Fit a plank first.</p>':"")+'</div>'+
+  '<div class="row" style="margin-top:18px"><button class="btn sm ghost" data-act="giveup">Set this ship aside and find another</button></div>'}
+const TABS=[["planks","Planks","pl"],["masts","Masts","mk"],["sails","Sails","sl"],["flag","Flag","fl"],["fit","Fittings","fit"],["bottle","Bottle",""],["name","Name and seal",""]];
+function tabCount(k){if(k==="pl")return oldBy("pl");if(k==="mk")return oldBy("mk");if(k==="sl")return oldBy("sl");if(k==="fl")return D.fl.old?1:0;if(k==="fit")return (D.fg.old?1:0)+(D.rd.old?1:0);return 0}
+function renderTabs(){const e=$("ptabs");if(!e||!G)return;e.innerHTML=TABS.map(t=>{const n=t[2]?tabCount(t[2]):0;return '<button class="pt2'+(ST.tab===t[0]?" on":"")+'" data-act="tab" data-v="'+t[0]+'">'+t[1]+(n?'<b>'+n+'</b>':"")+'</button>'}).join("")}
+function renderPanel(){const e=$("panel");if(!e||!G)return;const f={planks:panelPlanks,masts:panelMasts,sails:panelSails,flag:panelFlag,fit:panelFit,bottle:panelBottle,name:panelName}[ST.tab]||panelPlanks;const sy=e.scrollTop;e.innerHTML=f();e.scrollTop=sy;renderTabs()}
+/* ---------- the shelf ---------- */
+function entryDesign(e){try{if(e.kind==="salvage"){const g=makeG(e.json.seed);return{G:g,D:e.json.d,O:e.json.d}}const r=decodeShip(e.code);return r?{G:r.G,D:r.D,O:r.G.orig}:null}catch(x){return null}}
+function miniScene(e,o){const x=entryDesign(e);if(!x)return '<div class="empty">This ship could not be read.</div>';const S=sceneSVG(x.G,x.D,x.O,Object.assign({sealed:true,uid:"m"+String(e.id).replace(/\W/g,"")+(o&&o.bob?"b":"")},o||{}));return '<svg viewBox="0 0 1000 500" role="img" aria-label="'+esc(e.nm||"ship")+'">'+S.html+'</svg>'}
+const KIND={own:"",friend:"From a code you were given",salvage:"Built from the old planks"};
+function shelfHTML(){
+  const L=ST.shelf;
+  return '<section class="shelf"><div class="shh"><h2>Your shelf</h2><p class="note">'+(L.length?"Tap a ship to look at it, rename it, share its code, or refit it.":"Nothing here yet. Seal a ship in a bottle and it will live on this shelf. You can also paste a ship code from a friend under Seeds.")+'</p></div><div class="cards">'+L.map(e=>'<button class="card" data-act="open" data-id="'+e.id+'"><div class="cs">'+miniScene(e)+'</div><b>'+esc(e.nm||"Untitled")+'</b><span>'+(KIND[e.kind]||REFL[e.rf]||"")+'</span></button>').join("")+'</div></section>'}
+const REFL=["","It is the same ship","It is a new ship","It is both at once","The question is the point"];
+let MOD=null;
+function openModal(html,cls){const m=$("mov");$("msheet").className="sheet "+(cls||"");$("msheet").innerHTML=html;m.classList.add("show");MOD=1;const f=$("msheet").querySelector("[autofocus],input");if(f&&!f.readOnly)setTimeout(()=>{try{f.focus()}catch(e){}},60)}
+function closeModal(){$("mov").classList.remove("show");MOD=null}
+function ask(title,text,ok,fn){openModal('<h2>'+esc(title)+'</h2><p class="note">'+esc(text)+'</p><div class="row end"><button class="btn" data-act="closem">Not now</button><button class="btn pri" data-act="askok">'+esc(ok)+'</button></div>');ask.fn=fn}
+function openEntry(id){
+  const e=ST.shelf.find(x=>x.id===id);if(!e)return;const x=entryDesign(e);
+  const code=e.kind==="salvage"?"":e.code,left=x?[x.D.pl.filter(p=>p.old).length,x.D.mk.filter(p=>p.old).length,x.D.sl.filter(p=>p.old).length].reduce((a,b)=>a+b,0):0;
+  openModal('<div class="dview">'+miniScene(e,{bob:1})+'</div><div class="dtop"><input id="enm" class="field big" maxlength="30" value="'+esc(e.nm||"")+'" data-id="'+e.id+'" aria-label="Ship name"><div class="sub">'+esc(KIND[e.kind]||"")+(e.rf&&e.kind!=="salvage"?' · "'+REFL[e.rf]+'"':"")+(e.kind==="own"&&left?" · keeps "+left+" of its old parts":"")+'</div></div>'+
+   (code?'<div class="lab2">Ship code: anyone can paste this under Seeds</div><textarea id="ecode" class="field code" readonly rows="3">'+esc(code)+'</textarea><div class="row"><button class="btn pri" data-act="copyc" data-id="'+e.id+'">Copy code</button>':'<div class="row">')+
+   (e.kind!=="salvage"?'<button class="btn" data-act="refit" data-id="'+e.id+'">Refit it: replace it all again</button>':"")+'<button class="btn" data-act="closem">Close</button><button class="btn ghost" data-act="del" data-id="'+e.id+'">Remove</button></div>'+
+   (e.kind==="salvage"?'<p class="note">The ship you replaced, rebuilt from every plank, sail and mast that came out of it. Which one is Theseus’ ship?</p>':""),"wide")}
+/* ---------- seeds ---------- */
+function openSeeds(){
+  const cur=ST.proj?ST.proj.seed:"";
+  openModal('<div class="row between"><h2>Seeds and codes</h2><button class="btn sm" data-act="closem">Close</button></div><p class="note">Every old ship comes from a seed. Share one and a friend finds the very same weathered ship. A finished ship has its own longer code. Paste either here.</p>'+
+   (cur?'<div class="lab2">The old ship on your bench</div><div class="row"><input class="field" readonly id="curseed" value="'+VER+"·"+cur+'" style="flex:1"><button class="btn" data-act="copyseed">Copy</button></div>':"")+
+   '<div class="lab2" style="margin-top:16px">Paste a seed, a ship code, or any word</div><textarea id="sin" class="field code" rows="3" placeholder="TH1·XXXX-XXXX   or   TS1-XXXXX-…   or any word" autocomplete="off" spellcheck="false" autofocus></textarea><div class="row"><button class="btn pri" data-act="goseed">Go</button></div><p class="hint2">A seed starts that old ship on your bench. A ship code adds the finished ship to your shelf. Any other word becomes a seed of its own.</p>')}
+function goSeed(){
+  const t=($("sin").value||"").trim();if(!t){toast("Type or paste something first.");return}
+  if(/^TS\d/i.test(t)||t.replace(/[^0-9A-Za-z]/g,"").length>=40){const r=decodeShip(t);if(!r){toast("That ship code could not be read. Check it was copied whole.");return}
+    const e={id:"s"+Date.now().toString(36),kind:"friend",code:encodeShip(r.G,r.D),t:Date.now(),nm:r.D.nm||r.G.name,rf:r.D.rf||0};ST.shelf.unshift(e);save();closeModal();ST.view="shelf";renderApp();toast("Added to your shelf.");return}
+  const seed=normSeed(t),begin=()=>{startProject(seed,"seed");closeModal();renderApp();toast("An old ship from that seed is on your bench.")};
+  if(ST.proj&&oldLeft()<total())ask("Replace your bench ship?","Your current ship is partly rebuilt. Starting another sets it aside.","Start the new one",begin);else begin()}
+/* ---------- sealing the bottle ---------- */
+function sealBottle(){
+  if(emptySlots().length){toast("An empty slot is still open. Fit a plank first.");return}
+  const left=oldLeft();
+  openModal('<h2>'+(left?"Seal the bottle?":"Not one original part remains.")+'</h2><p class="note">'+(left?left+" original part"+(left===1?"":"s")+" will stay as they are.":"Every plank, mast, sail and fitting was replaced one at a time, and the ship still sails.")+'</p><p class="q">Is it the same ship?</p><div class="refl">'+[1,2,3,4].map(i=>'<button class="btn" data-act="refl" data-v="'+i+'">'+REFL[i]+'</button>').join("")+'</div><div class="row end"><button class="btn ghost" data-act="refl" data-v="0">I am not sure yet</button><button class="btn" data-act="closem">Keep working</button></div>')}
+function finishSeal(rf){
+  if(!D.nm||!D.nm.trim())D.nm=suggestName(rngFrom("nm"+(ST.seq||0)+G.seed));
+  D.rf=rf;const was=clone(D);D.pl.forEach(p=>{if(p.st!=="ok")p.st="ok"});
+  const id="s"+Date.now().toString(36),entry={id,kind:"own",code:encodeShip(G,D),t:Date.now(),nm:D.nm,rf};
+  const wood=(ST.proj.jar||0)>0&&!D.pl.every(p=>p.old);
+  const g=G,o=clone(O),jar=ST.proj.jar||0,seed=ST.proj.seed;
+  ST.shelf.unshift(entry);ST.proj=null;ST.seq=(ST.seq||0)+1;loadProj();save();
+  openModal('<div class="dview">'+miniScene(entry,{bob:1})+'</div><h2>'+esc(entry.nm)+'</h2><p class="note">It is on your shelf now.'+(rf?' You said: “'+REFL[rf]+'.”':"")+'</p><div class="lab2">Its ship code</div><textarea id="ecode" class="field code" readonly rows="3">'+esc(entry.code)+'</textarea><div class="row"><button class="btn pri" data-act="copyc" data-id="'+id+'">Copy code</button>'+(jar>0?'<button class="btn" data-act="salvage" data-id="'+id+'">Build a ship from the old planks</button>':"")+'<button class="btn" data-act="toshelf">See it on the shelf</button><button class="btn" data-act="newship">Find another old ship</button></div>',"wide");
+  FINISHED={seed,orig:o,id}}
+let FINISHED=null;
+function buildSalvage(id){
+  if(!FINISHED)return;const g=makeG(FINISHED.seed),d=clone(FINISHED.orig);d.nm="The Old Planks of "+(ST.shelf.find(e=>e.id===id)||{}).nm;d.pl.forEach(p=>{p.old=1;p.st="ok"});d.mk.forEach(p=>p.old=1);d.sl.forEach(p=>p.old=1);d.fl.old=1;d.rd.old=1;d.fg.old=d.fg.k?1:0;
+  const e={id:"s"+Date.now().toString(36)+"o",kind:"salvage",json:{seed:FINISHED.seed,d},t:Date.now(),nm:d.nm,rf:0};ST.shelf.unshift(e);save();closeModal();ST.view="shelf";renderApp();toast("The old ship is back, made of its own planks. Which one is Theseus’ ship?")}
+function refit(id){
+  const e=ST.shelf.find(x=>x.id===id);if(!e||e.kind==="salvage")return;const x=entryDesign(e);if(!x)return;
+  const go=()=>{const d=clone(x.D);d.pl.forEach(p=>{p.old=1;p.st="ok"});d.mk.forEach(p=>p.old=1);d.sl.forEach(p=>p.old=1);d.fl.old=1;d.rd.old=1;d.fg.old=d.fg.k?1:0;d.rf=0;const o=clone(d);o.nm=x.D.nm;
+    startProject(x.G.seed,"refit",o,d);ST.proj.found=x.D.nm;closeModal();renderApp();toast("It has aged a few years. Time to replace it all again.")};
+  if(ST.proj)ask("Set your bench ship aside?","You have a ship on the bench. Refitting this one sets that one aside.","Refit this one",go);else go()}
+/* ---------- the lounge (main menu) ---------- */
+function loungeHTML(){
+  const has=!!(ST.proj&&G),L=ST.shelf.slice(0,6),left=has?oldLeft():0,tot=has?total():0;
+  const shelfRow=(a)=>'<div class="lshelf">'+a.map(e=>'<button class="lship" data-act="open" data-id="'+e.id+'" title="'+esc(e.nm||"")+'"><div class="cs">'+miniScene(e)+'</div><span>'+esc(e.nm||"Untitled")+'</span></button>').join("")+'</div>';
+  return '<section class="lounge"><div class="lmenu"><div class="ltitle">THESEUS</div><p class="ltag">A ship in a bottle, replaced one plank at a time. Is it still the same ship?</p>'+
+   (has?'<button class="lbtn pri" data-act="view" data-v="bench"><b>Continue your ship</b><span>'+esc(ST.proj.found||G.name)+' · '+(left===0?"nothing original remains":left+" of "+tot+" original parts left")+'</span></button>':"")+
+   '<button class="lbtn'+(has?"":" pri")+'" data-act="lnew"><b>Start a new ship</b><span>An old ship is found for you</span></button>'+
+   '<button class="lbtn" data-act="view" data-v="shelf"><b>Your shelf</b><span>'+(ST.shelf.length?ST.shelf.length+" finished ship"+(ST.shelf.length===1?"":"s"):"Nothing here yet")+'</span></button>'+
+   '<button class="lbtn" data-act="seeds"><b>Seeds and codes</b><span>Open a friend\'s ship or an old ship from a seed</span></button>'+
+   '<button class="lbtn" data-act="help"><b>How it works</b><span>Short and simple</span></button></div>'+
+   '<div class="lroom">'+(has?'<button class="lbench" data-act="view" data-v="bench"><div class="lab2">On your workbench</div><div class="cs">'+'<svg viewBox="0 0 1000 500">'+sceneSVG(G,D,O,{uid:"lb",sealed:false}).html+'</svg></div></button>':'<div class="lbench empty"><p>Your workbench is empty. Start a new ship and it will stand here.</p></div>')+
+   '<div class="lab2" style="margin-top:14px">On your shelf</div>'+(L.length?shelfRow(L):'<div class="lshelf none2"><p>Finished ships will stand here for you to admire.</p></div>')+'<div class="lboard"></div></div></section>'}
+/* ---------- the frame ---------- */
+function benchHTML(){
+  if(!ST.proj)return '<section class="hero"><div class="herov" id="herov"></div><div class="herot"><h1>A ship in a bottle</h1><p>An old ship has been found, grey and mossy, sealed in glass. Replace it one plank at a time through the narrow neck, until not one original part remains. Then ask yourself: is it still the same ship?</p><div class="row"><button class="btn pri big" data-act="newship">Find an old ship</button><button class="btn big" data-act="seeds">Use a seed</button></div><p class="hint2">Every ship you finish is kept on your shelf with a code you can share.</p></div></section>';
+  return '<div class="bench"><section class="stagew"><div id="stage" class="stage"></div><div class="nextbar" id="next"></div><div class="progw"><div id="prog" class="prog"><i></i></div><span class="pt"></span></div></section><aside class="panelw"><nav id="ptabs" class="ptabs" aria-label="Parts of the ship"></nav><div id="panel" class="panel"></div></aside></div>'}
+function renderApp(){
+  const app=$("app"),n=ST.shelf.length;
+  app.innerHTML='<header class="top"><button class="logo" data-act="view" data-v="lounge" style="background:none;border:0"><i></i>Theseus</button><nav class="tabs2"><button class="tab'+(ST.view==="lounge"?" on":"")+'" data-act="view" data-v="lounge">Lounge</button><button class="tab'+(ST.view==="bench"?" on":"")+'" data-act="view" data-v="bench">Bench</button><button class="tab'+(ST.view==="shelf"?" on":"")+'" data-act="view" data-v="shelf">Shelf'+(n?" · "+n:"")+'</button></nav><div class="tr"><button class="btn sm" data-act="seeds">Seeds</button><button class="btn sm" data-act="help" aria-label="Help">?</button></div></header>'+(ST.view==="shelf"?shelfHTML():ST.view==="lounge"?loungeHTML():benchHTML());
+  if(ST.view==="bench"){
+    if(G){renderScene();renderPanel();updateBars()}
+    else{const hv=$("herov");if(hv){const g=makeG(HEROSEED),d=newDesign(g);hv.innerHTML='<svg viewBox="0 0 1000 500">'+sceneSVG(g,d,g.orig,{sealed:true,bob:1}).html+'</svg>'}}}
+  const sc=$("msc");if(sc)sc.scrollTop=0}
+const HEROSEED="J7KQ-2M4D";
+function help(){openModal('<div class="row between"><h2>How it works</h2><button class="btn sm" data-act="closem">Close</button></div><ol class="how"><li><b>Take an old plank out.</b> Tap a glowing plank. Long tweezers reach in through the neck and pull it out. A plank can only come out when the planks on either side of it are firmly in place, so choose your order with care.</li><li><b>Fit a new one.</b> Pick a wood or paint, then drag the new plank to the glowing slot and let go. The glue takes a moment to set.</li><li><b>Replace the rest.</b> Masts, sails, the flag, the figurehead and the rudder are replaced in their own tabs. Hold the button to raise or hang each one.</li><li><b>Make it yours.</b> Everything new can be repainted, and the bottle, sea, sky and stand are free to change at any time.</li><li><b>Seal it.</b> When you are done, seal the bottle. The ship goes on your shelf with a code you can share.</li></ol><p class="note">Nothing here can go wrong. If you let go too early, things simply settle back. The bar under the picture always says what to do next.</p>')}
+/* ---------- events ---------- */
+function holdHint(old,w){if(old)toast("Chosen. Now press and hold the big button at the top to fit the new "+w+".")}
+function act(a,b,ev){
+  const v=b.dataset.v,n=+v;
+  switch(a){
+   case"view":ST.view=v;if(v==="bench"&&!ST.proj)startProject(newSeed(),"seed");save();renderApp();break;
+   case"tab":ST.tab=v;save();renderPanel();setNext();tickOvl();break;
+   case"zoom":ST.zoom=v;save();animVB(vbFor(v));root.querySelectorAll(".zoomb .btn").forEach(x=>x.classList.toggle("on",x.dataset.v===v));break;
+   case"mode":ST.mode=v;save();renderPanel();redrawHull();setNext();break;
+   case"selc":ST.sel.c=n;save();renderPanel();if(BS.ph==="place")tickOvl();break;
+   case"seli":ST.sel.i=n;save();renderPanel();if(BS.ph==="place")tickOvl();break;
+   case"dice":{const r=rngFrom("d"+Date.now()+Math.random());ST.sel.c=rint(r,0,31);ST.sel.i=r()<.3?rint(r,1,3):0;save();renderPanel();if(BS.ph==="place")tickOvl();break}
+   case"pickme":pickForMe();break;
+   case"putback":putBack();break;
+   case"quick":ST.set.quick=b.checked?1:0;save();break;
+   case"mk":PM=n;renderPanel();break;
+   case"mkc":D.mk[PM].c=n;if(!D.mk[PM].old)redrawRig();holdHint(D.mk[PM].old,"mast");save();renderPanel();break;
+   case"sl":PS=n;renderPanel();break;
+   case"slc":D.sl[PS].c=n;if(!D.sl[PS].old)redrawRig();holdHint(D.sl[PS].old,"sail");save();renderPanel();break;
+   case"slp":D.sl[PS].p=n;if(!D.sl[PS].old)redrawRig();holdHint(D.sl[PS].old,"sail");save();renderPanel();break;
+   case"fsh":D.fl.sh=n;if(!D.fl.old)redrawRig();holdHint(D.fl.old,"flag");save();renderPanel();break;
+   case"fpt":D.fl.pt=n;if(!D.fl.old)redrawRig();holdHint(D.fl.old,"flag");save();renderPanel();break;
+   case"fslot":FS=v;renderPanel();break;
+   case"fcol":D.fl[FS]=n;if(!D.fl.old)redrawRig();holdHint(D.fl.old,"flag");save();renderPanel();break;
+   case"fem":D.fl.em=n;if(!D.fl.old)redrawRig();holdHint(D.fl.old,"flag");save();renderPanel();break;
+   case"fgk":D.fg.k=n;if(n&&O.fg.k===0)D.fg.old=0;if(!n&&O.fg.k===0)D.fg.old=0;redrawRig();save();renderPanel();updateBars();break;
+   case"fgc":D.fg.c=n;if(!D.fg.old)redrawRig();save();renderPanel();break;
+   case"fitfg":D.fg.old=0;redrawRig();save();renderPanel();updateBars();toast("The new figurehead is carved and fitted.");break;
+   case"rdc":D.rd.c=n;if(!D.rd.old)redrawRig();save();renderPanel();break;
+   case"fitrd":D.rd.old=0;redrawRig();save();renderPanel();updateBars();toast("The new rudder is hung.");break;
+   case"trc":D.tr=n;redrawHull();save();renderPanel();break;
+   case"btc":D.bt.crc=n;save();renderScene();renderPanel();break;
+   case"suggest":{ST.seq=(ST.seq||0)+1;D.nm=suggestName(rngFrom("sg"+Date.now()+Math.random()));save();const i=$("nm");if(i)i.value=D.nm;break}
+   case"seal":sealBottle();break;
+   case"refl":closeModal();finishSeal(n);break;
+   case"giveup":ask("Set this ship aside?","The ship on your bench will be put away for good, and a new old ship will be found.","Set it aside",()=>{ST.proj=null;loadProj();save();closeModal();renderApp()});break;
+   case"newship":{const go=()=>{startProject(newSeed(),"seed");closeModal();renderApp()};go();break}
+   case"lnew":{const go=()=>{startProject(newSeed(),"seed");closeModal();renderApp()};if(ST.proj&&oldLeft()<total())ask("Start a new ship?","The ship on your bench is partly rebuilt. Starting another sets it aside for good.","Start a new one",go);else go();break}
+   case"seeds":openSeeds();break;
+   case"help":help();break;
+   case"goseed":goSeed();break;
+   case"copyseed":copyText($("curseed").value,"Seed copied");break;
+   case"copyc":{const e=ST.shelf.find(x=>x.id===b.dataset.id);if(e)copyText(e.code,"Ship code copied");break}
+   case"open":openEntry(b.dataset.id);break;
+   case"closem":closeModal();break;
+   case"toshelf":closeModal();ST.view="shelf";save();renderApp();break;
+   case"askok":{const f=ask.fn;closeModal();if(f)f();break}
+   case"del":{const id=b.dataset.id;ask("Remove this ship?","It will leave your shelf. If you kept its code, you can always paste it again under Seeds.","Remove it",()=>{ST.shelf=ST.shelf.filter(x=>x.id!==id);save();renderApp()});break}
+   case"refit":refit(b.dataset.id);break;
+   case"salvage":buildSalvage(b.dataset.id);break;
+   default:{if(a.indexOf("bt:")===0){D.bt[a.slice(3)]=n;save();renderScene();renderPanel()}}}}
+async function copyText(t,msg){try{await navigator.clipboard.writeText(t);toast(msg||"Copied")}catch(e){const a=document.createElement("textarea");a.value=t;root.appendChild(a);a.select();try{document.execCommand("copy");toast(msg||"Copied")}catch(e2){toast("Could not copy. Select the text and copy it.")}a.remove()}}
+root.addEventListener("click",ev=>{const b=ev.target.closest("[data-act]");if(!b)return;if(b.tagName==="INPUT")return;if(b.disabled)return;act(b.dataset.act,b,ev)});
+root.addEventListener("change",ev=>{const b=ev.target;if(b&&b.dataset&&b.dataset.act==="quick")act("quick",b,ev)});
+root.addEventListener("input",ev=>{const e=ev.target;if(e.id==="nm"&&D){D.nm=e.value.slice(0,30);save()}else if(e.id==="enm"){const s=ST.shelf.find(x=>x.id===e.dataset.id);if(s){s.nm=e.value.slice(0,30);save()}}});
+root.addEventListener("keydown",ev=>{if(ev.key==="Escape"&&MOD)closeModal();if(ev.key==="Enter"&&ev.target&&(ev.target.id==="nm"||ev.target.id==="enm"))ev.target.blur();
+  if((ev.key===" "||ev.key==="Enter")&&ev.target&&ev.target.dataset&&ev.target.dataset.hold&&!ev.repeat){ev.preventDefault();startHold(ev.target.dataset.hold,+ev.target.dataset.i)}});
+root.addEventListener("keyup",ev=>{if((ev.key===" "||ev.key==="Enter")&&ev.target&&ev.target.dataset&&ev.target.dataset.hold)endHold()});
+root.addEventListener("pointerdown",ev=>{const h=ev.target.closest&&ev.target.closest("[data-hold]");if(h){ev.preventDefault();try{h.setPointerCapture(ev.pointerId)}catch(e){}startHold(h.dataset.hold,+h.dataset.i);return}if(ev.target.closest&&ev.target.closest("#sv"))onDown(ev)});
+root.addEventListener("pointermove",ev=>{if(ev.target.closest&&ev.target.closest("#sv"))onMove(ev);else if(BS.drag)onMove(ev)});
+root.addEventListener("pointerup",ev=>{endHold();onUp(ev)});root.addEventListener("pointercancel",ev=>{endHold();if(BS.drag){BS.drag=false;BS.tt=null}});
+root.addEventListener("contextmenu",ev=>{if(ev.target.closest&&(ev.target.closest("#sv")||ev.target.closest("[data-hold]")))ev.preventDefault()});
+/* ---------- begin ---------- */
+loadProj();ST.view="lounge";renderApp();
+host.TH={get G(){return G},get D(){return D},get O(){return O},ST:()=>ST,BS,act,sceneSVG,makeG,decodeShip,encodeShip,startProject,eligible,eligibleSet,slotC,renderApp};
+
+}
+
+defApp("theseus",{name:"Theseus",icon:"theseus",cat:"Games",w:1040,h:700,single:true,desc:"a cozy ship-in-a-bottle game: replace an old ship plank by plank, design the flag, sails and bottle, and keep your finished ships on a shelf with a code you can share",kw:"theseus ship bottle build boat sail flag plank seed shelf craft cozy model ship of theseus identity paradox",
+ init(win,b){
+  const host=h("div",{tabindex:"0"});b.append(host);
+  const sh=host.attachShadow({mode:"open"});sh.innerHTML="<style>"+TH_CSS+"</style>"+TH_HTML;
+  THGAME(sh,host);
+ }});
+})();
+
 /* ===================== HEARTH (a cozy fireplace) ===================== */
 defApp("hearth",{name:"Hearth",icon:"flame",cat:"Accessories",w:900,h:600,single:true,desc:"a cozy fireplace with sound",kw:"fireplace fire hearth fireside cozy relax ambience crackle warm flame logs sleep campfire",
  css(){if(document.getElementById("hhcss"))return;const s=document.createElement("style");s.id="hhcss";s.textContent=`
@@ -6799,6 +7545,7 @@ const CL={
   tvos_session:["Open windows","Which windows were open last time, so they can come back at start.","Housekeeping"],
   tvos_diary:["Diary","Every page you wrote in the Diary, its colours and its PIN.","Your writing and creations","This is your writing. Deleting it removes every Diary page and the PIN."],
   tvos_circuit:["Circuit Temple progress","Your Circuit Temple game: money, boards repaired, shop upgrades, your shelf and the repair you are in the middle of.","Your writing and creations","Deleting it restarts Circuit Temple from the beginning."],
+  tvos_theseus:["Theseus ships","Your Theseus game: the ship on your bench and every finished ship on your shelf, with names, share codes and your bottle and plank choices.","Your writing and creations","Deleting it empties your shelf and clears the ship on the bench."],
   tvos_mysky:["My Sky progress","Your My Sky game: every system, world and animal you named, your bookmarks, claimed systems, paradise finds, home star and ship name.","Your writing and creations","Deleting it restarts My Sky from the beginning."],
   tvos_seq:["Sequencer patterns","Your drum patterns A to D, tempo and mixer settings.","Your writing and creations","Deleting it erases your drum patterns."],
   tvos_tasks:["Tasks","Your task list.","Your writing and creations","Deleting it erases your task list."],
@@ -7545,6 +8292,7 @@ const BKT={
   const bm=BKT.json("tvos_bm",[]);if(Array.isArray(bm)){const u=bm.filter(x=>x&&x.u&&x.u!=="https://republicka.life");add("bm","Bookmarks","settings",u.length,BKT.hs(JSON.stringify(u)))}
   const pg=BKT.json("tvos_apps",[]);if(Array.isArray(pg)&&pg.length){let s=BKT.raw("tvos_apps")||"";for(let i=0;i<localStorage.length;i++){const k=localStorage.key(i);if(k.startsWith("tvos_app_")||k.startsWith("tvos_appd_"))s+="|"+k+BKT.hs(BKT.raw(k)||"")}add("progs","Programs","settings",pg.length,BKT.hs(s))}
   const ct=BKT.json("tvos_circuit",null);if(ct&&ct.done>0)add("circuit","Circuit Temple","settings",ct.done,BKT.hs(JSON.stringify([ct.done,ct.earned,ct.tiers,ct.decor])));
+  const ts=BKT.json("tvos_theseus",null);if(ts&&typeof ts==="object"){const sv=Array.isArray(ts.shelf)?ts.shelf:[],pr=ts.proj&&ts.proj.jar>0?1:0;if(sv.length||pr)add("theseus","Theseus","settings",sv.length||pr,BKT.hs(JSON.stringify([sv.map(e=>[e.id,e.nm,e.code||(e.json&&e.json.seed)]),pr?ts.proj.cur:0])))}
   const ms=BKT.json("tvos_mysky",null);if(ms&&ms.visited){const nv=Object.keys(ms.visited).length,nn=ms.names?Object.keys(ms.names).length:0;if(nn>0||nv>1)add("mysky","My Sky","settings",nn||nv,BKT.hs(JSON.stringify([ms.names,ms.pins,ms.claim,ms.home,ms.ship,ms.para,ms.strange,ms.rev,Object.keys(ms.visited).length])))}
   const gm=BKT.raw("terminal_velocity_v3");if(gm)add("game","Game save","game",1,BKT.hs(gm));
   return A},
