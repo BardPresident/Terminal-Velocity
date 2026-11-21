@@ -856,6 +856,36 @@ Circuit Temple (chip icon, Games)
   Saved on this device under tvos_circuit, so it is included in Backup
   and Restore, and shows in Clean-up as "Circuit Temple progress".
 
+SysAdmin (server icon, Games)
+  A cozy server-building game, a sister to Circuit Temple. Customers bring
+  you servers to build or fix. You open the lid and fit real-looking parts
+  into a drawn machine: processors, heatsinks, memory, drives, power
+  supplies and cards. Nothing has a clock, there is no strict budget and
+  you never need to do any maths: the game checks that parts fit and tells
+  you in plain words when one does not.
+  The Job board asks what kind of job you want (Build a server from
+  scratch, Fix a server, or Surprise me) and how hard (1 to 5 stars, nothing
+  is locked). A few hand-made jobs come first; after that the jobs never
+  run out, because new customers and new problems are made as you go.
+  Each job gives you a job card (who they are and what they want), a small
+  parts tray that holds only that customer's parts, and a Parts shop where
+  the game counts how many of each part the job needs and how many you
+  already have. Tap a part, then tap its glowing spot (or drag it up onto
+  the machine). A part that does not fit never goes in; it says why.
+  Building ends with Power on, a short self-test, and for builds the
+  customer's operating system to install. Fixing uses the Paste and Brush
+  tools (tap the tool, then tap the chip or a fan), a Power on to read the
+  screen, and swapping out the part that has failed.
+  The Lounge is the resting screen: your rank, jobs finished, servers built
+  and fixed, credits, time at the bench, jobs finished per star level,
+  recent servers (every finished job gets a photo on the Shelf) and a fun
+  fact. Credits pay for cozy workshop items in the Shop. The NEXT bar
+  always tells you what to do; Settings can turn the hints off.
+  Your job is remembered: close the window or the whole OS and the same
+  machine comes back as you left it.
+  Saved on this device under tvos_sysadmin, so it is included in Backup and
+  Restore (as its own area), and shows in Clean-up as "SysAdmin progress".
+
 My Sky (sparkle icon, Games)
   A cozy star-hunting game with no sound. You fly a small ship across a
   map of invented stars, visit systems, and name what you find: the
@@ -938,7 +968,7 @@ THE BACKUP ICON IN THE TRAY
   right now, open the Backup app, or turn reminders off.
   Only things you made count: Diary pages, files in /home/user, tasks,
   calendar notes, sequencer patterns, Themes Den, bookmarks, installed
-  programs, Circuit Temple progress and the game save. Moving windows, changing settings or
+  programs, Circuit Temple and SysAdmin progress and the game save. Moving windows, changing settings or
   themes, history and reading places never count and never nag.
   A reminder appears at most once a day, and only after a week without a
   backup (or a day, if you have made a lot), or two days after you first
