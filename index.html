@@ -1258,7 +1258,7 @@ const fmtDate=t=>{const d=new Date(t),hm=" "+pad(d.getHours())+":"+pad(d.getMinu
 const sleep=ms=>new Promise(r=>setTimeout(r,ms));
 const LS={get(k,d){try{const v=localStorage.getItem(k);return v==null?d:JSON.parse(v)}catch(e){return d}},set(k,v){try{localStorage.setItem(k,JSON.stringify(v));return true}catch(e){try{window.tvosStorageFull&&window.tvosStorageFull(e)}catch(_){}return false}}};
 const fmtUp=s=>{s=Math.max(0,Math.round(s));const d=Math.floor(s/86400),hr=Math.floor(s%86400/3600),m=Math.floor(s%3600/60),sc=s%60;if(d)return d+" d "+hr+" h";if(hr)return hr+" h "+m+" min";if(m)return m+" min "+sc+" s";return sc+" s"};
-const OS={apps:{},wins:[],z:10,bus:{},boot:performance.now(),ver:"1.0 build 1120-2301"};
+const OS={apps:{},wins:[],z:10,bus:{},boot:performance.now(),ver:"1.0 build 1121-0049"};
 OS.on=(ev,f)=>{(OS.bus[ev]=OS.bus[ev]||[]).push(f);return f};
 OS.off=(ev,f)=>{OS.bus[ev]=(OS.bus[ev]||[]).filter(x=>x!==f)};
 /* reboot that always fetches the newest copy of this page (like Ctrl+Shift+R), then reloads */
@@ -4410,6 +4410,525 @@ defApp("circuit",{name:"Circuit Temple",icon:"chip",cat:"Games",w:980,h:660,sing
  }});
 })();
 
+/* ===================== MY SKY (a cozy field journal of invented skies; Wendell's standalone game, built in) =====================
+   Runs inside a shadow root so its styles can never touch the OS (and the OS styles never touch it). No sound on purpose.
+   Save: localStorage "tvos_mysky": covered by the system Backup (listed as its own area). Generator version MS2 is frozen: a seed always shows the same sky. */
+(()=>{
+IP.sky="M12 2.5l1.9 5.6 5.6 1.9-5.6 1.9L12 17.5l-1.9-5.6L4.5 10l5.6-1.9z M18.5 15.5l.8 2.2 2.2.8-2.2.8-.8 2.2-.8-2.2-2.2-.8 2.2-.8z M5.5 16.5l.6 1.6 1.6.6-1.6.6-.6 1.6-.6-1.6-1.6-.6 1.6-.6z";
+const MS_CSS="\n:host{display:block;position:relative;flex:1;min-height:0;width:100%;height:100%;overflow:hidden;outline:0;--bg:#070914;--bg2:#0d1124;--ink:#e9ecf8;--mute:#8f96b6;--line:rgba(255,255,255,.09);--card:rgba(255,255,255,.045);--card2:rgba(255,255,255,.08);--h:210;--ac:hsl(var(--h) 85% 74%);--serif:ui-serif,\"Iowan Old Style\",\"Palatino Linotype\",Palatino,Georgia,serif;--sans:system-ui,-apple-system,\"Segoe UI\",Roboto,sans-serif}\n*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}\n#mw{position:absolute;inset:0;container-type:size;container-name:ms;overflow:hidden;background:radial-gradient(1200px 700px at 50% -10%,hsl(var(--h) 55% 17%) 0%,transparent 70%),linear-gradient(var(--bg),var(--bg2));background-color:var(--bg);color:var(--ink);font-family:var(--sans);line-height:1.5}\n#msc{position:absolute;inset:0;overflow:auto;z-index:1;-webkit-overflow-scrolling:touch}\n#sf{position:absolute;inset:0;width:100%;height:100%;z-index:0;pointer-events:none;opacity:.9}\n.app{position:relative;z-index:1;max-width:900px;margin:0 auto;padding:18px 16px 70px}\nbutton{font:inherit;color:inherit;cursor:pointer}\n.top{display:flex;align-items:center;gap:10px;margin-bottom:6px}\n.logo{font-family:var(--serif);font-size:22px;letter-spacing:.02em;display:flex;align-items:center;gap:9px;margin-right:auto}\n.logo i{width:9px;height:9px;border-radius:50%;background:var(--ac);box-shadow:0 0 14px 3px hsl(var(--h) 85% 70%/.55)}\n.tb{background:var(--card);border:1px solid var(--line);border-radius:999px;padding:7px 14px;font-size:13px;color:var(--ink);transition:background .2s,border-color .2s}\n.tb:hover{background:var(--card2);border-color:rgba(255,255,255,.2)}\n.tb.on{border-color:var(--ac);color:var(--ac)}\n.hint{color:var(--mute);font-size:14px;min-height:22px;margin:4px 2px 14px}\n.sys{margin:8px 0 18px}\n.lab{font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--mute)}\n.nm{width:100%;background:transparent;border:0;border-bottom:1px dashed transparent;color:var(--ink);font:inherit;font-family:var(--serif);outline:none;padding:2px 0;transition:border-color .2s}\n.nm:hover,.nm:focus{border-bottom-color:rgba(255,255,255,.25)}\n.nm::placeholder{color:rgba(233,236,248,.32);font-style:italic}\n.sys .nm{font-size:clamp(28px,6cqw,40px);line-height:1.15}\n.sub{display:flex;flex-wrap:wrap;gap:8px 12px;align-items:center;color:var(--mute);font-size:13px;margin-top:4px}\n.chip{display:inline-block;font-size:11px;letter-spacing:.04em;padding:2px 9px;border-radius:999px;border:1px solid var(--line);color:var(--mute);white-space:nowrap}\n.chip.r1{color:hsl(var(--h) 70% 78%);border-color:hsl(var(--h) 50% 40%)}\n.chip.r2{color:#ffd98a;border-color:#7a6430}\n.chip.r3{color:#ff9ad0;border-color:#8a3d68}\n.chip.r4{color:#c9a8ff;border-color:#6a4aa8;box-shadow:0 0 12px rgba(180,140,255,.35)}\n.chip.ok{color:#9be8b6;border-color:#357a4d}\n.cp{background:none;border:0;color:var(--mute);font-size:12px;padding:2px 6px;border-radius:6px}\n.cp:hover{color:var(--ink);background:var(--card)}\n.worlds{display:flex;flex-wrap:wrap;gap:12px;margin:16px 0 10px}\n.pc{flex:1 1 150px;max-width:210px;background:var(--card);border:1px solid var(--line);border-radius:18px;padding:14px 12px 12px;display:flex;flex-direction:column;align-items:center;gap:3px;text-align:center;transition:transform .25s,background .25s,border-color .25s}\n.pc:hover{transform:translateY(-3px);background:var(--card2)}\n.pc.sel{border-color:var(--ac);background:var(--card2)}\n.pc .pv{height:84px;display:flex;align-items:center}\n.pc .pn{font-family:var(--serif);font-size:16px;margin-top:4px}\n.pc .pn.u{color:var(--mute);font-style:italic}\n.pc .pt{font-size:12px;color:var(--mute)}\n.pc .pr{min-height:20px;margin-top:3px}\n.twin{display:flex;gap:0;flex:2 1 320px;max-width:430px;position:relative;border-radius:22px;background:linear-gradient(90deg,transparent,hsl(var(--h) 80% 70%/.12),transparent)}\n.twin .pc{flex:1 1 0;max-width:none}\n.twin::after{content:\"\";position:absolute;left:50%;top:14px;bottom:14px;width:2px;margin-left:-1px;background:linear-gradient(transparent,hsl(var(--h) 90% 80%/.8),transparent);filter:blur(1px)}\n.fade{animation:f .55s cubic-bezier(.2,.7,.2,1) both}\n@keyframes f{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}\n.panel{background:linear-gradient(180deg,var(--card2),var(--card));border:1px solid var(--line);border-radius:22px;padding:20px;margin:6px 0 22px}\n.ph{display:flex;gap:18px;align-items:center}\n.ph .pv{flex:0 0 auto;width:132px;height:132px;display:flex;align-items:center;justify-content:center}\n.ph .nm{font-size:clamp(24px,5cqw,32px)}\n.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(118px,1fr));gap:8px;margin:16px 0}\n.st{background:rgba(0,0,0,.18);border-radius:12px;padding:9px 12px}\n.st b{display:block;font-weight:500;font-size:15px}\n.st span{font-size:11px;color:var(--mute);letter-spacing:.06em;text-transform:uppercase}\n.note{color:#cdd2ea;font-size:15px;margin:10px 0}\n.odd{border:1px solid #6a4aa8;background:linear-gradient(135deg,rgba(150,110,255,.14),rgba(255,140,200,.07));border-radius:16px;padding:14px 16px;margin:14px 0}\n.odd h4{margin:0 0 4px;font-family:var(--serif);font-size:17px;font-weight:500;color:#d8c4ff}\n.odd p{margin:4px 0;font-size:14px;color:#d9dcf0}\n.odd .rev{color:#ffd9ec;font-style:italic;animation:f .8s both}\n.btn{background:var(--card2);border:1px solid var(--line);border-radius:12px;padding:8px 14px;font-size:13px}\n.btn:hover{border-color:var(--ac)}\n.cr{display:flex;gap:14px;padding:14px 0;border-top:1px solid var(--line);align-items:flex-start}\n.cr .gv{flex:0 0 88px;height:58px;display:flex;align-items:center;justify-content:center}\n.cr .nm{font-size:19px}\n.cr .tl{font-size:13px;color:var(--mute);margin:2px 0 4px}\n.cr .ds{font-size:14px;color:#cdd2ea}\n.h2{font-family:var(--serif);font-size:19px;margin:18px 0 8px}\n.go{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:10px}\n.gc{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:12px 14px;text-align:left;display:flex;gap:12px;align-items:center;transition:transform .25s,border-color .25s}\n.gc:hover{transform:translateY(-2px);border-color:var(--ac)}\n.gc .sd{flex:0 0 22px;height:22px;border-radius:50%}\n.gc small{display:block;color:var(--mute);font-size:12.5px}\n.row{display:flex;gap:8px;margin-top:10px;flex-wrap:wrap}\n.ov{position:absolute;inset:0;z-index:5;background:rgba(5,7,16,.88);display:none;overflow:auto;-webkit-overflow-scrolling:touch}\n.ov.show{display:block;animation:f .3s both}\n.sheet{max-width:760px;margin:0 auto;padding:22px 16px 60px}\n.sheet h2{font-family:var(--serif);font-weight:500;margin:0 0 4px;font-size:26px}\n.tabs{display:flex;gap:6px;flex-wrap:wrap;margin:12px 0}\n.jr{display:flex;gap:12px;align-items:center;padding:10px 0;border-top:1px solid var(--line)}\n.jr .ji{flex:0 0 44px;height:44px;display:flex;align-items:center;justify-content:center}\n.jr .jt{flex:1;min-width:0}\n.jr .jt b{font-family:var(--serif);font-weight:500;font-size:17px;display:block;overflow:hidden;text-overflow:ellipsis}\n.jr .jt span{font-size:12.5px;color:var(--mute)}\n.star{background:none;border:0;font-size:20px;color:var(--mute);padding:4px 8px}\n.star.on{color:#ffd98a}\n.field{width:100%;background:rgba(0,0,0,.25);border:1px solid var(--line);border-radius:12px;padding:11px 13px;color:var(--ink);font:inherit;outline:none}\n.field:focus{border-color:var(--ac)}\n.empty{color:var(--mute);padding:26px 0;text-align:center;font-size:14px}\n.toast{position:absolute;left:50%;bottom:26px;transform:translateX(-50%);background:#1b2140;border:1px solid var(--line);padding:9px 16px;border-radius:999px;font-size:13px;z-index:9;opacity:0;pointer-events:none;transition:opacity .3s}\n.toast.show{opacity:1}\n@container ms (max-width:560px){.ph{flex-direction:column;align-items:stretch;text-align:left}.ph .pv{align-self:center}.pc{flex-basis:130px}.twin{flex-basis:100%;max-width:none}}\n@media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}\n.tabs2{display:flex;gap:6px;margin:2px 0 4px;flex-wrap:wrap}\n.tab{background:transparent;border:0;border-bottom:2px solid transparent;color:var(--mute);padding:8px 14px;font-size:14px;letter-spacing:.02em}\n.tab:hover{color:var(--ink)}\n.tab.on{color:var(--ink);border-bottom-color:var(--ac)}\n.cabin .winw{position:relative;border-radius:24px;overflow:hidden;background:#05070f;border:1px solid var(--line)}\n.win{display:block;width:100%;height:auto;max-height:260px}\n.wl{position:absolute;left:18px;top:14px;right:18px;text-shadow:0 2px 14px rgba(0,0,0,.8)}\n.wn{font-family:var(--serif);font-size:clamp(22px,4.5cqw,30px);line-height:1.2}\n.sn{font-size:20px;color:#dfe4fa}\n.deck{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:10px;margin:14px 0}\n.cons{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:14px 16px;text-align:left;display:flex;flex-direction:column;gap:2px;transition:transform .25s,border-color .25s,background .25s}\n.cons:hover{transform:translateY(-2px);border-color:var(--ac);background:var(--card2)}\n.cons b{font-family:var(--serif);font-weight:500;font-size:17px}\n.cons span{font-size:12.5px;color:var(--mute)}\n.cons.big{border-color:hsl(var(--h) 60% 45%);background:linear-gradient(135deg,hsl(var(--h) 60% 40%/.22),var(--card))}\n.chartw{position:relative;border-radius:20px;overflow:hidden;border:1px solid var(--line);background:#05070f}\n#chart{display:block;width:100%;height:min(60cqh,470px);touch-action:none;cursor:grab}\n.cb{position:absolute;right:10px;top:10px;display:flex;gap:6px}\n.legend{font-size:11.5px;color:var(--mute);margin:8px 2px}\n.cinfo{margin:6px 0 10px;min-height:60px}\n.ci{display:flex;gap:12px;align-items:center;background:var(--card);border:1px solid var(--line);border-radius:16px;padding:12px 14px;flex-wrap:wrap}\n.ci .sd,.jr .sd{flex:0 0 18px;height:18px;border-radius:50%;display:inline-block}\n.cn{font-family:var(--serif);font-size:19px}\n.btn.go{border-color:var(--ac);color:var(--ac)}\n.scan{font-size:13px;color:var(--ac);margin:8px 2px;letter-spacing:.02em}\n.orrw{position:relative;border-radius:20px;border:1px solid var(--line);background:radial-gradient(ellipse at center,rgba(255,255,255,.03),transparent 70%),rgba(0,0,0,.18);overflow:hidden;margin:6px 0 10px}\n#orr{display:block;width:100%;height:auto}\n#orr .op{cursor:pointer}\n#orr .hl{stroke-opacity:0;transition:stroke-opacity .3s}\n#orr .op.sel .hl,#orr .op:hover .hl{stroke-opacity:.9}\n.pgw{display:flex;align-items:center;gap:10px;margin-top:10px;font-size:12.5px;color:var(--mute)}\n.prog{flex:0 0 120px;height:5px;border-radius:5px;background:rgba(255,255,255,.1);overflow:hidden}\n.prog i{display:block;height:100%;background:var(--ac);border-radius:5px;transition:width .4s}\n.crg{display:grid;grid-template-columns:repeat(auto-fill,minmax(270px,1fr));gap:10px}\n.crg .cr{border:1px solid var(--line);border-radius:16px;padding:12px;background:rgba(0,0,0,.15);flex-direction:row;gap:10px}\n.cr .gv{flex:0 0 72px;height:50px}\n.cm{flex:1;min-width:0}\n.cr .nm{font-size:18px}\n.flash{position:absolute;inset:0;z-index:8;pointer-events:none;opacity:0;background:radial-gradient(circle at 50% 50%,#fff 0,hsl(var(--h) 85% 72%/.75) 24%,hsl(var(--h) 60% 40%/.35) 52%,transparent 75%)}\n.flash.go{animation:fl .9s ease-in-out}\n@keyframes fl{0%{opacity:0;transform:scale(.4)}45%{opacity:1;transform:scale(1.2)}100%{opacity:0;transform:scale(1.6)}}\n@container ms (max-width:560px){.crg{grid-template-columns:1fr}.tab{padding:8px 10px}.wl{left:14px;top:10px}}\n.ci>div{min-width:150px}.ci .btn{margin-left:auto}\n@container ms (max-width:560px){.ci .btn,.ci>.chip{width:100%;margin-left:0;text-align:center}}\n\n.chip.para{color:#9df0b8;border-color:#3f9a64;box-shadow:0 0 12px rgba(120,230,160,.3)}\n.cons.para{border-color:#3f9a64;background:linear-gradient(135deg,rgba(80,200,130,.18),var(--card))}\n.hm{font-size:12.5px;color:var(--mute);margin:10px 2px}\n";
+const MS_HTML="<div id=\"mw\"><canvas id=\"sf\"></canvas><div id=\"msc\"><div class=\"app\" id=\"app\"></div></div><div class=\"ov\" id=\"jov\"><div class=\"sheet\" id=\"jsheet\"></div></div><div class=\"ov\" id=\"sov\"><div class=\"sheet\" id=\"ssheet\"></div></div><div class=\"ov\" id=\"pov\"><div class=\"sheet\" id=\"psheet\"></div></div><div class=\"flash\" id=\"flash\"></div><div class=\"toast\" id=\"toast\"></div></div>";
+function MSGAME(root,host,win){"use strict";
+/* ================================================================
+   MY SKY: a cozy field journal of invented skies.
+   The sky is one big map. Every star has a place on it, and its seed
+   is just that place, so the same seed always shows the same star.
+   Generator version MS2 is frozen: if it ever changes it gets a new
+   version name so old seeds keep their worlds. Only integer maths and
+   square roots are used, so every device draws the same sky.
+   ================================================================ */
+const VER="MS2";
+function xmur(str){let h=1779033703^str.length;for(let i=0;i<str.length;i++){h=Math.imul(h^str.charCodeAt(i),3432918353);h=h<<13|h>>>19}return function(){h=Math.imul(h^h>>>16,2246822507);h=Math.imul(h^h>>>13,3266489909);return(h^=h>>>16)>>>0}}
+function rngFrom(str){const s=xmur(str);let a=s(),b=s(),c=s(),d=s();return function(){a>>>=0;b>>>=0;c>>>=0;d>>>=0;let t=(a+b)|0;a=b^b>>>9;b=c+(c<<3)|0;c=c<<21|c>>>11;d=d+1|0;t=t+d|0;c=c+t|0;return(t>>>0)/4294967296}}
+const ALPHA="0123456789ABCDEFGHJKMNPQRSTVWXYZ",TAG=45,LY=12;
+const pickW=(r,arr)=>{let t=0;for(const a of arr)t+=a.p;let x=r()*t;for(const a of arr){x-=a.p;if(x<0)return a}return arr[arr.length-1]};
+/* ---------- the tables ---------- */
+const STARS=[{k:"red dwarf",c:"red",p:.30,lum:.25,h:8},{k:"orange star",c:"orange",p:.20,lum:.65,h:28},{k:"yellow star",c:"golden",p:.24,lum:1,h:48},{k:"white star",c:"white",p:.13,lum:1.9,h:205},{k:"blue giant",c:"blue",p:.07,lum:4,h:215},{k:"violet star",c:"violet",p:.02,lum:2.4,h:282},{k:"pale dwarf",c:"pale",p:.04,lum:.12,h:190}];
+const NW=[{n:1,p:.08},{n:2,p:.26},{n:3,p:.32},{n:4,p:.22},{n:5,p:.12}];
+const MASS=[{k:"tiny",p:.12,g:.3,s:.5},{k:"small",p:.25,g:.6,s:.64},{k:"medium",p:.33,g:1,s:.78},{k:"large",p:.18,g:1.6,s:.9},{k:"giant",p:.12,g:2.4,s:1,gas:1}];
+const AIR=["no air","thin air","soft air","thick air","crushing air"];
+const BIOME={
+  garden:{n:"garden world",p:0.078,h:125,s:45,l:42,place:"meadows"},ocean:{n:"ocean world",p:0.047,h:210,s:62,l:42,place:"shallows"},
+  archi:{n:"island world",p:0.055,h:178,s:55,l:44,place:"shores"},desert:{n:"desert world",p:0.12,h:36,s:55,l:50,place:"dunes"},
+  glacier:{n:"glacier world",p:0.14,h:200,s:35,l:72,place:"ice shelves"},frozen:{n:"frozen waste",p:0.075,h:195,s:22,l:68,place:"ice plains"},
+  rime:{n:"rime world",p:0.12,h:218,s:30,l:62,place:"frost caves"},barren:{n:"barren rock",p:0.15,h:26,s:12,l:44,place:"rock"},
+  scorched:{n:"scorched world",p:0.05,h:20,s:50,l:34,place:"cinders"},lava:{n:"lava world",p:0.002,h:8,s:75,l:38,place:"cinders"},
+  steam:{n:"steam world",p:0.04,h:44,s:38,l:70,place:"mist"},cloud:{n:"cloud world",p:0.114,h:32,s:50,l:58,place:"cloudtops"},
+  storm:{n:"storm giant",p:0.006,h:345,s:42,l:52,place:"storm decks"},icegiant:{n:"ice giant",p:0.0005,h:205,s:60,l:55,place:"cloudtops"}};
+const EXOTIC=[{n:"violet",h:285,s:62,l:50},{n:"rose",h:328,s:66,l:58},{n:"emerald",h:152,s:72,l:42},{n:"indigo",h:252,s:60,l:44}];
+const NCR={garden:[.03,.04,.07,.13,.2,.25,.28],ocean:[.03,.04,.07,.13,.2,.25,.28],archi:[.03,.04,.07,.13,.2,.25,.28],desert:[.12,.12,.16,.2,.18,.13,.09],glacier:[.12,.12,.16,.2,.18,.13,.09],frozen:[.2,.16,.18,.16,.14,.1,.06],rime:[.5,.25,.15,.1,0,0,0],barren:[.6,.25,.15,0,0,0,0],scorched:[.6,.25,.15,0,0,0,0],lava:[1,0,0,0,0,0,0],steam:[.4,.3,.2,.1,0,0,0],cloud:[.15,.15,.2,.2,.15,.1,.05],storm:[.15,.15,.2,.2,.15,.1,.05],icegiant:[.4,.3,.2,.1,0,0,0]};
+const HAB={garden:{land:.6,sea:.15,sky:.25},archi:{sea:.45,land:.3,sky:.25},ocean:{sea:.75,sky:.25},desert:{land:.7,sky:.2,burrow:.1},glacier:{land:.4,sea:.4,burrow:.2},frozen:{land:.5,burrow:.5},rime:{burrow:1},barren:{burrow:1},scorched:{burrow:1},steam:{sky:1},cloud:{sky:1},storm:{sky:1},icegiant:{sky:1},lava:{burrow:1}};
+const SIZES=[{k:"tiny",w:"tiny",p:.12,s:0},{k:"small",w:"small",p:.30,s:1},{k:"medium",w:"",p:.30,s:2},{k:"large",w:"large",p:.20,s:3},{k:"vast",w:"vast",p:.08,s:4}];
+const DIETS=[{k:"grazer",p:.30,t:"grazes"},{k:"browser",p:.20,t:"browses the high growth"},{k:"hunter",p:.15,t:"hunts"},{k:"filter feeder",p:.12,t:"filters its food from the flow"},{k:"scavenger",p:.10,t:"scavenges"},{k:"forager",p:.08,t:"forages"},{k:"light-eater",p:.05,t:"feeds on light itself"}];
+const WDIET=[{k:"filter feeder",p:.40,t:"filters its food from the flow"},{k:"hunter",p:.30,t:"hunts"},{k:"grazer",p:.20,t:"grazes the drifting growth"},{k:"scavenger",p:.10,t:"scavenges"}];
+const ACT=[{k:"by day",p:.40},{k:"by night",p:.30},{k:"at dusk",p:.20},{k:"at any hour",p:.10}];
+const SOC=[{k:"alone",p:.30,t:"lives alone"},{k:"in pairs",p:.25,t:"lives in pairs"},{k:"in herds",p:.25,t:"lives in herds"},{k:"in swarms",p:.12,t:"lives in swarms"},{k:"in flocks",p:.08,t:"drifts in great flocks"}];
+const TEMP=[{k:"placid",p:.30},{k:"curious",p:.30},{k:"shy",p:.20},{k:"playful",p:.20}];
+const VOICE=[{k:"hum",p:.25,t:"hums"},{k:"chirp",p:.20,t:"chirps"},{k:"click",p:.15,t:"clicks"},{k:"song",p:.15,t:"sings"},{k:"low call",p:.15,t:"calls low across distances"},{k:"whistle",p:.10,t:"whistles"}];
+const PAT=[{k:"plain",p:.60},{k:"spots",p:.15},{k:"stripes",p:.15},{k:"glow",p:.10,t:"glows softly"}];
+const EYES=[{k:2,p:.55},{k:4,p:.20},{k:3,p:.12},{k:1,p:.08},{k:6,p:.05}];
+const COVER_COLD=[{k:"fur",p:.45,w:"furred"},{k:"feather",p:.35,w:"feathered"},{k:"blubber",p:.20,w:"sleek"}];
+const COVER_MID=[{k:"scale",p:.30,w:"scaled"},{k:"hide",p:.30,w:"smooth-hided"},{k:"feather",p:.20,w:"feathered"},{k:"fur",p:.20,w:"furred"}];
+const COVER_HOT=[{k:"shell",p:.45,w:"shelled"},{k:"scale",p:.45,w:"scaled"},{k:"hide",p:.10,w:"thick-hided"}];
+const NOUN={2:"strider",4:"trotter",6:"scuttler",8:"crawler",wing:"flier",floater:"drifter",fins:"swimmer",tentacles:"tendril-swimmer",segments:"burrower"};
+const ODDS={
+ fishDesert:{t:"Fish in the dunes",x:"Shoals of fish glide through the dunes as if the sand were water.",r:"The sand here is so fine and so charged that it flows like a sea. The fish never left the water. The water became sand."},
+ longDay:{t:"A day longer than a year",x:"Here a single day lasts longer than the year. By evening, it is already next spring.",r:"The planet is not turning slowly. The sun is circling it. A small dim sun keeps orbiting the world, so every dawn is a whole year."},
+ mirrorCold:{t:"Colder near the sun",x:"This world sits close to its sun and is colder than the worlds farther out.",r:"Its seas are salt flats, white and flat as mirrors. They throw almost all the light straight back to the sky."},
+ shyOne:{t:"The one that isn't there",x:"Something is always at the edge of your vision here. When you look straight at it, it is gone.",r:"It is not an animal. It is the shape the animals leave when they all turn away at the same moment."},
+ bigMoon:{t:"The moon is bigger",x:"A moon here is larger than the planet it circles.",r:"They circle each other. Whichever one you stand on is called the planet."},
+ echo:{t:"Sounds arrive early",x:"Every call here is heard a moment before it is made.",r:"The thin shell of sky carries sound all the way around the world. The call reaches you first by the long way round."},
+ oneAnimal:{t:"All the same animal",x:"Every creature here is the same individual. The same marks, the same scar, the same sleepy look.",r:"There is only one. It is wound around the whole world, and what you have been meeting are its feet."},
+ rainUp:{t:"Rain falls upward",x:"The rain here falls upward and gathers in the clouds below.",r:"The sky is the sea. The ground you stand on is the underside of a very large island."}};
+
+const PARA=.4;
+const ODDP={longDay:.0082,shyOne:.0066,bigMoon:.0061,echo:.0053,oneAnimal:.0053,rainUp:.0013,fishDesert:.0009,mirrorCold:.0006};
+/* ---------- generating a system ---------- */
+function hsl(h,s,l,a){return"hsl("+Math.round(h)+" "+Math.round(s)+"% "+Math.round(l)+"%"+(a==null?"":"/"+a)+")"}
+function trk(o,p){if(p<=.06)o.rar*=1/p}
+function biomeOf(gas,T,a,wf){
+  if(gas)return T>420?"storm":T<130?"icegiant":"cloud";
+  if(T>600)return"lava";if(T>420)return"scorched";
+  if(T>340)return(a>=2&&wf>.5)?"steam":"desert";
+  if(a===0)return"barren";
+  if(T>260)return wf<.2?"desert":wf<.55?"garden":wf<.8?"archi":"ocean";
+  if(T>180)return wf<.35?"frozen":"glacier";
+  return"rime"}
+function gen(code){
+  const r=rngFrom(VER+"|"+code),S={code,rar:1,planets:[]};
+  S.star=pickW(r,STARS);trk(S,S.star.p);
+  S.binary=r()<.06;if(S.binary){trk(S,.06);S.star2=pickW(r,STARS)}
+  const lum=S.star.lum*(S.binary?1.5:1),n=pickW(r,NW).n;
+  S.n=n;if(n===1||n===5)trk(S,n===1?.08:.12);
+  let d=(.6+r()*.5)*lum;if(r()<.1)d*=.4;const orbits=[];for(let i=0;i<n;i++){orbits.push(d);d*=1.5+r()*.5}
+  let twin=-1;if(n>=2&&r()<.035){twin=(r()*(n-1))|0;trk(S,.035);S.twin=twin;orbits[twin+1]=orbits[twin]}
+  for(let i=0;i<n;i++)S.planets.push(genPlanet(S,i,orbits[i],lum,twin===i||twin===i-1&&twin>=0));
+  if(twin>=0){S.planets[twin].mergedWith=twin+1;S.planets[twin+1].mergedWith=twin}
+  return S}
+function genPlanet(S,i,d,lum,merged){
+  const r=rngFrom(VER+"|"+S.code+"|p"+i),P={i,rar:1,d,merged:!!merged,creatures:[],odd:null};
+  const m=pickW(r,MASS);P.mass=m;const gas=!!m.gas;P.gas=gas;P.g=m.g;trk(P,m.p);
+  const T0=Math.round(290*Math.sqrt(lum/d));
+  let w=[.15,.25,.35,.17,.08];if(m.k==="tiny")w=[.5,.5,0,0,0];else if(m.k==="small")w=[.2,.4,.4,0,0];else if(m.k==="large")w=[.05,.1,.3,.35,.2];
+  let x=r(),a=0;for(let k=0;k<5;k++){x-=w[k];if(x<0){a=k;break}a=k}
+  if(gas)a=3;P.air=a;P.T=T0+[-10,0,10,40,120][a];
+  const wf=r();P.wf=wf;let b=biomeOf(gas,P.T,a,wf);P.biome=b;const B=BIOME[b];trk(P,B.p);
+  /* colour: a rare few worlds are an unexpected colour */
+  P.hue=B.h+(r()*16-8);P.sat=B.s;P.lit=B.l;P.hue2=P.hue+(r()<.5?32:-32);
+  if(r()<.06){const e=EXOTIC[(r()*4)|0];P.hue=e.h;P.sat=e.s;P.lit=e.l;P.hue2=e.h+30;P.exotic=e.n;trk(P,.015)}else r();
+  const mo=pickW(r,[{n:0,p:.4},{n:1,p:.35},{n:2,p:.17},{n:3,p:.08}]);P.moons=mo.n+(gas&&mo.n<3?1:0);if(mo.n===3)trk(P,.08);
+  P.ring=r()<(gas?.35:.06);if(P.ring&&!gas)trk(P,.06);
+  P.day=Math.round(8+r()*60);P.year=Math.round(d*Math.sqrt(d)*365/(S.star.lum>1?Math.sqrt(S.star.lum):1));
+  if(S.star.lum<.3&&i<2){P.locked=true;P.day=P.year}
+  /* animals */
+  let nc=pickW(r,NCR[b].map((p,k)=>({p,n:k}))).n;
+  /* paradise: a gentle, lush, mild world full of life. Decided on its own stream so nothing else about the sky shifts. */
+  const rp=rngFrom(VER+"|"+S.code+"|para|"+i);P.paradise=!gas&&(b==="garden"||b==="ocean"||b==="archi")&&rp()<PARA;
+  if(P.paradise){P.air=2;P.T=285+((rp()*12)|0);P.g=[.8,.9,1,1.1][(rp()*4)|0];P.locked=false;P.day=18+((rp()*14)|0);P.sat=Math.min(82,P.sat+20);P.lit=P.lit+5;nc=Math.max(nc,4+((rp()*3)|0))}
+  let odd=null;
+  if(r()<.035){
+    const el=[];
+    if(b==="desert")el.push("fishDesert");
+    if(!gas&&!P.locked)el.push("longDay");
+    if(!gas&&d<1.6*lum&&(b==="frozen"||b==="glacier"))el.push("mirrorCold");
+    if(nc>0)el.push("shyOne");
+    if(P.moons>0)el.push("bigMoon");
+    if(a>=2)el.push("echo");
+    if(nc>=2)el.push("oneAnimal");
+    if(b==="garden"||b==="ocean"||b==="archi")el.push("rainUp");
+    if(el.length){odd=el[(r()*el.length)|0];P.rar*=1/ODDP[odd]}}
+  P.odd=odd;
+  if(odd==="longDay"){P.day=P.year+10+((r()*30)|0)}
+  if(odd==="mirrorCold"){P.T=Math.min(P.T,170);P.hue=205;P.sat=18;P.lit=84}
+  let cn=nc;if(odd==="fishDesert"&&cn===0)cn=1;
+  const used=new Set();for(let j=0;j<cn;j++){let C;for(let a=0;a<4;a++){C=genCreature(S,P,j,odd,a);if(!used.has(C.hab+C.body+C.cover.k+C.size.k))break}used.add(C.hab+C.body+C.cover.k+C.size.k);P.creatures.push(C)}
+  if(odd==="oneAnimal"){const c0=P.creatures[0];for(let j=1;j<P.creatures.length;j++){const c=P.creatures[j];Object.assign(c,c0,{j,path:c.path,same:true,rar:1})}}
+  return P}
+function genCreature(S,P,j,odd,att){
+  const r=rngFrom(VER+"|"+S.code+"|p"+P.i+"|c"+j+(att?"|a"+att:"")),C={j,rar:1};
+  let hab=pickW(r,Object.entries(HAB[P.biome]).map(([k,p])=>({k,p}))).k;
+  if(odd==="fishDesert"&&j===0)hab="sea";
+  C.hab=hab;
+  const sz=pickW(r,SIZES);C.size=sz;trk(C,sz.p);
+  if(hab==="land"){const g=P.g;const lw=g<.7?[.35,.3,.25,.1]:g<1.3?[.2,.45,.25,.1]:[0,.5,.3,.2];C.body=[2,4,6,8][pickW(r,lw.map((p,k)=>({p,k}))).k]}
+  else if(hab==="sky"){C.body=(P.gas||P.air<2||P.g>1.4)?"floater":(r()<.65?"wing":"floater")}
+  else if(hab==="sea"){C.body=r()<.6?"fins":"tentacles"}
+  else C.body="segments";
+  if(hab==="land"||hab==="sky"||hab==="sea"||hab==="burrow")r();
+  const diet=pickW(r,hab==="sea"?WDIET:DIETS);C.diet=diet;if(diet.k==="light-eater")trk(C,.05);
+  C.act=P.locked?{k:"along the twilight line"}:pickW(r,ACT);
+  C.soc=pickW(r,SOC);C.temp=pickW(r,TEMP);
+  const cov=pickW(r,P.T<250?COVER_COLD:P.T>340?COVER_HOT:COVER_MID);C.cover=cov;
+  if(r()<.07){C.cover=r()<.5?{k:"glass",w:"glass-skinned"}:{k:"moss",w:"moss-covered"};trk(C,.04)}
+  C.voice=P.air<2?{k:"light",t:"speaks in pulses of light"}:pickW(r,VOICE);
+  const pat=pickW(r,PAT);C.pat=pat;if(pat.k==="glow")trk(C,.1);
+  const ey=pickW(r,EYES);C.eyes=ey.k;if(ey.p<=.08)trk(C,ey.p);
+  C.hue=P.hue+(r()*80-40);C.sat=45+r()*35;C.lit=48+r()*20;C.hue2=C.hue+(r()<.5?45:-45);
+  if(odd==="shyOne"&&j===0)C.shy=true;
+  return C}
+/* ---------- words for what the generator made ---------- */
+const gword=g=>g<.5?"feather-light":g<.8?"light":g<1.2?"gentle":g<1.8?"heavy":"crushing";
+function creatureLine(C){const sz=C.size.w?C.size.w+" ":"";return(sz+C.cover.w+" "+NOUN[C.body]).replace(/^\w/,c=>c.toUpperCase())}
+function creatureNote(C,P){
+  const place=C.hab==="sea"?(P.odd==="fishDesert"?"swimming through the dunes":P.biome==="glacier"||P.biome==="frozen"?"under the ice":"in open water"):C.hab==="sky"?"in the high air":C.hab==="burrow"?"underground":"on the "+BIOME[P.biome].place;
+  const ey=C.eyes===1?"a single eye":C.eyes+" eyes";
+  return "Found "+place+". It "+C.diet.t+", is most active "+C.act.k+", and "+C.voice.t+". It "+C.soc.t+" and seems "+C.temp.k+". It has "+ey+(C.pat.k==="glow"?" and "+C.pat.t:C.pat.k==="plain"?"":", with "+C.pat.k+" on its coat")+"."}
+function planetNote(P,S){
+  const B=BIOME[P.biome];
+  return (P.paradise?"A paradise. ":"")+"A "+(P.gas?"":gword(P.g)+"-gravity ")+B.n+" circling a "+S.star.c+" sun"+(S.binary?" and its companion":"")+". "+(P.gas?"There is no ground here, only deep cloud.":"The air is "+AIR[P.air].replace(/ air$/,"")+".")+(P.locked?" One face always looks at the sun, and the living world is the twilight line.":"")+(P.paradise?" It is warm and mild, water gleams everywhere, and life fills every corner.":"")}
+const fmt=n=>n>=1000?(Math.round(n/100)/10)+"k":String(Math.round(n));
+function fmtN(n){const s=String(Math.round(n));if(n<100)return s;const e=s.length-2;return Number(s.slice(0,2)+"0".repeat(e)).toLocaleString("en-US")}
+function chip(rar){const n=Math.round(rar);if(n<8)return"";const t=n>=2000?[4,"Legendary"]:n>=300?[3,"Very rare"]:n>=50?[2,"Rare"]:[1,"Uncommon"];return'<span class="chip r'+t[0]+'">'+t[1]+" · 1 in "+fmtN(n)+"</span>"}
+/* ---------- tiny drawings (all made from code) ---------- */
+let UID=0;
+function planetSVG(P,S,sz){
+  const id="g"+(++UID),rr=rngFrom(VER+"|"+S.code+"|v"+P.i),R=34*P.mass.s,cx=50,cy=50,h=P.hue,s=P.sat,l=P.lit;
+  let o='<svg viewBox="0 0 100 100" width="'+sz+'" height="'+sz+'" aria-hidden="true"><defs>'+
+   '<radialGradient id="'+id+'a" cx=".35" cy=".3" r=".85"><stop offset="0" stop-color="'+hsl(h,s,l+20)+'"/><stop offset=".5" stop-color="'+hsl(h,s,l)+'"/><stop offset="1" stop-color="'+hsl(h,s*.8,l-26)+'"/></radialGradient>'+
+   '<radialGradient id="'+id+'h"><stop offset=".72" stop-color="'+hsl(h,80,70,0)+'"/><stop offset=".86" stop-color="'+hsl(h,80,70,.28)+'"/><stop offset="1" stop-color="'+hsl(h,80,70,0)+'"/></radialGradient>'+
+   '<clipPath id="'+id+'c"><circle cx="'+cx+'" cy="'+cy+'" r="'+R+'"/></clipPath></defs>';
+  const rx=R*1.45,ry=R*.36,tilt=-16+(rr()*10);
+  if(P.ring)o+='<ellipse cx="'+cx+'" cy="'+cy+'" rx="'+rx+'" ry="'+ry+'" fill="none" stroke="'+hsl(P.hue2,45,70,.5)+'" stroke-width="3.2" transform="rotate('+tilt+' '+cx+' '+cy+')"/>';
+  if(P.odd==="bigMoon")o+='<circle cx="82" cy="26" r="'+(R*1.15)+'" fill="'+hsl(h+20,10,70)+'" opacity=".9"/>';
+  if(P.paradise)o+='<circle cx="50" cy="50" r="'+(R+11)+'" fill="hsl(150 80% 70%/.17)"/>';o+='<circle cx="'+cx+'" cy="'+cy+'" r="'+(R+8)+'" fill="url(#'+id+'h)"/><circle cx="'+cx+'" cy="'+cy+'" r="'+R+'" fill="url(#'+id+'a)"/><g clip-path="url(#'+id+'c)">';
+  if(P.gas){for(let k=0;k<7;k++){const y=cy-R+k*(R*2/7)+rr()*3;o+='<rect x="0" y="'+y+'" width="100" height="'+(2+rr()*5)+'" fill="'+hsl(rr()<.5?P.hue2:h,s,l+(rr()*24-10),.4)+'"/>'}}
+  else{const nb=4+((rr()*4)|0);for(let k=0;k<nb;k++){const px=cx+(rr()*2-1)*R*.9,py=cy+(rr()*2-1)*R*.9;o+='<ellipse cx="'+px+'" cy="'+py+'" rx="'+(5+rr()*11)+'" ry="'+(3+rr()*7)+'" fill="'+hsl(P.hue2,s,l+(rr()*22-8),.52)+'" transform="rotate('+((rr()*80-40)|0)+' '+px+' '+py+')"/>'}}
+  o+='<circle cx="'+(cx+R*.5)+'" cy="'+(cy+R*.4)+'" r="'+(R*1.05)+'" fill="#05070f" opacity=".42"/></g>';
+  if(P.ring)o+='<path d="M'+(cx-rx)+' '+cy+' A'+rx+' '+ry+' 0 0 0 '+(cx+rx)+' '+cy+'" fill="none" stroke="'+hsl(P.hue2,45,70,.7)+'" stroke-width="3.2" transform="rotate('+tilt+' '+cx+' '+cy+')"/>';
+  for(let k=0;k<Math.min(P.moons,3);k++){if(P.odd==="bigMoon"&&k===0)continue;const ang=rr()*6.28,rad=Math.min(R*1.45+k*4,46);o+='<circle cx="'+(cx+Math.cos(ang)*rad*.92)+'" cy="'+(cy+Math.sin(ang)*rad*.5)+'" r="'+(2+rr()*2)+'" fill="#d7dbe8"/>'}
+  return o+"</svg>"}
+function creatureSVG(C,sz,blur){
+  const id="k"+(++UID),sc=.62+C.size.s*.1,bx=46,by=33,rx=21*sc,ry=14*sc,col=hsl(C.hue,C.sat,C.lit),col2=hsl(C.hue2,C.sat,C.lit+8),dk=hsl(C.hue,C.sat,C.lit-18);
+  let o='<svg viewBox="0 0 100 64" width="'+Math.round(sz*100/64)+'" height="'+sz+'" aria-hidden="true"'+(blur?' style="filter:blur(2.5px);opacity:.5"':"")+'><defs><clipPath id="'+id+'"><ellipse cx="'+bx+'" cy="'+by+'" rx="'+rx+'" ry="'+ry+'"/></clipPath></defs>';
+  if(C.pat.k==="glow")o+='<ellipse cx="'+bx+'" cy="'+by+'" rx="'+(rx+9)+'" ry="'+(ry+9)+'" fill="'+hsl(C.hue,90,70,.2)+'"/>';
+  const b=C.body,n=typeof b==="number"?b:0;
+  if(n){const pairs=n/2;for(let k=0;k<pairs;k++){const x=bx-rx*.7+(k+.5)*(rx*1.4/pairs);for(const sd of[-1,1]){o+='<path d="M'+x+' '+(by+ry*.7)+' l'+(sd*3+k%2*2)+' '+(8*sc)+' l'+(sd*-1)+' '+(7*sc)+'" stroke="'+dk+'" stroke-width="2.6" fill="none" stroke-linecap="round" stroke-linejoin="round"'+(sd<0?' opacity=".6"':"")+'/>'}}
+    o+='<path d="M'+(bx-rx)+' '+by+' q-14 -4 -16 8" stroke="'+dk+'" stroke-width="3" fill="none" stroke-linecap="round"/>'}
+  else if(b==="wing"){o+='<ellipse cx="'+(bx-4)+'" cy="'+(by-ry-4)+'" rx="'+(rx*.9)+'" ry="6" fill="'+col2+'" transform="rotate(-18 '+bx+' '+by+')"/><ellipse cx="'+(bx+6)+'" cy="'+(by-ry-1)+'" rx="'+(rx*.7)+'" ry="5" fill="'+dk+'" opacity=".8" transform="rotate(-6 '+bx+' '+by+')"/><path d="M'+(bx-rx)+' '+by+' l-16 6 l4 -9 z" fill="'+dk+'"/>'}
+  else if(b==="floater"){o+='<circle cx="'+bx+'" cy="'+(by-5)+'" r="'+(rx+3)+'" fill="'+col+'"/>';for(let k=0;k<4;k++){const x=bx-rx+k*(rx*2/3);o+='<path d="M'+x+' '+(by+ry-4)+' q3 8 -1 16" stroke="'+col2+'" stroke-width="1.8" fill="none" stroke-linecap="round"/>'}}
+  else if(b==="fins"){o+='<path d="M'+(bx-rx)+' '+by+' l-17 -9 l3 9 l-3 9 z" fill="'+dk+'"/><path d="M'+(bx-4)+' '+(by-ry)+' l8 -9 l5 9 z" fill="'+col2+'"/><path d="M'+(bx-2)+' '+(by+ry)+' l6 8 l-9 -1 z" fill="'+col2+'"/>'}
+  else if(b==="tentacles"){for(let k=0;k<5;k++){const x=bx-rx*.6+k*(rx*1.2/4);o+='<path d="M'+x+' '+(by+ry*.6)+' q'+(k%2?4:-4)+' 8 0 14 t2 9" stroke="'+dk+'" stroke-width="2.4" fill="none" stroke-linecap="round"/>'}}
+  else{for(let k=-2;k<=2;k++){if(k===0)continue;o+='<ellipse cx="'+(bx+k*rx*.75)+'" cy="'+(by+Math.abs(k)*1.5)+'" rx="'+(rx*.5)+'" ry="'+(ry*.85)+'" fill="'+(k%2?col2:dk)+'"/>'}}
+  o+='<ellipse cx="'+bx+'" cy="'+by+'" rx="'+rx+'" ry="'+ry+'" fill="'+col+'"/>';
+  if(C.pat.k==="spots"||C.pat.k==="glow"){o+='<g clip-path="url(#'+id+')" fill="'+col2+'">';for(let k=0;k<5;k++)o+='<circle cx="'+(bx-rx+k*(rx*2/4))+'" cy="'+(by-3+(k%2)*6)+'" r="'+(2+(k%3))+'"/>';o+="</g>"}
+  if(C.pat.k==="stripes"){o+='<g clip-path="url(#'+id+')" stroke="'+col2+'" stroke-width="3">';for(let k=0;k<6;k++)o+='<line x1="'+(bx-rx+k*(rx*2/5))+'" y1="'+(by-ry)+'" x2="'+(bx-rx+k*(rx*2/5)+4)+'" y2="'+(by+ry)+'"/>';o+="</g>"}
+  const hx=bx+rx+2,hr=6+sc*3;o+='<circle cx="'+hx+'" cy="'+(by-3)+'" r="'+hr+'" fill="'+col+'"/>';
+  const e=Math.min(C.eyes,6);for(let k=0;k<e;k++){o+='<circle cx="'+(hx+(e===1?1:(k%3-1)*2.2)+1)+'" cy="'+(by-5+(e>3?Math.floor(k/3)*3:0)+(k%2)*.5)+'" r="1.1" fill="#0b0d1a"/>'}
+  return o+"</svg>"}
+
+/* ---------- the map: every star lives in a square sector, and its seed is its place ---------- */
+function nS(sx,sy){return pickW(rngFrom(VER+"|sec|"+sx+"|"+sy),[{n:0,p:.18},{n:1,p:.3},{n:2,p:.3},{n:3,p:.15},{n:4,p:.07}]).n}
+function f20(x,k){let h=Math.imul(x^0x9E3779B1,0x85EBCA6B)^Math.imul(k+1,0xC2B2AE35);h^=h>>>15;h=Math.imul(h,0x2C1B3C6D);h^=h>>>12;h=Math.imul(h,0x297A2D39);h^=h>>>15;return h&0xFFFFF}
+function codeOf(sx,sy,k){const X=sx+16384,Y=sy+16384;let L=(X<<5)|(Y>>>10),R=((Y&1023)<<10)|(k<<6)|TAG;
+  for(let i=0;i<4;i++){const nl=R,nr=L^f20(R,i);L=nl;R=nr}
+  let s="";for(let i=0;i<4;i++)s+=ALPHA[(L>>>(15-5*i))&31];for(let i=0;i<4;i++)s+=ALPHA[(R>>>(15-5*i))&31];return s.slice(0,4)+"-"+s.slice(4)}
+function decode(code){const raw=String(code).replace(/[^0-9A-Z]/g,"");if(raw.length!==8)return null;let L=0,R=0;
+  for(let i=0;i<4;i++){const a=ALPHA.indexOf(raw[i]),b=ALPHA.indexOf(raw[i+4]);if(a<0||b<0)return null;L=L<<5|a;R=R<<5|b}
+  for(let i=3;i>=0;i--){const pl=R^f20(L,i);R=L;L=pl}
+  if((R&63)!==TAG)return null;const k=(R>>>6)&15,X=L>>>5,Y=((L&31)<<10)|(R>>>10),sx=X-16384,sy=Y-16384;
+  if(k>=nS(sx,sy))return null;return{sx,sy,k}}
+const LOC=new Map();
+function locOf(code){let o=LOC.get(code);if(o===undefined){const d=decode(code);if(d){const r=rngFrom(VER+"|pos|"+d.sx+"|"+d.sy+"|"+d.k);d.x=d.sx+r();d.y=d.sy+r()}o=d||null;if(LOC.size>4000)LOC.clear();LOC.set(code,o)}return o}
+function posOf(code){const l=locOf(code);return l?{x:l.x,y:l.y}:{x:0,y:0}}
+/* the cheap first look at a star (its colour), without making the whole system */
+const SCL=new Map();
+function starOf(code){let o=SCL.get(code);if(!o){const r=rngFrom(VER+"|"+code);o={star:pickW(r,STARS),binary:r()<.06};if(SCL.size>3000)SCL.clear();SCL.set(code,o)}return o}
+const GC=new Map();
+function getSys(code){let S=GC.get(code);if(!S){S=gen(code);if(GC.size>250)GC.clear();GC.set(code,S)}return S}
+const isStrange=S=>S.twin!=null||S.planets.some(P=>P.odd);
+/* the long-range scanner: it catches about six in ten strange places, and never raises a false alarm */
+const hintOf=code=>{const S=getSys(code);return isStrange(S)&&rngFrom("hint|"+code)()<.6};
+const hasPara=S=>S.planets.some(P=>P.paradise);
+/* the scanner also picks up paradise worlds, seven in ten of them */
+const hintPara=code=>hasPara(getSys(code))&&rngFrom("phint|"+code)()<.7;
+function starsIn(x0,y0,x1,y1){const out=[];for(let sx=Math.floor(x0);sx<=Math.floor(x1);sx++)for(let sy=Math.floor(y0);sy<=Math.floor(y1);sy++){const n=nS(sx,sy);for(let k=0;k<n;k++){const code=codeOf(sx,sy,k),l=locOf(code);if(l)out.push({code,x:l.x,y:l.y})}}return out}
+/* anything a person types becomes a place: a real code goes there, any other word is turned into a star of its own */
+function wordCode(txt){const r=rngFrom("word|"+String(txt).trim().toLowerCase()),cx=(r()*160|0)-80,cy=(r()*160|0)-80;
+  for(let d=0;d<30;d++)for(let dx=-d;dx<=d;dx++)for(let dy=-d;dy<=d;dy++){if(Math.max(Math.abs(dx),Math.abs(dy))!==d)continue;const n=nS(cx+dx,cy+dy);if(n>0)return codeOf(cx+dx,cy+dy,(r()*n)|0)}
+  return codeOf(0,0,0)}
+function toCode(txt){let t=String(txt||"").toUpperCase().replace(/^MS\d[\s·:_\-\/]*/,"").replace(/O/g,"0").replace(/[IL]/g,"1").replace(/U/g,"V");
+  const raw=t.replace(/[^0-9A-Z]/g,"");if(raw.length===8){const c=raw.slice(0,4)+"-"+raw.slice(4);if(decode(c))return c}
+  return wordCode(txt)}
+function parseSeed(txt){let t=String(txt||"").trim(),p=null;const m=t.match(/[·\/\s]p(\d)\s*$/i);if(m){p=+m[1]-1;t=t.slice(0,m.index)}return{code:toCode(t),p}}
+/* the home star: a gentle yellow or orange sun, close to the middle of the map, with a few lively worlds */
+function findHome(){let first=null;
+  for(let d=0;d<10;d++)for(let sx=-d;sx<=d;sx++)for(let sy=-d;sy<=d;sy++){if(Math.max(Math.abs(sx),Math.abs(sy))!==d)continue;const n=nS(sx,sy);
+    for(let k=0;k<n;k++){const c=codeOf(sx,sy,k),S=gen(c);if(!first)first=c;
+      if(S.n>=3&&S.n<=4&&!S.binary&&S.twin==null&&(S.star.c==="golden"||S.star.c==="orange")&&S.planets.every(P=>!P.odd)&&S.planets.some(P=>P.biome==="garden"&&P.creatures.length>=4&&!P.exotic)&&S.planets.reduce((a,P)=>a+P.creatures.length,0)>=7)return c}}
+  return first}
+const HOME=findHome();
+
+/* ---------- saved data (lives in this browser, and travels with a backup) ---------- */
+const KEY="tvos_mysky";
+let SV={names:{},pins:{},claim:{},strange:{},seen:{},seenC:{},rev:{},visited:{},trail:[],hist:[],cur:null,sel:null,view:"ship",para:{},home:null,ship:"",dist:0,best:null,msg:""};
+try{const o=JSON.parse(localStorage.getItem(KEY)||"null");if(o&&typeof o==="object")SV=Object.assign(SV,o)}catch(e){}
+let svT=0;function save(){clearTimeout(svT);svT=setTimeout(()=>{try{localStorage.setItem(KEY,JSON.stringify(SV))}catch(e){}},250)}
+const nameOf=p=>SV.names[p]||"";
+function setName(p,v){v=String(v).replace(/\s+/g," ").trim().slice(0,60);if(v)SV.names[p]=v;else delete SV.names[p];save()}
+const $=id=>root.getElementById(id),esc=s=>String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const REDUCE=matchMedia&&matchMedia("(prefers-reduced-motion:reduce)").matches;
+/* ---------- the stars behind everything ---------- */
+function stars(S){const cv=$("sf"),w=cv.width=Math.min(host.clientWidth||800,1400)/1.4|0,h=cv.height=Math.min(host.clientHeight||600,1000)/1.4|0,x=cv.getContext("2d"),r=rngFrom("sky|"+S.code);x.clearRect(0,0,w,h);
+  for(let i=0;i<120;i++){const a=r()*.7+.1,sz=r()<.1?1.6:.8,hue=r()<.3?S.star.h:210;x.fillStyle="hsla("+hue+",60%,88%,"+a+")";x.fillRect(r()*w,r()*h,sz,sz)}}
+/* ---------- helpers for the screens ---------- */
+let S=null,view=SV.view||"ship",cur=null;
+function toast(t){const e=$("toast");e.textContent=t;e.classList.add("show");clearTimeout(toast.t);toast.t=setTimeout(()=>e.classList.remove("show"),2000)}
+function sysName(code){const n=nameOf(code);if(n)return n;const s=starOf(code).star;return"Unnamed "+s.c+" star"}
+function sectorTxt(code){const l=locOf(code);return l?"Sector "+l.sx+", "+l.sy:""}
+function progress(S){let tot=1,got=nameOf(S.code)?1:0;for(const P of S.planets){tot++;if(nameOf(S.code+"/p"+P.i))got++;for(const C of P.creatures){tot++;if(nameOf(S.code+"/p"+P.i+"/c"+C.j))got++}}return{tot,got}}
+function lifeCount(S){return S.planets.reduce((a,P)=>a+P.creatures.length,0)}
+function bestCheck(rar,label){if(rar>=20&&(!SV.best||rar>SV.best.n)){SV.best={n:Math.round(rar),t:label}}}
+function go(code,sel){
+  const prev=SV.cur;
+  if(prev&&prev!==code){SV.hist.push(prev);if(SV.hist.length>200)SV.hist.shift();const a=posOf(prev),b=posOf(code);SV.dist+=Math.hypot(a.x-b.x,a.y-b.y)*LY}
+  SV.cur=code;SV.visited[code]=1;if(SV.trail[SV.trail.length-1]!==code){SV.trail.push(code);if(SV.trail.length>80)SV.trail.shift()}
+  S=getSys(code);SV.sel=sel==null?null:sel;
+  const strange=isStrange(S);if(strange&&!SV.strange[code]){SV.strange[code]=1}
+  const np=S.planets.filter(P=>P.paradise).length;if(np)SV.para[code]=np;
+  SV.msg="System scan: "+S.n+(S.n===1?" world":" worlds")+", "+lifeCount(S)+" signs of life"+(strange?"  ·  ◆ something strange is here":"")+(np?"  ·  ✦ "+(np>1?np+" paradise worlds":"a paradise world")+" here":"")+".";
+  host.style.setProperty("--h",S.star.h);stars(S);save()}
+function warp(code,sel,x){
+  if(code===SV.cur){if(sel!=null)SV.sel=sel;show("system");return}
+  const f=$("flash");f.classList.remove("go");void f.offsetWidth;if(!REDUCE)f.classList.add("go");
+  setTimeout(()=>{go(code,sel);show("system")},REDUCE?0:520)}
+function back(){const c=SV.hist.pop();if(c){warp(c)}else toast("This is where your journey began.")}
+function show(v){view=v;SV.view=v;save();render();{const sc=$("msc");if(sc)sc.scrollTop=0}}
+/* ---------- the ship ---------- */
+function windowSVG(S){const st=S.star,rr=rngFrom("win|"+S.code);let o='<svg class="win" viewBox="0 0 640 190" preserveAspectRatio="xMidYMid slice" aria-hidden="true"><defs><radialGradient id="wg" cx=".72" cy=".45" r=".7"><stop offset="0" stop-color="'+hsl(st.h,80,60,.55)+'"/><stop offset=".5" stop-color="'+hsl(st.h,70,30,.25)+'"/><stop offset="1" stop-color="#05070f" stop-opacity="0"/></radialGradient><radialGradient id="wo"><stop offset="0" stop-color="#fff"/><stop offset=".35" stop-color="'+hsl(st.h,90,78)+'"/><stop offset="1" stop-color="'+hsl(st.h,90,60,0)+'"/></radialGradient></defs><rect width="640" height="190" fill="url(#wg)"/>';
+  for(let i=0;i<46;i++)o+='<circle cx="'+(rr()*640)+'" cy="'+(rr()*190)+'" r="'+(rr()<.15?1.3:.7)+'" fill="#dfe6ff" opacity="'+(.25+rr()*.6)+'"/>';
+  const rs=(st.lum>1.5?30:st.lum<.3?16:22);o+='<circle cx="470" cy="84" r="'+(rs*2.6)+'" fill="url(#wo)" opacity=".85"/><circle cx="470" cy="84" r="'+rs+'" fill="'+hsl(st.h,95,82)+'"/>';
+  if(S.binary)o+='<circle cx="520" cy="58" r="9" fill="'+hsl(S.star2.h,90,80)+'"/>';
+  const ps=S.planets.slice(0,3);ps.forEach((P,i)=>{const sz=[96,64,46][i],x=[70,205,310][i],y=[40,78,58][i];o+='<g transform="translate('+x+' '+y+')">'+planetSVG(P,S,sz)+"</g>"});
+  o+='<path d="M0 190 L0 160 Q80 140 170 152 L470 152 Q560 140 640 160 L640 190 Z" fill="#0a0e1d" opacity=".96"/><rect x="0" y="0" width="640" height="190" fill="none" stroke="rgba(255,255,255,.14)" stroke-width="3" rx="22"/>';
+  for(let i=0;i<9;i++)o+='<circle cx="'+(200+i*28)+'" cy="172" r="2" fill="'+hsl(st.h,80,70,i%3?.25:.8)+'"/>';
+  return o+"</svg>"}
+function logStats(){
+  const names=Object.keys(SV.names).length,solved=Object.keys(SV.rev).length,st=Object.keys(SV.strange).length;
+  const items=[[Object.keys(SV.visited).length,"Stars visited"],[Math.round(SV.dist).toLocaleString("en-US"),"Light-years flown"],[Object.keys(SV.seen).length,"Worlds seen"],[Object.keys(SV.seenC).length,"Animals seen"],[names,"Things named"],[Object.keys(SV.claim).length,"Systems claimed"],[st,"Strange places found"],[solved,"Mysteries solved"]];
+  return'<div class="stats">'+items.map(i=>'<div class="st"><b>'+i[0]+"</b><span>"+i[1]+"</span></div>").join("")+"</div>"+(SV.best?'<p class="note">Rarest sighting: <b>'+esc(SV.best.t)+'</b> · '+chip(SV.best.n)+"</p>":"")}
+function renderShip(){
+  const strange=isStrange(S);
+  return'<section class="cabin fade"><div class="winw">'+windowSVG(S)+'<div class="wl"><div class="lab">Now orbiting</div><div class="wn">'+esc(sysName(S.code))+'</div><div class="sub"><span>'+sectorTxt(S.code)+" · "+S.star.k+"</span>"+(hasPara(S)?'<span class="chip para">✦ Paradise</span>':"")+(strange?'<span class="chip r4">◆ strange</span>':"")+"</div></div></div>"+
+   '<div class="lab" style="margin:16px 2px 4px">Your ship</div><input class="nm sn" data-ship="1" maxlength="40" placeholder="Name your ship" value="'+esc(SV.ship)+'" aria-label="Name your ship">'+
+   '<div class="deck">'+
+   '<button class="cons big" data-act="view" data-v="chart"><b>✦ Star chart</b><span>See the stars around you and fly to one</span></button>'+
+   '<button class="cons" data-act="view" data-v="system"><b>◉ This system</b><span>'+S.n+(S.n===1?" world":" worlds")+", "+lifeCount(S)+' signs of life</span></button>'+
+   '<button class="cons big para" data-act="places" data-t="para"><b>✦ Paradise worlds</b><span>'+Object.keys(SV.para).length+" paradise systems found so far. Green ✧ on the chart is the scanner hearing one.</span></button>"+
+   '<button class="cons" data-act="places" data-t="strange"><b>◆ Strange places</b><span>'+Object.keys(SV.strange).length+" found so far</span></button>"+
+   '<button class="cons" data-act="places" data-t="fav"><b>★ Saved places</b><span>Bookmarks and claimed systems</span></button>'+
+   '<button class="cons" data-act="journal"><b>✎ Journal</b><span>'+Object.keys(SV.names).length+" things named</span></button>"+
+   '<button class="cons" data-act="seed"><b>⌘ Seeds</b><span>Share this place or go to one</span></button></div>'+
+   '<div class="h2">Captain’s log</div>'+logStats()+
+   '<div class="row">'+(SV.home&&SV.home!==S.code?'<button class="btn" data-act="homestar">⌂ Fly home</button>':"")+(SV.home===S.code?'<span class="chip ok">⌂ This is your home</span><button class="btn" data-act="sethome">Clear home</button>':'<button class="btn" data-act="sethome">⌂ Make this system my home</button>')+'</div>'+(SV.home?"":'<p class="hm">You have no home yet. Pick any system and make it home, and you can fly back to it from anywhere.</p>')+"</section>"}
+/* ---------- the star chart: a real map you fly across ---------- */
+const CH={cx:0,cy:0,z:60,sel:null,fly:null,raf:0,cv:null,w:0,h:0,drag:null,range:3,list:[],last:0,dirty:true};
+function chartInit(){const cv=$("chart");if(!cv)return;CH.cv=cv;const r=cv.getBoundingClientRect();CH.dpr=Math.min(2,devicePixelRatio||1);cv.width=Math.round(r.width*CH.dpr);cv.height=Math.round(r.height*CH.dpr);CH.w=r.width;CH.h=r.height;
+  CH.z=Math.max(36,Math.min(r.width,r.height)/(2*CH.range+1.1));const p=posOf(SV.cur);CH.cx=p.x;CH.cy=p.y;CH.sel=null;CH.fly=null;
+  cv.onpointerdown=ev=>{CH.drag={x:ev.clientX,y:ev.clientY,cx:CH.cx,cy:CH.cy,moved:false};try{cv.setPointerCapture(ev.pointerId)}catch(e){}};
+  cv.onpointermove=ev=>{const d=CH.drag;if(!d)return;const dx=ev.clientX-d.x,dy=ev.clientY-d.y;if(Math.abs(dx)+Math.abs(dy)>5)d.moved=true;if(d.moved&&!CH.fly){CH.cx=d.cx-dx/CH.z;CH.cy=d.cy-dy/CH.z;CH.dirty=true}};
+  cv.onpointerup=ev=>{const d=CH.drag;CH.drag=null;if(d&&!d.moved)chartPick(ev)};
+  cv.onwheel=ev=>{ev.preventDefault();zoom(ev.deltaY<0?1.15:.87)};
+  chartInfo();chartLoop()}
+function zoom(f){CH.z=Math.max(22,Math.min(170,CH.z*f));CH.dirty=true}
+function chartLoop(){cancelAnimationFrame(CH.raf);const f=t=>{if(view!=="chart"||!CH.cv||!CH.cv.isConnected||!host.isConnected)return;if(t-CH.last>42||CH.fly||CH.dirty){CH.last=t;chartDraw(t);CH.dirty=false}CH.raf=requestAnimationFrame(f)};CH.raf=requestAnimationFrame(f)}
+function shipPos(t){const f=CH.fly;if(f){const k=Math.min(1,(performance.now()-f.t0)/f.dur),e=k<.5?4*k*k*k:1-Math.pow(-2*k+2,3)/2;return{x:f.a.x+(f.b.x-f.a.x)*e,y:f.a.y+(f.b.y-f.a.y)*e,k}}return Object.assign({k:0},posOf(SV.cur))}
+function chartDraw(t){
+  const c=CH.cv.getContext("2d"),w=CH.w,h=CH.h,z=CH.z;c.setTransform(CH.dpr,0,0,CH.dpr,0,0);c.clearRect(0,0,w,h);
+  const me=shipPos(t);if(CH.fly){CH.cx+=(me.x-CH.cx)*.14;CH.cy+=(me.y-CH.cy)*.14}
+  const X=x=>w/2+(x-CH.cx)*z,Y=y=>h/2+(y-CH.cy)*z,hue=S.star.h;
+  const g=c.createRadialGradient(w/2,h/2,10,w/2,h/2,Math.max(w,h)*.75);g.addColorStop(0,"rgba(28,34,68,.62)");g.addColorStop(1,"rgba(6,8,18,.86)");c.fillStyle=g;c.fillRect(0,0,w,h);
+  /* faint grid of sectors, so distance feels real */
+  c.strokeStyle="rgba(255,255,255,.035)";c.lineWidth=1;c.beginPath();for(let x=Math.floor(CH.cx-w/2/z);x<=CH.cx+w/2/z+1;x++){c.moveTo(X(x),0);c.lineTo(X(x),h)}for(let y=Math.floor(CH.cy-h/2/z);y<=CH.cy+h/2/z+1;y++){c.moveTo(0,Y(y));c.lineTo(w,Y(y))}c.stroke();
+  /* jump range rings */
+  const hp=posOf(SV.cur);c.font="10px system-ui";c.textAlign="center";
+  for(let i=1;i<=CH.range;i++){c.beginPath();c.arc(X(hp.x),Y(hp.y),i*z,0,6.2832);c.strokeStyle=i===CH.range?"hsla("+hue+",80%,70%,.38)":"rgba(255,255,255,.07)";c.setLineDash(i===CH.range?[5,6]:[2,6]);c.stroke();c.setLineDash([]);c.fillStyle="rgba(190,200,235,.4)";c.fillText(Math.round(i*LY)+" ly",X(hp.x),Y(hp.y)-i*z-3)}
+  /* where you have been */
+  c.beginPath();let first=true;for(const code of SV.trail){const p=posOf(code);if(first){c.moveTo(X(p.x),Y(p.y));first=false}else c.lineTo(X(p.x),Y(p.y))}c.strokeStyle="hsla("+hue+",70%,70%,.28)";c.lineWidth=1.2;c.setLineDash([2,5]);c.stroke();c.setLineDash([]);
+  /* the stars */
+  CH.list=starsIn(CH.cx-w/2/z-1,CH.cy-h/2/z-1,CH.cx+w/2/z+1,CH.cy+h/2/z+1);
+  const pulse=.5+.5*Math.sin(t/380);
+  for(const s of CH.list){const x=X(s.x),y=Y(s.y),o=starOf(s.code),d=Math.hypot(s.x-hp.x,s.y-hp.y),inr=d<=CH.range,r=Math.max(2,Math.min(6.5,1.4+Math.sqrt(o.star.lum)*2.4)),vis=SV.visited[s.code];
+    c.globalAlpha=inr?1:.5;
+    const gl=c.createRadialGradient(x,y,0,x,y,r*3.4);gl.addColorStop(0,hsl(o.star.h,90,78,.9));gl.addColorStop(.3,hsl(o.star.h,90,66,.3));gl.addColorStop(1,hsl(o.star.h,90,60,0));c.fillStyle=gl;c.beginPath();c.arc(x,y,r*3.4,0,6.2832);c.fill();
+    c.fillStyle=hsl(o.star.h,70,92);c.beginPath();c.arc(x,y,r*.62,0,6.2832);c.fill();
+    if(o.binary){c.beginPath();c.arc(x+r,y-r*.6,1.6,0,6.2832);c.fill()}
+    if(vis&&s.code!==SV.cur){c.strokeStyle="rgba(255,255,255,.5)";c.lineWidth=1;c.beginPath();c.arc(x,y,r+3,0,6.2832);c.stroke()}
+    c.globalAlpha=1;
+    /* markers */
+    let my=y-r-7;
+    if(SV.claim[s.code]){c.fillStyle="#ffd98a";c.font="12px system-ui";c.fillText("⚑",x,my);my-=12}
+    else if(SV.pins[s.code]){c.fillStyle="#ffd98a";c.font="11px system-ui";c.fillText("★",x,my);my-=11}
+    if(SV.home===s.code){c.fillStyle="#ffd98a";c.font="13px system-ui";c.fillText("⌂",x-r-9,y+4)}
+    if(SV.para[s.code]){c.fillStyle="#8df0b0";c.font="16px system-ui";c.fillText("✦",x-r-5,y-r)}
+    else if(inr&&!SV.visited[s.code]&&hintPara(s.code)){c.fillStyle="rgba(141,240,176,"+(.45+.5*pulse)+")";c.font="17px system-ui";c.fillText("✧",x-r-5,y-r)}
+    if(SV.strange[s.code]){c.fillStyle="#c9a8ff";c.font="11px system-ui";c.fillText("◆",x+r+5,y-r)}
+    else if(inr&&hintOf(s.code)){c.strokeStyle="rgba(201,168,255,"+(.45+.5*pulse)+")";c.lineWidth=1.5;const q=5;c.beginPath();c.moveTo(x+r+5,y-r-q);c.lineTo(x+r+5+q,y-r);c.lineTo(x+r+5,y-r+q);c.lineTo(x+r+5-q,y-r);c.closePath();c.stroke()}
+    const nm=nameOf(s.code);if(nm&&z>=30){c.fillStyle="rgba(235,238,252,.85)";c.font="11px Georgia,serif";c.fillText(nm,x,y+r+14)}
+    if(CH.sel===s.code){c.strokeStyle=hsl(hue,90,76);c.lineWidth=1.5;c.beginPath();c.arc(x,y,r+8,0,6.2832);c.stroke()}}
+  /* the route you plotted */
+  if(CH.sel&&!CH.fly){const b=posOf(CH.sel);c.strokeStyle="hsla("+hue+",90%,78%,.7)";c.setLineDash([6,5]);c.lineWidth=1.4;c.beginPath();c.moveTo(X(hp.x),Y(hp.y));c.lineTo(X(b.x),Y(b.y));c.stroke();c.setLineDash([])}
+  /* your ship */
+  let ang=-1.5708;const tgt=CH.fly?CH.fly.b:CH.sel?posOf(CH.sel):null;if(tgt)ang=Math.atan2(Y(tgt.y)-Y(me.y),X(tgt.x)-X(me.x));
+  c.save();c.translate(X(me.x),Y(me.y));c.rotate(ang+1.5708);
+  c.fillStyle="rgba(255,255,255,"+(.08+.12*pulse)+")";c.beginPath();c.arc(0,0,16,0,6.2832);c.fill();
+  if(CH.fly){c.fillStyle="hsla("+hue+",95%,75%,.6)";c.beginPath();c.moveTo(-3,9);c.lineTo(3,9);c.lineTo(0,9+14+8*pulse);c.closePath();c.fill()}
+  c.fillStyle="#f4f6ff";c.strokeStyle=hsl(hue,90,70);c.lineWidth=1.4;c.beginPath();c.moveTo(0,-10);c.lineTo(6.5,8);c.lineTo(0,4);c.lineTo(-6.5,8);c.closePath();c.fill();c.stroke();c.restore();
+  /* speed lines while flying */
+  if(CH.fly){const k=me.k,sp=Math.sin(k*Math.PI);c.strokeStyle="rgba(220,230,255,"+(.25*sp)+")";c.lineWidth=1;const cx=w/2,cy=h/2,r0=rngFrom("sp");for(let i=0;i<26;i++){const a=r0()*6.2832,d=60+r0()*Math.max(w,h)*.6,l=10+sp*d*.25;c.beginPath();c.moveTo(cx+Math.cos(a)*d,cy+Math.sin(a)*d);c.lineTo(cx+Math.cos(a)*(d+l),cy+Math.sin(a)*(d+l));c.stroke()}}
+  if(CH.fly&&me.k>=1){const f=CH.fly;CH.fly=null;arrive(f.code)}}
+function chartPick(ev){if(CH.fly)return;const r=CH.cv.getBoundingClientRect(),px=ev.clientX-r.left,py=ev.clientY-r.top,z=CH.z;let best=null,bd=26;
+  for(const s of CH.list){const d=Math.hypot(CH.w/2+(s.x-CH.cx)*z-px,CH.h/2+(s.y-CH.cy)*z-py);if(d<bd){bd=d;best=s.code}}
+  CH.sel=best;CH.dirty=true;chartInfo()}
+function chartInfo(){
+  const el=$("cinfo");if(!el)return;const code=CH.sel;
+  if(!code){el.innerHTML='<div class="note" style="margin:0;color:var(--mute)">Tap a star to plot a course. Drag the map to look around. The dashed ring is how far one jump can reach.</div>';return}
+  const o=starOf(code),here=code===SV.cur,a=posOf(SV.cur),b=posOf(code),d=Math.hypot(a.x-b.x,a.y-b.y),inr=d<=CH.range,ly=Math.round(d*LY);
+  const hint=!SV.visited[code]&&inr&&hintOf(code),phint=!SV.visited[code]&&inr&&hintPara(code);
+  el.innerHTML='<div class="ci"><span class="sd" style="background:'+hsl(o.star.h,80,68)+";box-shadow:0 0 14px "+hsl(o.star.h,90,66,.7)+'"></span><div style="flex:1;min-width:0"><div class="cn">'+esc(sysName(code))+(SV.claim[code]?" ⚑":"")+'</div><div class="sub"><span>'+sectorTxt(code)+" · "+(here?"you are here":ly+" light-years")+"</span>"+(SV.visited[code]&&!here?'<span class="chip">visited</span>':"")+(hint?'<span class="chip r4">◇ faint strange signal</span>':"")+(phint?'<span class="chip para">✧ faint paradise signal</span>':"")+(SV.para[code]?'<span class="chip para">✦ paradise</span>':"")+(SV.home===code?'<span class="chip ok">⌂ home</span>':"")+(SV.strange[code]?'<span class="chip r4">◆ strange</span>':"")+"</div></div>"+
+   (here?'<button class="btn" data-act="view" data-v="system">Look around</button>':inr?'<button class="btn go" data-act="jump" data-c="'+code+'">Fly there · '+(Math.round((1.4+d*.55)*10)/10)+"s</button>":'<span class="chip">out of range: hop closer first</span>')+"</div>"}
+function startFlight(code){if(CH.fly)return;const a=posOf(SV.cur),b=posOf(code),d=Math.hypot(a.x-b.x,a.y-b.y);CH.fly={a,b,code,t0:performance.now(),dur:REDUCE?50:(1.4+d*.55)*1000};$("hint").textContent="Flying…";chartInfo()}
+function arrive(code){const f=$("flash");f.classList.remove("go");void f.offsetWidth;if(!REDUCE)f.classList.add("go");setTimeout(()=>{go(code);show("system")},REDUCE?0:300)}
+function nearestUnvisited(){const a=posOf(SV.cur);let best=null,bd=1e9;for(const s of starsIn(a.x-CH.range-1,a.y-CH.range-1,a.x+CH.range+1,a.y+CH.range+1)){if(s.code===SV.cur||SV.visited[s.code])continue;const d=Math.hypot(s.x-a.x,s.y-a.y);if(d<=CH.range&&d<bd){bd=d;best=s.code}}return best}
+function renderChart(){
+  return'<section class="chartw fade"><canvas id="chart" aria-label="Star chart"></canvas><div class="cb"><button class="tb" data-act="zin" aria-label="Zoom in">＋</button><button class="tb" data-act="zout" aria-label="Zoom out">－</button><button class="tb" data-act="recenter">◎ Centre</button></div></section>'+
+   '<div class="legend">◇ faint strange signal &nbsp; ◆ strange place you found &nbsp; ★ saved &nbsp; ⚑ claimed &nbsp; ⌂ home &nbsp; ✧ paradise signal &nbsp; ✦ paradise found &nbsp; ring = visited</div><div id="cinfo" class="cinfo"></div>'+
+   '<div class="row"><button class="btn" data-act="nearest">Nearest star I haven’t visited</button><button class="btn" data-act="back">← Previous star</button>'+(SV.home&&SV.home!==SV.cur?'<button class="btn" data-act="homestar">⌂ Fly home</button>':"")+'</div>'}
+/* ---------- a system: worlds on their orbits ---------- */
+let SHIPXY={x:30,y:300};
+function orrery(S){
+  const cx=360,cy=172;let o='<svg id="orr" viewBox="0 0 720 340" role="img" aria-label="Map of this system"><defs><radialGradient id="sg"><stop offset="0" stop-color="#fff"/><stop offset=".25" stop-color="'+hsl(S.star.h,95,80)+'"/><stop offset="1" stop-color="'+hsl(S.star.h,95,60,0)+'"/></radialGradient></defs>';
+  const step=Math.min(84,230/Math.max(1,S.planets.length-1)),orbs=S.planets.map((P,i)=>({i,P,rx:100+i*step}));
+  for(const b of orbs)o+='<ellipse cx="'+cx+'" cy="'+cy+'" rx="'+b.rx+'" ry="'+(b.rx*.42)+'" fill="none" stroke="rgba(255,255,255,.08)"/>';
+  const sr=S.star.lum>1.5?20:S.star.lum<.3?10:14;o+='<circle cx="'+cx+'" cy="'+cy+'" r="'+(sr*3.2)+'" fill="url(#sg)" opacity=".8"/><circle cx="'+cx+'" cy="'+cy+'" r="'+sr+'" fill="'+hsl(S.star.h,95,86)+'"/>';
+  if(S.binary)o+='<circle cx="'+(cx+sr+14)+'" cy="'+(cy-6)+'" r="6" fill="'+hsl(S.star2.h,90,84)+'"/>';
+  const rr=rngFrom("orr|"+S.code),ph={};
+  for(const b of orbs){const P=b.P;let f=rr();if(P.merged&&P.mergedWith<P.i)f=ph[P.mergedWith]+.012;ph[P.i]=f;
+    const dur=70+b.i*55,rx=b.rx,ry=rx*.42,sz=58+P.mass.s*40,path="M"+(cx+rx)+" "+cy+" A"+rx+" "+ry+" 0 1 1 "+(cx-rx)+" "+cy+" A"+rx+" "+ry+" 0 1 1 "+(cx+rx)+" "+cy;
+    o+='<g class="op" data-act="planet" data-i="'+P.i+'"><animateMotion dur="'+dur+'s" begin="-'+(f*dur).toFixed(1)+'s" repeatCount="indefinite" path="'+path+'"/>'+
+     (P.odd?'<circle r="26" fill="none" stroke="#c9a8ff" stroke-width="1.6"><animate attributeName="r" values="22;34;22" dur="2.6s" repeatCount="indefinite"/><animate attributeName="stroke-opacity" values=".95;0;.95" dur="2.6s" repeatCount="indefinite"/></circle>':"")+
+     '<circle class="hl" r="'+(sz*.38+6)+'" fill="none" stroke="'+hsl(S.star.h,90,76)+'" stroke-width="1.6" stroke-dasharray="3 4"/><g transform="translate('+(-sz/2)+' '+(-sz/2)+')">'+planetSVG(P,S,sz)+'</g><circle r="'+Math.max(20,sz*.4)+'" fill="transparent"/></g>'}
+  o+='<g id="shipm" style="transform:translate('+SHIPXY.x+'px,'+SHIPXY.y+'px)"><g id="shipi" style="transform:rotate(40deg)"><path d="M0 -10 L6.5 8 L0 4 L-6.5 8 Z" fill="#f4f6ff" stroke="'+hsl(S.star.h,90,70)+'" stroke-width="1.4"/></g></g></svg>';
+  return o}
+function planetCard(P){const path=S.code+"/p"+P.i,nm=nameOf(path),nc=P.creatures.length;
+  return'<button class="pc'+(SV.sel===P.i?" sel":"")+'" data-act="planet" data-i="'+P.i+'"><span class="pv">'+planetSVG(P,S,64)+'</span><span class="pn'+(nm?"":" u")+'">'+(nm?esc(nm):"Unnamed world")+'</span><span class="pt">'+BIOME[P.biome].n+(P.exotic?" · "+P.exotic:"")+(nc?" · "+nc+(nc===1?" animal":" animals"):"")+'</span><span class="pr">'+(P.paradise?'<span class="chip para">✦ Paradise</span> ':"")+(P.odd?'<span class="chip r4">◆ strange</span> ':"")+chip(P.rar)+"</span></button>"}
+function planetPanel(P){
+  const path=S.code+"/p"+P.i,B=BIOME[P.biome];SV.seen[path]=1;bestCheck(P.rar,(P.exotic?P.exotic+" ":"")+B.n);P.creatures.forEach(C=>{SV.seenC[path+"/c"+C.j]=1;if(!C.same)bestCheck(C.rar,creatureLine(C))});save();
+  const oddTxt=P.odd?ODDS[P.odd]:null;
+  let h='<section class="panel fade" id="pp"><div class="ph"><div class="pv">'+planetSVG(P,S,132)+'</div><div style="flex:1;min-width:0"><div class="lab">World '+(P.i+1)+" of "+S.n+(P.merged?" · merged":"")+'</div><input class="nm" data-name="'+path+'" maxlength="60" placeholder="Name this world" value="'+esc(nameOf(path))+'" aria-label="Name this world"><div class="sub"><span>'+B.n+(P.exotic?", "+P.exotic:"")+"</span>"+(P.paradise?'<span class="chip para">✦ Paradise</span>':"")+chip(P.rar)+'<button class="cp" data-act="copyp" data-i="'+P.i+'">⧉ copy seed</button></div></div></div>'+
+   '<p class="note">'+planetNote(P,S)+"</p>"+
+   '<div class="stats">'+(P.gas?"":'<div class="st"><b>'+P.g.toFixed(1)+' g</b><span>Gravity</span></div>')+
+    '<div class="st"><b>'+AIR[P.air]+'</b><span>Air</span></div><div class="st"><b>'+(P.T-273)+'°C</b><span>Surface</span></div><div class="st"><b>'+(P.locked?"locked":P.day+" hours")+'</b><span>Day</span></div><div class="st"><b>'+P.year+' days</b><span>Year</span></div><div class="st"><b>'+P.moons+(P.moons===1?" moon":" moons")+(P.ring?", ringed":"")+"</b><span>Sky</span></div></div>";
+  if(oddTxt){const open=SV.rev[path];h+='<div class="odd"><div class="lab" style="color:#bba4ff">Something strange</div><h4>'+oddTxt.t+"</h4><p>"+oddTxt.x+"</p>"+(open?'<p class="rev">'+oddTxt.r+"</p>":'<div class="row"><button class="btn" data-act="reveal" data-p="'+path+'">Look closer</button></div>')+"</div>"}
+  if(P.creatures.length){h+='<div class="h2">Animals · '+P.creatures.length+'</div><div class="crg">';P.creatures.forEach(C=>{const cp=path+"/c"+C.j,hid=C.shy&&!SV.rev[path];
+    h+='<div class="cr"><div class="gv">'+creatureSVG(C,hid?46:54,hid)+'</div><div class="cm"><input class="nm" data-name="'+cp+'" maxlength="60" placeholder="Name this animal" value="'+esc(nameOf(cp))+'" aria-label="Name this animal"><div class="tl">'+(hid?"Something at the edge of sight":creatureLine(C))+" "+(C.same?"":chip(C.rar))+'</div><div class="ds">'+(hid?"It will not hold still long enough to be described.":creatureNote(C,P))+"</div></div></div>"});h+="</div>"}
+  else h+='<div class="note" style="color:var(--mute);margin-top:14px">Nothing seems to live here. Or nothing you can see yet.</div>';
+  return h+'<div class="row"><button class="btn" data-act="leave">Leave orbit</button></div></section>'}
+function progHTML(){const p=progress(S);return'<div class="prog" title="Named so far"><i style="width:'+(p.got/p.tot*100)+'%"></i></div><span id="pgt">Named '+p.got+" of "+p.tot+"</span>"}
+function renderSystem(){
+  const nm=nameOf(S.code),W=S.planets,strange=isStrange(S);
+  let ws="";for(let i=0;i<W.length;i++){const P=W[i];if(P.merged&&P.mergedWith===i+1){ws+='<div class="twin">'+planetCard(P)+planetCard(W[i+1])+"</div>";i++}else ws+=planetCard(P)}
+  return'<section class="sys fade"><div class="lab">System · '+sectorTxt(S.code)+'</div><input class="nm" data-name="'+S.code+'" maxlength="60" placeholder="Name this system" value="'+esc(nm)+'" aria-label="Name this system"><div class="sub"><span>'+S.star.k+(S.binary?" with a companion "+S.star2.c+" sun":"")+" · "+S.n+(S.n===1?" world":" worlds")+"</span>"+chip(S.rar)+(S.twin!=null?'<span class="chip r3">Two worlds merged</span>':"")+(hasPara(S)?'<span class="chip para">✦ Paradise</span>':"")+(strange?'<span class="chip r4">◆ strange</span>':"")+
+   '</div><div class="sub" style="margin-top:8px"><button class="tb'+(SV.pins[S.code]?" on":"")+'" data-act="favs">'+(SV.pins[S.code]?"★ Saved":"☆ Save")+'</button><button class="tb'+(SV.claim[S.code]?" on":"")+'" data-act="claim">'+(SV.claim[S.code]?"⚑ Claimed":"⚐ Claim")+'</button><button class="tb'+(SV.home===S.code?" on":"")+'" data-act="sethome">'+(SV.home===S.code?"⌂ Home":"⌂ Make home")+'</button><button class="cp" data-act="copys">⧉ '+VER+"·"+S.code+'</button></div><div class="pgw" id="pgw">'+progHTML()+"</div></section>"+
+   '<div class="scan">'+esc(SV.msg)+'</div><div class="orrw">'+orrery(S)+'</div><div class="worlds">'+ws+'</div><div id="detail">'+(SV.sel!=null&&W[SV.sel]?planetPanel(W[SV.sel]):"")+"</div>"+
+   '<div class="row"><button class="btn go" data-act="view" data-v="chart">✦ Open star chart</button><button class="btn" data-act="view" data-v="ship">Return to ship</button></div>'}
+function selectPlanet(i){
+  const svg=$("orr");if(SV.sel===i){leaveOrbit();return}
+  SV.sel=i;save();root.querySelectorAll(".pc").forEach(e=>e.classList.toggle("sel",+e.dataset.i===i));
+  root.querySelectorAll(".op").forEach(e=>e.classList.toggle("sel",+e.dataset.i===i));
+  const open=()=>{$("detail").innerHTML=planetPanel(S.planets[i]);const h=$("hint");if(h)h.textContent=hintText();const pp=$("pp");if(pp)pp.scrollIntoView({behavior:"smooth",block:"start"})};
+  const el=svg&&svg.querySelector('.op[data-i="'+i+'"]'),sh=$("shipm");
+  if(el&&sh&&!REDUCE){const r=el.getBoundingClientRect(),sr=svg.getBoundingClientRect(),k=720/sr.width,x=(r.left+r.width/2-sr.left)*k,y=(r.top+r.height/2-sr.top)*k;
+    sh.style.transition="transform 1.1s cubic-bezier(.5,0,.3,1)";const ang=Math.atan2(y-SHIPXY.y,x-SHIPXY.x)*180/Math.PI+90;$("shipi").style.transform="rotate("+ang+"deg)";sh.style.transform="translate("+x+"px,"+y+"px)";
+    setTimeout(()=>{if(SV.sel===i){sh.style.transition="opacity .4s";sh.style.opacity="0";SHIPXY={x:30,y:300}}open()},1150)}
+  else open()}
+function leaveOrbit(){SV.sel=null;save();const sh=$("shipm");if(sh){sh.style.transition="none";sh.style.transform="translate("+SHIPXY.x+"px,"+SHIPXY.y+"px)";void sh.getBoundingClientRect();sh.style.transition="opacity .4s";sh.style.opacity="1"}
+  root.querySelectorAll(".pc,.op").forEach(e=>e.classList.remove("sel"));$("detail").innerHTML="";const h=$("hint");if(h)h.textContent=hintText()}
+function hintText(){
+  if(view==="ship")return"Welcome aboard. Open the star chart to choose where to fly.";
+  if(view==="chart")return"Pick a star and fly. Purple ◇ means something strange. Green ✧ means a paradise world. Both are the scanner catching a faint signal.";
+  if(SV.sel==null)return hasPara(S)?"Paradise found. Tap the shining green world to fly in.":isStrange(S)?"The scanner found something strange here. Tap a glowing world to fly in.":"Tap a world to fly in and look closer. Nothing strange here? Open the chart and keep hunting.";
+  return"Name it, meet its animals, or leave orbit and fly somewhere new."}
+/* ---------- the frame ---------- */
+function render(){
+  cancelAnimationFrame(CH.raf);const app=$("app");
+  const tabs=[["ship","Ship"],["chart","Star chart"],["system","System"]].map(t=>'<button class="tab'+(view===t[0]?" on":"")+'" data-act="view" data-v="'+t[0]+'">'+t[1]+"</button>").join("");
+  app.innerHTML='<div class="top"><div class="logo"><i></i>My Sky</div><button class="tb" data-act="journal">Journal'+(Object.keys(SV.names).length?" · "+Object.keys(SV.names).length:"")+'</button></div><nav class="tabs2">'+tabs+'</nav><div class="hint" id="hint">'+esc(hintText())+"</div>"+
+   (view==="ship"?renderShip():view==="chart"?renderChart():renderSystem());
+  if(view==="chart")chartInit()}
+/* ---------- places sheet, journal, seeds ---------- */
+let pt="fav";
+function placesSheet(){
+  const mk=(list)=>list.map(code=>{const o=starOf(code),pr=SV.claim[code]?progress(getSys(code)):null;return'<div class="jr"><div class="ji"><span class="sd" style="background:'+hsl(o.star.h,80,68)+";box-shadow:0 0 12px "+hsl(o.star.h,90,66,.7)+'"></span></div><div class="jt"><b>'+esc(sysName(code))+(SV.claim[code]?" ⚑":"")+"</b><span>"+sectorTxt(code)+" · "+o.star.k+(SV.para[code]?' · <span style="color:#8df0b0">✦ '+SV.para[code]+(SV.para[code]>1?" paradise worlds":" paradise world")+"</span>":"")+(SV.strange[code]?' · <span style="color:#c9a8ff">◆ strange</span>':"")+(pr?" · named "+pr.got+" of "+pr.tot:"")+'</span></div><button class="star'+(SV.pins[code]?" on":"")+'" data-act="pinplace" data-c="'+code+'" aria-label="Save">★</button><button class="btn" data-act="warp" data-c="'+code+'">Fly</button></div>'}).join("");
+  const sets={fav:Object.keys(SV.pins).filter(k=>/^[0-9A-Z]{4}-[0-9A-Z]{4}$/.test(k)),claim:Object.keys(SV.claim),para:Object.keys(SV.para),strange:Object.keys(SV.strange),recent:[...new Set(SV.trail.slice().reverse())]};
+  const T=[["fav","Saved"],["claim","Claimed"],["para","Paradise"],["strange","Strange places"],["recent","Recent"]];
+  let h='<div class="row" style="justify-content:space-between;align-items:center;margin:0"><h2>Places</h2><button class="btn" data-act="closep">Close</button></div><div class="tabs">'+T.map(t=>'<button class="tb'+(pt===t[0]?" on":"")+'" data-act="pt" data-k="'+t[0]+'">'+t[1]+" · "+sets[t[0]].length+"</button>").join("")+"</div><p class=\"hm\">★ <b>Saved</b> is a bookmark: it only helps you fly back later. ⚑ <b>Claimed</b> means the system is yours: you named things there. Naming anything claims the system for you.</p>";
+  const L=sets[pt];h+=L.length?mk(L):'<div class="empty">'+({fav:"Nothing saved yet. Use ☆ Save on a system you love.",claim:"No claimed systems yet. Claim a system to name everything in it. Naming a system claims it automatically.",para:"No paradise worlds found yet. Watch for the green ✧ on the star chart, then fly there.",strange:"No strange places found yet. Look for the purple ◇ on the star chart.",recent:"Nowhere visited yet."})[pt]+"</div>";
+  $("psheet").innerHTML=h;$("pov").classList.add("show")}
+let jf="all";
+function allNamed(){const out=[];for(const p in SV.names){const m=p.match(/^([0-9A-Z]{4}-[0-9A-Z]{4})(?:\/p(\d))?(?:\/c(\d))?$/);if(!m||!locOf(m[1]))continue;out.push({path:p,code:m[1],pi:m[2]==null?null:+m[2],cj:m[3]==null?null:+m[3],name:SV.names[p]})}return out}
+function journal(){
+  const L=allNamed();let rows=L.filter(e=>jf==="all"||(jf==="pins"&&SV.pins[e.path])||(jf==="systems"&&e.pi==null)||(jf==="planets"&&e.pi!=null&&e.cj==null)||(jf==="animals"&&e.cj!=null));
+  rows.sort((a,b)=>(SV.pins[b.path]?1:0)-(SV.pins[a.path]?1:0)||a.name.localeCompare(b.name));
+  let h='<div class="row" style="justify-content:space-between;align-items:center;margin:0"><h2>Journal</h2><button class="btn" data-act="closej">Close</button></div><div class="sub"><span>'+L.length+" named · "+Object.keys(SV.visited).length+' stars visited</span></div><div class="tabs">';
+  for(const [k,t] of [["all","All"],["pins","Favourites"],["systems","Systems"],["planets","Worlds"],["animals","Animals"]])h+='<button class="tb'+(jf===k?" on":"")+'" data-act="jf" data-k="'+k+'">'+t+"</button>";
+  h+="</div>";if(!rows.length)h+='<div class="empty">'+(L.length?"Nothing here yet.":"Nothing is named yet. Fly somewhere, open a world, give it a name, and it will be kept here.")+"</div>";
+  for(const e of rows){const G=getSys(e.code);let ic="",sub="";
+    if(e.pi==null){ic='<svg viewBox="0 0 20 20" width="30" height="30"><circle cx="10" cy="10" r="4" fill="'+hsl(G.star.h,80,68)+'"/><circle cx="10" cy="10" r="8" fill="none" stroke="'+hsl(G.star.h,80,68,.3)+'"/></svg>';sub="System · "+G.star.k+" · "+G.n+" worlds "+chip(G.rar)}
+    else{const P=G.planets[e.pi];if(!P)continue;if(e.cj==null){ic=planetSVG(P,G,40);sub="World · "+BIOME[P.biome].n+(P.exotic?", "+P.exotic:"")+" "+chip(P.rar)}else{const C=P.creatures[e.cj];if(!C)continue;ic=creatureSVG(C,26);sub="Animal · "+creatureLine(C)+" "+(C.same?"":chip(C.rar))}}
+    const sd=e.pi!=null&&e.cj==null&&SV.rev[e.code+"/p"+e.pi]?' <span class="chip ok">Mystery solved</span>':"";
+    h+='<div class="jr"><div class="ji">'+ic+'</div><div class="jt"><b>'+esc(e.name)+"</b><span>"+sub+sd+'</span></div><button class="star'+(SV.pins[e.path]?" on":"")+'" data-act="pin" data-p="'+e.path+'" aria-label="Favourite">★</button><button class="btn" data-act="visit" data-c="'+e.code+'" data-i="'+(e.pi==null?"":e.pi)+'">Fly</button></div>'}
+  h+='<div class="row" style="margin-top:22px"><button class="btn" data-act="export">Copy journal as text</button></div>';$("jsheet").innerHTML=h;$("jov").classList.add("show")}
+function exportText(){const L=allNamed().sort((a,b)=>a.code.localeCompare(b.code)||(a.pi??-1)-(b.pi??-1)||(a.cj??-1)-(b.cj??-1));let t="MY SKY JOURNAL\n\n";for(const e of L){const ind=e.pi==null?"":e.cj==null?"  ":"    ",kind=e.pi==null?"System":e.cj==null?"World":"Animal";t+=ind+kind+": "+e.name+"   ["+VER+"·"+e.code+(e.pi!=null?"·p"+(e.pi+1):"")+(e.cj!=null?" animal "+(e.cj+1):"")+"]\n"}return t}
+function seedSheet(){$("ssheet").innerHTML='<div class="row" style="justify-content:space-between;align-items:center;margin:0"><h2>Seeds</h2><button class="btn" data-act="closes">Close</button></div><p class="note">A seed is a place on the map. Share it and anyone can fly to this same star. You can also type any word, and it becomes a star of its own.</p><div class="lab" style="margin-top:14px">This system</div><div class="row"><input class="field" id="cur" readonly value="'+VER+"·"+S.code+(SV.sel!=null?"·p"+(SV.sel+1):"")+'" style="flex:1"><button class="btn" data-act="copycur">Copy</button></div><div class="lab" style="margin-top:20px">Fly to a seed</div><div class="row"><input class="field" id="sin" placeholder="MS2·XXXX-XXXX, or any word" style="flex:1" autocomplete="off" spellcheck="false"><button class="btn" data-act="gotoseed">Fly</button></div>';$("sov").classList.add("show");setTimeout(()=>{const e=$("sin");if(e)e.focus()},50)}
+async function copy(t,msg){try{await navigator.clipboard.writeText(t);toast(msg||"Copied")}catch(e){const a=document.createElement("textarea");a.value=t;root.appendChild(a);a.select();try{document.execCommand("copy");toast(msg||"Copied")}catch(e2){toast("Could not copy")}a.remove()}}
+/* ---------- events ---------- */
+function closeAll(){["jov","sov","pov"].forEach(i=>$(i).classList.remove("show"))}
+root.addEventListener("click",ev=>{const b=ev.target.closest("[data-act]");if(!b)return;const a=b.dataset.act;
+  if(a==="view"){closeAll();show(b.dataset.v)}
+  else if(a==="planet")selectPlanet(+b.dataset.i);
+  else if(a==="leave")leaveOrbit();
+  else if(a==="jump")startFlight(b.dataset.c);
+  else if(a==="zin")zoom(1.25);else if(a==="zout")zoom(.8);
+  else if(a==="recenter"){const p=posOf(SV.cur);CH.cx=p.x;CH.cy=p.y;CH.dirty=true}
+  else if(a==="nearest"){const c=nearestUnvisited();if(c){CH.sel=c;const p=posOf(c),q=posOf(SV.cur);CH.cx=(p.x+q.x)/2;CH.cy=(p.y+q.y)/2;CH.dirty=true;chartInfo()}else toast("Every star in range has been visited. Pan the map and hop further.")}
+  else if(a==="back")back();
+  else if(a==="homestar"){if(SV.home){closeAll();warp(SV.home)}}
+  else if(a==="reveal"){SV.rev[b.dataset.p]=1;save();SV.msg="Mystery solved. It is kept in your journal.";const P=S.planets[SV.sel];$("detail").innerHTML=planetPanel(P)}
+  else if(a==="sethome"){SV.home=SV.home===S.code?null:S.code;save();toast(SV.home?"This system is now your home":"Home cleared");render()}
+  else if(a==="favs"){if(SV.pins[S.code]){delete SV.pins[S.code];toast("Removed from saved places")}else{SV.pins[S.code]=1;toast("Saved to your places")}save();b.className="tb"+(SV.pins[S.code]?" on":"");b.textContent=SV.pins[S.code]?"★ Saved":"☆ Save"}
+  else if(a==="claim"){if(SV.claim[S.code]){delete SV.claim[S.code]}else{SV.claim[S.code]=1;toast("System claimed")}save();b.className="tb"+(SV.claim[S.code]?" on":"");b.textContent=SV.claim[S.code]?"⚑ Claimed":"⚐ Claim"}
+  else if(a==="places"){pt=b.dataset.t;placesSheet()}
+  else if(a==="pt"){pt=b.dataset.k;placesSheet()}
+  else if(a==="closep")$("pov").classList.remove("show");
+  else if(a==="pinplace"){const c=b.dataset.c;if(SV.pins[c])delete SV.pins[c];else SV.pins[c]=1;save();placesSheet()}
+  else if(a==="warp"){closeAll();warp(b.dataset.c)}
+  else if(a==="seed")seedSheet();
+  else if(a==="closes")$("sov").classList.remove("show");
+  else if(a==="copys")copy(VER+"·"+S.code,"System seed copied");
+  else if(a==="copyp")copy(VER+"·"+S.code+"·p"+(+b.dataset.i+1),"World seed copied");
+  else if(a==="copycur")copy($("cur").value,"Seed copied");
+  else if(a==="gotoseed"){const q=parseSeed($("sin").value);closeAll();warp(q.code,q.p!=null&&q.p>=0?q.p:null)}
+  else if(a==="journal")journal();
+  else if(a==="closej"){$("jov").classList.remove("show");if(view==="ship"||view==="system")render()}
+  else if(a==="jf"){jf=b.dataset.k;journal()}
+  else if(a==="pin"){const p=b.dataset.p;if(SV.pins[p])delete SV.pins[p];else SV.pins[p]=1;save();journal()}
+  else if(a==="visit"){closeAll();const i=b.dataset.i;warp(b.dataset.c,i===""?null:+i)}
+  else if(a==="export")copy(exportText(),"Journal copied as text")});
+root.addEventListener("input",ev=>{const e=ev.target,d=e.dataset;if(!d)return;
+  if(d.ship!=null){SV.ship=e.value.slice(0,40);save();return}
+  if(d.name!=null){const had=!!nameOf(d.name);setName(d.name,e.value);const named=e.value.trim();
+    if(named&&d.name===S.code&&!SV.claim[S.code]){SV.claim[S.code]=1;toast("System claimed")}
+    
+    const g=$("pgw");if(g)g.innerHTML=progHTML();
+    const jb=root.querySelector('[data-act="journal"]');if(jb){const n=Object.keys(SV.names).length;jb.textContent="Journal"+(n?" · "+n:"")}}});
+root.addEventListener("keydown",ev=>{if(ev.key==="Enter"&&ev.target.dataset&&(ev.target.dataset.name!=null||ev.target.dataset.ship!=null))ev.target.blur();if(ev.key==="Enter"&&ev.target.id==="sin")root.querySelector('[data-act="gotoseed"]').click();if(ev.key==="Escape")closeAll()});
+{let rz=0;new ResizeObserver(()=>{if(!host.isConnected)return;cancelAnimationFrame(rz);rz=requestAnimationFrame(()=>{if(S)stars(S);if(view==="chart")chartInit()})}).observe(host)}
+/* ---------- begin ---------- */
+host.MS={gen,toCode,parseSeed,codeOf,decode,locOf,starsIn,findHome,getSys,nS,rngFrom,HOME,VER,state:()=>SV};
+if(!SV.cur||!locOf(SV.cur)){SV.cur=HOME;SV.visited[HOME]=1;SV.trail=[HOME]}
+{const c=SV.cur;SV.cur=null;go(c,SV.sel);SV.view=SV.view||"ship"}
+view=SV.view;if(view==="chart")view="ship";
+render();
+
+}
+
+defApp("mysky",{name:"My Sky",icon:"sky",cat:"Games",w:980,h:680,single:true,desc:"a cozy star-hunting game: fly between invented systems, find paradise worlds and strange places, and name every world and animal",kw:"sky stars space planets animals discover name paradise explore no man's sky seeds procedural universe galaxy ship",
+ init(win,b){
+  const host=h("div",{tabindex:"0"});b.append(host);
+  const sh=host.attachShadow({mode:"open"});sh.innerHTML="<style>"+MS_CSS+"</style>"+MS_HTML;
+  MSGAME(sh,host,win);
+ }});
+})();
+
 /* ===================== HEARTH (a cozy fireplace) ===================== */
 defApp("hearth",{name:"Hearth",icon:"flame",cat:"Accessories",w:900,h:600,single:true,desc:"a cozy fireplace with sound",kw:"fireplace fire hearth fireside cozy relax ambience crackle warm flame logs sleep campfire",
  css(){if(document.getElementById("hhcss"))return;const s=document.createElement("style");s.id="hhcss";s.textContent=`
@@ -6273,6 +6792,7 @@ const CL={
   tvos_session:["Open windows","Which windows were open last time, so they can come back at start.","Housekeeping"],
   tvos_diary:["Diary","Every page you wrote in the Diary, its colours and its PIN.","Your writing and creations","This is your writing. Deleting it removes every Diary page and the PIN."],
   tvos_circuit:["Circuit Temple progress","Your Circuit Temple game: money, boards repaired, shop upgrades, your shelf and the repair you are in the middle of.","Your writing and creations","Deleting it restarts Circuit Temple from the beginning."],
+  tvos_mysky:["My Sky progress","Your My Sky game: every system, world and animal you named, your bookmarks, claimed systems, paradise finds, home star and ship name.","Your writing and creations","Deleting it restarts My Sky from the beginning."],
   tvos_seq:["Sequencer patterns","Your drum patterns A to D, tempo and mixer settings.","Your writing and creations","Deleting it erases your drum patterns."],
   tvos_tasks:["Tasks","Your task list.","Your writing and creations","Deleting it erases your task list."],
   tvos_bm:["Browser bookmarks","Your bookmarks in the Browser app.","Your writing and creations","Deleting it removes your bookmarks (the two starter bookmarks may come back)."],
@@ -7018,6 +7538,7 @@ const BKT={
   const bm=BKT.json("tvos_bm",[]);if(Array.isArray(bm)){const u=bm.filter(x=>x&&x.u&&x.u!=="https://republicka.life");add("bm","Bookmarks","settings",u.length,BKT.hs(JSON.stringify(u)))}
   const pg=BKT.json("tvos_apps",[]);if(Array.isArray(pg)&&pg.length){let s=BKT.raw("tvos_apps")||"";for(let i=0;i<localStorage.length;i++){const k=localStorage.key(i);if(k.startsWith("tvos_app_")||k.startsWith("tvos_appd_"))s+="|"+k+BKT.hs(BKT.raw(k)||"")}add("progs","Programs","settings",pg.length,BKT.hs(s))}
   const ct=BKT.json("tvos_circuit",null);if(ct&&ct.done>0)add("circuit","Circuit Temple","settings",ct.done,BKT.hs(JSON.stringify([ct.done,ct.earned,ct.tiers,ct.decor])));
+  const ms=BKT.json("tvos_mysky",null);if(ms&&ms.visited){const nv=Object.keys(ms.visited).length,nn=ms.names?Object.keys(ms.names).length:0;if(nn>0||nv>1)add("mysky","My Sky","settings",nn||nv,BKT.hs(JSON.stringify([ms.names,ms.pins,ms.claim,ms.home,ms.ship,ms.para,ms.strange,ms.rev,Object.keys(ms.visited).length])))}
   const gm=BKT.raw("terminal_velocity_v3");if(gm)add("game","Game save","game",1,BKT.hs(gm));
   return A},
  st(){const snap=BKT.json("tvos_backup_snap",null),last=LS.get("tvos_backup_last",0),sg=(snap&&snap.sigs)||{},ft=snap?(snap.ft||0):0,as=BKT.areas(),ch=[];let files=0,all=0;
