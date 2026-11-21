@@ -449,6 +449,9 @@ Lyre
     mood while it plays crossfades into the new one.
   - Play for me: the lyre plays itself, in phrases with rests, swells and
     chord changes. Press again to stop. You can play over it by hand.
+    While it plays, it also moves to a different mood, picked at random
+    from all of them, every few minutes (see "change mood" in More
+    settings). It changes at the end of a phrase, so nothing cuts off.
   - Record: records what the lyre plays. Tick "Include my voice" first to
     record your microphone too (headphones give the cleanest sound).
     Press Stop recording when you are done. A bar then appears with Play
@@ -485,7 +488,8 @@ Lyre
   modes Dorian, Phrygian, Lydian and Mixolydian, major, minor, harmonic
   minor, Hirajoshi, Hijaz, whole tone, chromatic), starting note, lowest
   octave, 7 to 13 strings (7 is the classic ancient lyre), ring time,
-  tone, echo, playing style, looseness, "Stop by itself after" (a sleep
+  tone, echo, playing style, looseness, "When playing for me, change
+  mood" (every 2 to 20 minutes, or stay on one mood), "Stop by itself after" (a sleep
   timer: the music fades out slowly, then stops) and "Moving background"
   (turn it off on a very slow computer). The playing styles are Lullaby,
   Dawn, Tide, Rain, Campfire, Starlight, Drone, Wander, Procession,
