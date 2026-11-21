@@ -1258,7 +1258,7 @@ const fmtDate=t=>{const d=new Date(t),hm=" "+pad(d.getHours())+":"+pad(d.getMinu
 const sleep=ms=>new Promise(r=>setTimeout(r,ms));
 const LS={get(k,d){try{const v=localStorage.getItem(k);return v==null?d:JSON.parse(v)}catch(e){return d}},set(k,v){try{localStorage.setItem(k,JSON.stringify(v));return true}catch(e){try{window.tvosStorageFull&&window.tvosStorageFull(e)}catch(_){}return false}}};
 const fmtUp=s=>{s=Math.max(0,Math.round(s));const d=Math.floor(s/86400),hr=Math.floor(s%86400/3600),m=Math.floor(s%3600/60),sc=s%60;if(d)return d+" d "+hr+" h";if(hr)return hr+" h "+m+" min";if(m)return m+" min "+sc+" s";return sc+" s"};
-const OS={apps:{},wins:[],z:10,bus:{},boot:performance.now(),ver:"1.0 build 1121-1538"};
+const OS={apps:{},wins:[],z:10,bus:{},boot:performance.now(),ver:"1.0 build 1121-1548"};
 OS.on=(ev,f)=>{(OS.bus[ev]=OS.bus[ev]||[]).push(f);return f};
 OS.off=(ev,f)=>{OS.bus[ev]=(OS.bus[ev]||[]).filter(x=>x!==f)};
 /* reboot that always fetches the newest copy of this page (like Ctrl+Shift+R), then reloads */
@@ -8729,8 +8729,8 @@ SPA.close=(cv,o)=>{
 SPA.smear=(cv,pts)=>{
   const c=cv.getContext("2d");c.setTransform(1,0,0,1,0,0);c.clearRect(0,0,cv.width,cv.height);const s=cv.width/100;c.setTransform(s,0,0,s,0,0);c.lineCap="round";c.lineJoin="round";
   for(let i=1;i<pts.length;i++){const a=pts[i-1],b=pts[i],al=Math.max(0,1-b.age/2.4);if(al<=0)continue;
-    c.strokeStyle="rgba(255,255,255,"+(.2*al).toFixed(3)+")";c.lineWidth=11;c.beginPath();c.moveTo(a.x,a.y);c.lineTo(b.x,b.y);c.stroke();
-    c.strokeStyle="rgba(255,210,222,"+(.22*al).toFixed(3)+")";c.lineWidth=6;c.beginPath();c.moveTo(a.x,a.y);c.lineTo(b.x,b.y);c.stroke();
+    c.strokeStyle="rgba(255,255,255,"+(.3*al).toFixed(3)+")";c.lineWidth=11;c.beginPath();c.moveTo(a.x,a.y);c.lineTo(b.x,b.y);c.stroke();
+    c.strokeStyle="rgba(255,210,222,"+(.32*al).toFixed(3)+")";c.lineWidth=6;c.beginPath();c.moveTo(a.x,a.y);c.lineTo(b.x,b.y);c.stroke();
     c.strokeStyle="rgba(255,255,255,"+(.3*al).toFixed(3)+")";c.lineWidth=1.4;c.beginPath();c.moveTo(a.x-2,a.y-2.2);c.lineTo(b.x-2,b.y-2.2);c.stroke()}
 };
 /* one frame of Sophia, in the right pose, facing the right way */
@@ -8773,7 +8773,7 @@ SP.home=()=>({bag:Math.max(SP.Sz()*.5,SP.W-.5*SP.Sz()-4)});
 SP.css=()=>{if($("#spcss"))return;const s=document.createElement("style");s.id="spcss";s.textContent=`
 #sophia{position:absolute;inset:0;z-index:2147483000;pointer-events:none;overflow:hidden}
 #sophia canvas{position:absolute;left:0;top:0;pointer-events:none;will-change:transform}
-#sophia .sphit{position:absolute;pointer-events:auto;cursor:pointer;touch-action:none;-webkit-tap-highlight-color:transparent}
+#sophia .sphit{position:absolute;pointer-events:auto;cursor:pointer;touch-action:none;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none;-webkit-tap-highlight-color:transparent}
 #sophia .spsay{position:absolute;left:0;top:0;white-space:nowrap;font-size:11px;line-height:1;padding:4px 8px;border-radius:10px;background:var(--pn);color:var(--fg);border:1px solid var(--bd);box-shadow:0 2px 8px rgba(0,0,0,.35);opacity:0;transition:opacity .25s;pointer-events:none}
 #sophia .spsay.on{opacity:1}
 #sophia .spfx{position:absolute;left:0;top:0;pointer-events:none;font-size:14px;color:#ff8fa8;text-shadow:0 1px 3px rgba(0,0,0,.4);animation:spfx 1.5s ease-out forwards}
@@ -8906,12 +8906,22 @@ SP.pet=()=>{const P=SP.P;if(P.st==="sleep"){SP.wake(true)}SP.lastActive=Date.now
   SP.setSt("pet",1.7,()=>SP.think());SP.fx("♡");setTimeout(()=>SP.fx("♡"),260)};
 SP.bindHit=()=>{
   const hit=SP.hit;let t0=0,timer=0,down=false;
-  const end=()=>{clearTimeout(timer);if(!down)return;down=false;const P=SP.P,dt=performance.now()-t0;
-    if(P.st==="cuddle"){if(dt>1800){SP.bump("cuddle");SP.fx("♡")}SP.lickEnd();SP.setSt("pet",1.6,()=>SP.think())}else SP.pet()};
+  /* every way a press can end funnels through here, so she can never be left licking: finger up, touch cancelled, pointer lost, tab hidden, a tap somewhere else, or she simply gets tired */
+  const stop=(kind)=>{clearTimeout(timer);const P=SP.P,was=down;down=false;
+    if(P.st==="cuddle"){if(performance.now()-t0>1800){SP.bump("cuddle");SP.fx("♡")}SP.lickEnd();SP.setSt("pet",1.6,()=>SP.think());return}
+    if(was&&kind==="up")SP.pet()};
+  SP.holdStop=stop;
   hit.addEventListener("pointerdown",e=>{if(e.button!==0)return;e.preventDefault();down=true;t0=performance.now();try{hit.setPointerCapture(e.pointerId)}catch(_){}
     timer=setTimeout(()=>{if(!down)return;const P=SP.P;if(P.st==="sleep")SP.wake(true);SP.q.length=0;SP.setSt("cuddle");P.earT=1;P.face=1;SP.fx("♡")},420)});
-  hit.addEventListener("pointerup",end);hit.addEventListener("pointercancel",()=>{clearTimeout(timer);down=false;if(SP.P.st==="cuddle"){SP.lickEnd();SP.setSt("sit",1)}});
-  hit.addEventListener("contextmenu",e=>{e.preventDefault();clearTimeout(timer);down=false;SP.menu(e.clientX,e.clientY)});
+  hit.addEventListener("pointerup",()=>stop("up"));
+  hit.addEventListener("pointercancel",()=>stop("cancel"));
+  hit.addEventListener("lostpointercapture",()=>stop("cancel"));
+  /* Android fires a context-menu event on a long press while the finger is still down. That must not end (or start) anything: the press is still going. */
+  hit.addEventListener("contextmenu",e=>{e.preventDefault();if(down||SP.P.st==="cuddle")return;SP.menu(e.clientX,e.clientY)});
+  const any=()=>{if(down||(SP.P&&SP.P.st==="cuddle"))stop("cancel")};
+  document.addEventListener("pointerup",any);document.addEventListener("pointercancel",any);document.addEventListener("touchend",any);document.addEventListener("touchcancel",any);
+  addEventListener("blur",any);document.addEventListener("visibilitychange",()=>{if(document.hidden)any()});
+  document.addEventListener("pointerdown",e=>{if(SP.lk&&SP.lk.on&&e.target!==hit)stop("cancel")},true);
 };
 SP.menu=(x,y)=>{const S=SP.S,on=SP.L&&S.mode!=="away";
   ctxMenu(x,y,[
@@ -8945,7 +8955,7 @@ SP.step=(dt)=>{
   if(st==="walk"){const rg=SP.platR(P.plat);P.tx=Math.max(rg[0],Math.min(rg[1],P.tx));const sp=SP.speed(P.fast)*dt,d=P.tx-P.x;P.ph+=dt*(P.fast?3.2:2.1);P.wag+=dt*4;if(Math.abs(d)<=sp||P.t>(P.wlim||20)){P.x=Math.abs(d)<=sp?P.tx:P.x;SP.fit();return SP.done()}P.x+=Math.sign(d)*sp;SP.fit();return}
   if(st==="hop"){const h=P.hp,u=Math.min(1,P.t/h.d);P.x=h.x0+(h.x1-h.x0)*u;P.fy=h.y0+(h.y1-h.y0)*u-4*h.peak*u*(1-u);P.wag+=dt*8;if(u>=1){P.plat=h.pl;P.x=h.x1;P.fy=SP.platY(h.pl);P.lwx=h.pl.k==="w"?SP.rect(h.pl.win).x:null;SP.done()}return}
   if(st==="fall"){P.vy=(P.vy||0)+900*dt;P.fy+=P.vy*dt;const fl=SP.platY(SP.floor);if(P.fy>=fl){P.fy=fl;P.plat=SP.floor;P.vy=0;P.earT=1;SP.say("oh!",1100);return SP.setSt("sit",1.2)}return}
-  if(st==="cuddle"){P.wag+=dt*10;if(P.t>1.2&&SP.lk&&!SP.lk.on)SP.lickStart();else if(!SP.lk.on&&P.t>.9&&Math.floor(P.t*1.2)!==Math.floor((P.t-dt)*1.2))SP.fx("♡");return}
+  if(st==="cuddle"){P.wag+=dt*10;if(P.t>6&&SP.holdStop){SP.holdStop("cancel");return}if(P.t>1.2&&SP.lk&&!SP.lk.on)SP.lickStart();else if(!SP.lk.on&&P.t>.9&&Math.floor(P.t*1.2)!==Math.floor((P.t-dt)*1.2))SP.fx("♡");return}
   if(st==="sleep"){if(Math.floor(P.t/3.2)!==Math.floor((P.t-dt)/3.2))SP.fx("z","z");if(P.t>=P.dur){return SP.done()}return}
   if(st==="happy"||st==="pet"||st==="eat"||st==="bark"||st==="alert")P.wag+=dt*(st==="eat"?5:13);
   else P.wag+=dt*(st==="stare"?1:2.4);
