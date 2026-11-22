@@ -917,8 +917,9 @@ Sophia (paw icon, Companions)
   - Checks every new window: when you open an app she trots over, sniffs
     along the top of the window and says "all clear". Open several at once
     and she just nods at the extras. She never covers the window itself.
-  - Barks (only a speech bubble, she is silent) when
-    the OS catches an error, and at most once every 20 seconds.
+  - Barks (only a speech bubble, she is silent) every now and then on
+    her own, once every ten to twenty minutes ("woof!", "bark!", "yap!"),
+    and also when the OS catches an error, at most once every 20 seconds.
   - Tap her to pet her. Press and hold for a cuddle; keep holding and she
     leans right up to the screen, looks at you, and licks the glass for
     real, leaving a wet trail that fades. Let go (or tap anywhere else)
