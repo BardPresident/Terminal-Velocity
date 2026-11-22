@@ -1258,7 +1258,7 @@ const fmtDate=t=>{const d=new Date(t),hm=" "+pad(d.getHours())+":"+pad(d.getMinu
 const sleep=ms=>new Promise(r=>setTimeout(r,ms));
 const LS={get(k,d){try{const v=localStorage.getItem(k);return v==null?d:JSON.parse(v)}catch(e){return d}},set(k,v){try{localStorage.setItem(k,JSON.stringify(v));return true}catch(e){try{window.tvosStorageFull&&window.tvosStorageFull(e)}catch(_){}return false}}};
 const fmtUp=s=>{s=Math.max(0,Math.round(s));const d=Math.floor(s/86400),hr=Math.floor(s%86400/3600),m=Math.floor(s%3600/60),sc=s%60;if(d)return d+" d "+hr+" h";if(hr)return hr+" h "+m+" min";if(m)return m+" min "+sc+" s";return sc+" s"};
-const OS={apps:{},wins:[],z:10,bus:{},boot:performance.now(),ver:"1.0 build 1121-1600"};
+const OS={apps:{},wins:[],z:10,bus:{},boot:performance.now(),ver:"1.0 build 1122-0445"};
 OS.on=(ev,f)=>{(OS.bus[ev]=OS.bus[ev]||[]).push(f);return f};
 OS.off=(ev,f)=>{OS.bus[ev]=(OS.bus[ev]||[]).filter(x=>x!==f)};
 /* reboot that always fetches the newest copy of this page (like Ctrl+Shift+R), then reloads */
@@ -7792,9 +7792,9 @@ defApp("lyre",{name:"Lyre",icon:"lyre",cat:"Media",w:900,h:640,single:true,desc:
     nextT+=it.s!=null?it.s:it.g*bt}}
   /* every few minutes, hop to a different mood chosen at random from all of them, at the end of a phrase */
   function cycMood(){const all=[];for(const g of LY.moods)for(const k of Object.keys(g[1]))if(k!==S.mood)all.push(k);cycAt=performance.now()+S.cyc*60000;if(!all.length)return;const k=all[Math.floor(Math.random()*all.length)];Object.assign(S,LY.mood(k));S.mood=k;syncCtl();applyScale()}
-  async function autoStart(){await ensure();if(auto)return;auto=true;resetSt();cycAt=S.cyc?performance.now()+S.cyc*60000:0;nextT=ctx.currentTime+.08;sleepEnd=S.sleep?performance.now()+S.sleep*60000:0;
+  async function autoStart(){await ensure();if(auto)return;auto=true;try{SP.musSet("lyre",true)}catch(e){}resetSt();cycAt=S.cyc?performance.now()+S.cyc*60000:0;nextT=ctx.currentTime+.08;sleepEnd=S.sleep?performance.now()+S.sleep*60000:0;
    E.setVol(S.vol);autoT=setInterval(autoTick,40);clearInterval(uiT);uiT=setInterval(paint,1000);autoTick();paint();kick()}
-  function autoStop(keepVol){if(sleepEnd&&!keepVol&&E)E.setVol(S.vol);auto=false;sleepEnd=0;clearInterval(autoT);clearInterval(uiT);paint()}
+  function autoStop(keepVol){if(sleepEnd&&!keepVol&&E)E.setVol(S.vol);auto=false;try{SP.musSet("lyre",false)}catch(e){}sleepEnd=0;clearInterval(autoT);clearInterval(uiT);paint()}
   function sleepDone(){autoStop(true);fadeAll(.4);toast("The Lyre has stopped by itself.");setTimeout(()=>{if(!dead&&E)E.setVol(S.vol)},2500)}
   function autoToggle(){auto?autoStop():autoStart()}
   /* ---------- recording: what the lyre plays, and (if you ask) your voice, saved as a WAV ---------- */
@@ -7974,7 +7974,7 @@ defApp("lyre",{name:"Lyre",icon:"lyre",cat:"Media",w:900,h:640,single:true,desc:
   win.on.focus=()=>{try{root.focus({preventScroll:true})}catch(_){}kick()};
   const vis=()=>{if(!document.hidden)kick()};document.addEventListener("visibilitychange",vis);
   win.api={pluck:(i,v)=>pluckNow(i,v==null?.8:v),S,get ctx(){return ctx},get E(){return E},get take(){return take},get rec(){return rec},recStart,recStop,recToggle,playToggle,saveTake,dropTake,autoToggle,layout,setPace,applyLook,get ps(){return ps},get st(){return st},get q(){return q},fadeAll,get sleepEnd(){return sleepEnd},set sleepEnd(v){sleepEnd=v},autoTick,get auto(){return auto},setNar};
-  win.on.close=()=>{dead=true;clearInterval(autoT);clearInterval(uiT);clearInterval(tmT);clearInterval(playT);clearTimeout(idleT);clearTimeout(rebuildT);clearTimeout(saveT);cancelAnimationFrame(raf);ro.disconnect();document.removeEventListener("visibilitychange",vis);LS.set("tvos_lyre",S);if(rec){const r=rec;rec=null;try{r.micS&&r.micS.getTracks().forEach(t=>t.stop());r.q.stop()}catch(e){}}REC.guard(false);if(E)E.dead=true;if(ctx){try{ctx.close()}catch(e){}}}
+  win.on.close=()=>{dead=true;try{SP.musSet("lyre",false)}catch(e){}clearInterval(autoT);clearInterval(uiT);clearInterval(tmT);clearInterval(playT);clearTimeout(idleT);clearTimeout(rebuildT);clearTimeout(saveT);cancelAnimationFrame(raf);ro.disconnect();document.removeEventListener("visibilitychange",vis);LS.set("tvos_lyre",S);if(rec){const r=rec;rec=null;try{r.micS&&r.micS.getTracks().forEach(t=>t.stop());r.q.stop()}catch(e){}}REC.guard(false);if(E)E.dead=true;if(ctx){try{ctx.close()}catch(e){}}}
  }});
 /* ===================== DEEJAY: all-synthesized trance and techno for parties. Launch layers, hold Build, release for the Drop, or let Autopilot run the whole night. ===================== */
 IP.deejay="M12 3a9 9 0 100 18 9 9 0 000-18z M12 9.2a2.8 2.8 0 100 5.6 2.8 2.8 0 000-5.6z M12 11.4v1.2 M6.2 12a5.8 5.8 0 015.8-5.8 M17.8 12a5.8 5.8 0 01-5.8 5.8";
@@ -8411,13 +8411,13 @@ defApp("deejay",{name:"DeeJay",icon:"deejay",cat:"Media",w:940,h:660,single:true
   const decks=DJ.DECKS.map(d=>({d,tune:null,on:false}));
   /* ---------- audio ---------- */
   async function ensure(){if(!ctx){ctx=new (window.AudioContext||window.webkitAudioContext)({latencyHint:"playback"});E=DJ.engine(ctx,lpOn());E.setVol(S.vol);E.xy(.5,0,S.mood.wash);
-    Q=DJ.seq(E,S,{autoSet,onSection:()=>paint(),onMood:m=>{moodTxt.textContent=m.name;bpmIn.value=S.bpm;bpmOut.textContent=Math.round(S.bpm);colors();paint()},onDrop:()=>{flash=1;paint()},onBar:()=>paint()})}
+    Q=DJ.seq(E,S,{autoSet,onSection:()=>paint(),onMood:m=>{try{SP.musSong("deejay")}catch(e){}moodTxt.textContent=m.name;bpmIn.value=S.bpm;bpmOut.textContent=Math.round(S.bpm);colors();paint()},onDrop:()=>{flash=1;paint()},onBar:()=>paint()})}
    if(ctx.state!=="running")try{await ctx.resume()}catch(e){}return ctx}
   let lastPump=0,maxGap=.03;
   /* look further ahead when this computer is slow to wake the timer, so a hiccup never leaves a gap in the music */
   const pump=()=>{if(dead||!Q)return;const n=performance.now();if(lastPump)maxGap=Math.max((n-lastPump)/1000,maxGap*.995);lastPump=n;Q.tick(ctx.currentTime,document.hidden?1.6:Math.min(1.2,Math.max(.35,maxGap*2.2+.2)))};
-  async function startMusic(){await ensure();if(dead||Q.playing)return;clearTimeout(idleT);Q.sel=S.sel.slice(0,7);Q.mood=S.mood;Q.start(ctx.currentTime);clearInterval(tickT);tickT=setInterval(pump,25);pump();paint();kick()}
-  function stopAll(){if(!Q||!Q.playing)return;Q.stop();clearInterval(tickT);E.xy(.5,0,S.mood.wash);if(rec)recStop();Q.pend=[];Q.auto&&Q.setAuto(false);S.sel=[0,0,0,0,0,0,0];Q.sel=S.sel.slice();decks.forEach(k=>{k.on=false});paint();clearTimeout(idleT);idleT=setTimeout(()=>{if(!dead&&ctx&&!Q.playing&&!rec&&ctx.state==="running")ctx.suspend().catch(()=>{})},9000)}
+  async function startMusic(){await ensure();if(dead||Q.playing)return;clearTimeout(idleT);Q.sel=S.sel.slice(0,7);Q.mood=S.mood;Q.start(ctx.currentTime);try{SP.musSet("deejay",true,()=>S.bpm)}catch(e){}clearInterval(tickT);tickT=setInterval(pump,25);pump();paint();kick()}
+  function stopAll(){if(!Q||!Q.playing)return;Q.stop();try{SP.musSet("deejay",false)}catch(e){}clearInterval(tickT);E.xy(.5,0,S.mood.wash);if(rec)recStop();Q.pend=[];Q.auto&&Q.setAuto(false);S.sel=[0,0,0,0,0,0,0];Q.sel=S.sel.slice();decks.forEach(k=>{k.on=false});paint();clearTimeout(idleT);idleT=setTimeout(()=>{if(!dead&&ctx&&!Q.playing&&!rec&&ctx.state==="running")ctx.suspend().catch(()=>{})},9000)}
   /* send a record's state to the music; it joins on the next bar */
   function applyDeck(i,manual){const k=decks[i];k.d.lanes.forEach((lane,j)=>{const v=k.on&&k.tune?k.tune.v[j]:0;if(Q&&Q.playing)Q.setSel(lane,v,manual&&Q.auto);else{S.sel[lane]=v;if(Q)Q.sel[lane]=v}})}
   const wait=(ms)=>new Promise(r=>setTimeout(r,ms));
@@ -8581,7 +8581,7 @@ defApp("deejay",{name:"DeeJay",icon:"deejay",cat:"Media",w:940,h:660,single:true
   DJ.dbg=win.api={S,decks,get ctx(){return ctx},get E(){return E},get Q(){return Q},stopAll,tapDeck,setTune,fxTap,setAuto,chooseMood,buildDown,buildUp,paint,recStart,recStop,saveTake,openCrate,get take(){return take},get rec(){return rec}};
   win.on.close=()=>{dead=true;clearInterval(tickT);clearInterval(tmT);clearTimeout(idleT);clearTimeout(saveT);cancelAnimationFrame(raf);RO.disconnect();document.removeEventListener("visibilitychange",vis);root.removeEventListener("keydown",kd);root.removeEventListener("keyup",ku);
    window.removeEventListener("pointermove",xyMove);window.removeEventListener("pointerup",xyUp);window.removeEventListener("pointercancel",xyUp);window.removeEventListener("pointerup",bUp);window.removeEventListener("pointercancel",bCancel);window.removeEventListener("touchend",tEnd);window.removeEventListener("touchcancel",tEnd);window.removeEventListener("pointercancel",bUp);
-   try{if(Q)Q.stop()}catch(e){}if(rec){try{rec.q.stop()}catch(e){}rec=null;REC.guard(false)}if(take&&!take.saved)REC.guard(false);try{LS.set("tvos_deejay",keep())}catch(e){}
+   try{if(Q)Q.stop()}catch(e){}try{SP.musSet("deejay",false)}catch(e){}if(rec){try{rec.q.stop()}catch(e){}rec=null;REC.guard(false)}if(take&&!take.saved)REC.guard(false);try{LS.set("tvos_deejay",keep())}catch(e){}
    if(ctx)try{ctx.close()}catch(e){}ctx=null;E=null;Q=null}
  }});
 
@@ -8746,9 +8746,9 @@ SPA.draw=(cv,o,k)=>{
 /* ===================== SOPHIA, part 2: Chief of Defence of Republicka. A tiny companion who lives on the desktop: she naps in her corner, wanders, checks every new window is safe, barks softly at trouble, loves cuddles and treats, and keeps a notebook of real system facts. She cannot be hurt, cannot starve, and wants nothing. Tap her to pet her, hold for a cuddle, right-click for a menu. ===================== */
 const SP={P:null,L:null,run:false,last:0,q:[],treats:[],t0:0,act:0};
 const spDay=(d)=>{d=d||new Date();return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0")};
-SP.def=()=>({v:2,on:true,mode:"up",size:2,snd:false,vol:.2,pitch:1,soft:.6,met:false,tot:{pet:0,treat:0,win:0,err:0,nap:0,cuddle:0,safe:0,scan:0},days:{}});
+SP.def=()=>({v:2,on:true,mode:"up",size:2,met:false,tot:{pet:0,treat:0,win:0,err:0,nap:0,cuddle:0,safe:0,scan:0,dance:0,song:0},days:{}});
 SP.load=()=>{const d=SP.def(),o=LS.get("tvos_sophia",null);if(o&&typeof o==="object"){for(const k of Object.keys(d))if(o[k]!=null)d[k]=o[k]}
-  if(o&&(o.v||1)<2)d.size=2;d.on=d.on!==false;d.mode=["up","bed","away"].includes(d.mode)?d.mode:"up";d.size=[1,1.4,2,2.8,3.6].includes(+d.size)?+d.size:2;d.snd=!!d.snd;d.vol=Math.max(0,Math.min(1,+d.vol||0));d.pitch=Math.max(.6,Math.min(1.5,+d.pitch||1));d.soft=Math.max(0,Math.min(1,+d.soft));d.met=!!d.met;
+  if(o&&(o.v||1)<2)d.size=2;d.on=d.on!==false;d.mode=["up","bed","away"].includes(d.mode)?d.mode:"up";d.size=[1,1.4,2,2.8,3.6].includes(+d.size)?+d.size:2;delete d.snd;delete d.vol;delete d.pitch;delete d.soft;d.met=!!d.met;
   if(!d.days||typeof d.days!=="object")d.days={};if(!d.tot||typeof d.tot!=="object")d.tot=SP.def().tot;for(const k in SP.def().tot)d.tot[k]=+d.tot[k]||0;SP.prune(d);return d};
 /* the notebook keeps two weeks and then clears itself, like a real log */
 SP.prune=(d)=>{const keep=new Date();keep.setDate(keep.getDate()-14);const ks=spDay(keep);for(const k of Object.keys(d.days))if(k<ks)delete d.days[k]};
@@ -8832,16 +8832,8 @@ SP.fx=(txt,cls)=>{if(!SP.L)return;const P=SP.P,Sz=SP.Sz(),e=h("div",{class:"spfx
 SP.say=(txt,ms)=>{if(!SP.L)return;const e=SP.say_el;e.textContent=txt;e.classList.add("on");clearTimeout(SP.sayT);SP.sayT=setTimeout(()=>e.classList.remove("on"),ms||1800);SP.placeSay()};
 SP.placeSay=()=>{const P=SP.P,e=SP.say_el,Sz=SP.Sz();if(!e||!P)return;const w=e.offsetWidth||40;let x=P.x-w/2,y=P.fy-Sz*.98-18;x=Math.max(4,Math.min(SP.W-w-4,x));if(y<2)y=P.fy+4;e.style.transform="translate("+Math.round(x)+"px,"+Math.round(y)+"px)"};
 
-/* ---------- soft sound. Off until you turn it on, and never loud. ---------- */
-SP.snd=(kind)=>{const S=SP.S;if(!S||!S.snd||S.vol<=0)return;try{
-  const A=SP.ac=SP.ac||new (window.AudioContext||window.webkitAudioContext)();if(A.state==="suspended")A.resume();
-  const t=A.currentTime,g=A.createGain(),f=A.createBiquadFilter();f.type="lowpass";f.frequency.value=500+S.soft*2400;g.connect(f);f.connect(A.destination);
-  const base=(kind==="grumble"?190:kind==="yip"?640:440)*S.pitch,vol=Math.min(.18,S.vol*.22);
-  const o=A.createOscillator();o.type="triangle";o.frequency.setValueAtTime(base*1.25,t);o.frequency.exponentialRampToValueAtTime(base*.8,t+.14);
-  g.gain.setValueAtTime(0,t);g.gain.linearRampToValueAtTime(vol,t+.015);g.gain.exponentialRampToValueAtTime(.0008,t+(kind==="grumble"?.4:.16));o.connect(g);o.start(t);o.stop(t+.45);
-  const n=A.createBufferSource(),b=A.createBuffer(1,A.sampleRate*.08,A.sampleRate),dd=b.getChannelData(0);for(let i=0;i<dd.length;i++)dd[i]=(Math.random()*2-1)*(1-i/dd.length);n.buffer=b;const ng=A.createGain();ng.gain.value=vol*.35;n.connect(ng);ng.connect(f);n.start(t);
-}catch(e){}};
-SP.bark=(txt)=>{const P=SP.P;if(!P)return;P.st==="sleep"&&SP.wake(true);SP.setSt("bark",1.1,()=>SP.think());SP.say(txt||"woof!",1300);SP.snd("bark");SP.P.earT=2};
+/* ---------- she is silent: no sound at all. Barks are only a speech bubble. ---------- */
+SP.bark=(txt)=>{const P=SP.P;if(!P)return;P.st==="sleep"&&SP.wake(true);SP.setSt("bark",1.1,()=>SP.think());SP.say(txt||"woof!",1300);SP.P.earT=2};
 
 /* ---------- state machine ---------- */
 SP.setSt=(st,dur,then)=>{const P=SP.P;P.st=st;P.t=0;P.dur=dur==null?1e9:dur;P.then=then||null;if(st==="sleep"){P.napStart=performance.now()}};
@@ -8863,7 +8855,8 @@ SP.think=()=>{
   const P=SP.P,S=SP.S;if(!SP.L)return;
   if(SP.scn&&SP.scn.on&&SP.scn.resume)return SP.scn.resume();
   if(S.mode==="bed"){if(P.st==="sleep")return;return SP.toBag(()=>SP.setSt("sleep"))}
-  if(SP.q.length){const w=SP.q.shift();if(w&&!w.dead&&!w.min&&w.el&&w.el.isConnected)return SP.inspect(w)}
+  if(SP.q.length&&!SP.dancing()){const w=SP.q.shift();if(w&&!w.dead&&!w.min&&w.el&&w.el.isConnected)return SP.inspect(w)}
+  if(SP.dancing())return SP.startDance();
   if(P.plat.k==="w"&&(P.plat.win.dead||P.plat.win.min||!P.plat.win.el.isConnected))return SP.fall();
   const mo=SP.motion(),wins=SP.wins(),sl=SP.sleepy();
   const opts=[["look",22],["walk",mo?4:26],["sniff",mo?0:12],["nap",sl>.35?40+90*sl:6],["perch",wins.length&&!mo?11:0],["floor",P.plat.k==="w"?44:0],["wag",8],["stretch",10]];
@@ -8893,6 +8886,15 @@ SP.inspect=(w)=>{
 SP.onWins=()=>{if(!SP.S)return;const known=SP.known||(SP.known=new Set());const cur=OS.wins.filter(w=>!w.dead);const fresh=cur.filter(w=>!known.has(w.id));for(const w of cur)known.add(w.id);for(const id of [...known])if(!cur.some(w=>w.id===id))known.delete(id);
   for(const w of fresh){SP.bump("win");SP.bump("win",0,w.app);if(!SP.L||!SP.visible())continue;if(performance.now()-SP.t0<9000||w.app==="sophia")continue;if(SP.S.mode==="bed")continue;if(SP.q.length<3)SP.q.push(w);if(["sit","walk","look","sniff","sleep","happy","stretch","stare"].includes(SP.P.st)&&!SP.P.seqBusy)setTimeout(()=>{if(SP.L&&SP.q.length&&["sit","walk","sniff","sleep","happy","stretch","stare"].includes(SP.P.st))SP.think()},700)}};
 SP.onErr=()=>{const now=Date.now();if(!SP.S||now-SP.P_lastErr<20000&&SP.P_lastErr)return;SP.P_lastErr=now;SP.bump("err");if(SP.L&&SP.visible()&&SP.S.mode!=="bed")SP.bark("woof!")};
+
+/* ---------- music: DeeJay and Lyre tell her when they are really playing (hands-free or a running set); she gets up and jumps to it, and stops when it stops ---------- */
+SP.mus={};
+SP.musSet=(id,on,bpm)=>{try{if(on){const was=!!SP.mus[id];SP.mus[id]={bpm:bpm};if(!was){if(SP.L&&SP.visible()&&SP.S.mode==="up")SP.bump("song");SP.musKick()}}else if(SP.mus[id]){delete SP.mus[id]}}catch(e){}};
+SP.musSong=(id)=>{try{if(SP.mus[id]&&SP.L&&SP.visible()&&SP.S.mode==="up")SP.bump("song")}catch(e){}};
+SP.dancing=()=>{const S=SP.S;return !!(S&&S.on&&S.mode==="up"&&SP.L&&SP.run&&Object.keys(SP.mus).length)};
+SP.beatSec=()=>{const m=SP.mus;let v=1.5;if(m.deejay){let b=m.deejay.bpm;try{if(typeof b==="function")b=b()}catch(e){b=0}b=+b||128;v=Math.max(.36,Math.min(.65,60/b))}else if(m.lyre)v=1.5;return v};
+SP.startDance=()=>{const P=SP.P;if(!P)return;if(P.st==="sleep"){P.fy=SP.platY(P.plat)}P.earT=1.5;P.dn={tw:SP.rand(7,12),twT:0,bk:SP.rand(2,5),acc:0};SP.say_el&&SP.say_el.classList.remove("on");SP.setSt("dance",1e9)};
+SP.musKick=()=>{const P=SP.P;if(!SP.dancing()||!P)return;if(SP.scn&&SP.scn.on)return;if(["sit","look","walk","sniff","stretch","happy","stare","sleep","alert","bark"].includes(P.st)&&!P.seqBusy)SP.startDance()};
 
 /* ---------- treats and petting ---------- */
 SP.treat=()=>{
@@ -8941,7 +8943,7 @@ SP.mountAll=()=>{SP.build();SP.apply()};
 
 /* ---------- each frame ---------- */
 SP.frame=(ts)=>{if(!SP.run||!SP.L)return;requestAnimationFrame(SP.frame);if(document.hidden)return;
-  const P=SP.P,gap=P.st==="sleep"&&!SP.fxBusy?220:((["walk","hop","fall","cuddle","happy","pet","eat","bark"].includes(P.st)||(SP.lk&&(SP.lk.on||SP.lk.k>0||SP.lk.pts.length)))?33:80);
+  const P=SP.P,gap=P.st==="sleep"&&!SP.fxBusy?220:((["walk","hop","fall","cuddle","happy","pet","eat","bark","dance"].includes(P.st)||(SP.lk&&(SP.lk.on||SP.lk.k>0||SP.lk.pts.length)))?33:80);
   if(ts-SP.last<gap)return;const dt=Math.min(.12,(ts-(SP.last||ts-gap))/1000);SP.last=ts;
   try{SP.step(dt);SP.render()}catch(e){console.error(e)}};
 SP.step=(dt)=>{
@@ -8960,6 +8962,12 @@ SP.step=(dt)=>{
   if(st==="hop"){const h=P.hp,u=Math.min(1,P.t/h.d);P.x=h.x0+(h.x1-h.x0)*u;P.fy=h.y0+(h.y1-h.y0)*u-4*h.peak*u*(1-u);P.wag+=dt*8;if(u>=1){P.plat=h.pl;P.x=h.x1;P.fy=SP.platY(h.pl);P.lwx=h.pl.k==="w"?SP.rect(h.pl.win).x:null;SP.done()}return}
   if(st==="fall"){P.vy=(P.vy||0)+900*dt;P.fy+=P.vy*dt;const fl=SP.platY(SP.floor);if(P.fy>=fl){P.fy=fl;P.plat=SP.floor;P.vy=0;P.earT=1;SP.say("oh!",1100);return SP.setSt("sit",1.2)}return}
   if(st==="cuddle"){P.wag+=dt*10;if(P.t>6&&SP.holdStop){SP.holdStop("cancel");return}if(P.t>1.2&&SP.lk&&!SP.lk.on)SP.lickStart();else if(!SP.lk.on&&P.t>.9&&Math.floor(P.t*1.2)!==Math.floor((P.t-dt)*1.2))SP.fx("♡");return}
+  if(st==="dance"){P.wag+=dt*13;const D=P.dn;D.acc+=dt;if(D.acc>=5){SP.bump("dance",Math.round(D.acc));D.acc=0}
+    if(!SP.dancing()){if(D.acc>=1)SP.bump("dance",Math.round(D.acc));D.acc=0;return SP.done()}
+    if(D.tw>0){D.tw-=dt;if(D.tw<=0){D.twT=1}}if(D.twT>0){D.twT-=dt}
+    D.bk-=dt;if(D.bk<=0){D.bk=SP.rand(6,12);if(!SP.motion())SP.say(["woof!","woof woof!","♪"][Math.floor(Math.random()*3)],1100)}
+    if(D.tw<=0&&!(D.twT>0)){D.tw=SP.rand(9,16)}
+    return}
   if(st==="sleep"){if(Math.floor(P.t/3.2)!==Math.floor((P.t-dt)/3.2))SP.fx("z","z");if(P.t>=P.dur){return SP.done()}return}
   if(st==="happy"||st==="pet"||st==="eat"||st==="bark"||st==="alert")P.wag+=dt*(st==="eat"?5:13);
   else P.wag+=dt*(st==="stare"?1:2.4);
@@ -8978,7 +8986,7 @@ SP.renderLick=(dt)=>{
   SP.cl.style.width=SP.cl.style.height=Math.round(sz)+"px";SP.cl.style.transform="translate("+Math.round(cx-sz/2)+"px,"+Math.round(cy-sz/2)+"px)";
   SP.sm.style.transform="translate("+Math.round(fx-Cs/2)+"px,"+Math.round(fy-Cs/2)+"px)";
   if(lk.k>0){const licking=lk.on&&lk.k>=1&&lk.t>.7;const tip=SPA.close(SP.cl,{t:lk.t,eye:lk.t<.8||!lk.on?"open":"happy",lick:licking});
-    if(tip&&licking){lk.pts.push({x:tip.x,y:tip.y,age:0});if(lk.pts.length>140)lk.pts.shift();if(Math.floor(lk.t*2)!==Math.floor((lk.t-dt)*2))SP.snd("yip")}}
+    if(tip&&licking){lk.pts.push({x:tip.x,y:tip.y,age:0});if(lk.pts.length>140)lk.pts.shift()}}
   for(const q of lk.pts)q.age+=dt;while(lk.pts.length&&lk.pts[0].age>2.4)lk.pts.shift();
   if(lk.pts.length){SP.sm.style.display="";SPA.smear(SP.sm,lk.pts)}else SP.sm.style.display="none";
   if(!lk.on&&lk.k<=0){SP.cl.style.display="none";SP.cv.style.display=""}
@@ -9000,13 +9008,15 @@ SP.render=()=>{if(SP.lk&&(SP.lk.on||SP.lk.k>0||SP.lk.pts.length))SP.renderLick(M
     case"eat":o.pose="side";o.hy=14;o.hx=8;o.tilt=.34;o.mouth="open";o.still=true;break;
     case"happy":o.pose="front";o.eye="happy";o.mouth="tongue";o.bob=-happyBounce*3;o.ear=.9;break;
     case"pet":o.pose="front";o.eye="happy";o.mouth="tongue";o.bob=-happyBounce*1.5;o.ear=.5;o.paw=Math.sin(P.t*8)*.5;break;
+    case"dance":{const D=P.dn||{},per=SP.beatSec(),ph=(P.t/per)%1,up=Math.sin(ph*Math.PI),mo=SP.motion();o.pose="front";o.eye="happy";o.mouth="tongue";o.ear=1;o.bob=-up*(mo?1:3);o.tilt=Math.sin(P.t*Math.PI/per)*(mo?.12:.07);o.paw=Math.sin(P.t*9)*.5;
+      if(D.twT>0&&!mo){o.pose="side";o.still=true;o.face=Math.cos((1-D.twT)*Math.PI*4)>=0?1:-1;o.ear=.9}break}
     case"cuddle":o.pose="front";o.eye=P.t>.45?"happy":"open";o.mouth=P.t>2?"lick":"tongue";o.ear=.4;o.bob=P.t>2?-1.5:0;o.tilt=P.t>2?Math.sin(P.t*5)*.06:0;o.paw=.6;break;
   }
   if(P.earT>0&&st!=="sleep")o.ear=1;
   if(o.pose==="side"&&["walk","hop","fall"].includes(st)===false)o.still=true;
   SPA.draw(SP.cv,o);
   /* the happy bounce lifts her off the ground a touch */
-  const lift=(st==="happy"||st==="eat")?happyBounce*(st==="happy"?6:0)*S.size:0;
+  const lift=(st==="happy"||st==="eat")?happyBounce*(st==="happy"?6:0)*S.size:(st==="dance"&&!SP.motion()?Math.sin(((P.t/SP.beatSec())%1)*Math.PI)*Sz*.17:0);
   const bx=Math.round(P.x-Sz/2),by=Math.round(P.fy-Sz*.94-lift);
   SP.cv.style.transform="translate("+bx+"px,"+by+"px)";
   const h=SP.hit.style;h.left=Math.round(P.x-Sz*.3)+"px";h.top=Math.round(P.fy-Sz*.82)+"px";h.width=Math.round(Sz*.6)+"px";h.height=Math.round(Sz*.8)+"px";
@@ -9031,7 +9041,7 @@ SP.scan=(kind)=>{
   else steps=[floorStep(.4),floorStep(.8),napStep];
   const fin=()=>{if(!sc.on)return;sc.resume=null;SP.report(kind).then(rep=>{sc.rep=rep;sc.on=false;sc.pct=100;SP.bump("scan");P.earT=1;SP.say("scan complete \u2713",2400);SP.fx("♡");SP.setSt("happy",1.8,()=>SP.think());SP.refreshUI()})};
   const run=i=>{if(!sc.on||!SP.L)return;sc.pct=Math.round(i/Math.max(1,steps.length)*100);SP.refreshUI();if(i>=steps.length)return fin();sc.resume=()=>run(i);steps[i](()=>run(i+1))};
-  SP.say(SP.scanKinds[kind].toLowerCase()+"...",2000);SP.snd("yip");
+  SP.say(SP.scanKinds[kind].toLowerCase()+"...",2000);
   setTimeout(()=>{if(sc.on)fin()},kind==="deep"?60000:90000);
   run(0);return true};
 SP.report=async(kind)=>{
@@ -9078,7 +9088,7 @@ init(win,b){
   const sys={};
   const probe=()=>{try{navigator.storage&&navigator.storage.estimate&&navigator.storage.estimate().then(e=>{sys.stor=e;paintNote()}).catch(()=>{})}catch(e){}try{navigator.getBattery&&navigator.getBattery().then(bt=>{sys.bat=bt;paintNote()}).catch(()=>{})}catch(e){}};
   const stat=()=>{const s=S();if(!s.on)return"Sophia is switched off.";if(s.mode==="away")return"Resting out of sight.";if(!SP.L||!SP.P)return"Getting ready.";const st=SP.P.st;
-    return({sleep:s.mode==="bed"?"Asleep in her corner (you sent her to bed).":"Napping in her corner.",sit:"Sitting and watching what you do.",look:"Looking around.",walk:"Out for a trot.",hop:"Hopping across.",sniff:"Sniffing around.",happy:"Very pleased with herself.",pet:"Loving the attention.",cuddle:"Having a cuddle.",eat:"Eating a treat.",bark:"Barking softly.",alert:"Ears up!",stretch:"Having a stretch.",fall:"Whoops."})[st]||"Being Sophia."};
+    return({sleep:s.mode==="bed"?"Asleep in her corner (you sent her to bed).":"Napping in her corner.",sit:"Sitting and watching what you do.",look:"Looking around.",walk:"Out for a trot.",hop:"Hopping across.",sniff:"Sniffing around.",happy:"Very pleased with herself.",pet:"Loving the attention.",cuddle:"Having a cuddle.",eat:"Eating a treat.",bark:"Barking (she is silent, it is only a bubble).",dance:"Dancing to the music!",alert:"Ears up!",stretch:"Having a stretch.",fall:"Whoops."})[st]||"Being Sophia."};
   const portrait=h("canvas",{width:184,height:184});
   const drawPortrait=()=>{const o={pose:S().on&&S().mode==="bed"?"sleep":"front",face:1,wag:performance.now()/260,eye:S().on?"open":"closed",mouth:"closed",ear:.75,t:performance.now()/1000};SPA.draw(portrait,o)};
   const stEl=h("div",{class:"st"});
@@ -9107,13 +9117,13 @@ init(win,b){
     if(!s.on){pg.append(h("div",{class:"off"},h("div",{},"Sophia is switched off. She is not loaded, so she costs your computer nothing."),h("div",{style:"margin-top:14px"},h("button",{class:"pri",onclick:()=>SP.setOn(true)},"Switch Sophia on"))));return}
     if(tab==="Notebook"){
       const d=SP.day(),apps=d.a?Object.keys(d.a).length:0;
-      pg.append(h("h3",{},"Today's patrol"),h("div",{class:"tiles"},tile(d.win||0,"windows opened"),tile(d.safe||0,"checked and safe"),tile(apps,"different apps used"),tile(d.err||0,"errors she barked at"),tile(d.pet||0,"pets"),tile(d.cuddle||0,"cuddles"),tile(d.treat||0,"treats"),tile(d.nap||0,"naps")));
+      pg.append(h("h3",{},"Today's patrol"),h("div",{class:"tiles"},tile(d.win||0,"windows opened"),tile(d.safe||0,"checked and safe"),tile(apps,"different apps used"),tile(d.err||0,"errors she barked at"),tile(d.pet||0,"pets"),tile(d.cuddle||0,"cuddles"),tile(d.treat||0,"treats"),tile(d.nap||0,"naps"),tile(d.song||0,"songs danced to"),tile(Math.round((d.dance||0)/60),"minutes danced")));
       pg.append(h("h3",{},"The system right now"));noteEl=h("div",{class:"rows"});pg.append(noteEl);paintNote();probe();
       const days=lastDays(),mx=Math.max(1,...days.map(x=>x[1]));
       pg.append(h("h3",{},"Windows opened, last 14 days"),h("div",{class:"bars"},...days.map(([k,v])=>h("i",{class:v?"":"z",title:k+": "+v,style:"height:"+Math.max(4,Math.round(v/mx*100))+"%"}))));
       const apl=d.a?Object.entries(d.a).sort((a,b)=>b[1]-a[1]).slice(0,5):[];
       if(apl.length){pg.append(h("h3",{},"Busiest apps today"),h("div",{class:"rows"},...apl.map(([id,n])=>row((OS.apps[id]&&OS.apps[id].name)||id,n+" time"+(n>1?"s":"")))))}
-      pg.append(h("h3",{},"All time"),h("div",{class:"rows"},row("Windows she has checked",String(s.tot.safe)),row("Pets and cuddles",s.tot.pet+" and "+s.tot.cuddle),row("Treats eaten",String(s.tot.treat)),row("Errors barked at",String(s.tot.err))));
+      pg.append(h("h3",{},"All time"),h("div",{class:"rows"},row("Windows she has checked",String(s.tot.safe)),row("Pets and cuddles",s.tot.pet+" and "+s.tot.cuddle),row("Treats eaten",String(s.tot.treat)),row("Songs danced to",String(s.tot.song)),row("Time spent dancing",Math.round(s.tot.dance/60)+" min"),row("Errors barked at",String(s.tot.err))));
       pg.append(h("div",{class:"note"},"Sophia keeps this notebook for 14 days and then clears the old pages by herself. It only holds what the browser really knows, and it never leaves this computer."),h("div",{style:"margin-top:10px"},h("button",{onclick:()=>{if(confirm("Clear Sophia's notebook? Her totals and today's page will start again.")){s.days={};s.tot=SP.def().tot;SP.save();paint()}}},"Clear the notebook")));
     }else if(tab==="Security"){
       const d=SP.day(),sc=SP.scn,busy=!!(sc&&sc.on);
@@ -9131,12 +9141,9 @@ init(win,b){
     }else{
       const opt=(t,sub,ctl)=>h("div",{class:"opt"},h("div",{},t,sub?h("small",{},sub):null),ctl);
       const sel=h("select",{onchange:e=>{s.size=+e.target.value;SP.save();if(SP.L){SP.size();SP.fit()}}},...[[1,"Tiny"],[1.4,"Small"],[2,"Big"],[2.8,"Bigger"],[3.6,"Huge"]].map(([v,t])=>h("option",{value:v,selected:v===s.size},t)));
-      const snd=h("input",{type:"checkbox",checked:s.snd,onchange:e=>{s.snd=e.target.checked;SP.save();if(s.snd)SP.snd("bark");paint()}});
-      const rng=(k,mn,mx,st2)=>h("input",{type:"range",min:mn,max:mx,step:st2,value:s[k],oninput:e=>{s[k]=+e.target.value;SP.save()},onchange:()=>SP.snd("bark")});
-      pg.append(h("h3",{},"How to play with her"),h("div",{class:"note",style:"margin:0 0 6px;color:var(--fg)"},"Tap Sophia to pet her. Press and hold for a cuddle. Right-click her (or use the paw in the tray) for a menu. Open any app and she will trot over to check that it is safe."));
+      pg.append(h("h3",{},"How to play with her"),h("div",{class:"note",style:"margin:0 0 6px;color:var(--fg)"},"Tap Sophia to pet her. Press and hold for a cuddle. Right-click her (or use the paw in the tray) for a menu. Open any app and she will trot over to check that it is safe. Start DeeJay or Lyre playing and she gets up and dances. She is completely silent."));
       pg.append(h("h3",{},"Her settings"));
-      pg.append(opt("Her size","Big is her default. Tiny is closer to her real size.",sel),opt("Sounds","Off by default. When on, her barks are soft and short.",snd));
-      if(s.snd)pg.append(opt("Sound volume","Kept low on purpose.",rng("vol",.05,1,.05)),opt("Bark pitch","Tune it by ear.",rng("pitch",.6,1.5,.05)),opt("Bark softness","Lower is rounder and duller.",rng("soft",0,1,.05)));
+      pg.append(opt("Her size","Big is her default. Tiny is closer to her real size.",sel));
       pg.append(h("h3",{},"Not in the mood for a dog?"),h("div",{class:"note",style:"margin:0 0 8px"},"Send her to bed and she sleeps quietly in her corner. Dismiss her and she is out of sight until you call her back. Or switch her off completely and she is not even loaded."),h("button",{onclick:()=>{if(confirm("Switch Sophia off completely? You can switch her back on here any time.")){SP.setOn(false)}}},"Switch Sophia off"));
     }
   };
@@ -9157,7 +9164,7 @@ const CL={
   tvos_session:["Open windows","Which windows were open last time, so they can come back at start.","Housekeeping"],
   tvos_diary:["Diary","Every page you wrote in the Diary, its colours and its PIN.","Your writing and creations","This is your writing. Deleting it removes every Diary page and the PIN."],
   tvos_circuit:["Circuit Temple progress","Your Circuit Temple game: money, boards repaired, shop upgrades, the repair kits you have given away with their thank-you notes, your shelf and the repair you are in the middle of.","Your writing and creations","Deleting it restarts Circuit Temple from the beginning."],
-  tvos_sophia:["Sophia","Sophia's settings (size, sounds, whether she is out or in bed) and her patrol notebook: counts of windows, pets, treats and the last two weeks of days.","Your writing and creations","Deleting it resets Sophia to a fresh start. She will keep living on the desktop."],
+  tvos_sophia:["Sophia","Sophia's settings (size, whether she is out or in bed) and her patrol notebook: counts of windows, pets, treats and the last two weeks of days.","Your writing and creations","Deleting it resets Sophia to a fresh start. She will keep living on the desktop."],
   tvos_sysadmin:["SysAdmin progress","Your SysAdmin game: credits, jobs finished, stats, workshop items, the servers you have given away with their thank-you notes, your shelf of finished servers and the job you are in the middle of.","Your writing and creations","Deleting it restarts SysAdmin from the beginning."],
   tvos_theseus:["Theseus ships","Your Theseus game: the ship on your bench and every finished ship on your shelf, with names, share codes and your bottle and plank choices.","Your writing and creations","Deleting it empties your shelf and clears the ship on the bench."],
   tvos_mysky:["My Sky progress","Your My Sky game: every system, world and animal you named, your bookmarks, claimed systems, paradise finds, home star and ship name.","Your writing and creations","Deleting it restarts My Sky from the beginning."],
