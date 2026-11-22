@@ -1258,7 +1258,7 @@ const fmtDate=t=>{const d=new Date(t),hm=" "+pad(d.getHours())+":"+pad(d.getMinu
 const sleep=ms=>new Promise(r=>setTimeout(r,ms));
 const LS={get(k,d){try{const v=localStorage.getItem(k);return v==null?d:JSON.parse(v)}catch(e){return d}},set(k,v){try{localStorage.setItem(k,JSON.stringify(v));return true}catch(e){try{window.tvosStorageFull&&window.tvosStorageFull(e)}catch(_){}return false}}};
 const fmtUp=s=>{s=Math.max(0,Math.round(s));const d=Math.floor(s/86400),hr=Math.floor(s%86400/3600),m=Math.floor(s%3600/60),sc=s%60;if(d)return d+" d "+hr+" h";if(hr)return hr+" h "+m+" min";if(m)return m+" min "+sc+" s";return sc+" s"};
-const OS={apps:{},wins:[],z:10,bus:{},boot:performance.now(),ver:"1.0 build 1122-1112"};
+const OS={apps:{},wins:[],z:10,bus:{},boot:performance.now(),ver:"1.0 build 1122-1221"};
 OS.on=(ev,f)=>{(OS.bus[ev]=OS.bus[ev]||[]).push(f);return f};
 OS.off=(ev,f)=>{OS.bus[ev]=(OS.bus[ev]||[]).filter(x=>x!==f)};
 /* reboot that always fetches the newest copy of this page (like Ctrl+Shift+R), then reloads */
@@ -8774,7 +8774,7 @@ SP.home=()=>({bag:Math.max(SP.Sz()*.5,SP.W-.5*SP.Sz()-4)});
 SP.css=()=>{if($("#spcss"))return;const s=document.createElement("style");s.id="spcss";s.textContent=`
 #sophia{position:absolute;inset:0;z-index:2147483000;pointer-events:none;overflow:hidden}
 #sophia canvas{position:absolute;left:0;top:0;pointer-events:none;will-change:transform}
-#sophia .sphit{position:absolute;pointer-events:auto;cursor:pointer;touch-action:none;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none;-webkit-tap-highlight-color:transparent}
+#sophia .sphit{position:absolute;pointer-events:none;cursor:pointer;touch-action:none;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none;-webkit-tap-highlight-color:transparent}
 #sophia .spsay{position:absolute;left:0;top:0;white-space:nowrap;font-size:11px;line-height:1;padding:4px 8px;border-radius:10px;background:var(--pn);color:var(--fg);border:1px solid var(--bd);box-shadow:0 2px 8px rgba(0,0,0,.35);opacity:0;transition:opacity .25s;pointer-events:none}
 #sophia .spsay.on{opacity:1}
 #sophia .spfx{position:absolute;left:0;top:0;pointer-events:none;font-size:14px;color:#ff8fa8;text-shadow:0 1px 3px rgba(0,0,0,.4);animation:spfx 1.5s ease-out forwards}
@@ -8918,8 +8918,18 @@ SP.bindHit=()=>{
     if(P.st==="cuddle"){if(performance.now()-t0>1800){SP.bump("cuddle");SP.fx("♡")}SP.lickEnd();SP.setSt("pet",1.6,()=>SP.think());return}
     if(was&&kind==="up")SP.pet()};
   SP.holdStop=stop;
-  hit.addEventListener("pointerdown",e=>{if(e.button!==0)return;e.preventDefault();down=true;t0=performance.now();try{hit.setPointerCapture(e.pointerId)}catch(_){}
-    timer=setTimeout(()=>{if(!down)return;const P=SP.P;if(P.st==="sleep")SP.wake(true);SP.q.length=0;SP.setSt("cuddle");P.earT=1;P.face=1;SP.fx("♡")},420)});
+  const press=(e)=>{if(e.button!==0)return;e.preventDefault();down=true;t0=performance.now();try{hit.setPointerCapture(e.pointerId)}catch(_){}
+    timer=setTimeout(()=>{if(!down)return;const P=SP.P;if(P.st==="sleep")SP.wake(true);SP.q.length=0;SP.setSt("cuddle");P.earT=1;P.face=1;SP.fx("♡")},420)};
+  hit.addEventListener("pointerdown",press);
+  /* only her exact figure answers a press. Everything around her belongs to whatever is underneath. The invisible hit box is switched on only while the pointer is on a visible part of her. */
+  SP.hov=()=>{if(SP.mx==null||!SP.hit)return;const on=SP.over(SP.mx,SP.my);const v=on?"auto":"none";if(SP.hit.style.pointerEvents!==v)SP.hit.style.pointerEvents=v};
+  SP.dn={press,stop,down:()=>down};
+  if(!SP.docBound){SP.docBound=true;let mvT=0;
+    document.addEventListener("pointermove",e=>{SP.mx=e.clientX;SP.my=e.clientY;SP.mt=performance.now();const n=performance.now();if(n-mvT<25)return;mvT=n;SP.hov()},true);
+    document.addEventListener("pointerdown",e=>{SP.mx=e.clientX;SP.my=e.clientY;if(!SP.L||!SP.dn||e.button!==0||e.target===SP.hit||!SP.over(e.clientX,e.clientY))return;SP.eatClick=performance.now();e.stopImmediatePropagation();SP.dn.press(e)},true);
+    document.addEventListener("click",e=>{if(e.target!==SP.hit&&performance.now()-(SP.eatClick||-1e9)<700){e.stopImmediatePropagation();e.preventDefault()}},true);
+    document.addEventListener("contextmenu",e=>{if(!SP.L||!SP.dn||e.target===SP.hit||!SP.over(e.clientX,e.clientY))return;e.preventDefault();e.stopImmediatePropagation();if(SP.dn.down()||SP.P.st==="cuddle")return;SP.menu(e.clientX,e.clientY)},true);
+    document.addEventListener("pointerup",e=>{if(SP.dn&&SP.dn.down()&&e.target!==SP.hit)SP.dn.stop(SP.over(e.clientX,e.clientY)?"up":"cancel")},true)}
   hit.addEventListener("pointerup",()=>stop("up"));
   hit.addEventListener("pointercancel",()=>stop("cancel"));
   hit.addEventListener("lostpointercapture",()=>stop("cancel"));
@@ -8930,6 +8940,12 @@ SP.bindHit=()=>{
   addEventListener("blur",any);document.addEventListener("visibilitychange",()=>{if(document.hidden)any()});
   document.addEventListener("pointerdown",e=>{if(SP.lk&&SP.lk.on&&e.target!==hit)stop("cancel")},true);
 };
+/* is this screen point on a visible part of her? Reads the alpha of her own drawing, so it follows her exact outline in every pose. */
+SP.over=(x,y)=>{const cv=SP.cv;if(!cv||!SP.L||SP.L.style.display==="none"||(SP.lk&&(SP.lk.on||SP.lk.k>0)))return false;
+  const r=cv.getBoundingClientRect();if(!r.width||x<r.left-6||x>r.right+6||y<r.top-6||y>r.bottom+6)return false;
+  let c;try{c=cv.getContext("2d")}catch(e){}if(!c)return false;const sx=cv.width/r.width,sy=cv.height/r.height;
+  for(const d of[[0,0],[-3,0],[3,0],[0,-3],[0,3]]){const px=Math.floor((x+d[0]-r.left)*sx),py=Math.floor((y+d[1]-r.top)*sy);if(px<0||py<0||px>=cv.width||py>=cv.height)continue;try{if(c.getImageData(px,py,1,1).data[3]>90)return true}catch(e){return false}}
+  return false};
 SP.menu=(x,y)=>{const S=SP.S,on=SP.L&&S.mode!=="away";
   ctxMenu(x,y,[
     {t:"Give Sophia a treat",ic:"paw",fn:()=>SP.treat(),dis:!on},
@@ -8937,7 +8953,8 @@ SP.menu=(x,y)=>{const S=SP.S,on=SP.L&&S.mode!=="away";
     {t:S.mode==="away"?"Call Sophia back":"Dismiss Sophia",fn:()=>SP.setMode(S.mode==="away"?"up":"away")},
     "-",
     {t:"Run a security scan (a joke)",ic:"paw",fn:()=>{SP.tabSel="Security";OS.open("sophia");SP.scan("quick");SP.refreshUI()},dis:!on},
-    {t:"Sophia's notebook",ic:"paw",fn:()=>OS.open("sophia")}])};
+    {t:"Sophia's notebook",ic:"paw",fn:()=>{SP.tabSel="Notebook";OS.open("sophia");SP.refreshUI()}},
+    {t:"Sophia's settings",ic:"paw",fn:()=>{SP.tabSel="Her settings";OS.open("sophia");SP.refreshUI()}}])};
 SP.setMode=(m)=>{const S=SP.S;S.mode=m;SP.save();SP.apply();if(m==="away")toast("Sophia is resting out of sight. Call her back from her icon in the tray.");if(m==="bed"&&SP.L){SP.q.length=0;SP.setSt("sit",.1,()=>SP.think())}if(m==="up"&&SP.L&&SP.P.st==="sleep"){SP.wake()}SP.refreshUI()};
 SP.setOn=(on)=>{SP.S.on=!!on;SP.save();if(on)SP.mountAll();else SP.destroy();SP.refreshUI()};
 SP.apply=()=>{if(!SP.S.on||!SP.L)return;const vis=SP.visible();SP.L.style.display=vis?"":"none";if(vis&&!SP.run){SP.run=true;SP.last=0;requestAnimationFrame(SP.frame)}else if(!vis)SP.run=false};
@@ -8947,7 +8964,7 @@ SP.mountAll=()=>{SP.build();SP.apply()};
 SP.frame=(ts)=>{if(!SP.run||!SP.L)return;requestAnimationFrame(SP.frame);if(document.hidden)return;
   const P=SP.P,gap=P.st==="sleep"&&!SP.fxBusy?220:((["walk","hop","fall","cuddle","happy","pet","eat","bark","dance"].includes(P.st)||(SP.lk&&(SP.lk.on||SP.lk.k>0||SP.lk.pts.length)))?33:80);
   if(ts-SP.last<gap)return;const dt=Math.min(.12,(ts-(SP.last||ts-gap))/1000);SP.last=ts;
-  try{SP.step(dt);SP.render()}catch(e){console.error(e)}};
+  try{SP.step(dt);SP.render();if(SP.mx!=null&&performance.now()-(SP.mt||0)<5000)SP.hov()}catch(e){console.error(e)}};
 SP.step=(dt)=>{
   const P=SP.P,Sz=SP.Sz();P.t+=dt;P.t2=(P.t2||0)+dt;if(P.earT>0)P.earT-=dt;
   /* follow the window she is standing on */
@@ -9151,7 +9168,7 @@ init(win,b){
   };
   const sync=()=>{const s=S();stEl.textContent=stat();bBed.textContent=s.mode==="bed"?"Wake her up":"Send to bed";bAway.textContent=s.mode==="away"?"Call her back":"Dismiss her";bTreat.disabled=!s.on||s.mode==="away";bBed.disabled=!s.on||s.mode==="away";bAway.disabled=!s.on;top.querySelector(".btns").style.display=s.on?"":"none";drawPortrait()};
   paint();sync();
-  const ui=()=>{sync();paint()};SP.ui.push(ui);
+  const ui=()=>{if(SP.tabSel)tab=SP.tabSel;sync();paint()};SP.ui.push(ui);
   const tm=setInterval(()=>{sync();if(tab==="Notebook")paintNote();else if(tab==="Security"&&SP.scn&&SP.scn.on)paint()},1200);
   win.on.close=()=>{clearInterval(tm);const i=SP.ui.indexOf(ui);if(i>=0)SP.ui.splice(i,1)};
 }});
