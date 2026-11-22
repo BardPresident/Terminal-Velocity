@@ -926,7 +926,9 @@ Sophia (paw icon, Companions)
     and she steps back. She also gets tired and steps back by herself
     after a few seconds, so she can never get stuck licking.
     Right-click her, or tap the paw in the tray, for a menu: Give a treat,
-    Send to bed, Dismiss, Notebook. After six treats in ten minutes she is
+    Send to bed, Dismiss, Run a security scan, Notebook, Settings.
+    Only her actual figure answers a click or tap. The empty space around
+    her, even when she is set to Huge, belongs to whatever is under it. After six treats in ten minutes she is
     full and goes for a nap.
   - Out of the way: Send to bed keeps her asleep in her corner. Dismiss
     hides her until you call her back. "Switch Sophia off" in her app
