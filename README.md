@@ -917,7 +917,7 @@ Sophia (paw icon, Companions)
   - Checks every new window: when you open an app she trots over, sniffs
     along the top of the window and says "all clear". Open several at once
     and she just nods at the extras. She never covers the window itself.
-  - Barks (a speech bubble, and a soft sound if you turn sounds on) when
+  - Barks (only a speech bubble, she is silent) when
     the OS catches an error, and at most once every 20 seconds.
   - Tap her to pet her. Press and hold for a cuddle; keep holding and she
     leans right up to the screen, looks at you, and licks the glass for
@@ -932,8 +932,18 @@ Sophia (paw icon, Companions)
     unloads her completely. The paw in the tray always works.
   - Size: Tiny, Small, Big, Bigger or Huge, in her settings. Big is the
     default.
-  - Sounds: off until you turn them on. They are soft and short, and have
-    their own volume, pitch and softness sliders to tune by ear.
+  - Silent: Sophia makes no sound at all. When she barks you see a little
+    speech bubble, nothing more.
+  - Dancing: when DeeJay or Lyre is really playing music, she gets up
+    (even from a nap) and dances where she is: jumping up and down, now
+    and then a twirl or a "woof!" bubble. In DeeJay she follows the
+    speed of the music. Lyre is slower, so her jumps are slower. She
+    stops when the music stops or you close the app. Just having the app
+    open does nothing, and Lyre only counts when its "Play for me" is
+    on. A pet or a treat interrupts her, and she goes back to dancing if
+    the music is still on. She does not dance if you sent her to bed or
+    dismissed her. With reduced motion she sways instead of jumping. She
+    keeps the tempo but does not land exactly on each beat.
   - Always in front: she stays on top of every window, and she keeps
     herself fully on the screen when you make the window smaller.
   - Phones and small screens: she shrinks to fit (never more than about
@@ -946,7 +956,8 @@ Sophia (paw icon, Companions)
   Her notebook is a patrol log that keeps only what the browser really
   knows, and clears pages older than 14 days by itself:
   - Today: windows opened, windows she checked, different apps used,
-    errors she barked at, pets, cuddles, treats, naps.
+    errors she barked at, pets, cuddles, treats, naps, songs danced to
+    and minutes danced.
   - The system right now: how long this session has run, how much storage
     your saved data uses, memory used by the OS and battery (only where
     the browser reports them), online or offline, time since your last
