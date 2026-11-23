@@ -912,18 +912,22 @@ Cartridges (cartridge icon, Games)
   as cartridges.html. So the OS stays small, and new games never need a new
   OS.
   The default pack. cartridges.html (the author's own games) is the
-  default game pack, and nobody has to install it. When the OS is opened
-  from a web address, with cartridges.html in the same place as
-  terminal-velocity.html, Cartridges fetches it by itself the first time
-  it opens, keeps a copy in the browser so it works offline, and updates
-  it whenever it is online and the file has changed. It cannot be removed.
-  If the OS is opened from a file instead (not a web address), a browser
-  cannot read the neighbouring file, so Game packs offers "From a file" to
-  load cartridges.html by hand. Anyone can add more packs, or single
-  games by link, beside the default one.
+  default game pack, and nobody has to install it. Cartridges fetches it
+  by itself when it opens. It looks first for a cartridges.html next to the
+  OS (when the OS is served from a web address), and if there is none, or
+  the OS was opened from a saved file, it falls back to the home copy at
+  https://republicka.life/cartridges.html (one line in the OS source, so it
+  is easy to change if the site moves). That home site must send an
+  "Access-Control-Allow-Origin: *" header for the file, or a saved copy of
+  the OS cannot read it. The pack is kept in the browser so it works
+  offline, and is updated whenever it is online and the file has changed.
+  It cannot be removed. If it cannot be reached, Game packs offers "From a
+  file". Anyone can add more packs, or single games by link, beside the
+  default one.
   More stores. cartridges.html can name more game packs in its head, for
   example <meta name="cartridges-more" content="risingsun.html, other.html">.
-  Those files must be in the same folder as cartridges.html. Cartridges
+  Those files must be in the same folder as the cartridges.html that was
+  loaded (next to the OS, or on the home site). Cartridges
   loads them by itself after the default one, and the Store shows each pack
   under its own heading, in the order listed. Adding a new store therefore
   means editing only cartridges.html; the OS does not change and everyone
