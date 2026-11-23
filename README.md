@@ -921,12 +921,28 @@ Cartridges (cartridge icon, Games)
   cannot read the neighbouring file, so Game packs offers "From a file" to
   load cartridges.html by hand. Anyone can add more packs, or single
   games by link, beside the default one.
-  Four tabs. My cartridges is your shelf: Play, Remove (your progress is
-  kept) and Erase save. Store lists every game in the packs you have
-  loaded; press Install and it goes on your shelf. Game packs loads a pack
-  from a file or from a web address, lists the loaded packs and removes
-  them. Add by link adds a game from the web (it must allow being shown
-  inside other pages, and it needs a connection).
+  More stores. cartridges.html can name more game packs in its head, for
+  example <meta name="cartridges-more" content="risingsun.html, other.html">.
+  Those files must be in the same folder as cartridges.html. Cartridges
+  loads them by itself after the default one, and the Store shows each pack
+  under its own heading, in the order listed. Adding a new store therefore
+  means editing only cartridges.html; the OS does not change and everyone
+  who already has the OS gets the new store. The first store is checked
+  every time Cartridges opens; the others at most once a day, or when you
+  press Check for updates in Game packs. They are kept for offline use. A
+  store that has been taken off the list disappears once none of its games
+  is installed. If two stores have a game with the same id, the earlier
+  store wins and the Store shows a warning.
+  Four tabs. My cartridges is your shelf: Play, Remove and Erase save.
+  Removing a game that has saved progress asks whether to keep or erase
+  the progress. Store lists the games of every store that is turned on,
+  with a search box and tag buttons; press Install and it goes on your
+  shelf. Game packs shows your stores, turns each one off or on (the
+  default store cannot be turned off, and a store will not turn off while
+  one of its games is installed), loads a pack from a file or a web
+  address, and shows how much saving space your game progress uses. Add by
+  link adds a game from the web (it must allow being shown inside other
+  pages, and it needs a connection).
   Opening cartridges.html in a browser tab on its own also works as a
   stand-alone player, but its saves stay in that tab and are not part of
   Backup. Use it through Cartridges instead.
