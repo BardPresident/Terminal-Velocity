@@ -1258,7 +1258,7 @@ const fmtDate=t=>{const d=new Date(t),hm=" "+pad(d.getHours())+":"+pad(d.getMinu
 const sleep=ms=>new Promise(r=>setTimeout(r,ms));
 const LS={get(k,d){try{const v=localStorage.getItem(k);return v==null?d:JSON.parse(v)}catch(e){return d}},set(k,v){try{localStorage.setItem(k,JSON.stringify(v));return true}catch(e){try{window.tvosStorageFull&&window.tvosStorageFull(e)}catch(_){}return false}}};
 const fmtUp=s=>{s=Math.max(0,Math.round(s));const d=Math.floor(s/86400),hr=Math.floor(s%86400/3600),m=Math.floor(s%3600/60),sc=s%60;if(d)return d+" d "+hr+" h";if(hr)return hr+" h "+m+" min";if(m)return m+" min "+sc+" s";return sc+" s"};
-const OS={apps:{},wins:[],z:10,bus:{},boot:performance.now(),ver:"1.0 build 1122-1221"};
+const OS={apps:{},wins:[],z:10,bus:{},boot:performance.now(),ver:"1.0 build 1123-0953"};
 OS.on=(ev,f)=>{(OS.bus[ev]=OS.bus[ev]||[]).push(f);return f};
 OS.off=(ev,f)=>{OS.bus[ev]=(OS.bus[ev]||[]).filter(x=>x!==f)};
 /* reboot that always fetches the newest copy of this page (like Ctrl+Shift+R), then reloads */
@@ -1552,7 +1552,7 @@ function buildTray(){const tr=$("#tray");tr.innerHTML="";tr.append(h("span",{cla
 function cycleTheme(d){const i=(THEME_ORDER.indexOf(SET.theme)+d+THEME_ORDER.length)%THEME_ORDER.length;applyTheme(THEME_ORDER[i]);toast("Theme: "+THEMES[SET.theme].n)}
 OS.on("manifest",m=>{try{buildDesk()}catch(e){}const a=$("#arc");if(a)a.textContent="archive: "+m.files.toLocaleString()+" files"});
 /* ---- desktop icons & start menu ---- */
-const DESK_FIRST=["tv","terminal","files","music","books","audiobooks","comic","school","media","images","notepad","archive","reader","calc","settings","programs"];
+const DESK_FIRST=["tv","terminal","files","music","books","audiobooks","comic","school","media","images","notepad","archive","reader","calc","settings","programs","cartridges"];
 function buildDesk(){const d=$("#dic");d.innerHTML="";const rest=Object.keys(OS.apps).filter(i=>!DESK_FIRST.includes(i)&&appVisible(OS.apps[i])&&!OS.apps[i].deskHide).sort((x,y)=>(!!OS.apps[x].user-!!OS.apps[y].user)||OS.apps[x].cat.localeCompare(OS.apps[y].cat)||OS.apps[x].name.localeCompare(OS.apps[y].name));for(const id of DESK_FIRST.concat(rest)){const a=OS.apps[id];if(!a||!appVisible(a))continue;const e=h("div",{class:"dic",tabindex:"0",title:a.name,onclick:e=>{if(isMob()||e.detail>=2)OS.open(id)},onkeydown:e=>{if(e.key==="Enter")OS.open(id)}},ic(a.icon),a.name);e.addEventListener("contextmenu",ev=>{ev.preventDefault();ctxMenu(ev.clientX,ev.clientY,[{t:"Open",fn:()=>OS.open(id)}])});d.append(e)}}
 $("#desk").addEventListener("contextmenu",e=>{if(e.target.id!=="desk"&&e.target.id!=="dic")return;e.preventDefault();ctxMenu(e.clientX,e.clientY,[{t:"Terminal here",ic:"term",fn:()=>OS.open("terminal")},{t:"Files",ic:"folder",fn:()=>OS.open("files")},{t:"New note",ic:"note",fn:()=>OS.open("notepad")},"-",{t:"Next theme",ic:"eye",fn:()=>cycleTheme(1)},{t:"Next wallpaper",ic:"image",fn:()=>{const i=(WALLS.indexOf(wallId())+1)%WALLS.length;SET.wall=WALLS[i];saveSet();setWall();toast("Wallpaper: "+SET.wall)}},{t:"Settings",ic:"gear",fn:()=>OS.open("settings")}])});
 let startSel=0;
@@ -9215,6 +9215,7 @@ const CL={
   tvos_rec_set:["Recorder settings","Format, channels and other Recorder choices.","App preferences"],
   tvos_rec_dest:["Where recordings save","Downloads, a folder, or inside the OS.","App preferences"],
   tvos_themes:["Themes: your Den","Your Den of caught and bred themes (just their short seeds), with names, star ratings and family trees.","Your writing and creations","Deleting it empties your Den. A theme can be caught again from its seed."],
+  tvos_cartridges:["Cartridges: shelf and game progress","Which games you installed from Cartridges, the links you added, and every game's saved progress. The games themselves are kept separately, in their game packs.","Your writing and creations","Deleting it resets your shelf and erases the progress of every cartridge game."],
   tvos_apps:["Installed programs: list","The names, icons and categories of the programs you installed in the Programs app.","Your writing and creations","Deleting it removes every installed program from Start and the desktop."],
   tvos_themes_tab:["Themes: last tab","Which tab you left open in the Themes app (Meadow, Den, Nursery or Dex).","App preferences"],
   tvos_cam_set:["Camera settings","Resolution, format and other Camera choices.","App preferences"],
@@ -9776,7 +9777,7 @@ defApp("themes",{name:"Themes",icon:"swatch",cat:"System",w:820,h:720,single:tru
 
 /* ===================== PROGRAMS: install and remove your own web apps ===================== */
 /* Single-file HTML apps (kept as an offline copy) or links to sites that allow being shown inside other pages.
-   Each installed app becomes a real app: desktop icon, Start entry, Spotlight, window. The 17 built-in apps are not listed here and cannot be changed. */
+   Each installed app becomes a real app (no desktop icon): Start entry, Spotlight, window. The 17 built-in apps are not listed here and cannot be changed. */
 IP.pkg="M3 8l9-5 9 5v8l-9 5-9-5z M3 8l9 5 9-5 M12 13v8";
 const PG={
  ICONS:["code","globe","book","music","film","image","paint","note","calc","clock","cal","task","tools","star","grid","edit","dice","eye","mic","folder","game","mon","lock","list","home","search","binder"],
@@ -9806,7 +9807,7 @@ const PG={
   "document.addEventListener('click',function(e){var a=e.target.closest&&e.target.closest('a[href]');if(!a)return;var g=(a.getAttribute('target')||'').toLowerCase();if(g!=='_blank'&&g!=='_new')return;if(!/^https?:/i.test(a.href))return;e.preventDefault();parent.postMessage({tvos:'open',url:a.href},'*')},true);"+
   "window.open=function(u){try{var x=new URL(u,document.baseURI).href;if(/^https?:/i.test(x))parent.postMessage({tvos:'open',url:x},'*')}catch(e){}return null}}catch(e){}})()<\/script>"},
  inject(src,sc){let m=/<head(?=[\s>])[^>]*>/i.exec(src);if(!m)m=/<html(?=[\s>])[^>]*>/i.exec(src);if(!m)m=/<!doctype[^>]*>/i.exec(src);if(!m)return sc+src;const i=m.index+m[0].length;return src.slice(0,i)+sc+src.slice(i)},
- register(r){const id=PG.aid(r);defApp(id,{name:r.name,icon:(IP[r.icon]?r.icon:"code"),cat:r.cat||"My apps",desc:r.desc||(r.kind==="url"?"online app":"installed app"),kw:(r.name+" "+(r.cat||"")+" "+(r.desc||"")+" installed program app "+(r.kind==="url"?PG.hostOf(r.url):"")),w:900,h:620,single:true,user:true,deskHide:r.desk===false,init:(win,b)=>PG.run(r.id,win,b)})},
+ register(r){const id=PG.aid(r);defApp(id,{name:r.name,icon:(IP[r.icon]?r.icon:"code"),cat:r.cat||"My apps",desc:r.desc||(r.kind==="url"?"online app":"installed app"),kw:(r.name+" "+(r.cat||"")+" "+(r.desc||"")+" installed program app "+(r.kind==="url"?PG.hostOf(r.url):"")),w:900,h:620,single:true,user:true,deskHide:true,init:(win,b)=>PG.run(r.id,win,b)})},
  refresh(){try{buildDesk()}catch(e){}OS.emit&&OS.emit("programs")},
  /* run an installed app inside a window */
  run(id,win,b){const r=PG.get(id);if(!r){b.append(h("div",{class:"pad"},"This program is no longer installed."));return}
@@ -9854,7 +9855,7 @@ defApp("programs",{name:"Programs",icon:"pkg",cat:"System",w:840,h:620,single:tr
    return h("div",{class:"row",style:"gap:10px;flex-wrap:wrap;align-items:center;border:1px solid var(--bd);border-radius:8px;padding:8px 10px"},
     h("span",{style:"font-size:22px;display:inline-flex;color:var(--ac)"},ic(IP[r.icon]?r.icon:"code")),
     h("div",{class:"grow",style:"min-width:160px"},h("div",{style:"font-weight:700"},r.name),
-     h("div",{class:"dim",style:"font-size:12px"},r.cat+" · "+(r.kind==="url"?"Online link: "+PG.hostOf(r.url):"Saved copy, works offline · "+fmtBytes(r.size||(PG.src(r.id)||"").length))+" · added "+ago(r.added)+(r.desk===false?" · not on desktop":"")),
+     h("div",{class:"dim",style:"font-size:12px"},r.cat+" · "+(r.kind==="url"?"Online link: "+PG.hostOf(r.url):"Saved copy, works offline · "+fmtBytes(r.size||(PG.src(r.id)||"").length))+" · added "+ago(r.added)),
      r.desc?h("div",{class:"dim",style:"font-size:12px"},r.desc):null),
     h("div",{style:"display:flex;gap:6px;flex-wrap:wrap"},
      h("button",{class:"btn sm pri",onclick:()=>OS.open(PG.aid(r))},ic("play"),"Open"),
@@ -9867,7 +9868,7 @@ defApp("programs",{name:"Programs",icon:"pkg",cat:"System",w:840,h:620,single:tr
    const body=h("div",{class:"scr grow",style:"display:flex;flex-direction:column;gap:8px;padding:10px;overflow:auto"});
    const fill=()=>{const ws2=q.toLowerCase().split(/\s+/).filter(Boolean),r2=PG.list().filter(r=>(catF==="All"||(r.cat||"My apps")===catF)&&ws2.every(w=>(r.name+" "+r.cat+" "+(r.desc||"")+" "+(r.url||"")).toLowerCase().includes(w))).sort((x,y)=>(x.cat||"").localeCompare(y.cat||"")||x.name.localeCompare(y.name));body.replaceChildren();
     if(!all.length){body.append(h("h3",{class:"ac",style:"margin:0"},"Install any web app"),
-     h("div",{},"An installed program gets its own icon on the desktop, a place in Start and in search, and its own window, just like the built-in apps. The built-in apps are not listed here and stay as they are."),
+     h("div",{},"An installed program gets a place in Start and in search, and its own window. It does not go on the desktop, so the desktop never fills up: open your programs from this window. The built-in apps are not listed here and stay as they are."),
      h("div",{},"Two kinds can be installed: a single .html file (a saved copy that works offline and keeps its own private data), or a link to a website that allows itself to be shown inside other pages."),
      h("div",{class:"dim"},"Try a suggestion. It opens the install form with the link filled in:"),
      h("div",{style:"display:flex;gap:6px;flex-wrap:wrap"},...BR.sugg.slice(0,10).map(([n,u])=>h("button",{class:"btn sm",onclick:()=>start("url",{url:u,name:n,cat:"Internet"})},n))));return}
@@ -9899,7 +9900,7 @@ defApp("programs",{name:"Programs",icon:"pkg",cat:"System",w:840,h:620,single:tr
      if(isNew){if(PG.add({id:PG.newId(name),name,kind:"url",url:u,icon:d.icon,cat,desc,desk:d.desk!==false,added:Date.now()})){toast("Installed "+name);view="list";render()}}
      else{if(PG.update(Object.assign({},edit,{name,url:u,icon:d.icon,cat,desc,desk:d.desk!==false}))){toast("Saved");view="list";render()}}return}
     const code=d.code;if(!code.trim()||!/<\w/.test(code))return toast("That does not look like an HTML app",1);
-    if(isNew){if(PG.add({id:PG.newId(name),name,kind:"src",icon:d.icon,cat,desc,desk:d.desk!==false,added:Date.now(),size:code.length},code)){toast("Installed "+name+(d.desk!==false?". It is on your desktop and in Start.":""));view="list";render()}}
+    if(isNew){if(PG.add({id:PG.newId(name),name,kind:"src",icon:d.icon,cat,desc,desk:d.desk!==false,added:Date.now(),size:code.length},code)){toast("Installed "+name+". Open it from Programs, Start or search.");view="list";render()}}
     else{if(PG.update(Object.assign({},edit,{name,icon:d.icon,cat,desc,desk:d.desk!==false}),code!==(PG.src(edit.id)||"")?code:null)){toast("Saved");view="list";render()}}};
    return h("div",{class:"scr",style:"height:100%;overflow:auto;padding:12px;display:flex;flex-direction:column;gap:10px"},
     h("h3",{class:"ac",style:"margin:0"},isNew?"Install a program":"Edit "+edit.name),tabs,isNew?src():(kind==="src"?src():null),urlEdit,
@@ -9907,7 +9908,7 @@ defApp("programs",{name:"Programs",icon:"pkg",cat:"System",w:840,h:620,single:tr
     h("div",{style:"display:flex;flex-direction:column;gap:6px"},h("label",{},"Category (pick one or type a new one)"),h("input",{class:"t",list:"pgcats"+win.id,value:d.cat,oninput:e=>{d.cat=e.target.value}}),dl),
     h("div",{style:"display:flex;flex-direction:column;gap:6px"},h("label",{},"Icon"),iconBox),
     h("div",{style:"display:flex;flex-direction:column;gap:6px"},h("label",{},"Short description (optional)"),h("input",{class:"t",value:d.desc,placeholder:"Shown in Start",oninput:e=>{d.desc=e.target.value}})),
-    h("label",{style:"display:flex;gap:8px;align-items:center"},h("input",{type:"checkbox",checked:d.desk!==false,onchange:e=>{d.desk=e.target.checked}}),"Show an icon on the desktop (it is always in Start and search)"),
+    h("div",{class:"dim",style:"font-size:12px"},"Installed programs do not go on the desktop. Open them from this window, Start or search."),
     isNew?h("div",{class:"dim",style:"font-size:12px"},"Installing runs someone's code inside a sandboxed window. It cannot read your files, diary or saves. Only install apps you trust."):null,
     h("div",{class:"row",style:"gap:8px;border:0;padding:0"},h("button",{class:"btn",onclick:()=>{view="list";render()}},"Cancel"),h("button",{class:"btn pri",onclick:go},isNew?"Install":"Save")))};
   const render=()=>{b.replaceChildren(view==="list"?listView():formView())};
@@ -9915,6 +9916,125 @@ defApp("programs",{name:"Programs",icon:"pkg",cat:"System",w:840,h:620,single:tr
   const prevClose=win.on.close;win.on.close=()=>{try{OS.off("programs",win.onProg)}catch(e){}prevClose&&prevClose()};
   render();if(arg)openArg(arg)},
  onArg(w,a){w.openArg&&w.openArg(a)}});
+
+/* ===================== CARTRIDGES: games that live outside the OS =====================
+   The OS holds only this player: a shelf, a Store, the sealed window a game runs in, and the saving.
+   The games themselves come in game packs (a pack is a single .html file such as cartridges.html; one file holds many games).
+   Packs are kept in IndexedDB ("tvos_cartridges"), so they are not squeezed into the 5 MB of localStorage.
+   What you own and every game's progress live under ONE localStorage key, tvos_cartridges, which Backup already covers
+   (every tvos_ key is), so a new game never needs a new OS. Each game runs in a sandboxed frame with its own private localStorage, kept here.
+   Other people's games can be added by link; a game on its own website saves with postMessage (see "Add by link"). ===================== */
+IP.cart="M5 3h14v14l-3 4H8l-3-4z M9 3v4h6V3 M9 12h6";
+const CT={
+ KEY:"tvos_cartridges",MAXSAVE:600000,
+ S:{inst:[],urls:[],saves:{}},meta:[],packs:[],ready:null,cur:null,
+ load(){try{const r=JSON.parse(localStorage.getItem(CT.KEY)||"null");if(r&&typeof r==="object")CT.S={inst:Array.isArray(r.inst)?r.inst.filter(x=>typeof x==="string"):[],urls:Array.isArray(r.urls)?r.urls.filter(u=>u&&typeof u.id==="string"&&typeof u.url==="string"):[],saves:r.saves&&typeof r.saves==="object"&&!Array.isArray(r.saves)?r.saves:{}}}catch(e){}},
+ save(){try{localStorage.setItem(CT.KEY,JSON.stringify(CT.S));return true}catch(e){toast("Could not save: the browser's storage is full.",1);return false}},
+ db(){return CT._db||(CT._db=new Promise((res,rej)=>{if(!window.indexedDB)return rej(new Error("no indexedDB"));const q=indexedDB.open("tvos_cartridges",1);q.onupgradeneeded=()=>q.result.createObjectStore("packs",{keyPath:"id"});q.onsuccess=()=>res(q.result);q.onerror=()=>rej(q.error)}))},
+ async tx(mode,fn){const db=await CT.db();return new Promise((res,rej)=>{const t=db.transaction("packs",mode);let out;const r=fn(t.objectStore("packs"));if(r)r.onsuccess=()=>{out=r.result};t.oncomplete=()=>res(out);t.onerror=t.onabort=()=>rej(t.error)})},
+ async init(){CT.load();let all=[];try{all=await CT.tx("readonly",s=>s.getAll())||[]}catch(e){}CT.index(all)},
+ index(all){CT.meta=[];CT.packs=[];for(const p of all){CT.packs.push({id:p.id,name:p.name,from:p.from,added:p.added,n:p.games.length,size:p.size||0,len:p.len||0});for(const g of p.games)CT.meta.push(Object.assign({},g.meta,{id:g.id,packId:p.id,size:g.size||0}))}},
+ clean(m,id){const s=(v,n)=>String(v==null?"":v).slice(0,n);return{name:s(m.name,60)||id,sub:s(m.sub,80),desc:s(m.desc,400),status:s(m.status,24),color:/^#[0-9a-f]{6}$/i.test(m.color||"")?m.color:"#8a94a6",glyph:/^[MmLlHhVvCcSsQqTtAaZz0-9 .,\-eE]{1,700}$/.test(m.glyph||"")?m.glyph:"M5 3h14v14l-3 4H8l-3-4z M9 3v4h6V3",tags:Array.isArray(m.tags)?m.tags.slice(0,3).map(t=>s(t,20)):[]}},
+ parse(text,fallbackId){const d=new DOMParser().parseFromString(text,"text/html"),gs=[];
+  d.querySelectorAll("script.cartsrc").forEach(el=>{let m;try{m=JSON.parse(el.getAttribute("data-meta"))}catch(e){return}if(!m||typeof m!=="object")return;const id=String(m.id||"").replace(/[^a-z0-9_-]/gi,"").slice(0,40);if(!id)return;
+   const src=el.textContent.replace(/<~\/script/g,"<"+"/script").replace(/<~!--/g,"<!"+"--");gs.push({id,meta:CT.clean(m,id),src,size:src.length})});
+  const mp=n=>{const e=d.querySelector('meta[name="'+n+'"]');return e?e.getAttribute("content"):""};
+  const pid=String(mp("cartridges-pack")||fallbackId||"pack").replace(/[^a-z0-9_-]/gi,"").slice(0,40)||"pack";
+  return{id:pid,name:String(mp("cartridges-pack-name")||(d.title||"").trim()||pid).slice(0,60),games:gs}},
+ async addPack(text,from,silent){const p=CT.parse(text,CT.slug(from));if(!p.games.length){toast("That file has no cartridges in it.",1);return false}
+  const rec={id:p.id,name:p.name,from:from||"",added:Date.now(),len:text.length,games:p.games,size:p.games.reduce((a,g)=>a+g.size,0)};
+  try{await CT.tx("readwrite",s=>s.put(rec))}catch(e){toast("Could not keep the pack: the browser did not allow the storage.",1);return false}
+  /* a game with this id in another pack is replaced by this one */
+  const all=(await CT.tx("readonly",s=>s.getAll()))||[];CT.index(all);if(!silent)toast("Loaded "+p.games.length+" cartridge"+(p.games.length===1?"":"s")+" from "+p.name+".");return true},
+ /* the default pack: cartridges.html, found next to the OS. It is loaded by itself the first time and kept up to date when online. */
+ DEF:"core",defState:"",
+ async fetchDefault(){let ch=false;try{const u=new URL("cartridges.html",location.href);if(!/^https?:$/.test(u.protocol)){CT.defState=CT.packs.some(p=>p.id===CT.DEF)?"offline":"file";return false}
+  const ctl=new AbortController(),t=setTimeout(()=>ctl.abort(),10000);let r;try{r=await fetch(u.href,{cache:"no-cache",credentials:"omit",signal:ctl.signal})}finally{clearTimeout(t)}
+  if(!r.ok)throw new Error("HTTP "+r.status);const txt=await r.text(),ex=CT.packs.find(p=>p.id===CT.DEF);
+  if(ex&&ex.len===txt.length){CT.defState="ok";return false}
+  ch=await CT.addPack(txt,"the default games",true);CT.defState=ch?"ok":"none"}catch(e){CT.defState=CT.packs.some(p=>p.id===CT.DEF)?"offline":"none"}return ch},
+ slug:s=>String(s||"pack").toLowerCase().replace(/\.[a-z]+$/,"").replace(/[^a-z0-9]+/g,"-").replace(/^-+|-+$/g,"").slice(0,30),
+ async rmPack(id){try{await CT.tx("readwrite",s=>s.delete(id))}catch(e){}const gone=CT.meta.filter(g=>g.packId===id).map(g=>g.id);CT.S.inst=CT.S.inst.filter(x=>gone.indexOf(x)<0);CT.save();const all=(await CT.tx("readonly",s=>s.getAll()))||[];CT.index(all)},
+ async src(g){const p=await CT.tx("readonly",s=>s.get(g.packId));const x=p&&p.games.find(q=>q.id===g.id);return x?x.src:null},
+ hostOf(u){try{return new URL(u).hostname.replace(/^www\./,"")}catch(e){return u}},
+ all(){return CT.meta.map(g=>Object.assign({kind:"own"},g)).concat(CT.S.urls.map(u=>({id:u.id,name:u.name,sub:"Online cartridge",kind:"url",url:u.url,color:"#4a5568",glyph:"M12 3a9 9 0 100 18 9 9 0 000-18z M3 12h18 M12 3c3 3 3 15 0 18 M12 3c-3 3-3 15 0 18",desc:"A game from "+CT.hostOf(u.url)+". It needs an internet connection.",tags:["Online"]})))},
+ find(id){return CT.all().find(g=>g.id===id)},
+ isIn:id=>CT.S.inst.indexOf(id)>=0,
+ inject(src,sc){let m=/<head(?=[\s>])[^>]*>/i.exec(src)||/<html(?=[\s>])[^>]*>/i.exec(src)||/<!doctype[^>]*>/i.exec(src);if(!m)return sc+src;const i=m.index+m[0].length;return src.slice(0,i)+sc+src.slice(i)},
+ /* the script put into every game: its localStorage is private to the game and is handed back here to be kept */
+ shim(data){const J=JSON.stringify(data).replace(/</g,"\\u003c").replace(new RegExp(String.fromCharCode(8232),"g"),"\\u2028").replace(new RegExp(String.fromCharCode(8233),"g"),"\\u2029");
+  return"<"+"script>(function(){try{var D="+J+",t=0;function send(){clearTimeout(t);t=0;try{parent.postMessage({tvc:'save',data:D},'*')}catch(e){}}function later(){clearTimeout(t);t=setTimeout(send,300)}"+
+  "function mk(p){var d=p?D:{};var o={getItem:function(k){k=String(k);return Object.prototype.hasOwnProperty.call(d,k)?d[k]:null},setItem:function(k,v){d[String(k)]=String(v);if(p)later()},removeItem:function(k){delete d[String(k)];if(p)later()},clear:function(){for(var k in d)delete d[k];if(p)later()},key:function(i){return Object.keys(d)[i]||null}};"+
+  "return new Proxy(o,{get:function(T,k){if(k==='length')return Object.keys(d).length;if(k in T)return T[k];return typeof k==='string'&&Object.prototype.hasOwnProperty.call(d,k)?d[k]:undefined},set:function(T,k,v){T.setItem(k,v);return true},deleteProperty:function(T,k){T.removeItem(k);return true},has:function(T,k){return k in T||Object.prototype.hasOwnProperty.call(d,k)},ownKeys:function(){return Object.keys(d)},getOwnPropertyDescriptor:function(T,k){return Object.prototype.hasOwnProperty.call(d,k)?{value:d[k],enumerable:true,configurable:true,writable:true}:undefined}})}"+
+  "var L=mk(true),Q=mk(false);Object.defineProperty(window,'localStorage',{configurable:true,get:function(){return L}});Object.defineProperty(window,'sessionStorage',{configurable:true,get:function(){return Q}});"+
+  "addEventListener('pagehide',function(){if(t)send()});document.addEventListener('visibilitychange',function(){if(document.hidden&&t)send()});addEventListener('message',function(e){if(e.data&&e.data.tvc==='flush'&&t)send()})}catch(e){}})()<"+"/script>"}
+};
+addEventListener("message",e=>{const d=e.data,c=CT.cur;if(!c||!d||typeof d!=="object"||!d.tvc||!c.fr||e.source!==c.fr.contentWindow)return;const id=c.g.id,s=CT.S.saves[id]||(CT.S.saves[id]={});
+ if(d.tvc==="save"&&d.data&&typeof d.data==="object"&&!Array.isArray(d.data)){let j;try{j=JSON.stringify(d.data)}catch(x){return}if(j.length>CT.MAXSAVE){toast(c.g.name+" tried to save too much",1);return}CT.S.saves[id]=d.data;CT.save()}
+ else if(d.tvc==="set"&&typeof d.k==="string"){const v=String(d.v==null?"":d.v);if(v.length>CT.MAXSAVE){toast(c.g.name+" tried to save too much",1);return}s[d.k]=v;CT.save()}
+ else if(d.tvc==="get"&&typeof d.k==="string"){try{e.source.postMessage({tvc:"val",k:d.k,n:d.n,v:Object.prototype.hasOwnProperty.call(s,d.k)?s[d.k]:null},"*")}catch(x){}}});
+
+defApp("cartridges",{name:"Cartridges",icon:"cart",cat:"Games",w:940,h:660,single:true,desc:"play games that live outside the OS",kw:"cartridges cartridge games game store install packs play timelord arcade shelf",
+ init(win,b){
+  const esc=s=>String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+  const kb=n=>n<1024?n+" bytes":n<1048576?(n/1024).toFixed(0)+" KB":(n/1048576).toFixed(1)+" MB";
+  if(!document.getElementById("ctcss")){const st=document.createElement("style");st.id="ctcss";st.textContent=".ctp{position:absolute;inset:0;display:flex;flex-direction:column}.ctp nav{display:flex;gap:6px;flex-wrap:wrap;padding:8px 10px;border-bottom:1px solid var(--bd);flex:none;align-items:center}.ctp .ctm{flex:1;min-height:0;overflow:auto;padding:14px}.ctp h4{margin:0 0 2px;font-size:18px}.ctg{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:12px}.ctc{border:1px solid var(--bd);border-radius:10px 10px 14px 14px;overflow:hidden;display:flex;flex-direction:column;background:var(--bg2,rgba(255,255,255,.04))}.ctc .tp{height:10px;background:rgba(0,0,0,.35);border-bottom:1px solid var(--bd);position:relative}.ctc .tp:after{content:'';position:absolute;left:50%;top:0;width:44%;height:100%;transform:translateX(-50%);border:1px solid var(--bd);border-top:0;border-radius:0 0 8px 8px;background:var(--bg,#111)}.ctc .lb{margin:10px 10px 0;border-radius:6px;height:104px;display:flex;align-items:center;justify-content:center;position:relative;overflow:hidden;border:1px solid rgba(255,255,255,.12)}.ctc .lb svg{width:56px;height:56px;fill:none;stroke:currentColor;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round}.ctc .lb b{position:absolute;left:8px;bottom:5px;font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:#fff;opacity:.85}.ctc .bd{padding:8px 12px 12px;display:flex;flex-direction:column;gap:5px;flex:1}.ctc .nm{font-weight:700;font-size:15px}.ctc .ft{display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin-top:auto}.cttag{font-size:11px;border:1px solid var(--bd);border-radius:99px;padding:0 8px}.ctbox{border:1px solid var(--bd);border-radius:10px;padding:10px 12px;margin:8px 0}.ctem{border:1px dashed var(--bd);border-radius:12px;padding:22px;text-align:center}.ctp pre{border:1px solid var(--bd);border-radius:6px;padding:8px;white-space:pre-wrap;font-size:12px;overflow:auto}#ctplay{position:absolute;inset:0;display:none;flex-direction:column;background:var(--bg,#000);z-index:3}#ctplay.on{display:flex}#ctplay .pb{display:flex;gap:8px;align-items:center;padding:6px 10px;border-bottom:1px solid var(--bd);flex:none;flex-wrap:wrap}#ctplay .pb b{flex:1;min-width:90px}";document.head.append(st)}
+  const box=h("div",{class:"ctp"});b.style.position="relative";b.append(box);
+  const nav=h("nav"),main=h("div",{class:"ctm"}),play=h("div",{id:"ctplay"});box.append(nav,main,play);
+  const fr=h("iframe",{style:"flex:1;border:0;width:100%;background:#fff;min-height:0",allow:"fullscreen; autoplay; clipboard-write; gamepad",allowfullscreen:""});
+  const pt=h("b"),ps=h("span",{class:"dim",style:"font-size:12px"}),pback=h("button",{class:"btn sm"},"← Back"),prel=h("button",{class:"btn sm"},"Restart"),pfull=h("button",{class:"btn sm"},"Full screen");
+  play.append(h("div",{class:"pb"},pback,pt,ps,prel,pfull),fr);
+  let view="shelf",ready=false,confirm=null,msg="";
+  const tile=(g,mode)=>{const inst=CT.isIn(g.id);let s='<div class="ctc"><div class="tp"></div><div class="lb" style="background:linear-gradient(135deg,'+g.color+'33,'+g.color+'88);color:'+g.color+'"><svg viewBox="0 0 24 24"><path d="'+esc(g.glyph)+'"/></svg><b>'+esc(g.tags[0]||"")+'</b></div><div class="bd"><div class="nm">'+esc(g.name)+'</div><div class="dim" style="font-size:12.5px;margin-top:-3px">'+esc(g.sub||"")+'</div><div style="font-size:13px;opacity:.9">'+esc(g.desc||"")+'</div><div class="ft">';
+   if(g.status)s+='<span class="cttag ac">'+esc(g.status)+'</span>';if(g.kind==="own")s+='<span class="cttag dim">'+kb(g.size)+'</span>';else s+='<span class="cttag dim">needs internet</span>';
+   if(mode==="store"){s+=inst?'<span class="cttag" style="color:var(--ac)">Installed</span><button class="btn sm pri" data-a="play" data-k="'+esc(g.id)+'">Play</button>':'<button class="btn sm pri" data-a="install" data-k="'+esc(g.id)+'">Install</button>'}
+   else{s+='<button class="btn sm pri" data-a="play" data-k="'+esc(g.id)+'">Play</button><button class="btn sm" data-a="remove" data-k="'+esc(g.id)+'">'+(confirm==="r"+g.id?"Sure? Tap again":"Remove")+'</button>'+(CT.S.saves[g.id]&&Object.keys(CT.S.saves[g.id]).length?'<button class="btn sm" data-a="erase" data-k="'+esc(g.id)+'">'+(confirm==="e"+g.id?"Erase it?":"Erase save")+'</button>':"")}
+   return s+'</div></div></div>'};
+  const render=()=>{nav.innerHTML="";nav.append(h("b",{style:"margin-right:6px;display:inline-flex;gap:6px;align-items:center;color:var(--ac)"},ic("cart"),"Cartridges"));
+   for(const [k,n] of [["shelf","My cartridges"],["store","Store"],["packs","Game packs"],["link","Add by link"]])nav.append(h("button",{class:"btn sm"+(view===k?" on":""),"data-v":k},n));
+   if(!ready){main.innerHTML='<div class="dim">Opening your cartridges…</div>';return}
+   let s="";const all=CT.all();
+   if(view==="shelf"){const mine=all.filter(g=>CT.isIn(g.id));s+='<h4>My cartridges</h4><div class="dim" style="margin-bottom:12px">The games you have installed. Your progress in each one saves by itself and is included in Backup.</div>';
+    const orphan=CT.S.inst.filter(id=>!all.some(g=>g.id===id));
+    if(!mine.length)s+='<div class="ctem"><p style="margin:0 0 10px">Nothing installed yet.</p><button class="btn pri" data-v="'+(CT.meta.length?"store":"packs")+'">'+(CT.meta.length?"Open the Store":"Load a game pack")+'</button></div>';
+    else s+='<div class="ctg">'+mine.map(g=>tile(g,"shelf")).join("")+'</div>';
+    if(orphan.length)s+='<div class="ctbox dim">'+orphan.length+' installed game'+(orphan.length>1?"s are":" is")+' missing, because its game pack is not loaded. Load the pack again in Game packs and it comes back with its progress.</div>'}
+   else if(view==="store"){s+='<h4>Store</h4><div class="dim" style="margin-bottom:12px">Pick a game and install it. It goes on your shelf in My cartridges.</div>';
+    s+=CT.meta.length?'<div class="ctg">'+CT.meta.map(g=>tile(Object.assign({kind:"own"},g),"store")).join("")+'</div>':'<div class="ctem"><p style="margin:0 0 10px">The Store is empty because no game pack is loaded yet.</p><button class="btn pri" data-v="packs">Load a game pack</button></div>'}
+   else if(view==="packs"){s+='<h4>Game packs</h4><div class="dim" style="margin-bottom:10px">A game pack is one .html file that holds many games, like cartridges.html. Games are kept in this browser\'s storage, not in the OS, so there is no small limit.</div>'+
+    (CT.defState==="ok"||CT.packs.some(p=>p.id===CT.DEF)?'':'<div class="ctbox"><b>The default games</b><div class="dim" style="font-size:13px;margin:4px 0">'+(CT.defState==="file"?'The default games load from cartridges.html when the OS is opened from a web address, with both files in the same place. This copy was opened from a file, so load cartridges.html from a file below.':'The default games (cartridges.html) were not found next to the OS. Put cartridges.html in the same place as terminal-velocity.html, or load it from a file below.')+'</div><button class="btn sm" data-a="defcheck">Check again</button></div>')+'<div class="ctbox"><b>Load a pack</b><div class="row" style="gap:8px;flex-wrap:wrap;margin:8px 0"><button class="btn pri" data-a="packfile">From a file…</button></div><div class="row" style="gap:6px;flex-wrap:wrap"><input class="t grow" id="ctpu" placeholder="Or a web address, like https://example.com/cartridges.html" style="min-width:180px"><button class="btn" data-a="packurl">Load</button></div>'+(msg?'<div class="dim" style="margin-top:6px">'+esc(msg)+'</div>':"")+'<div class="dim" style="font-size:12px;margin-top:6px">A pack from a web address only loads if that website allows other pages to read it. If it does not, save the file and load it from a file.</div></div>';
+    if(CT.packs.length)s+='<h4 style="margin-top:14px">Loaded packs</h4>'+CT.packs.map(p=>'<div class="ctbox row" style="gap:10px;flex-wrap:wrap;align-items:center"><div class="grow" style="min-width:150px"><b>'+esc(p.name)+'</b><div class="dim" style="font-size:12px">'+p.n+' cartridge'+(p.n===1?"":"s")+' · '+kb(p.size)+(p.from?' · from '+esc(p.from):"")+'</div></div>'+(p.id===CT.DEF?'<span class="cttag ac">Default</span>':'<button class="btn sm" data-a="rmpack" data-k="'+esc(p.id)+'">'+(confirm==="p"+p.id?"Sure? Tap again":"Remove pack")+'</button>')+'</div>').join("")+'<div class="dim" style="font-size:12px;margin-top:6px">Removing a pack removes its games from your shelf. Your progress is kept, so loading the pack again brings the games back as you left them.</div>'}
+   else{s+='<h4>Add by link</h4><div class="dim" style="margin-bottom:8px">Add a game from the web. It must be a page that allows itself to be shown inside other pages, and it needs an internet connection.</div><div class="ctbox"><div class="dim" style="font-size:12px">Name</div><input class="t" id="ctn" placeholder="My game" style="width:100%"><div class="dim" style="font-size:12px;margin-top:6px">Address</div><input class="t" id="ctu" placeholder="https://example.com/game.html" style="width:100%"><p><button class="btn pri" data-a="addurl">Add it to My cartridges</button></p></div>'+
+    '<details><summary class="ac" style="cursor:pointer">Making a game for Cartridges</summary><div class="ctbox" style="font-size:13px"><p><b>The easy way:</b> make the game a single .html file that uses <code>localStorage</code> as normal, and put it in a game pack. Its <code>localStorage</code> is kept for you automatically and goes into Backup.</p><p><b>A game on its own website:</b> a site cannot use another site\'s storage, so ask Cartridges to keep your save with messages:</p><pre>parent.postMessage({tvc:"set",k:"save",v:JSON.stringify(state)},"*");\nparent.postMessage({tvc:"get",k:"save",n:1},"*");\naddEventListener("message",e=>{ if(e.data&&e.data.tvc==="val"&&e.data.k==="save") load(e.data.v) });</pre><p>The page must allow framing (no <code>X-Frame-Options: DENY</code>).</p></div></details>';
+    if(CT.S.urls.length)s+='<h4 style="margin-top:12px">Your links</h4>'+CT.S.urls.map(u=>'<div class="ctbox row" style="gap:8px;align-items:center;flex-wrap:wrap"><b class="grow">'+esc(u.name)+'</b><span class="dim" style="font-size:12px">'+esc(CT.hostOf(u.url))+'</span><button class="btn sm" data-a="dellink" data-k="'+esc(u.id)+'">Remove link</button></div>').join("")}
+   main.innerHTML=s};
+  /* playing */
+  const stopPlay=()=>{try{fr.contentWindow.postMessage({tvc:"flush"},"*")}catch(e){}setTimeout(()=>{fr.removeAttribute("srcdoc");fr.removeAttribute("src");fr.src="about:blank";play.classList.remove("on");CT.cur=null;CT.save();render()},160)};
+  const startPlay=async g=>{fr.removeAttribute("srcdoc");fr.removeAttribute("src");
+   if(g.kind==="own"){const src=await CT.src(g);if(src==null){toast("This game's pack is missing. Load it again in Game packs.",1);return}
+    CT.cur={g,fr};pt.textContent=g.name;ps.textContent="progress saves by itself";fr.setAttribute("sandbox","allow-scripts allow-forms allow-modals allow-popups allow-downloads allow-pointer-lock allow-presentation");fr.srcdoc=CT.inject(src,CT.shim(CT.S.saves[g.id]||{}))}
+   else{CT.cur={g,fr};pt.textContent=g.name;ps.textContent=CT.hostOf(g.url)+" · online";fr.setAttribute("sandbox",BR.sandboxFor(g.url));fr.setAttribute("referrerpolicy","no-referrer");fr.src=g.url}
+   play.classList.add("on")};
+  pback.onclick=stopPlay;prel.onclick=()=>{if(CT.cur)startPlay(CT.cur.g)};pfull.onclick=()=>{try{(fr.requestFullscreen||fr.webkitRequestFullscreen).call(fr)}catch(e){toast("Full screen is not available here.",1)}};
+  win.on.close=(prev=>()=>{try{fr.contentWindow.postMessage({tvc:"flush"},"*")}catch(e){}if(CT.cur&&CT.cur.fr===fr)CT.cur=null;prev&&prev()})(win.on.close);
+  const arm=(k)=>{confirm=k;setTimeout(()=>{if(confirm===k){confirm=null;if(ready)render()}},3000)};
+  box.addEventListener("click",async e=>{const t=e.target.closest("[data-a],[data-v]");if(!t)return;
+   if(t.dataset.v){view=t.dataset.v;msg="";confirm=null;render();main.scrollTop=0;return}
+   const a=t.dataset.a,k=t.dataset.k;
+   if(a==="install"){if(!CT.isIn(k))CT.S.inst.push(k);CT.save();toast("Installed. It is in My cartridges.");render()}
+   else if(a==="play"){const g=CT.find(k);if(g)startPlay(g)}
+   else if(a==="remove"){if(confirm==="r"+k){CT.S.inst=CT.S.inst.filter(x=>x!==k);confirm=null;CT.save();toast("Removed. Your progress is kept in case you install it again.");render()}else{arm("r"+k);render()}}
+   else if(a==="erase"){if(confirm==="e"+k){delete CT.S.saves[k];confirm=null;CT.save();toast("Progress erased.");render()}else{arm("e"+k);render()}}
+   else if(a==="packfile"){const [f]=await pickDisk(".html,.htm,text/html");if(!f)return;try{const ok=await CT.addPack(await f.text(),f.name);msg=ok?"":"That file has no cartridges in it."}catch(x){msg="Could not read that file."}render()}
+   else if(a==="packurl"){let u=(main.querySelector("#ctpu").value||"").trim();if(!u)return;if(!/^[a-z][a-z0-9+.-]*:\/\//i.test(u))u="https://"+u;msg="Loading…";render();try{const r=await fetch(u,{credentials:"omit",referrerPolicy:"no-referrer"});if(!r.ok)throw new Error("HTTP "+r.status);const ok=await CT.addPack(await r.text(),CT.hostOf(u));msg=ok?"":"That page has no cartridges in it."}catch(x){msg="Could not load it. The website may not allow other pages to read it. Save the file and load it from a file instead."}render()}
+   else if(a==="defcheck"){msg="";await CT.fetchDefault();render()}
+   else if(a==="rmpack"){if(confirm==="p"+k){confirm=null;await CT.rmPack(k);toast("Pack removed.");render()}else{arm("p"+k);render()}}
+   else if(a==="addurl"){const n=main.querySelector("#ctn").value.trim();let u=main.querySelector("#ctu").value.trim();if(u&&!/^[a-z][a-z0-9+.-]*:\/\//i.test(u))u="https://"+u;let ok=false;try{const x=new URL(u);ok=x.protocol==="https:"||x.protocol==="http:"}catch(er){}
+    if(!ok){toast("That does not look like a web address.",1);return}const id="u"+Date.now().toString(36);CT.S.urls.push({id,name:n||CT.hostOf(u),url:u});CT.S.inst.push(id);CT.save();toast("Added to My cartridges.");view="shelf";render()}
+   else if(a==="dellink"){CT.S.urls=CT.S.urls.filter(u=>u.id!==k);CT.S.inst=CT.S.inst.filter(x=>x!==k);CT.save();render()}});
+  win.openArg=async a=>{if(typeof a==="string"){const n=V.get(a);if(n&&!n.dir){try{await CT.addPack(await V.read(n,"text"),n.name);view="store";render()}catch(e){}}}};
+  render();(CT.ready||(CT.ready=CT.init())).then(async()=>{const first=!CT.packs.some(p=>p.id===CT.DEF);if(first)main.innerHTML='<div class="dim">Getting the default games\u2026</div>';else{ready=true;if(view==="shelf"&&!CT.S.inst.length)view=CT.meta.length?"store":"packs";render()}
+   await CT.fetchDefault();ready=true;if(first&&view==="shelf"&&!CT.S.inst.length)view=CT.meta.length?"store":"packs";render()})}});
 
 /* ===================== BACKUP HABIT: tray icon, honest change counting, rare reminders ===================== */
 /* Only things you made count: Diary pages, files, tasks, calendar notes, sequencer patterns, Den themes, bookmarks, installed programs, game save.
@@ -9936,6 +10056,7 @@ const BKT={
   const sa=BKT.json("tvos_sysadmin",null);if(sa&&typeof sa==="object"){const n=sa.best?Object.keys(sa.best).length:0;if(n>0||sa.gave>0||(sa.decor&&Object.keys(sa.decor).length))add("sysadmin","SysAdmin","settings",n||sa.gave,BKT.hs(JSON.stringify([sa.best,sa.credits,sa.earned,sa.decor,sa.parts,sa.secs,sa.gave,sa.hearts])))}
   const ts=BKT.json("tvos_theseus",null);if(ts&&typeof ts==="object"){const sv=Array.isArray(ts.shelf)?ts.shelf:[],pr=ts.proj&&ts.proj.jar>0?1:0;if(sv.length||pr)add("theseus","Theseus","settings",sv.length||pr,BKT.hs(JSON.stringify([sv.map(e=>[e.id,e.nm,e.code||(e.json&&e.json.seed)]),pr?ts.proj.cur:0])))}
   const ms=BKT.json("tvos_mysky",null);if(ms&&ms.visited){const nv=Object.keys(ms.visited).length,nn=ms.names?Object.keys(ms.names).length:0;if(nn>0||nv>1)add("mysky","My Sky","settings",nn||nv,BKT.hs(JSON.stringify([ms.names,ms.pins,ms.claim,ms.home,ms.ship,ms.para,ms.strange,ms.rev,Object.keys(ms.visited).length])))}
+  const ca=BKT.json("tvos_cartridges",null);if(ca&&typeof ca==="object"){const n=ca.saves&&typeof ca.saves==="object"?Object.keys(ca.saves).length:0;if(n>0||(Array.isArray(ca.urls)&&ca.urls.length))add("cartridges","Cartridges","settings",n||ca.urls.length,BKT.hs(JSON.stringify([ca.saves,ca.inst,ca.urls])))}
   const gm=BKT.raw("terminal_velocity_v3");if(gm)add("game","Game save","game",1,BKT.hs(gm));
   return A},
  st(){const snap=BKT.json("tvos_backup_snap",null),last=LS.get("tvos_backup_last",0),sg=(snap&&snap.sigs)||{},ft=snap?(snap.ft||0):0,as=BKT.areas(),ch=[];let files=0,all=0;
