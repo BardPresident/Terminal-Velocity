@@ -245,7 +245,7 @@ SESSION RESTORE
 4. THE APPS
 =====================================================================
 
-Every app has a desktop icon, a Start menu entry and a Spotlight entry,
+Every built-in app has a desktop icon, a Start menu entry and a Spotlight entry,
 and every icon is different.
 
 --- SYSTEM -----------------------------------------------------------
@@ -740,12 +740,14 @@ App Runner
 
 Programs
   Add/Remove Programs for web apps. Install your own apps and they get
-  a desktop icon, a place in Start and Spotlight, and their own window,
-  exactly like the built-in apps. The built-in apps are not listed in
-  Programs and cannot be changed or removed from it.
-  Installed programs always come last, after every built-in app: at the
-  end of the desktop icons, and in Start under their own "Installed:"
+  a place in Start and Spotlight, and their own window, like the built-in
+  apps. Installed programs never go on the desktop, so the desktop can
+  never fill up and run off the page: open them from the Programs window
+  (each has an Open button), Start or search. The built-in apps are not
+  listed in Programs and cannot be changed or removed from it.
+  In Start, installed programs come last, under their own "Installed:"
   headings (one per category you chose), so yours are easy to find.
+  Programs is for your own HTML apps. Games go in Cartridges.
   Two kinds of app can be installed:
     From a link   A site you type or paste, for example
                   https://www.biblegateway.com. It needs the internet,
@@ -901,6 +903,50 @@ SysAdmin (server icon, Games)
   machine comes back as you left it.
   Saved on this device under tvos_sysadmin, so it is included in Backup and
   Restore (as its own area), and shows in Clean-up as "SysAdmin progress".
+
+Cartridges (cartridge icon, Games)
+  The place for games that live outside the OS. Programs is for your own
+  HTML apps; Cartridges is for games. The OS holds only the player (a shelf,
+  a Store, a sealed window for each game, and the saving). The games come
+  in game packs: a pack is a single .html file that holds many games, such
+  as cartridges.html. So the OS stays small, and new games never need a new
+  OS.
+  The default pack. cartridges.html (the author's own games) is the
+  default game pack, and nobody has to install it. When the OS is opened
+  from a web address, with cartridges.html in the same place as
+  terminal-velocity.html, Cartridges fetches it by itself the first time
+  it opens, keeps a copy in the browser so it works offline, and updates
+  it whenever it is online and the file has changed. It cannot be removed.
+  If the OS is opened from a file instead (not a web address), a browser
+  cannot read the neighbouring file, so Game packs offers "From a file" to
+  load cartridges.html by hand. Anyone can add more packs, or single
+  games by link, beside the default one.
+  Four tabs. My cartridges is your shelf: Play, Remove (your progress is
+  kept) and Erase save. Store lists every game in the packs you have
+  loaded; press Install and it goes on your shelf. Game packs loads a pack
+  from a file or from a web address, lists the loaded packs and removes
+  them. Add by link adds a game from the web (it must allow being shown
+  inside other pages, and it needs a connection).
+  Opening cartridges.html in a browser tab on its own also works as a
+  stand-alone player, but its saves stay in that tab and are not part of
+  Backup. Use it through Cartridges instead.
+  Where things are kept. The games themselves are kept in the browser's
+  IndexedDB (a database called tvos_cartridges), not in the 5 MB of
+  localStorage, so a pack can be large. Your shelf, your links and every
+  game's saved progress are kept under one key, tvos_cartridges, which is
+  included in Backup and Restore (as its own area) and shows in Clean-up as
+  "Cartridges: shelf and game progress". Game packs are not in Backup,
+  because you can load them again. Removing a pack keeps your progress.
+  Each game runs in a sealed frame. It cannot see your files, your diary or
+  the other games. A game that uses localStorage as normal gets a private
+  one, kept for it automatically. A game on its own website cannot use
+  another site's storage, so it asks Cartridges to keep a save with
+  postMessage (the Add by link tab shows how).
+  A web address for a pack only loads if that website allows other pages to
+  read it; otherwise save the file and load it from a file.
+  Honest limits. Loading a pack of games from someone else means running
+  their code; each game is sealed in its own frame, but only load packs
+  you trust. It has been tested here, not on a real Chromebook or phone.
 
 Sophia (paw icon, Companions)
   Sophia is a long-haired Chihuahua, black with a white chest, tan
