@@ -1258,7 +1258,7 @@ const fmtDate=t=>{const d=new Date(t),hm=" "+pad(d.getHours())+":"+pad(d.getMinu
 const sleep=ms=>new Promise(r=>setTimeout(r,ms));
 const LS={get(k,d){try{const v=localStorage.getItem(k);return v==null?d:JSON.parse(v)}catch(e){return d}},set(k,v){try{localStorage.setItem(k,JSON.stringify(v));return true}catch(e){try{window.tvosStorageFull&&window.tvosStorageFull(e)}catch(_){}return false}}};
 const fmtUp=s=>{s=Math.max(0,Math.round(s));const d=Math.floor(s/86400),hr=Math.floor(s%86400/3600),m=Math.floor(s%3600/60),sc=s%60;if(d)return d+" d "+hr+" h";if(hr)return hr+" h "+m+" min";if(m)return m+" min "+sc+" s";return sc+" s"};
-const OS={apps:{},wins:[],z:10,bus:{},boot:performance.now(),ver:"1.0 build 1123-2020"};
+const OS={apps:{},wins:[],z:10,bus:{},boot:performance.now(),ver:"1.0 build 1123-2248"};
 OS.on=(ev,f)=>{(OS.bus[ev]=OS.bus[ev]||[]).push(f);return f};
 OS.off=(ev,f)=>{OS.bus[ev]=(OS.bus[ev]||[]).filter(x=>x!==f)};
 /* reboot that always fetches the newest copy of this page (like Ctrl+Shift+R), then reloads */
@@ -9957,17 +9957,19 @@ const CT={
   await CT.reindex();if(!silent)toast("Loaded "+p.games.length+" cartridge"+(p.games.length===1?"":"s")+" from "+p.name+".");return true},
  async touch(id,patch){try{const r=await CT.tx("readonly",s=>s.get(id));if(r){Object.assign(r,patch);await CT.tx("readwrite",s=>s.put(r))}}catch(e){}},
  /* the default pack: cartridges.html, found next to the OS. It is loaded by itself the first time and kept up to date when online. */
- DEF:"core",defState:"",
+ DEF:"core",defState:"",HOME:"https://republicka.life/cartridges.html", /* the home of the default store: change this one line if the site ever moves */
  async getText(u){const ctl=new AbortController(),t=setTimeout(()=>ctl.abort(),15000);try{const r=await fetch(u,{cache:"no-cache",credentials:"omit",signal:ctl.signal});if(!r.ok){const e=new Error("HTTP "+r.status);e.status=r.status;throw e}return await r.text()}finally{clearTimeout(t)}},
  /* Brings the first store and the stores it names up to date. The first store is checked on every open; the others at most once a day, or when force is true. */
  sync(force,onChange){if(CT.syncing)return CT.syncing;return CT.syncing=CT._sync(force,onChange).then(r=>{CT.syncing=null;return r},e=>{CT.syncing=null;return false})},
  async _sync(force,onChange){
-  const ping=()=>{if(onChange)try{onChange()}catch(e){}},base=new URL("cartridges.html",location.href);let ch=false;CT.probs={};
-  if(!/^https?:$/.test(base.protocol)){CT.defState=CT.packs.some(p=>p.id===CT.DEF)?"offline":"file";return false}
-  try{const txt=await CT.getText(base.href),ex=CT.packs.find(p=>p.id===CT.DEF);
-   if(ex&&ex.len===txt.length&&ex.h===CT.hs(txt))CT.defState="ok";
-   else{const ok=await CT.addPack(txt,"the default games",true,{id:CT.DEF});CT.defState=ok?"ok":"none";if(ok)ch=true}}
-  catch(e){CT.defState=CT.packs.some(p=>p.id===CT.DEF)?"offline":"none"}
+  const ping=()=>{if(onChange)try{onChange()}catch(e){}};let ch=false,base=null;CT.probs={};
+  /* where the first store comes from: next to the OS if it is on a web server, otherwise (or if it is not there) the home site */
+  const tries=[];if(/^https?:$/.test(location.protocol))tries.push(new URL("cartridges.html",location.href).href);if(tries.indexOf(CT.HOME)<0)tries.push(CT.HOME);
+  let txt=null,fail=false;for(const u of tries){try{const t=await CT.getText(u);if(!/class=["']?cartsrc/.test(t))throw new Error("not a pack");txt=t;base=new URL(u);break}catch(e){fail=true}}
+  if(txt!=null){const ex=CT.packs.find(p=>p.id===CT.DEF);
+   try{if(ex&&ex.len===txt.length&&ex.h===CT.hs(txt))CT.defState="ok";else{const ok=await CT.addPack(txt,"the default games",true,{id:CT.DEF});CT.defState=ok?"ok":"none";if(ok)ch=true}}catch(e){CT.defState="none"}}
+  else CT.defState=CT.packs.some(p=>p.id===CT.DEF)?"offline":(/^https?:$/.test(location.protocol)?"none":"file");
+  if(!base)base=new URL(tries[tries.length-1]);
   ping();
   const core=CT.packs.find(p=>p.id===CT.DEF),list=core?core.more:[];
   for(let i=0;i<list.length;i++){const f=list[i],id="s-"+CT.slug(f),ex=CT.packs.find(q=>q.id===id);
@@ -10043,7 +10045,7 @@ defApp("cartridges",{name:"Cartridges",icon:"cart",cat:"Games",w:940,h:660,singl
      if(CT.dups.length)s+='<div class="ctwarn">Some games share a name tag (id) with a game in an earlier store, so they are hidden: '+CT.dups.slice(0,5).map(d=>esc(d.name)+' ('+esc(d.pack)+')').join(", ")+(CT.dups.length>5?" and more":"")+'.</div>'}
     else s+='<div class="ctem"><p style="margin:0 0 10px">The Store is empty because no game pack is loaded yet.</p><button class="btn pri" data-v="packs">Load a game pack</button></div>'}
    else if(view==="packs"){s+='<h4>Game packs</h4><div class="dim" style="margin-bottom:10px">A game pack is one .html file that holds many games, like cartridges.html. Games are kept in this browser\'s storage, not in the OS, so there is no small limit.</div>'+
-    (CT.defState==="ok"||CT.packs.some(p=>p.id===CT.DEF)?'':'<div class="ctbox"><b>The default games</b><div class="dim" style="font-size:13px;margin:4px 0">'+(CT.defState==="file"?'The default games load from cartridges.html when the OS is opened from a web address, with both files in the same place. This copy was opened from a file, so load cartridges.html from a file below.':'The default games (cartridges.html) were not found next to the OS. Put cartridges.html in the same place as terminal-velocity.html, or load it from a file below.')+'</div><button class="btn sm" data-a="defcheck">Check again</button></div>')+'<div class="ctbox"><b>Load a pack</b><div class="row" style="gap:8px;flex-wrap:wrap;margin:8px 0"><button class="btn pri" data-a="packfile">From a file…</button></div><div class="row" style="gap:6px;flex-wrap:wrap"><input class="t grow" id="ctpu" placeholder="Or a web address, like https://example.com/cartridges.html" style="min-width:180px"><button class="btn" data-a="packurl">Load</button></div>'+(msg?'<div class="dim" style="margin-top:6px">'+esc(msg)+'</div>':"")+'<div class="dim" style="font-size:12px;margin-top:6px">A pack from a web address only loads if that website allows other pages to read it. If it does not, save the file and load it from a file.</div></div>';
+    (CT.defState==="ok"||CT.packs.some(p=>p.id===CT.DEF)?'':'<div class="ctbox"><b>The default games</b><div class="dim" style="font-size:13px;margin:4px 0">'+'The default games could not be reached. Check your internet connection and try again, or load cartridges.html from a file below.'+'</div><button class="btn sm" data-a="defcheck">Check again</button></div>')+'<div class="ctbox"><b>Load a pack</b><div class="row" style="gap:8px;flex-wrap:wrap;margin:8px 0"><button class="btn pri" data-a="packfile">From a file…</button></div><div class="row" style="gap:6px;flex-wrap:wrap"><input class="t grow" id="ctpu" placeholder="Or a web address, like https://example.com/cartridges.html" style="min-width:180px"><button class="btn" data-a="packurl">Load</button></div>'+(msg?'<div class="dim" style="margin-top:6px">'+esc(msg)+'</div>':"")+'<div class="dim" style="font-size:12px;margin-top:6px">A pack from a web address only loads if that website allows other pages to read it. If it does not, save the file and load it from a file.</div></div>';
     if(CT.packs.length){s+='<h4 style="margin-top:14px">Your stores</h4>'+(msg2?'<div class="ctwarn">'+esc(msg2)+'</div>':"")+CT.packs.map(p=>{const pr=p.file&&CT.probs[p.file];
       return'<div class="ctbox row" style="gap:10px;flex-wrap:wrap;align-items:center"><div class="grow" style="min-width:150px"><b>'+esc(p.name)+'</b>'+(p.off?' <span class="cttag">Off</span>':'')+'<div class="dim" style="font-size:12px">'+p.n+' cartridge'+(p.n===1?"":"s")+' · '+kb(p.size)+(p.from&&!p.listed&&p.id!==CT.DEF?' · from '+esc(p.from):"")+(p.listed?' · '+esc(p.file):"")+'</div>'+(pr?'<div class="dim" style="font-size:12px">'+(pr==="missing"?esc(p.file)+" was not found next to cartridges.html.":"Could not reach it just now. Showing the saved copy.")+'</div>':"")+'</div>'+
        (p.id===CT.DEF?'<span class="cttag ac">Default</span>':'<button class="btn sm" data-a="toggle" data-k="'+esc(p.id)+'">'+(p.off?"Turn on":"Turn off")+'</button>'+(p.listed?"":'<button class="btn sm" data-a="rmpack" data-k="'+esc(p.id)+'">'+(confirm==="p"+p.id?"Sure? Tap again":"Remove pack")+'</button>'))+'</div>'}).join("")+
