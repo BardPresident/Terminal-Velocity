@@ -1258,7 +1258,7 @@ const fmtDate=t=>{const d=new Date(t),hm=" "+pad(d.getHours())+":"+pad(d.getMinu
 const sleep=ms=>new Promise(r=>setTimeout(r,ms));
 const LS={get(k,d){try{const v=localStorage.getItem(k);return v==null?d:JSON.parse(v)}catch(e){return d}},set(k,v){try{localStorage.setItem(k,JSON.stringify(v));return true}catch(e){try{window.tvosStorageFull&&window.tvosStorageFull(e)}catch(_){}return false}}};
 const fmtUp=s=>{s=Math.max(0,Math.round(s));const d=Math.floor(s/86400),hr=Math.floor(s%86400/3600),m=Math.floor(s%3600/60),sc=s%60;if(d)return d+" d "+hr+" h";if(hr)return hr+" h "+m+" min";if(m)return m+" min "+sc+" s";return sc+" s"};
-const OS={apps:{},wins:[],z:10,bus:{},boot:performance.now(),ver:"1.0 build 1123-2248"};
+const OS={apps:{},wins:[],z:10,bus:{},boot:performance.now(),ver:"1.0 build 1124-0458"};
 OS.on=(ev,f)=>{(OS.bus[ev]=OS.bus[ev]||[]).push(f);return f};
 OS.off=(ev,f)=>{OS.bus[ev]=(OS.bus[ev]||[]).filter(x=>x!==f)};
 /* reboot that always fetches the newest copy of this page (like Ctrl+Shift+R), then reloads */
@@ -9938,7 +9938,7 @@ const CT={
  async reindex(){CT.index((await CT.tx("readonly",s=>s.getAll()))||[])},
  index(all){const rank=p=>p.id===CT.DEF?0:p.listed?1:2;all=all.slice().sort((a,b)=>rank(a)-rank(b)||(rank(a)===1?(a.order||0)-(b.order||0):(a.added||0)-(b.added||0)));
   CT.meta=[];CT.packs=[];CT.dups=[];const seen=Object.create(null);
-  for(const p of all){const off=CT.S.off.indexOf(p.id)>=0;CT.packs.push({id:p.id,name:p.name,from:p.from,file:p.file||"",listed:!!p.listed,gone:!!p.gone,order:p.order||0,more:p.more||[],h:p.h,added:p.added,checked:p.checked||0,n:p.games.length,size:p.size||0,len:p.len||0,off,ids:p.games.map(g=>g.id)});
+  for(const p of all){const off=CT.S.off.indexOf(p.id)>=0;CT.packs.push({id:p.id,name:p.name,from:p.from,file:p.file||"",listed:!!p.listed,gone:!!p.gone,probed:p.probed||0,order:p.order||0,more:p.more||[],h:p.h,added:p.added,checked:p.checked||0,n:p.games.length,size:p.size||0,len:p.len||0,off,ids:p.games.map(g=>g.id)});
    if(off)continue;
    for(const g of p.games){if(seen[g.id]){CT.dups.push({id:g.id,name:g.meta.name,pack:p.name,first:seen[g.id]});continue}seen[g.id]=p.name;CT.meta.push(Object.assign({},g.meta,{id:g.id,packId:p.id,size:g.size||0}))}}},
  clean(m,id){const s=(v,n)=>String(v==null?"":v).slice(0,n);return{name:s(m.name,60)||id,sub:s(m.sub,80),desc:s(m.desc,400),status:s(m.status,24),color:/^#[0-9a-f]{6}$/i.test(m.color||"")?m.color:"#8a94a6",glyph:/^[MmLlHhVvCcSsQqTtAaZz0-9 .,\-eE]{1,700}$/.test(m.glyph||"")?m.glyph:"M5 3h14v14l-3 4H8l-3-4z M9 3v4h6V3",tags:Array.isArray(m.tags)?m.tags.slice(0,3).map(t=>s(t,20)):[]}},
@@ -9979,7 +9979,22 @@ const CT={
     else if(await CT.addPack(txt,f,true,{id,file:f,listed:true,order:i}))ch=true;else CT.probs[f]="empty"}
    catch(e){CT.probs[f]=e&&e.status===404?"missing":"offline"}
    await CT.reindex();ping()}
-  if(core){for(const p of CT.packs.slice()){if((p.listed||p.gone)&&list.indexOf(p.file)<0){if(p.ids.some(x=>CT.isIn(x)))await CT.touch(p.id,{listed:false,gone:true});else{try{await CT.tx("readwrite",s=>s.delete(p.id))}catch(e){}CT.S.off=CT.S.off.filter(x=>x!==p.id);CT.save()}ch=true}}}
+  /* automatic finding: after the listed stores, try cartridges-2.html, cartridges-3.html, ... and stop after two missing in a row, so one gap is forgiven */
+  const seen={},auto=/^cartridges-\d+\.html$/i;let probeOff=false,probed=false;
+  if(core){let miss=0;const due=force||!core.probed||Date.now()-core.probed>72e6;
+   for(let n=2;n<=60&&miss<2;n++){const f="cartridges-"+n+".html";
+    if(list.indexOf(f)>=0){miss=0;continue}
+    const id="s-"+CT.slug(f),ex=CT.packs.find(q=>q.id===id),ord=100+n;
+    if(ex&&!force&&Date.now()-ex.checked<72e6){seen[f]=1;miss=0;if(ex.order!==ord||!ex.listed)await CT.touch(id,{order:ord,listed:true,gone:false,file:f});continue}
+    if(!ex&&!due){miss++;continue}
+    try{const txt=await CT.getText(new URL(f,base).href);probed=true;if(!/class=["']?cartsrc/.test(txt))throw Object.assign(new Error("not a pack"),{status:404});
+     seen[f]=1;miss=0;
+     if(ex&&ex.len===txt.length&&ex.h===CT.hs(txt))await CT.touch(id,{checked:Date.now(),order:ord,listed:true,gone:false,file:f});
+     else if(await CT.addPack(txt,f,true,{id,file:f,listed:true,order:ord}))ch=true;
+     await CT.reindex();ping()}
+    catch(e){if(e&&e.status===404){probed=true;miss++}else{probeOff=true;break}}}
+   if(probed)await CT.touch(CT.DEF,{probed:Date.now()})}
+  if(core){for(const p of CT.packs.slice()){if((p.listed||p.gone)&&list.indexOf(p.file)<0&&!seen[p.file]&&!(probeOff&&auto.test(p.file))){if(p.ids.some(x=>CT.isIn(x)))await CT.touch(p.id,{listed:false,gone:true});else{try{await CT.tx("readwrite",s=>s.delete(p.id))}catch(e){}CT.S.off=CT.S.off.filter(x=>x!==p.id);CT.save()}ch=true}}}
   await CT.reindex();ping();return ch},
  /* turn a store off or on; it will not turn off while a game from it is installed */
  async toggle(id){const p=CT.packs.find(q=>q.id===id);if(!p||id===CT.DEF)return"";
