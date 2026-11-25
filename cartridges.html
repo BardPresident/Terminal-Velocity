@@ -2290,6 +2290,17 @@ function renderLounge(){
  wrap.append(tabs);
  if(VIEW.tab==="shelf"){
   wrap.append(h("h1",null,"Divine Tragedy"),h("p",{class:"dim ui"},"Pluck a string yourself, or let an instrument play for you. Breed two to make a voice that never existed before."));
+  const importBox=h("input",{type:"text",placeholder:"Paste a shared seed (DT1-…)",style:"max-width:260px;font-family:monospace;font-size:12px"});
+  const importBtn=h("button",{class:"btn sm"},"Load seed");
+  importBtn.onclick=()=>{
+   const id=doImportSeed(importBox.value);
+   if(!id){toast("That doesn't look like a valid seed.");return}
+   importBox.value="";
+   VIEW.playId=id;VIEW.screen="play";renderAll();
+  };
+  importBox.onkeydown=e=>{if(e.key==="Enter")importBtn.click()};
+  wrap.append(h("div",{class:"row ui",style:"margin:10px 0 18px;align-items:center"},
+   h("div",null,h("label",null,"Load a shared seed"),h("div",{style:"display:flex;gap:6px;flex-wrap:wrap"},importBox,importBtn))));
   if(!S.inst.length)wrap.append(h("div",{class:"empty ui"},"Nothing of your own yet. Breed two of the founding instruments to begin."));
   else{const grid=h("div",{class:"grid"});
    for(const inst of S.inst){
@@ -2509,6 +2520,17 @@ function renderPlay(){
  wrap.append(backBtn);
  bodyEl.append(wrap);
 }
+/* loading a shared seed should credit the same things a live breed would, where it can:
+   a fresh instrument joins the shelf, counts toward totalMade/maxGen, and any founding
+   species named among its parents counts toward the "bred with all 7" crown star. */
+function doImportSeed(s){
+ const inst=decodeSeed((s||"").trim());if(!inst)return null;
+ S.inst.push(inst);S.totalMade=(S.totalMade||0)+1;S.maxGen=Math.max(S.maxGen||1,inst.gen||1);
+ if(inst.parents){for(const sp of SPECIES)if(inst.parents.includes(sp.name)&&!S.speciesSeen.includes(sp.id))S.speciesSeen.push(sp.id)}
+ saveNow(S);
+ toast("Loaded: "+(inst.custom||inst.name));
+ return inst.id;
+}
 function giftInstrument(inst){
  S.inst=S.inst.filter(i=>i.id!==inst.id);
  S.grace=(S.grace||0)+1;S.gifts=(S.gifts||0)+1;saveNow(S);
@@ -2549,7 +2571,7 @@ function boot(){
   gift(instId){const inst=S.inst.find(i=>i.id===instId);if(!inst)return false;giftInstrument(inst);return true},
   rename(instId,name){const inst=S.inst.find(i=>i.id===instId)||SPECIES.map(founderInstance).find(i=>i.id===instId);if(!inst)return false;inst.custom=name;saveNow(S);return true},
   seedOf(instId){const inst=findParent(instId);return inst?encodeSeed(inst):null},
-  importSeed(s){const inst=decodeSeed(s);if(!inst)return false;S.inst.push(inst);S.totalMade=(S.totalMade||0)+1;S.maxGen=Math.max(S.maxGen||1,inst.gen||1);saveNow(S);return inst.id},
+  importSeed(s){return doImportSeed(s)||false},
   async full(){ // breed two founders, place it, return the resulting id
    this.breedNow("f_harp","f_lyre");
    for(let i=0;i<30;i++){if(VIEW.screen==="reveal")break;await new Promise(r=>setTimeout(r,30))}
