@@ -345,6 +345,13 @@ Media Player
   Each file plays once and stops. Turn on "Auto-next" to move on to the
   next file in the playlist by itself (off by default; the choice is
   remembered). The Next and Previous buttons always work.
+  Full screen, everywhere. Every full-screen mode in the OS (Media Player,
+  School, Comics, Cartridges, Firework, Hearth) has an easy way out: a
+  floating "Exit full screen" button that fades after a few quiet seconds
+  and returns when the mouse or a finger moves, plus Esc, plus the app's
+  own button. In Media Player, School and Comics the mouse also hides when
+  still, and a double click exits. A website or program running inside a
+  frame controls its own full screen; Esc leaves it.
 
 Image Viewer
   Zoom, pan, rotate, slideshow.
@@ -636,7 +643,8 @@ Music, Books, Comics, Audiobooks, School, Archive
     Right: the player, controls and item list. mp4 plays in the window,
     mp3 plays with a title card, jpg shows full size. Keys: Space play or
     pause, Left/Right +-10 s, N/P next or previous, F full screen, Up/Down
-    volume. Position is remembered per file, finished items get a check
+    volume. In full screen the mouse hides after a few quiet seconds, and a
+    double click exits (Comics does the same). Position is remembered per file, finished items get a check
     mark. When you reopen School it loads the last thing you watched,
     paused at the second you left, and "Continue" plays it.
   - Archive: search every file name in the manifest.
@@ -943,6 +951,9 @@ Cartridges (cartridge icon, Games)
   store that has been taken off the list disappears once none of its games
   is installed. If two stores have a game with the same id, the earlier
   store wins and the Store shows a warning.
+  Full screen. The Full screen button in a game makes the whole player full
+  screen, with the bar on top, so the same button (now "Exit full screen"),
+  Back, a double click on the bar, or Esc brings you back.
   Four tabs. My cartridges is your shelf: Play, Remove and Erase save.
   Removing a game that has saved progress asks whether to keep or erase
   the progress. Store lists the games of every store that is turned on,
