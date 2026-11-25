@@ -161,6 +161,940 @@ details{margin:8px 0}summary{cursor:pointer;color:var(--ac2)}
 <main id="main"></main>
 <div id="play"><div id="pbar"><button class="btn sm" id="pback">&larr; Back</button><span class="t" id="ptitle"></span><span class="dim small" id="psave"></span><button class="btn sm" id="preload">Restart</button><button class="btn sm" id="pfull">Full screen</button></div><iframe id="pfr" allow="fullscreen; autoplay; clipboard-write; gamepad" allowfullscreen></iframe></div>
 </div><div id="toast"></div>
+<script type="text/plain" class="cartsrc" data-meta='{"name": "Checksum", "sub": "A desk for cleaning corrupted files, Republicka-issue", "desc": "Every archive collects noise. Open each file, delete what was never meant to be binary, and leave the rest exactly as readable as it should&#39;ve always been. Submit the case when you&#39;re satisfied \u2014 how it went is between you and Sage.", "color": "#4dff88", "glyph": "M4 4h16a1 1 0 011 1v11a1 1 0 01-1 1H4a1 1 0 01-1-1V5a1 1 0 011-1z M9 12l2 2 4-4 M9 20h6 M12 17v3", "tags": ["Puzzle", "Philosophy", "Comedy"], "id": "checksum"}'><!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Checksum</title>
+<style>
+:root{
+ --bg:#050b06;--panel:#0a150c;--panel2:#0d1c10;--line:#1d4d30;
+ --fg:#4dff88;--fg2:#8dffb8;--dim:#2f8a57;--dim2:#1f5c3c;
+ --bad:#ff5c5c;--bad2:#ff8a8a;--amber:#ffd36b;
+}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%}
+body{
+ background:var(--bg);color:var(--fg);
+ font:14px/1.5 ui-monospace,"SF Mono",Menlo,Consolas,monospace;
+ overflow:hidden;
+}
+#app{position:absolute;inset:0;display:flex;flex-direction:column}
+/* CRT dressing: scanlines + faint flicker, purely decorative, never blocks input */
+#crt{position:fixed;inset:0;pointer-events:none;z-index:50;
+ background:repeating-linear-gradient(180deg,rgba(0,0,0,0) 0px,rgba(0,0,0,0) 2px,rgba(0,0,0,.18) 3px),
+  radial-gradient(120% 80% at 50% 0%,rgba(77,255,136,.05),rgba(0,0,0,0) 60%);
+ mix-blend-mode:normal;animation:flicker 7s infinite}
+@keyframes flicker{0%,96%,100%{opacity:1}97%{opacity:.94}98%{opacity:1}}
+.glow{text-shadow:0 0 6px rgba(77,255,136,.45)}
+h1,h2,h3{margin:0;font-weight:700;letter-spacing:.02em}
+.dim{color:var(--dim)}
+.small{font-size:12px}
+button{font:inherit;cursor:pointer;background:var(--panel2);color:var(--fg);border:1px solid var(--line);border-radius:3px;padding:7px 12px;min-height:34px}
+button:hover{border-color:var(--fg)}
+button:disabled{opacity:.4;cursor:default}
+button.pri{background:var(--fg);color:#021707;border-color:var(--fg);font-weight:700}
+button.pri:hover{background:var(--fg2)}
+button.bad:hover{border-color:var(--bad);color:var(--bad2)}
+header{
+ flex:none;padding:10px 14px;border-bottom:1px solid var(--line);
+ background:linear-gradient(180deg,var(--panel2),var(--panel));
+ display:flex;flex-direction:column;gap:6px;
+}
+.hdr-top{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.brand{font-weight:700;letter-spacing:.16em;text-transform:uppercase;font-size:15px}
+.pill{border:1px solid var(--line);border-radius:3px;padding:3px 9px;font-size:12px;color:var(--fg2);white-space:nowrap}
+.pill.clear{color:var(--amber);border-color:#5c4a1f}
+.hdr-top .spacer{flex:1}
+.brief{font-size:13px;color:var(--fg2)}
+.stakes{font-size:12px;color:var(--dim);font-style:italic}
+.help{font-size:12.5px;color:var(--fg2);border:1px dashed var(--line);border-radius:4px;padding:8px 10px;margin-top:2px}
+.help ul{margin:6px 0 0;padding-left:18px}
+.help li{margin:3px 0}
+main{flex:1;min-height:0;display:flex;overflow:hidden}
+@media (max-width:760px){main{flex-direction:column}}
+/* file list: fixed-width sidebar on wide screens, never crushed; becomes a horizontal strip on narrow */
+#filelist{
+ flex:none;width:260px;border-right:1px solid var(--line);
+ background:var(--panel);overflow:auto;padding:10px;
+ display:flex;flex-direction:column;align-items:stretch;gap:6px;
+}
+@media (max-width:760px){
+ #filelist{width:100%;max-height:34vh;flex-direction:row;flex-wrap:wrap;border-right:none;border-bottom:1px solid var(--line)}
+}
+.filerow{
+ border:1px solid var(--line);border-radius:4px;padding:8px 10px;text-align:left;
+ background:var(--panel2);color:var(--fg);display:flex;flex-direction:column;gap:3px;
+}
+.filerow .nm{font-size:13px;word-break:break-all}
+.filerow .st{font-size:11px;color:var(--dim)}
+.filerow .btnrow{display:flex;gap:6px;flex-wrap:wrap;margin-top:2px}
+.filerow .btnrow button{flex:1;min-width:0}
+.filerow.open{border-color:var(--fg);box-shadow:0 0 0 1px var(--fg) inset}
+.filerow.gone{opacity:.35}
+/* no color cue on filenames either -- a binary file reads the same as any other until
+   you look at what's inside it (or just decide to delete it and find out). */
+/* viewer: scrolls its own content, never clips the top (flex-start, not center) */
+#viewer{
+ flex:1;min-width:0;display:flex;flex-direction:column;
+ overflow:auto;padding:14px 16px;align-items:stretch;justify-content:flex-start;gap:8px;
+}
+/* clean and corrupt lines are styled IDENTICALLY on purpose -- the only tell is
+   whether the line actually reads as real content. no color-coded answer key. */
+.line{
+ border:1px solid transparent;border-radius:3px;padding:5px 9px;cursor:pointer;
+ white-space:pre-wrap;word-break:break-word;font-size:13px;color:var(--fg2);
+}
+.line:hover{border-color:var(--dim2);background:rgba(77,255,136,.05)}
+.viewer-empty{margin:auto;color:var(--dim);text-align:center;padding:30px}
+.filestatus{font-size:12px;color:var(--dim);flex:none}
+.filestatus.clean{color:var(--fg)}
+footer{
+ flex:none;border-top:1px solid var(--line);background:var(--panel2);
+ padding:10px 14px;display:flex;gap:10px;align-items:center;flex-wrap:wrap;
+}
+footer .spacer{flex:1}
+/* ---------- lounge: the home screen, same shape as the other cartridges ---------- */
+#loungewrap{max-width:560px;margin:0 auto;padding:40px 20px 60px;display:flex;flex-direction:column;align-items:center;text-align:center;gap:4px}
+#loungewrap .lstatus{margin:6px 0 20px}
+#loungewrap h2{align-self:flex-start;margin-top:30px;margin-bottom:8px;font-size:15px;color:var(--fg2)}
+#shelf{width:100%;display:flex;flex-direction:column}
+.entry{display:flex;align-items:center;gap:9px;padding:7px 2px;border-bottom:1px solid var(--line);font-size:13px;text-align:left}
+.dot{width:9px;height:9px;border-radius:50%;flex:none}
+.dot.happy{background:var(--fg)}
+.dot.neutral{background:var(--amber)}
+.dot.sad{background:var(--bad)}
+.vbad{color:var(--bad2)}
+.virusline{margin:2px 0 10px}
+/* binary read-only peek and its occasional consequence */
+.line.noise{cursor:default;color:var(--dim)}
+.line.noise:hover{background:none;border-color:transparent}
+.infectnotice{color:var(--bad2);font-size:12.5px;border:1px dashed var(--bad);border-radius:4px;padding:8px 10px;margin-top:4px}
+/* compare: two columns on anything roomy, stacked pairs on a narrow screen so a
+   row's two halves stay adjacent instead of becoming two separate long scrolls */
+#viewer.compare{padding:14px 10px}
+.cmphead{display:grid;grid-template-columns:1fr 1fr;gap:8px;font-size:12px;color:var(--dim);padding:0 9px 6px;border-bottom:1px solid var(--line);margin-bottom:6px}
+.cmprow{display:grid;grid-template-columns:1fr 1fr;gap:8px;align-items:stretch}
+.cmprow .line{margin:2px 0}
+.cmprow .line.empty{cursor:default}
+@media (max-width:620px){
+ .cmphead{grid-template-columns:1fr}
+ .cmphead div:last-child{border-top:1px solid var(--line);padding-top:4px;margin-top:2px}
+ .cmprow{grid-template-columns:1fr;border-bottom:1px dashed var(--line);padding-bottom:4px;margin-bottom:4px}
+}
+/* ---------- Quarantine (the cure minigame): canvas scales down to fit any viewport
+   width instead of forcing horizontal scroll, and the touch controls are real
+   thumb-sized buttons, not shrunk-to-fit text buttons. ---------- */
+#mgstage{position:relative;flex:1;min-height:0;display:flex;align-items:center;justify-content:center;padding:10px;overflow:hidden}
+#mgcanvas{background:#050b06;border:1px solid var(--line);border-radius:4px;max-width:100%;max-height:100%;width:auto;height:auto;touch-action:none}
+#mgctl{flex:none;display:flex;align-items:center;justify-content:center;gap:14px;padding:10px 14px 16px}
+.mgbtn{min-width:64px;min-height:56px;font-size:20px;padding:0;user-select:none;-webkit-user-select:none;touch-action:manipulation}
+#mgbanner{position:absolute;inset:0;display:none;align-items:center;justify-content:center;background:rgba(2,8,3,.88);border-radius:4px}
+.mgcard{background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:20px 24px;text-align:center;display:flex;flex-direction:column;gap:12px;max-width:320px}
+.mgcard .mood{font-size:30px}
+.mgcard .line{cursor:default;background:none;padding:0;white-space:normal;color:var(--fg2)}
+#result{
+ position:fixed;inset:0;background:rgba(2,8,3,.9);z-index:45;display:flex;align-items:center;justify-content:center;padding:20px;
+}
+#result .card{background:var(--panel);border:1px solid var(--fg);border-radius:6px;max-width:460px;width:100%;padding:22px;text-align:center;display:flex;flex-direction:column;gap:14px}
+#result .mood{font-size:34px}
+#result .line{font-size:15px;color:var(--fg2);background:none;cursor:default;padding:0;white-space:normal}
+#result.happy .card{border-color:var(--fg)}
+#result.neutral .card{border-color:var(--amber)}
+#result.sad .card{border-color:var(--bad)}
+::-webkit-scrollbar{width:10px}::-webkit-scrollbar-thumb{background:var(--line);border-radius:5px}
+</style>
+</head><body>
+<div id="crt"></div>
+<div id="tlhost"></div>
+<script>
+(()=>{"use strict";
+const host=document.getElementById("tlhost");
+const $=id=>document.getElementById(id);
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
+const h=(tag,attrs,...kids)=>{const e=document.createElement(tag);if(attrs)for(const k in attrs){if(k==="class")e.className=attrs[k];else if(k.startsWith("on"))e.addEventListener(k.slice(2),attrs[k]);else if(k==="style")e.style.cssText=attrs[k];else if(k==="disabled"||k==="checked")e[k]=!!attrs[k];else e.setAttribute(k,attrs[k])}
+ for(const k of kids.flat(Infinity))if(k!=null)e.append(k.nodeType?k:document.createTextNode(String(k)));return e};
+const cap=s=>s.charAt(0).toUpperCase()+s.slice(1);
+const pick=arr=>arr[Math.floor(Math.random()*arr.length)];
+const pickSome=(arr,n)=>{const a=arr.slice();for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a.slice(0,n)};
+const randInt=(a,b)=>a+Math.floor(Math.random()*(b-a+1));
+const chance=p=>Math.random()<p;
+let UID=1;const uid=()=>UID++;
+
+/* ---------- the government: a utopia, not an iron world. every bank here should read
+   as adorably overstaffed, never as sinister -- the stakes are always disproportionate
+   to the actual mess, and nobody is ever really in trouble. ---------- */
+const DEPT_PREFIX=["Ministry of","Bureau of","Office of","Department of","Division of","Committee for","Council on"];
+const DEPT_NOUN=["Thermal Grievances","Ceremonial Firmware","Vestigial Infrastructure","Ambient Patriotism",
+ "Redundant Oversight","Unsolicited Enthusiasm","Decorative Protocol","Backup Backups","Scenic Paperwork",
+ "Approved Snacks","Theoretical Punctuality","Minor Miracles","Continuing Optimism","Harmless Nostalgia",
+ "Shared Enthusiasm","National Houseplants","Civic Daydreaming","Wholesome Bureaucracy","Procedural Sunshine",
+ "Standardized Wonder","Gentle Compliance","Festive Logistics","Communal Shoelaces","Public Encouragement",
+ "Inherited Optimism","Mandatory Delight","Quiet Achievements","Secondhand Ceremony"];
+
+const CLEARANCE=["Public","Routine","Restricted","Mildly Confidential","Aggressively Confidential",
+ "Top Secret (Everyone Already Knows)","Beyond Top Secret (Not Even We Know)","Classified By Mistake",
+ "Need-to-Know (You Don't)","Extremely Fine, Probably"];
+
+const PERSON=["a junior clerk","the Undersecretary for Snacks","an enthusiastic volunteer","the night-shift archivist",
+ "a visiting dignitary's assistant","the Minister's second cousin","a work-experience student","the office's oldest intern",
+ "a retired lighthouse keeper turned auditor","the Deputy of Nice Things","a well-meaning substitute",
+ "the new recruit, bless them","whoever was closest to the keyboard"];
+
+const EVENT=["the Spring Civic Fair","the National Houseplant Address","the Minister's karaoke night",
+ "the Annual Shoelace Review","a live broadcast of the weather","the Founders' Day pageant rehearsal",
+ "the quarterly enthusiasm audit","a surprise visit from the Commonwealth delegation",
+ "the ribbon-cutting for a bridge nobody asked for","the office's slow-motion talent show",
+ "the ceremonial lowering of expectations","a very small parade"];
+
+const MISTAKE=["compiled his resignation letter into the backing track","uploaded her grocery list as official policy",
+ "let the office cat walk across the keyboard mid-broadcast","replied to a formal inquiry entirely in emoji",
+ "saved over the national anthem with a ringtone","accidentally knighted the photocopier",
+ "filed the wrong form in triplicate, then filed that","compressed the archive until it forgot what it was",
+ "asked the fax machine a personal question it wasn't ready for","left the backup running overnight, unsupervised"];
+
+const THING=["anthem synthesizer","ceremonial fax machine","Minister's away-message","civic jukebox",
+ "Department's away-message server","Founders' Day slideshow","emergency bagpipe simulator",
+ "office's mood lighting rig","commemorative doorbell chime","visitor sign-in kiosk"];
+
+const WEIRD=["humming the wrong anthem","filibustering in Comic Sans","replying to emails only in riddles",
+ "playing the hold music backwards","greeting visitors in a language nobody speaks",
+ "insisting it is still last Tuesday","narrating its own malfunction out loud","CC-ing the whole building by reflex"];
+
+const PROCEDURE=["integrity sweep","shelf inventory","backup verification","scheduled dusting","compliance nap check"];
+
+const DISCOVERY=["a suspiciously confident paragraph","something that used to be a memo",
+ "a file that remembers things that never happened","a block of text wearing a disguise",
+ "a line item nobody will take credit for"];
+
+const LOCATION=["the stationery cupboard's backup drive","the Minister's sock drawer archive",
+ "a filing cabinet marked DO NOT ORGANIZE","the server humming quietly under the stairs",
+ "a folder labeled definitely not important"];
+
+const COMMITTEE=["the Committee for Shared Blame","the Office of No Hard Feelings",
+ "the Department's morale subcommittee","the Council on Minor Embarrassments"];
+
+const STAKES=["If left uncorrected, the file may be mistaken for an acceptable standard of governance.",
+ "Citizens have been asked to remain calm, or at least to remain.",
+ "The Prime Minister has requested this be resolved before afternoon tea.",
+ "Left alone, it may develop opinions.",
+ "The longer it sits, the more official it starts to look.",
+ "Nobody will be blamed. Someone would still like it fixed.",
+ "It has already appeared in one (1) dream.",
+ "The archive insists this is fine. The archive is wrong.",
+ "No alarms have been raised. A gentle hum has, however."];
+
+const INCIDENT_TEMPLATES=[
+ ()=>`During ${pick(EVENT)}, ${pick(PERSON)} accidentally ${pick(MISTAKE)}.`,
+ ()=>`${cap(pick(PERSON))} reports that the ${pick(THING)} has started ${pick(WEIRD)} again.`,
+ ()=>`A routine ${pick(PROCEDURE)} turned up ${pick(DISCOVERY)} inside ${pick(LOCATION)}.`,
+ ()=>`${pick(COMMITTEE)} would like it noted that nobody is to blame for what happened to the ${pick(THING)}, especially not ${pick(PERSON)}.`,
+ ()=>`${cap(pick(PERSON))} insists the ${pick(THING)} was already like this when they got here.`,
+ ()=>`Something got into ${pick(LOCATION)} again. Early reports blame ${pick(PERSON)}.`
+];
+
+function genDepartment(){return `${pick(DEPT_PREFIX)} ${pick(DEPT_NOUN)}`}
+function genClearance(){return pick(CLEARANCE)}
+function genIncident(){return pick(INCIDENT_TEMPLATES)()}
+function genStakes(){return pick(STAKES)}
+
+/* ---------- Sage: per-job only, never a grudge-holder. three honest moods. ---------- */
+const SAGE_HAPPY=["Sage beams. “Immaculate work. The Republic thanks you.”",
+ "Sage claps once, delighted. “Not a scrap of binary left. Wonderful.”",
+ "Sage grins. “This is exactly the kind of clean I was hoping for.”",
+ "Sage looks genuinely moved. “You read every word of this. I can tell.”"];
+const SAGE_NEUTRAL=["Sage nods slowly. “Acceptable. A few things slipped through, but acceptable.”",
+ "Sage shrugs. “Could've been cleaner. Could've been worse.”",
+ "Sage tilts their head. “Mostly tidy. We'll call it a win.”",
+ "Sage sets it down without comment, which from Sage counts as a pass."];
+const SAGE_SAD=["Sage sighs, but kindly. “Oh dear. Quite a bit got left behind — and a few things that shouldn't have gone, went.”",
+ "Sage winces. “That's... not quite what we needed. No matter, there's always the next one.”",
+ "Sage pats you on the shoulder anyway. “Rough one. Everybody has rough ones.”",
+ "Sage holds the file at arm's length. “We'll say this one was character-building.”"];
+function pickSageLine(mood){return pick(mood==="happy"?SAGE_HAPPY:mood==="sad"?SAGE_SAD:SAGE_NEUTRAL)}
+
+/* ---------- file content banks. carrier files should always look readable; only the
+   injected noise (or a swapped-in sentence) is ever actually corrupt. no color-coded
+   or shape-coded tell -- reading is the only way to know. ---------- */
+const CLEAN_BY_TYPE={
+ html:["<h1>Minutes of the Weekly Meeting</h1>","<p>All attendees agreed the biscuits were adequate.</p>",
+  "<ul><li>Item 1: approved, with reservations</li></ul>","<footer>Filed under: ongoing</footer>",
+  "<p>The chair reminded everyone that this is, in fact, the agenda.</p>",
+  "<section><h2>Open Business</h2></section>","<p>No further business. Several further opinions.</p>",
+  "<blockquote>“We'll revisit this next week,” said everyone, every week.</blockquote>",
+  "<p>Attendance: mandatory in spirit.</p>","<div class=\"notice\">This page intentionally reads fine.</div>",
+  "<p>Motion carried, mostly out of fatigue.</p>","<p>Next meeting: same time, renewed optimism.</p>"],
+ txt:["An idea kept secret is only half an idea.","What can be read can be checked.",
+  "Nothing here is locked; walk in.","A closed format is just a locked door with good lighting.",
+  "If it can't be read, it isn't information, it's furniture.","Openness is not a policy. It's a housekeeping habit.",
+  "Every file here should survive being stared at.","The archive keeps nothing it can't explain.",
+  "Plain text outlives every format built to replace it.","Transparency is just tidiness, applied to the truth.",
+  "A government that can be read can be corrected.","This note is, itself, the whole point."],
+ mp3:["Track 04 — hum, unresolved.","Duration: 3:12 (approx, nobody counted closely).",
+  "Encoded by a committee, apparently.","Note: contains one (1) kazoo.",
+  "Mixed on a Tuesday, remixed out of spite on a Thursday.","Lyrics: mostly vowels.",
+  "Tempo: whatever felt right at the time.","Credits: everyone, somehow.",
+  "Bridge section recovered from a voicemail.","Master copy smells faintly of toast.",
+  "Liner notes: “we did try.”","Bonus track: silence, extended."],
+ mp4:["[00:00:04] A flag is raised. Nobody claps.","[00:00:11] The host forgets the guest's name, recovers gracefully.",
+  "[00:00:22] Scene: a hallway. Somehow still a hallway.","[00:00:31] Subtitle: (polite applause)",
+  "[00:00:40] A committee is introduced. It waves as one.","[00:00:52] Someone off-camera says “we're rolling.”",
+  "[00:01:03] Cut to: the same hallway, from a worse angle.","[00:01:10] Credits begin early, by accident.",
+  "[00:01:18] The narrator admits he hasn't seen the rest of this either.","[00:01:25] End card: “thank you, probably.”"]
+};
+const EXT_OF={html:"html",txt:"txt",mp3:"mp3",mp4:"mp4"};
+const STEM={
+ html:["minutes_meeting","notice_public","agenda_weekly","memo_internal","report_civic","policy_draft"],
+ txt:["readme_archive","notes_general","statement_official","log_daily","manifest_public"],
+ mp3:["anthem_final","track_backing","jingle_civic","anthem_v3","hold_music"],
+ mp4:["ceremony_full","broadcast_weather","pageant_rehearsal","meeting_recorded","address_national"]
+};
+const SUFFIX=["","_v2","_FINAL","_DRAFT","_backup","_real","_ACTUAL","_DO_NOT_SEND",""];
+const BIN_STEM=["unidentified_update","legacy_installer","mystery","vendor_helper","unlisted_tool","leftover_patch","unclaimed_binary"];
+const BIN_EXT=["exe","dll","bin","so","msi"];
+
+function noiseWord(){
+ if(chance(0.5)){
+  const chars="░▒▓█▚▞┼┤╬\xD8\xD7ϟ&%$#@~^";
+  let s="";const n=randInt(3,7);for(let i=0;i<n;i++)s+=chars[Math.floor(Math.random()*chars.length)];
+  return s;
+ }
+ const n=randInt(2,6);const parts=[];for(let i=0;i<n;i++)parts.push(randInt(0,255).toString(16).padStart(2,"0").toUpperCase());
+ return parts.join(" ");
+}
+function noiseLine(){const n=randInt(2,4);const out=[];for(let i=0;i<n;i++)out.push(noiseWord());return out.join("  ")}
+function noiseBlock(nLines){const out=[];for(let i=0;i<nLines;i++)out.push(noiseLine());return out}
+
+/* real file names get a REAL extension (the last one) -- but some wear an earlier,
+   misleading extension as camouflage, exactly like a real double-extension disguise
+   (invoice.pdf.exe). a binary wearing a carrier-looking name is still pure binary.
+   a carrier wearing a scary name is still perfectly legitimate. only the last
+   extension is ever the truth. */
+function genFileName(type){
+ const stem=pick(STEM[type]),suf=pick(SUFFIX);
+ const base=`${stem}${suf}`;
+ if(chance(0.14))return `${base}.${pick(BIN_EXT)}.${EXT_OF[type]}`; // scary-looking, actually fine
+ return `${base}.${EXT_OF[type]}`;
+}
+function genBinaryName(){
+ if(chance(0.22)){
+  const t=pick(["html","txt","mp3","mp4"]);
+  return `${pick(STEM[t])}${pick(SUFFIX)}.${EXT_OF[t]}.${pick(BIN_EXT)}`; // safe-looking, actually binary
+ }
+ return `${pick(BIN_STEM)}.${pick(BIN_EXT)}`;
+}
+
+/* ---------- cross-file references. a line that names another file is only as
+   trustworthy as what it actually points at -- which means checking it against the
+   rest of this job's file list, not just reading the line by itself. ---------- */
+const REF_TEMPLATES={
+ html:n=>`<scr`+`ipt src="${n}"></scr`+`ipt>`,
+ txt:n=>`See attached: ${n}`,
+ mp3:n=>`Source loop borrowed from ${n}`,
+ mp4:n=>`Overlay graphic pulled from ${n}`
+};
+function orphanName(){
+ const t=pick(["html","txt","mp3","mp4"]);
+ return chance(.5)?`${pick(STEM[t])}${pick(SUFFIX)}.${EXT_OF[t]}`:`${pick(BIN_STEM)}.${pick(BIN_EXT)}`;
+}
+/* targets: a real carrier name in this job (fine), a real binary name in this job
+   (a redirect to something that shouldn't exist -- corrupt), or a name that isn't in
+   this job at all (an orphan reference -- also corrupt). */
+function genReference(type,carrierNames,binaryNames){
+ const roll=Math.random();
+ let target,corrupt;
+ if(roll<0.34&&carrierNames.length){target=pick(carrierNames);corrupt=false}
+ else if(roll<0.72&&binaryNames.length){target=pick(binaryNames);corrupt=true}
+ else{target=orphanName();corrupt=true}
+ return {corrupt,text:REF_TEMPLATES[type](target)};
+}
+
+function genCarrierFile(carrierNamesSoFar,binaryNames){
+ const type=pick(["html","txt","mp3","mp4"]);
+ const bank=CLEAN_BY_TYPE[type];
+ const nClean=randInt(6,9);
+ const cleanLines=pickSome(bank,Math.min(nClean,bank.length));
+ const nCorruptRuns=randInt(1,3);
+ const chunks=cleanLines.map(t=>({id:uid(),corrupt:false,text:t}));
+ for(let i=0;i<nCorruptRuns;i++){
+  const runLen=randInt(1,2);
+  const insertAt=randInt(0,chunks.length);
+  const run=[];for(let j=0;j<runLen;j++)run.push({id:uid(),corrupt:true,text:noiseLine()});
+  chunks.splice(insertAt,0,...run);
+ }
+ if(chance(0.5)){
+  const ref=genReference(type,carrierNamesSoFar,binaryNames);
+  chunks.splice(randInt(0,chunks.length),0,{id:uid(),corrupt:ref.corrupt,text:ref.text});
+ }
+ return {id:uid(),binary:false,name:genFileName(type),chunks};
+}
+
+/* ---------- paired files: same base document, two copies. one copy's problems are
+   ordinary noise (readable alone). the other copy's problem is a single swapped-in
+   sentence that is, read on its own, perfectly fine -- it only gives itself away
+   sitting next to its twin. both copies keep exactly the same line count and order,
+   so a side-by-side compare lines up row for row. ---------- */
+function genPairedFiles(){
+ const type=pick(["html","txt","mp3","mp4"]);
+ const bank=CLEAN_BY_TYPE[type];
+ const n=Math.min(randInt(6,9),bank.length);
+ const base=pickSome(bank,n);
+ const spare=bank.filter(l=>!base.includes(l));
+ const pairId=uid();
+
+ const chunksA=base.map(t=>({id:uid(),corrupt:false,text:t}));
+ const posA=pickSome([...chunksA.keys()],randInt(1,Math.min(3,chunksA.length)));
+ posA.forEach(i=>{chunksA[i]={id:uid(),corrupt:true,text:noiseLine()}});
+
+ const chunksB=base.map(t=>({id:uid(),corrupt:false,text:t}));
+ const swapPool=spare.length?spare:bank;
+ const posB=pickSome([...chunksB.keys()].filter(i=>!posA.includes(i)),randInt(1,Math.min(2,chunksB.length)));
+ posB.forEach(i=>{chunksB[i]={id:uid(),corrupt:true,text:pick(swapPool)}});
+
+ const nameA=genFileName(type),nameB=genFileName(type);
+ return [
+  {id:uid(),binary:false,name:nameA,chunks:chunksA,pairId},
+  {id:uid(),binary:false,name:nameB,chunks:chunksB,pairId}
+ ];
+}
+
+function genJob(extraCorruption){
+ const nBinary=randInt(1,2),wantPair=chance(0.45),nSolo=randInt(wantPair?1:2,4);
+ const binaryNames=[];for(let i=0;i<nBinary;i++)binaryNames.push(genBinaryName());
+ const binaries=binaryNames.map(name=>({id:uid(),binary:true,name,inspected:false,infected:false}));
+
+ const carrierNamesSoFar=[];
+ const solo=[];
+ for(let i=0;i<nSolo;i++){
+  const f=genCarrierFile(carrierNamesSoFar,binaryNames);
+  carrierNamesSoFar.push(f.name);
+  solo.push(f);
+ }
+ const paired=wantPair?genPairedFiles():[];
+ paired.forEach(f=>carrierNamesSoFar.push(f.name));
+
+ /* a still-active infection means this case arrives already dirtier -- decided once,
+    up front, never mid-play. only solo (unpaired) carriers get the extra noise, so a
+    compare pair's aligned chunk counts never get thrown off. */
+ if(extraCorruption>0&&solo.length){
+  for(let i=0;i<Math.min(extraCorruption,5);i++){
+   const f=pick(solo);
+   f.chunks.splice(randInt(0,f.chunks.length),0,{id:uid(),corrupt:true,text:noiseLine()});
+  }
+ }
+
+ const files=[...binaries,...solo,...paired];
+ for(let i=files.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[files[i],files[j]]=[files[j],files[i]]}
+ return {
+  id:uid(),
+  dept:genDepartment(),
+  clearance:genClearance(),
+  incident:genIncident(),
+  stakes:genStakes(),
+  files
+ };
+}
+
+/* opening a binary: usually just noise, occasionally a single legible line naming
+   another file in this job -- confirming (or denying) a suspicious reference
+   somewhere else, but never risk-free: looking costs a chance of infection. */
+function inspectBinary(job,file){
+ const others=job.files.filter(f=>f.id!==file.id).map(f=>f.name);
+ const clue=others.length&&chance(0.3)?pick(others):null;
+ const lines=noiseBlock(randInt(5,9));
+ if(clue)lines.splice(randInt(0,lines.length),0,`[fragment recovered: references "${clue}"]`);
+ return lines;
+}
+/* ---------- persistence: case count, a light score-free log, and the two virus
+   numbers survive between jobs. Sage's mood itself never carries forward -- it's
+   recomputed fresh every job. virusesLifetime never goes down; it's just the honest
+   record. virusesActive is what the lounge minigame can clear to zero. ---------- */
+const SAVE_KEY="checksum_save_v1";
+function loadSave(){
+ try{const raw=localStorage.getItem(SAVE_KEY);if(!raw)return {casesCompleted:0,caseLog:[],virusesActive:0,virusesLifetime:0};
+  const d=JSON.parse(raw);
+  return {
+   casesCompleted:d.casesCompleted|0,
+   caseLog:Array.isArray(d.caseLog)?d.caseLog:[],
+   virusesActive:d.virusesActive|0,
+   virusesLifetime:d.virusesLifetime|0
+  };
+ }catch(e){return {casesCompleted:0,caseLog:[],virusesActive:0,virusesLifetime:0}}
+}
+function writeSave(sv){try{localStorage.setItem(SAVE_KEY,JSON.stringify(sv))}catch(e){}}
+
+const SV=loadSave();
+
+/* ---------- lounge vs. a case in progress vs. the cure minigame -- same shape as the
+   other cartridges ---------- */
+let VIEW="lounge";
+function setView(v){VIEW=v;render()}
+
+const S={
+ job:null,
+ openFileId:null,     // primary file being viewed (carrier or binary)
+ compareId:null,      // secondary file id, only set while viewing a pair side-by-side
+ removedChunks:new Set(), // chunk ids removed this case, within a still-open carrier file
+ removedFiles:new Set(),  // file ids deleted whole this case -- binary OR carrier, player's call
+ undo:[],                 // stack of {kind:'chunk'|'file', fileId, chunkId?}
+ phase:"play",            // "play" | "result"
+ resultMood:null,
+ resultLine:"",
+ showHelp:false,
+};
+
+function currentFile(fid){return S.job.files.find(f=>f.id===fid)}
+
+function newJob(){
+ S.job=genJob(SV.virusesActive);
+ S.removedChunks=new Set();
+ S.removedFiles=new Set();
+ S.undo=[];
+ S.phase="play";
+ S.compareId=null;
+ S.resultMood=null;S.resultLine="";
+ const firstCarrier=S.job.files.find(f=>!f.binary);
+ S.openFileId=firstCarrier?firstCarrier.id:(S.job.files[0]&&S.job.files[0].id)||null;
+}
+
+/* opening any file -- carrier for the usual line-by-line view, binary for a raw,
+   noisy read-only peek that costs a one-time chance of infection per binary. */
+function openFile(id){
+ const f=currentFile(id);
+ if(!f||S.removedFiles.has(id))return;
+ S.compareId=null;
+ S.openFileId=id;
+ if(f.binary&&!f.inspected){
+  f.inspected=true;
+  f.inspectLines=inspectBinary(S.job,f);
+  if(chance(0.18)){
+   f.infected=true;
+   SV.virusesActive++;SV.virusesLifetime++;writeSave(SV);
+  }
+ }
+}
+
+/* side-by-side compare for a paired file and its twin. */
+function openCompare(id){
+ const f=currentFile(id);
+ if(!f||f.binary||!f.pairId||S.removedFiles.has(id))return;
+ const twin=S.job.files.find(o=>o.pairId===f.pairId&&o.id!==f.id);
+ if(!twin||S.removedFiles.has(twin.id))return;
+ S.openFileId=id;S.compareId=twin.id;
+}
+
+function deleteChunk(fileId,chunkId){
+ if(S.removedChunks.has(chunkId))return;
+ S.removedChunks.add(chunkId);
+ S.undo.push({kind:"chunk",fileId,chunkId});
+}
+
+/* deletes an entire file in one move -- binary or carrier, the player's call. deleting a
+   carrier file this way throws out whatever clean content was still in it along with
+   whatever corruption was still in it, which is exactly the risk/speed trade-off: fast,
+   but it costs you any credit for content you never actually looked at. */
+function deleteWholeFile(fileId){
+ if(S.removedFiles.has(fileId))return;
+ S.removedFiles.add(fileId);
+ S.undo.push({kind:"file",fileId});
+ if(S.openFileId===fileId){S.openFileId=null;S.compareId=null}
+ if(S.compareId===fileId)S.compareId=null;
+}
+
+function undoLast(){
+ const last=S.undo.pop();
+ if(!last)return;
+ if(last.kind==="chunk")S.removedChunks.delete(last.chunkId);
+ else S.removedFiles.delete(last.fileId);
+}
+
+/* remaining corrupt chunks still sitting in a given (not yet wholesale-deleted) carrier file */
+function remainingCorrupt(file){
+ return file.chunks.filter(c=>c.corrupt&&!S.removedChunks.has(c.id)).length;
+}
+
+/* soft, honest scoring -- used only to pick Sage's mood, never shown to the player. */
+function computeResult(){
+ let correct=0,wrong=0,missed=0;
+ for(const f of S.job.files){
+  if(S.removedFiles.has(f.id)){
+   if(f.binary)correct++;
+   else for(const c of f.chunks){if(c.corrupt)correct++;else wrong++}
+  }else if(f.binary){
+   missed++;
+  }else{
+   for(const c of f.chunks){
+    const removed=S.removedChunks.has(c.id);
+    if(c.corrupt&&removed)correct++;
+    else if(c.corrupt&&!removed)missed++;
+    else if(!c.corrupt&&removed)wrong++;
+   }
+  }
+ }
+ const total=correct+wrong+missed;
+ const ratio=total===0?1:correct/total;
+ const mood=ratio>=0.75?"happy":ratio>=0.4?"neutral":"sad";
+ return {correct,wrong,missed,mood};
+}
+
+function submitJob(){
+ const r=computeResult();
+ SV.casesCompleted++;
+ SV.caseLog.unshift({dept:S.job.dept,mood:r.mood,ts:Date.now()});
+ if(SV.caseLog.length>30)SV.caseLog.length=30;
+ writeSave(SV);
+ S.phase="result";
+ S.resultMood=r.mood;
+ S.resultLine=pickSageLine(r.mood);
+}
+
+/* a clean run of the cure minigame always wipes every active infection -- partial
+   credit for a loss would just be torturing the player over a few pixels. the
+   lifetime count never moves either way. */
+function cureAllViruses(){
+ SV.virusesActive=0;
+ writeSave(SV);
+}
+function render(){
+ host.innerHTML="";
+ if(VIEW==="lounge"){host.append(renderLounge());return}
+ if(VIEW==="minigame"){host.append(renderMinigame());return}
+ host.append(h("div",{id:"app"},
+  renderHeader(),
+  renderMain(),
+  renderFooter()
+ ));
+ if(S.phase==="result")host.append(renderResult());
+}
+
+/* ---------- lounge: the home screen, same shape as the other cartridges ---------- */
+function renderLounge(){
+ const n=SV.casesCompleted;
+ const kids=[
+  h("div",{class:"brand glow",style:"font-size:26px"},"Checksum"),
+  h("div",{class:"dim small"},"A desk for cleaning corrupted files, Republicka-issue."),
+  h("div",{class:"lstatus small dim"},n===0?"No cases closed yet.":`${n} case${n===1?"":"s"} closed so far.`),
+  h("button",{class:"pri",style:"font-size:15px;padding:11px 22px",onclick:()=>{newJob();setView("job")}},"Open a new case")
+ ];
+ kids.push(h("div",{class:"virusline small"},
+  h("span",{class:SV.virusesActive?"vbad":"dim"},SV.virusesActive?`${SV.virusesActive} active infection${SV.virusesActive===1?"":"s"}`:"No active infections"),
+  h("span",{class:"dim"}," — "+SV.virusesLifetime+" caught, lifetime")
+ ));
+ if(SV.virusesActive>0)kids.push(h("button",{class:"bad",onclick:()=>{setView("minigame")}},"Fight off the infection"));
+ kids.push(h("h2",{},"Case log"),renderShelf());
+ return h("div",{id:"app"},h("div",{id:"loungewrap"},...kids));
+}
+
+function renderShelf(){
+ if(!SV.caseLog.length)return h("div",{id:"shelf"},h("div",{class:"dim small",style:"padding:6px 2px"},"Nothing closed yet — open a case to begin."));
+ return h("div",{id:"shelf"},...SV.caseLog.map(e=>
+  h("div",{class:"entry"},h("div",{class:"dot "+e.mood}),h("div",{},e.dept))
+ ));
+}
+
+function renderHeader(){
+ const kids=[
+  h("div",{class:"hdr-top"},
+   h("div",{class:"brand glow"},"Checksum"),
+   h("span",{class:"pill"},S.job.dept),
+   h("span",{class:"pill clear"},S.job.clearance),
+   h("div",{class:"spacer"}),
+   h("button",{onclick:()=>{S.showHelp=!S.showHelp;render()}},S.showHelp?"Hide help":"How do I do this?"),
+   h("button",{onclick:()=>{setView("lounge")}},"Abandon case")
+  ),
+  h("div",{class:"brief"},S.job.incident),
+  h("div",{class:"stakes"},S.job.stakes)
+ ];
+ if(S.showHelp)kids.push(h("div",{class:"help"},
+  "You're a data scientist for Republicka. Every file in an open archive should be fully readable — if it isn't, it's corrupted.",
+  h("ul",{},
+   h("li",{},"You can delete any file outright, whole — fast, but you lose any credit for content you never actually read."),
+   h("li",{},"Or open a file and remove only the parts that don't belong, piece by piece."),
+   h("li",{},"Nothing marks what's corrupt for you. Read before you delete — and check names against each other, not just against themselves."),
+   h("li",{},"Binary files can be opened too, out of curiosity — but looking inside one is a real risk, not a free peek."),
+   h("li",{},"Submit the case whenever you're satisfied. You always get paid — how it went is between you and Sage.")
+  )
+ ));
+ return h("header",{},...kids);
+}
+
+function renderMain(){
+ return h("main",{},renderFileList(),renderViewer());
+}
+
+function renderFileList(){
+ const rows=S.job.files.map(f=>{
+  const gone=S.removedFiles.has(f.id);
+  const open=S.openFileId===f.id&&!gone;
+  if(f.binary){
+   return h("div",{class:"filerow bin"+(open?" open":"")+(gone?" gone":"")},
+    h("div",{class:"nm"},f.name),
+    h("div",{class:"st"},gone?"deleted":(f.infected?"opened — something came back with you":f.inspected?"opened — looked clean enough":"—")),
+    gone?null:h("div",{class:"btnrow"},
+     h("button",{onclick:()=>{openFile(f.id);render()}},open?"Viewing":"Open"),
+     h("button",{class:"bad",onclick:()=>{deleteWholeFile(f.id);render()}},"Delete file")
+    )
+   );
+  }
+  const remaining=gone?0:remainingCorrupt(f);
+  const hasTwin=f.pairId&&S.job.files.some(o=>o.pairId===f.pairId&&o.id!==f.id&&!S.removedFiles.has(o.id));
+  return h("div",{class:"filerow"+(open?" open":"")+(gone?" gone":"")},
+   h("div",{class:"nm"},f.name),
+   h("div",{class:"st"+(!gone&&remaining===0?" clean":"")},gone?"deleted":(remaining===0?"clean":`${remaining} fragment${remaining===1?"":"s"} remaining`)),
+   gone?null:h("div",{class:"btnrow"},
+    h("button",{onclick:()=>{openFile(f.id);render()}},open&&S.compareId===null?"Viewing":"Open"),
+    hasTwin?h("button",{onclick:()=>{openCompare(f.id);render()}},S.compareId?"Comparing":"Compare"):null,
+    h("button",{class:"bad",onclick:()=>{deleteWholeFile(f.id);render()}},"Delete file")
+   )
+  );
+ });
+ return h("div",{id:"filelist"},...rows);
+}
+
+function renderViewer(){
+ if(S.compareId)return renderCompareViewer();
+ const f=S.openFileId?currentFile(S.openFileId):null;
+ if(!f)return h("div",{id:"viewer"},h("div",{class:"viewer-empty"},"Open a file on the left to look through it."));
+ if(f.binary)return renderBinaryViewer(f);
+ const remaining=remainingCorrupt(f);
+ const lines=f.chunks.filter(c=>!S.removedChunks.has(c.id)).map(c=>
+  h("div",{class:"line",onclick:()=>{deleteChunk(f.id,c.id);render()}},c.text)
+ );
+ if(lines.length===0)lines.push(h("div",{class:"viewer-empty"},"Nothing left in this file."));
+ return h("div",{id:"viewer"},
+  h("div",{class:"filestatus"+(remaining===0?" clean":"")},f.name+" — "+(remaining===0?"clean":`${remaining} fragment${remaining===1?"":"s"} remaining`)),
+  ...lines
+ );
+}
+
+function renderBinaryViewer(f){
+ return h("div",{id:"viewer"},
+  h("div",{class:"filestatus"},f.name+" — pure binary, read-only"),
+  ...f.inspectLines.map(t=>h("div",{class:"line noise"},t)),
+  f.infected?h("div",{class:"infectnotice"},"Something in there wasn't inert. (+1 active infection)"):null
+ );
+}
+
+function renderCompareViewer(){
+ const a=currentFile(S.openFileId),b=currentFile(S.compareId);
+ if(!a||!b)return h("div",{id:"viewer"},h("div",{class:"viewer-empty"},"Its twin is gone — back to a single view."));
+ const n=Math.max(a.chunks.length,b.chunks.length);
+ const rows=[];
+ for(let i=0;i<n;i++){
+  const ca=a.chunks[i],cb=b.chunks[i];
+  rows.push(h("div",{class:"cmprow"},
+   ca?h("div",{class:"line",onclick:()=>{deleteChunk(a.id,ca.id);render()}},S.removedChunks.has(ca.id)?"":ca.text):h("div",{class:"line empty"}),
+   cb?h("div",{class:"line",onclick:()=>{deleteChunk(b.id,cb.id);render()}},S.removedChunks.has(cb.id)?"":cb.text):h("div",{class:"line empty"})
+  ));
+ }
+ return h("div",{id:"viewer",class:"compare"},
+  h("div",{class:"cmphead"},h("div",{},a.name),h("div",{},b.name)),
+  ...rows
+ );
+}
+
+function renderFooter(){
+ return h("footer",{},
+  h("button",{disabled:S.undo.length===0,onclick:()=>{undoLast();render()}},"Undo last deletion"),
+  h("div",{class:"spacer"}),
+  h("button",{class:"pri",onclick:()=>{submitJob();render()}},"Submit case")
+ );
+}
+
+function renderResult(){
+ return h("div",{id:"result",class:S.resultMood},
+  h("div",{class:"card"},
+   h("div",{class:"mood"},S.resultMood==="happy"?"🟢":S.resultMood==="sad"?"🔴":"🟡"),
+   h("div",{class:"line"},S.resultLine),
+   h("button",{class:"pri",onclick:()=>{setView("lounge")}},"Return to the lounge")
+  )
+ );
+}
+
+/* ---------- Quarantine: the lounge's cure minigame. a short, different-textured
+   break from the main loop -- quick reflexes instead of slow reading. difficulty
+   (invader count) scales with how many active infections you're carrying. a clean
+   win wipes every active infection at once; a loss costs nothing and can be retried
+   immediately. fully playable with on-screen touch buttons, not just a keyboard. */
+let MG=null;
+
+function invaderCount(){return clamp(6+SV.virusesActive*3,6,36)}
+
+function createMinigame(canvas,banner){
+ const ctx=canvas.getContext("2d");
+ const W=canvas.width,H=canvas.height;
+ const COLS=Math.min(9,Math.ceil(Math.sqrt(invaderCount()*2)));
+ const total=invaderCount();
+ const rows=Math.ceil(total/COLS);
+ const iw=28,ih=18,gapx=10,gapy=10;
+ const gridW=COLS*(iw+gapx)-gapx;
+ const originX=(W-gridW)/2;
+ let invaders=[];
+ for(let i=0;i<total;i++){
+  const r=Math.floor(i/COLS),c=i%COLS;
+  invaders.push({x:originX+c*(iw+gapx),y:30+r*(ih+gapy),alive:true});
+ }
+ let dir=1,dropAcc=0;
+ const baseSpeed=28+Math.min(SV.virusesActive,10)*1.6; // px/sec, mild ramp
+ const player={w:36,h:12,x:(W-36)/2,y:H-30,speed:220};
+ let bullets=[]; // {x,y}
+ const bulletSpeed=320;
+ let cooldown=0;
+ const held={left:false,right:false};
+ let last=performance.now();
+ let animId=null,ended=false;
+
+ function fire(){
+  if(ended||cooldown>0)return;
+  bullets.push({x:player.x+player.w/2-2,y:player.y-6});
+  cooldown=0.28;
+ }
+
+ function keydown(e){
+  if(e.code==="ArrowLeft"||e.code==="KeyA")held.left=true;
+  else if(e.code==="ArrowRight"||e.code==="KeyD")held.right=true;
+  else if(e.code==="Space"){e.preventDefault();fire()}
+ }
+ function keyup(e){
+  if(e.code==="ArrowLeft"||e.code==="KeyA")held.left=false;
+  else if(e.code==="ArrowRight"||e.code==="KeyD")held.right=false;
+ }
+ window.addEventListener("keydown",keydown);
+ window.addEventListener("keyup",keyup);
+
+ function heldSetter(key){
+  return {
+   down:e=>{e.preventDefault();held[key]=true},
+   up:()=>{held[key]=false}
+  };
+ }
+
+ function draw(){
+  ctx.clearRect(0,0,W,H);
+  ctx.fillStyle="#050b06";ctx.fillRect(0,0,W,H);
+  ctx.fillStyle="#4dff88";
+  for(const inv of invaders)if(inv.alive)ctx.fillRect(inv.x,inv.y,iw,ih);
+  ctx.fillStyle="#8dffb8";
+  for(const b of bullets)ctx.fillRect(b.x,b.y,4,10);
+  ctx.fillStyle="#4dff88";
+  ctx.fillRect(player.x,player.y,player.w,player.h);
+ }
+
+ function finish(won){
+  if(ended)return;
+  ended=true;
+  if(animId)cancelAnimationFrame(animId);
+  if(won)cureAllViruses();
+  banner.style.display="flex";
+  banner.replaceChildren(
+   h("div",{class:"mgcard"},
+    h("div",{class:"mood"},won?"🟢":"🔴"),
+    h("div",{class:"line"},won?"Clean sweep. Every active infection, gone.":"They got through. Still infected."),
+    h("div",{class:"btnrow",style:"justify-content:center"},
+     won?null:h("button",{class:"pri",onclick:()=>{MG.restart()}},"Try again"),
+     h("button",{onclick:()=>{MG.cleanup();setView("lounge")}},won?"Return to the lounge":"Back to the lounge")
+    )
+   )
+  );
+ }
+
+ function step(now){
+  const dt=Math.min((now-last)/1000,0.05);
+  last=now;
+  if(!ended){
+   cooldown=Math.max(0,cooldown-dt);
+   if(held.left)player.x-=player.speed*dt;
+   if(held.right)player.x+=player.speed*dt;
+   player.x=clamp(player.x,0,W-player.w);
+
+   bullets.forEach(b=>b.y-=bulletSpeed*dt);
+   bullets=bullets.filter(b=>b.y>-12);
+
+   let minX=Infinity,maxX=-Infinity,lowestY=-Infinity,aliveCount=0;
+   for(const inv of invaders){
+    if(!inv.alive)continue;
+    aliveCount++;
+    minX=Math.min(minX,inv.x);maxX=Math.max(maxX,inv.x+iw);
+    lowestY=Math.max(lowestY,inv.y+ih);
+   }
+   if(aliveCount===0){finish(true);draw();animId=requestAnimationFrame(step);return}
+
+   const speed=baseSpeed*(1+(total-aliveCount)/total*0.8); // fewer left, faster -- classic ramp
+   let dx=dir*speed*dt,dropNow=false;
+   if(maxX+dx>W-6||minX+dx<6){dir*=-1;dx=0;dropNow=true}
+   for(const inv of invaders){if(!inv.alive)continue;inv.x+=dx;if(dropNow)inv.y+=14}
+
+   for(const inv of invaders){
+    if(!inv.alive)continue;
+    for(const b of bullets){
+     if(b.x<inv.x+iw&&b.x+4>inv.x&&b.y<inv.y+ih&&b.y+10>inv.y){inv.alive=false;b.y=-999}
+    }
+   }
+   bullets=bullets.filter(b=>b.y>-12);
+
+   if(lowestY>=player.y){finish(false)}
+  }
+  draw();
+  animId=requestAnimationFrame(step);
+ }
+
+ const api={
+  start(){last=performance.now();animId=requestAnimationFrame(step)},
+  restart(){
+   ended=false;banner.style.display="none";bullets=[];
+   invaders=[];for(let i=0;i<total;i++){const r=Math.floor(i/COLS),c=i%COLS;invaders.push({x:originX+c*(iw+gapx),y:30+r*(ih+gapy),alive:true})}
+   dir=1;player.x=(W-player.w)/2;last=performance.now();
+   if(animId)cancelAnimationFrame(animId);
+   animId=requestAnimationFrame(step);
+  },
+  cleanup(){
+   if(animId)cancelAnimationFrame(animId);
+   window.removeEventListener("keydown",keydown);
+   window.removeEventListener("keyup",keyup);
+  },
+  bindButton(el,key){
+   const s=heldSetter(key);
+   el.addEventListener("pointerdown",s.down);
+   el.addEventListener("pointerup",s.up);
+   el.addEventListener("pointerleave",s.up);
+   el.addEventListener("pointercancel",s.up);
+  },
+  fire
+ };
+ return api;
+}
+
+function renderMinigame(){
+ if(MG)MG.cleanup();
+ const canvas=h("canvas",{width:"640",height:"420",id:"mgcanvas"});
+ const banner=h("div",{id:"mgbanner"});
+ const leftBtn=h("button",{class:"mgbtn"},"◀");
+ const rightBtn=h("button",{class:"mgbtn"},"▶");
+ const fireBtn=h("button",{class:"mgbtn pri",onclick:()=>{MG.fire()}},"FIRE");
+ const wrap=h("div",{id:"app"},
+  h("header",{},
+   h("div",{class:"hdr-top"},
+    h("div",{class:"brand glow"},"Quarantine"),
+    h("div",{class:"spacer"}),
+    h("button",{onclick:()=>{MG.cleanup();setView("lounge")}},"Leave")
+   ),
+   h("div",{class:"brief"},"Clear every one of them before they reach you.")
+  ),
+  h("div",{id:"mgstage"},canvas,banner),
+  h("div",{id:"mgctl"},leftBtn,fireBtn,rightBtn)
+ );
+ MG=createMinigame(canvas,banner);
+ MG.bindButton(leftBtn,"left");
+ MG.bindButton(rightBtn,"right");
+ MG.start();
+ return wrap;
+}
+function boot(){
+ render();
+}
+boot();
+})();
+<~/script></body></html>
+</script>
 <script type="text/plain" class="cartsrc" data-meta='{"name": "Deina", "sub": "A conservation genetics laboratory outside time", "desc": "Places come to you sick: a seed nobody spreads, a soil nobody turns. Work out which animal is missing, read its DNA letter by letter, tell real difference from the damage of ages, edit a living relative, grow founders, and let them go. From 2031 to 2300.", "color": "#3fb995", "glyph": "M8 3c0 4.5 8 4.5 8 9s-8 4.5-8 9 M16 3c0 4.5-8 4.5-8 9s8 4.5 8 9 M8.4 7h7.2 M7.6 12h8.8 M8.4 17h7.2", "tags": ["Genetics", "Story", "Philosophy"], "id": "deina"}'><!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><title>Deina</title>
 <style>
 :root{--wood:#0b1114;--wood2:#111b1f;--wood3:#1d2b30;--paper:#f1ece0;--paper2:#e2dac6;--ink:#1d2a26;--ink2:#46564f;--brass:#3fb995;--brass2:#7fe6c2;--brass3:#1d6a55;--ox:#c4553f;--baize:#10302b;--tx:#eaf2ef;--mu:#9fb3ad;--sans:"Trebuchet MS","Segoe UI",system-ui,sans-serif;--ok:#9ed39a;--bad:#e8907a;--ln:rgba(127,230,194,.22);--serif:Georgia,"Iowan Old Style","Palatino Linotype",Palatino,"Book Antiqua",serif;
@@ -3996,6 +4930,2628 @@ Object.assign(host.RT,{
  goto(screen){VIEW.screen=screen;renderAll()}
 });
 
+boot();
+})();
+<~/script></body></html>
+</script>
+<script type="text/plain" class="cartsrc" data-meta='{"name": "Harp of David", "sub": "Shepherd a flock across an open, procedurally generated pasture", "desc": "Walk the pasture and play the harp to call sheep in from wherever they&#39;ve wandered, while Sophia the dog gathers them in on command. Shear the flock for wool, grow your abode from a tent to a stone keep, trade with the wandering trader, and keep the pen&#39;s fences mended before nightfall costs you a sheep for good.", "color": "#8aab5c", "glyph": "M6 20V5l10-2v15 M6 9l10-2 M6 13l10-2 M6 17l10-2", "tags": ["3D", "Farming", "Exploration"], "id": "harpofdavid"}'><!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Harp of David</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{width:100%;height:100%;overflow:hidden;background:#000;font-family:system-ui,sans-serif}
+#tlhost{position:fixed;inset:0}
+#gl{position:absolute;inset:0;width:100%;height:100%;display:block;cursor:default}
+/* hud and lockHint are stacked children of this flex column rather than two
+   independently-positioned absolute boxes with a guessed-at gap between them --
+   a fixed pixel offset between them breaks the moment either box's actual
+   wrapped height differs from the guess (exactly what happened on a narrow
+   window, where the HUD's text wraps onto more lines than it does at full
+   width). Flex stacking sizes the gap to whatever the HUD actually renders at,
+   at any window size, with nothing to recompute. */
+#topLeftStack{position:absolute;left:10px;top:10px;display:flex;flex-direction:column;gap:8px;max-width:260px}
+#hud{color:#dff;font:12px/1.5 monospace;background:rgba(0,0,0,.45);padding:8px 10px;border-radius:8px;pointer-events:none;text-shadow:0 1px 2px #000}
+#hud b{color:#fff}
+#crosshair{position:absolute;left:50%;top:50%;width:6px;height:6px;margin:-3px 0 0 -3px;border-radius:50%;background:rgba(255,255,255,.75);pointer-events:none}
+#menuBtn,#controlsBtn{background:rgba(0,0,0,.45);border:1px solid #4aa;color:#dff;padding:6px 11px;border-radius:8px;cursor:pointer;font:12px monospace;text-shadow:0 1px 2px #000}
+#menuBtn:hover,#controlsBtn:hover{background:rgba(20,50,60,.7)}
+#controlsBtn{position:absolute;right:10px;bottom:10px;font-size:11px}
+#lockHint{position:absolute;right:10px;bottom:44px;max-width:280px;color:#dff;font:10.5px/1.5 monospace;background:rgba(0,0,0,.55);padding:7px 10px;border-radius:8px;text-shadow:0 1px 2px #000;text-align:right}
+#lockHint.hidden{display:none}
+/* the lounge: a title/pause screen over the game -- sits on top of the canvas in DOM
+   order and catches every click itself, so it also doubles as the thing that stops a
+   click on one of its own buttons from being read as a look-drag on the canvas
+   underneath; nothing extra needed to "pause" input, closing it is enough */
+#menuOverlay{position:absolute;inset:0;background:rgba(5,10,14,.72);display:flex;align-items:center;justify-content:center}
+#menuOverlay.hidden{display:none}
+#menuPanel{background:#0e1a20;border:1px solid #4aa;border-radius:14px;padding:24px 28px;color:#dff;font:14px/1.6 system-ui;max-width:380px;width:90vw;box-shadow:0 10px 40px rgba(0,0,0,.5)}
+#menuPanel h1{font-size:21px;margin-bottom:2px;color:#fff}
+#menuPanel .sub{font-size:12px;color:#8ab;margin-bottom:16px}
+#menuPanel .row{display:flex;gap:8px;align-items:center;margin-bottom:10px}
+#menuPanel input{flex:1;background:#111;border:1px solid #456;color:#dff;padding:7px 9px;border-radius:6px;font:13px monospace;min-width:0}
+#menuPanel button{background:#1b3a4a;border:1px solid #4aa;color:#dff;padding:8px 13px;border-radius:6px;cursor:pointer;font:13px monospace;white-space:nowrap}
+#menuPanel button:hover{background:#245266}
+#menuPanel button.primary{background:#2a6b3a;border-color:#4c9}
+#menuPanel button.primary:hover{background:#357d46}
+#menuPanel hr{border:none;border-top:1px solid #2a3f48;margin:14px 0}
+#statsGrid{display:grid;grid-template-columns:auto 1fr;gap:5px 14px;font:13px monospace;margin-bottom:18px}
+#statsGrid .label{color:#8ab}
+#statsGrid .val{color:#fff;font-weight:bold;text-align:right}
+#instrBtn{width:100%;text-align:left;background:transparent;border:1px solid #2a3f48;margin-bottom:10px}
+#instrBtn:hover{background:#17262c}
+#instructions{max-height:220px;overflow-y:auto;font-size:12.5px;line-height:1.55;color:#bcd;margin-bottom:14px;padding-right:4px}
+#instructions.hidden{display:none}
+#instructions b{color:#fff}
+#instructions p{margin-bottom:8px}
+#glanceSpot{position:absolute;left:50%;bottom:22px;transform:translateX(-50%);color:#fff;font:13px/1.4 system-ui;background:rgba(0,0,0,.5);padding:7px 14px;border-radius:999px;text-align:center;pointer-events:none;white-space:nowrap}
+#compassArrow{position:absolute;left:50%;bottom:70px;transform:translateX(-50%);display:flex;flex-direction:column;align-items:center;gap:3px;pointer-events:none}
+#compassArrow.hidden{display:none}
+/* a plain isoceles triangle (the earlier shape) has no front/back of its own --
+   rotated, it reads as "a triangle at some angle", not clearly "pointing" anywhere.
+   A notched arrowhead (concave tail) has an unambiguous tip and an unambiguous
+   back end, so a glance tells you which way it's indicating, the way a compass
+   needle or map-ping arrow does, instead of having to think about it. */
+#compassTriangle{display:block;filter:drop-shadow(0 1px 2px #000)}
+#compassLabel{color:#fff;font:12px/1.2 system-ui;background:rgba(0,0,0,.5);padding:3px 8px;border-radius:6px;white-space:nowrap}
+@media (max-width:640px){
+ #topLeftStack{max-width:200px}
+ #hud{font-size:10.5px}
+ #lockHint{font-size:9.5px;max-width:200px}
+ #menuPanel{padding:18px 18px}
+}
+</style>
+</head><body>
+<div id="tlhost"></div>
+<script>
+const host=document.getElementById("tlhost");
+const $=id=>document.getElementById(id);
+const esc=s=>String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+/* ---------- fully seeded, fully deterministic: a seed string fully determines the
+   permutation table below, which fully determines every noise sample, which fully
+   determines the whole world. no Math.random() anywhere in world generation. ---------- */
+function hashSeed(str){
+ str=String(str);
+ let h=1779033703^str.length;
+ for(let i=0;i<str.length;i++){
+  h=Math.imul(h^str.charCodeAt(i),3432918353);
+  h=(h<<13)|(h>>>19);
+ }
+ return ()=>{
+  h=Math.imul(h^(h>>>16),2246822507);
+  h=Math.imul(h^(h>>>13),3266489909);
+  h^=h>>>16;
+  return (h>>>0);
+ };
+}
+function mulberry32(seedInt){
+ let a=seedInt>>>0;
+ return function(){
+  a|=0;a=a+0x6D2B79F5|0;
+  let t=Math.imul(a^(a>>>15),1|a);
+  t=t+Math.imul(t^(t>>>7),61|t)^t;
+  return ((t^(t>>>14))>>>0)/4294967296;
+ };
+}
+function makeRng(seedStr){
+ const seeder=hashSeed(seedStr);
+ return mulberry32(seeder());
+}
+
+/* classic Perlin-style permutation-table gradient noise, 2D and 3D, built from
+   a seeded RNG instead of a fixed table so every seed gets genuinely different noise */
+function buildPerm(rng){
+ const p=new Uint8Array(256);
+ for(let i=0;i<256;i++)p[i]=i;
+ for(let i=255;i>0;i--){
+  const j=Math.floor(rng()*(i+1));
+  const t=p[i];p[i]=p[j];p[j]=t;
+ }
+ const perm=new Uint8Array(512);
+ for(let i=0;i<512;i++)perm[i]=p[i&255];
+ return perm;
+}
+function fade(t){return t*t*t*(t*(t*6-15)+10)}
+function lerp(a,b,t){return a+t*(b-a)}
+function grad2(h,x,y){
+ const v=h&7;
+ const u=v<4?x:y,w=v<4?y:x;
+ return ((v&1)?-u:u)+((v&2)?-2*w:2*w);
+}
+function grad3(h,x,y,z){
+ const v=h&15;
+ const u=v<8?x:y;
+ const w=v<4?y:(v===12||v===14?x:z);
+ return ((v&1)?-u:u)+((v&2)?-w:w);
+}
+function makeNoise2D(perm){
+ return function(x,y){
+  const X=Math.floor(x)&255,Y=Math.floor(y)&255;
+  x-=Math.floor(x);y-=Math.floor(y);
+  const u=fade(x),v=fade(y);
+  const aa=perm[X+perm[Y]],ab=perm[X+perm[Y+1]],ba=perm[X+1+perm[Y]],bb=perm[X+1+perm[Y+1]];
+  return lerp(
+   lerp(grad2(aa,x,y),grad2(ba,x-1,y),u),
+   lerp(grad2(ab,x,y-1),grad2(bb,x-1,y-1),u),
+   v
+  );
+ };
+}
+function makeNoise3D(perm){
+ return function(x,y,z){
+  const X=Math.floor(x)&255,Y=Math.floor(y)&255,Z=Math.floor(z)&255;
+  x-=Math.floor(x);y-=Math.floor(y);z-=Math.floor(z);
+  const u=fade(x),v=fade(y),w=fade(z);
+  const A=perm[X]+Y,AA=perm[A]+Z,AB=perm[A+1]+Z;
+  const B=perm[X+1]+Y,BA=perm[B]+Z,BB=perm[B+1]+Z;
+  return lerp(
+   lerp(lerp(grad3(perm[AA],x,y,z),grad3(perm[BA],x-1,y,z),u),
+        lerp(grad3(perm[AB],x,y-1,z),grad3(perm[BB],x-1,y-1,z),u),v),
+   lerp(lerp(grad3(perm[AA+1],x,y,z-1),grad3(perm[BA+1],x-1,y,z-1),u),
+        lerp(grad3(perm[AB+1],x,y-1,z-1),grad3(perm[BB+1],x-1,y-1,z-1),u),v),
+   w
+  );
+ };
+}
+/* small fractal-sum helper: layered octaves for natural-looking rolling terrain */
+function fbm2(noise2,x,y,octaves,lac,gain){
+ let sum=0,amp=1,freq=1,norm=0;
+ for(let i=0;i<octaves;i++){
+  sum+=noise2(x*freq,y*freq)*amp;
+  norm+=amp;
+  amp*=gain;freq*=lac;
+ }
+ return sum/norm;
+}
+/* ---------- world constants: a smooth, mostly-flat pasture, not a voxel grid.
+   this game doesn't need interior caves or overhangs, so a heightmap -- one height
+   per (x,z) point, no vertical block stack -- is both simpler and the right shape
+   for the look Wendell wants. collision becomes "stand on the surface here" instead
+   of full voxel AABB checks, which is a real simplification, not just a visual one. ---------- */
+const CHUNK_W=16,CHUNK_D=16; // one terrain tile, in world units
+const TREE_SPARSITY=0.996; // fraction of columns that do NOT get a tree -- higher = sparser.
+ // this is a sheep pasture, not a forest -- trees should read as occasional, not a treeline
+
+let WORLD_SEED="";
+let nHeight1,nHeight2,nColor,_colHashRng;
+
+function setWorldSeed(seedStr){
+ WORLD_SEED=String(seedStr);
+ const rng1=makeRng(WORLD_SEED+":h1"),rng2=makeRng(WORLD_SEED+":h2"),rngC=makeRng(WORLD_SEED+":col");
+ nHeight1=makeNoise2D(buildPerm(rng1));
+ nHeight2=makeNoise2D(buildPerm(rng2));
+ nColor=makeNoise2D(buildPerm(rngC));
+ _colHashRng=hashSeed(WORLD_SEED+":treehash")();
+}
+
+/* gentle rolling pasture: one broad low-frequency swell plus a little fine detail,
+   amplitude kept deliberately small -- this is a sheep paddock, not a mountain range */
+function terrainHeight(wx,wz){
+ const base=fbm2(nHeight1,wx*0.01,wz*0.01,3,2.1,0.5);
+ const detail=fbm2(nHeight2,wx*0.06,wz*0.06,2,2.0,0.5);
+ return base*2.2+detail*0.5;
+}
+/* surface normal via finite differences -- cheap, and smooth enough at this scale */
+function terrainNormal(wx,wz){
+ const e=0.5;
+ const hL=terrainHeight(wx-e,wz),hR=terrainHeight(wx+e,wz);
+ const hD=terrainHeight(wx,wz-e),hU=terrainHeight(wx,wz+e);
+ const n=vNorm([hL-hR,2*e,hD-hU]);
+ return n;
+}
+/* grass color varies a little patch to patch so a flat field still reads as a real
+   field, not a flat-painted plane. two shades of green, blended by a slow noise. */
+function terrainColor(wx,wz){
+ const t=(fbm2(nColor,wx*0.03,wz*0.03,2,2,0.5)+1)/2; // 0..1
+ const lo=[0.34,0.52,0.27],hi=[0.47,0.66,0.33];
+ const lush=[lo[0]+(hi[0]-lo[0])*t,lo[1]+(hi[1]-lo[1])*t,lo[2]+(hi[2]-lo[2])*t];
+ // grazed-down patches fade toward a dry, trodden dirt color -- depletionAt is
+ // defined in 10_grazing.js, hoisted into this same script scope
+ const dep=depletionAt(wx,wz);
+ if(dep<=0)return lush;
+ const bare=[0.56,0.47,0.31];
+ return [lush[0]+(bare[0]-lush[0])*dep,lush[1]+(bare[1]-lush[1])*dep,lush[2]+(bare[2]-lush[2])*dep];
+}
+
+function columnHash(x,z){
+ let h=(x*374761393+z*668265263+_colHashRng)|0;
+ h=Math.imul(h^(h>>>13),1274126177);
+ h^=h>>>16;
+ return (h>>>0)/4294967296;
+}
+/* is there a tree rooted at this exact integer column? sparse and deterministic */
+function treeAt(x,z){return columnHash(x,z)>TREE_SPARSITY}
+
+function groundHeightAt(wx,wz){return terrainHeight(wx,wz)}
+
+/* trees are visual-only in the mesh (baked straight into the chunk, no per-tree
+   object list), so collision is answered the same cheap way the mesher finds them:
+   re-run the deterministic treeAt() test on the handful of integer columns close
+   enough to matter, rather than keeping a separate list in sync with what's loaded */
+const TREE_TRUNK_RADIUS=0.32;
+function treeBlockedAt(x,z){
+ const r=TREE_TRUNK_RADIUS;
+ const x0=Math.floor(x-r),x1=Math.floor(x+r),z0=Math.floor(z-r),z1=Math.floor(z+r);
+ for(let tx=x0;tx<=x1;tx++)for(let tz=z0;tz<=z1;tz++){
+  if(!treeAt(tx,tz))continue;
+  const dx=x-tx,dz=z-tz;
+  if(dx*dx+dz*dz<r*r)return true;
+ }
+ return false;
+}
+/* ---------- smooth heightmap terrain + simple low-poly trees, baked into one
+   mesh per chunk (one draw call covers both) ---------- */
+const GRID_STEP=1; // one terrain vertex per world unit -- plenty smooth at pasture scale
+
+function pushVert(positions,normals,colors,x,y,z,nx,ny,nz,r,g,b){
+ positions.push(x,y,z);normals.push(nx,ny,nz);colors.push(r,g,b);
+}
+
+/* a simple N-sided cone, flat-shaded (each triangle gets its own duplicated verts
+   and face normal) -- cheap, and the faceted look suits a low-poly pasture style
+   better than a smooth-shaded canopy would */
+function addCone(positions,normals,colors,indices,vcountRef,baseY,baseX,baseZ,radius,height,sides,color){
+ for(let i=0;i<sides;i++){
+  const a0=(i/sides)*Math.PI*2,a1=((i+1)/sides)*Math.PI*2;
+  const p0=[baseX+Math.cos(a0)*radius,baseY,baseZ+Math.sin(a0)*radius];
+  const p1=[baseX+Math.cos(a1)*radius,baseY,baseZ+Math.sin(a1)*radius];
+  const p2=[baseX,baseY+height,baseZ];
+  const e1=[p1[0]-p0[0],p1[1]-p0[1],p1[2]-p0[2]];
+  const e2=[p2[0]-p0[0],p2[1]-p0[1],p2[2]-p0[2]];
+  const n=vNorm(vCross(e1,e2));
+  pushVert(positions,normals,colors,p0[0],p0[1],p0[2],n[0],n[1],n[2],color[0],color[1],color[2]);
+  pushVert(positions,normals,colors,p1[0],p1[1],p1[2],n[0],n[1],n[2],color[0],color[1],color[2]);
+  pushVert(positions,normals,colors,p2[0],p2[1],p2[2],n[0],n[1],n[2],color[0],color[1],color[2]);
+  indices.push(vcountRef.n,vcountRef.n+1,vcountRef.n+2);
+  vcountRef.n+=3;
+ }
+}
+/* a thin, slightly tapered trunk -- just 4 side faces, smooth-shaded top-to-bottom
+   normals pointing straight outward (good enough at this size/distance) */
+function addTrunk(positions,normals,colors,indices,vcountRef,x,y,z,height,radius,color){
+ const sides=5;
+ for(let i=0;i<sides;i++){
+  const a0=(i/sides)*Math.PI*2,a1=((i+1)/sides)*Math.PI*2;
+  const nx0=Math.cos(a0),nz0=Math.sin(a0),nx1=Math.cos(a1),nz1=Math.sin(a1);
+  const bx0=x+nx0*radius,bz0=z+nz0*radius,bx1=x+nx1*radius,bz1=z+nz1*radius;
+  pushVert(positions,normals,colors,bx0,y,bz0,nx0,0,nz0,color[0],color[1],color[2]);
+  pushVert(positions,normals,colors,bx1,y,bz1,nx1,0,nz1,color[0],color[1],color[2]);
+  pushVert(positions,normals,colors,bx1,y+height,bz1,nx1,0,nz1,color[0],color[1],color[2]);
+  pushVert(positions,normals,colors,bx0,y+height,bz0,nx0,0,nz0,color[0],color[1],color[2]);
+  const b=vcountRef.n;
+  indices.push(b,b+1,b+2,b,b+2,b+3);
+  vcountRef.n+=4;
+ }
+}
+
+function addTree(positions,normals,colors,indices,vcountRef,wx,wz){
+ const h=terrainHeight(wx,wz);
+ const rng=makeRng(WORLD_SEED+":tree:"+wx+","+wz);
+ const trunkH=1.6+rng()*0.8,trunkR=0.12+rng()*0.04;
+ const trunkColor=[0.36+rng()*0.05,0.24+rng()*0.04,0.14];
+ addTrunk(positions,normals,colors,indices,vcountRef,wx,h,wz,trunkH,trunkR,trunkColor);
+ const greenJ=rng()*0.08;
+ const canopyColor=[0.20+greenJ*0.3,0.46+greenJ,0.22+greenJ*0.4];
+ const tiers=2+(rng()<0.5?0:1);
+ let cy=h+trunkH*0.55;
+ for(let t=0;t<tiers;t++){
+  const rad=1.1-t*0.3+rng()*0.15;
+  const ch=1.1-t*0.15+rng()*0.1;
+  addCone(positions,normals,colors,indices,vcountRef,cy,wx,wz,rad,ch,6,canopyColor);
+  cy+=ch*0.6;
+ }
+}
+
+/* terrain grid for one chunk, with any trees rooted inside it baked into the same
+   buffer -- one draw call per chunk for the whole scene */
+function buildChunkMesh(cx,cz){
+ const positions=[],normals=[],colors=[],indices=[];
+ const vcountRef={n:0};
+ const bx=cx*CHUNK_W,bz=cz*CHUNK_D;
+ const n=CHUNK_W/GRID_STEP,m=CHUNK_D/GRID_STEP;
+ // shared grid of terrain vertices for this chunk (+1 edge so quads tile exactly)
+ const idx=new Int32Array((n+1)*(m+1));
+ for(let j=0;j<=m;j++)for(let i=0;i<=n;i++){
+  const wx=bx+i*GRID_STEP,wz=bz+j*GRID_STEP;
+  const y=terrainHeight(wx,wz);
+  const nrm=terrainNormal(wx,wz);
+  const col=terrainColor(wx,wz);
+  idx[j*(n+1)+i]=vcountRef.n;
+  pushVert(positions,normals,colors,wx,y,wz,nrm[0],nrm[1],nrm[2],col[0],col[1],col[2]);
+  vcountRef.n++;
+ }
+ for(let j=0;j<m;j++)for(let i=0;i<n;i++){
+  const v00=idx[j*(n+1)+i],v10=idx[j*(n+1)+i+1];
+  const v01=idx[(j+1)*(n+1)+i],v11=idx[(j+1)*(n+1)+i+1];
+  indices.push(v00,v11,v10, v00,v01,v11);
+ }
+ // trees rooted in this chunk
+ for(let i=0;i<CHUNK_W;i++)for(let j=0;j<CHUNK_D;j++){
+  const wx=bx+i,wz=bz+j;
+  if(treeAt(wx,wz))addTree(positions,normals,colors,indices,vcountRef,wx,wz);
+ }
+ return {
+  positions:new Float32Array(positions),
+  normals:new Float32Array(normals),
+  colors:new Float32Array(colors),
+  indices:vcountRef.n>65535?new Uint32Array(indices):new Uint16Array(indices),
+  wide32:vcountRef.n>65535,
+  triCount:indices.length/3,
+  originX:bx,originZ:bz // kept for the chunk-manager's distance/behind-camera math only
+ };
+}
+
+/* ---------- a plain axis-aligned box, used for sheep and Sophia -- these move
+   every frame so they're rebuilt as one small dynamic mesh each frame rather than
+   baked into the static terrain chunks ---------- */
+function addBox(positions,normals,colors,indices,vcountRef,cx,cy,cz,hx,hy,hz,color){
+ const x0=cx-hx,x1=cx+hx,y0=cy,y1=cy+hy*2,z0=cz-hz,z1=cz+hz;
+ const faces=[
+  [[[x0,y0,z1],[x1,y0,z1],[x1,y1,z1],[x0,y1,z1]],[0,0,1]],
+  [[[x1,y0,z0],[x0,y0,z0],[x0,y1,z0],[x1,y1,z0]],[0,0,-1]],
+  [[[x1,y0,z1],[x1,y0,z0],[x1,y1,z0],[x1,y1,z1]],[1,0,0]],
+  [[[x0,y0,z0],[x0,y0,z1],[x0,y1,z1],[x0,y1,z0]],[-1,0,0]],
+  [[[x0,y1,z1],[x1,y1,z1],[x1,y1,z0],[x0,y1,z0]],[0,1,0]],
+  [[[x0,y0,z0],[x1,y0,z0],[x1,y0,z1],[x0,y0,z1]],[0,-1,0]],
+ ];
+ for(const f of faces){
+  const quad=f[0],n=f[1];
+  const base=vcountRef.n;
+  for(const p of quad)pushVert(positions,normals,colors,p[0],p[1],p[2],n[0],n[1],n[2],color[0],color[1],color[2]);
+  indices.push(base,base+1,base+2, base,base+2,base+3);
+  vcountRef.n+=4;
+ }
+}
+
+/* local-space offset (forward, right, up) rotated into world space by a heading angle
+   using the same convention as forwardFromYawPitch (forward=(sin h,cos h)) -- shared by
+   every compound body below so a sheep, the dog, and the trader can each be built out
+   of several boxes that stay attached and correctly oriented as the thing turns. */
+function headingOffset(x,z,h,fwdOff,rightOff){
+ const fx=Math.sin(h),fz=Math.cos(h),rx=-Math.cos(h),rz=Math.sin(h);
+ return [x+fx*fwdOff+rx*rightOff, z+fz*fwdOff+rz*rightOff];
+}
+
+/* a blocky quadruped: body raised on four short legs, a smaller dark head out front --
+   used for both sheep and (with different proportions/colors) nothing else needs this
+   shape, but it's written generically since a sheep and a lamb are the same rig at
+   different scales */
+function addQuadruped(positions,normals,colors,indices,vcountRef,x,y,z,h,scale,bodyCol,darkCol,dims){
+ const legH=dims.legH*scale;
+ {
+  const [wx,wz]=headingOffset(x,z,h,0,0);
+  addBox(positions,normals,colors,indices,vcountRef,wx,y+legH,wz,dims.bodyHx*scale,dims.bodyHy*scale,dims.bodyHz*scale,bodyCol);
+ }
+ {
+  const [wx,wz]=headingOffset(x,z,h,dims.headFwd*scale,0);
+  addBox(positions,normals,colors,indices,vcountRef,wx,y+legH+dims.headUp*scale,wz,dims.headHx*scale,dims.headHy*scale,dims.headHz*scale,darkCol);
+ }
+ for(const [fo,ro] of [[dims.legFwd,dims.legRight],[dims.legFwd,-dims.legRight],[-dims.legFwd,dims.legRight],[-dims.legFwd,-dims.legRight]]){
+  const [wx,wz]=headingOffset(x,z,h,fo*scale,ro*scale);
+  addBox(positions,normals,colors,indices,vcountRef,wx,y,wz,dims.legR*scale,legH/2,dims.legR*scale,darkCol);
+ }
+}
+const SHEEP_DIMS={legH:0.16,bodyHx:0.32,bodyHy:0.22,bodyHz:0.46,headFwd:0.58,headUp:0.14,headHx:0.16,headHy:0.15,headHz:0.18,legFwd:0.3,legRight:0.22,legR:0.05};
+
+/* flat-shaded quad/triangle helpers, in the same style as addCone's per-face normal --
+   used for roof slopes and gable ends, which addBox's axis-aligned faces can't make */
+function addQuad(positions,normals,colors,indices,vcountRef,p0,p1,p2,p3,color){
+ const e1=[p1[0]-p0[0],p1[1]-p0[1],p1[2]-p0[2]];
+ const e2=[p3[0]-p0[0],p3[1]-p0[1],p3[2]-p0[2]];
+ const n=vNorm(vCross(e1,e2));
+ const base=vcountRef.n;
+ for(const p of [p0,p1,p2,p3])pushVert(positions,normals,colors,p[0],p[1],p[2],n[0],n[1],n[2],color[0],color[1],color[2]);
+ indices.push(base,base+1,base+2, base,base+2,base+3);
+ vcountRef.n+=4;
+}
+function addTri(positions,normals,colors,indices,vcountRef,p0,p1,p2,color){
+ const e1=[p1[0]-p0[0],p1[1]-p0[1],p1[2]-p0[2]];
+ const e2=[p2[0]-p0[0],p2[1]-p0[1],p2[2]-p0[2]];
+ const n=vNorm(vCross(e1,e2));
+ const base=vcountRef.n;
+ for(const p of [p0,p1,p2])pushVert(positions,normals,colors,p[0],p[1],p[2],n[0],n[1],n[2],color[0],color[1],color[2]);
+ indices.push(base,base+1,base+2);
+ vcountRef.n+=3;
+}
+/* an A-frame ridge roof -- ridge runs along z, so the two long faces slope away on
+   +x/-x and the two gable ends are triangular. A tent is just this reaching the
+   ground with nothing underneath; a house sits it on top of a box of walls. */
+function addRidgeRoof(positions,normals,colors,indices,vcountRef,cx,cz,baseY,halfW,halfD,peakH,color){
+ const y0=baseY,y1=baseY+peakH;
+ const rA=[cx,y1,cz-halfD],rB=[cx,y1,cz+halfD];
+ const wA0=[cx-halfW,y0,cz-halfD],wA1=[cx+halfW,y0,cz-halfD];
+ const wB0=[cx-halfW,y0,cz+halfD],wB1=[cx+halfW,y0,cz+halfD];
+ addQuad(positions,normals,colors,indices,vcountRef,wA0,wB0,rB,rA,color);
+ addQuad(positions,normals,colors,indices,vcountRef,wB1,wA1,rA,rB,color);
+ addTri(positions,normals,colors,indices,vcountRef,wA0,rA,wA1,color);
+ addTri(positions,normals,colors,indices,vcountRef,wB1,rB,wB0,color);
+ // closes the seam between the wall-top (narrower than the roof's own overhanging
+ // footprint) and the roof's open underside -- without this there's a thin slit
+ // running right along the eave line, open straight through to the sky from outside
+ addBox(positions,normals,colors,indices,vcountRef,cx,y0,cz,halfW,0.04,halfD,color);
+}
+/* a fixed point just off the home point, outside the pen fence: angle + radius
+   rather than HOME_POINT.x-4 etc, so it lands well clear of FENCE_RADIUS (even the
+   Castle's widest point, its corner tower, stays past the ring) instead of
+   clipping through a post -- at the angle exactly between two posts, so it reads
+   as sitting across from a gap in the ring, like a path leads to it. Shared so the
+   "sleep at the house" interaction in 12_cycle.js checks distance to the same spot
+   addHouse actually builds at, rather than keeping its own separate copy of this
+   math to go stale against. HOME_POINT and FENCE_RADIUS are defined in later files
+   but resolved at call time, long after boot, so the file-order hazard that bit
+   top-level consts earlier doesn't apply to a function body like this one. */
+function housePos(){
+ const houseAng=Math.PI*1.125,houseR=FENCE_RADIUS+6; // 202.5deg -- midway between the posts at 180deg and 225deg
+ return {x:HOME_POINT.x+Math.cos(houseAng)*houseR,z:HOME_POINT.z+Math.sin(houseAng)*houseR};
+}
+// the ground-floor wall footprint addHouse actually builds for each tier (the roof's
+// own wider overhang isn't something you'd walk into at head height, so it's left out
+// of collision on purpose) -- indexed the same as ABODE_TIERS/abodeTierIndex()
+const HOUSE_FOOTPRINT=[{hx:0.9,hz:1.3},{hx:1.0,hz:1.2},{hx:1.3,hz:1.6},{hx:1.6,hz:2.0},{hx:2.2,hz:2.2}];
+/* the house used to have no collision at all -- just a shape the player walked
+   straight through. A simple box test against the current tier's footprint (plus,
+   at Castle, the corner tower) is enough; it doesn't need to be exact down to the
+   doorway, just solid enough that the house reads as an actual obstacle. */
+function houseBlockedAt(x,z){
+ const h=housePos(),tier=abodeTierIndex(),fp=HOUSE_FOOTPRINT[tier];
+ if(Math.abs(x-h.x)<fp.hx+PLAYER_RADIUS&&Math.abs(z-h.z)<fp.hz+PLAYER_RADIUS)return true;
+ if(tier===ABODE_TIERS.length-1){ // the Castle's corner tower, offset +2,-2 from the keep's own center
+  const towerX=h.x+2.0,towerZ=h.z-2.0;
+  if(Math.hypot(x-towerX,z-towerZ)<0.95+PLAYER_RADIUS)return true;
+ }
+ return false;
+}
+function addHouse(positions,normals,colors,indices,vcountRef){
+ const tier=abodeTierIndex();
+ const {x:cx,z:cz}=housePos();
+ const gy=groundHeightAt(cx,cz);
+ const doorCol=[0.12,0.09,0.07],winCol=[0.85,0.78,0.45];
+ if(tier===0){ // Tent -- just a low A-frame, canvas colored, no separate walls
+  addRidgeRoof(positions,normals,colors,indices,vcountRef,cx,cz,gy,0.9,1.3,1.0,[0.74,0.64,0.46]);
+  return;
+ }
+ if(tier===1){ // Shack -- one small box, a flat overhanging roof, a door
+  addBox(positions,normals,colors,indices,vcountRef,cx,gy,cz,1.0,0.9,1.2,[0.45,0.33,0.2]);
+  addBox(positions,normals,colors,indices,vcountRef,cx,gy+1.8,cz,1.15,0.08,1.35,[0.26,0.2,0.15]);
+  addBox(positions,normals,colors,indices,vcountRef,cx,gy,cz+1.2,0.22,0.35,0.03,doorCol);
+  return;
+ }
+ if(tier===2){ // Small House -- bigger walls, a proper gable roof, two windows
+  addBox(positions,normals,colors,indices,vcountRef,cx,gy,cz,1.3,1.1,1.6,[0.68,0.6,0.5]);
+  addRidgeRoof(positions,normals,colors,indices,vcountRef,cx,cz,gy+2.2,1.5,1.9,1.0,[0.55,0.25,0.2]);
+  addBox(positions,normals,colors,indices,vcountRef,cx,gy,cz+1.6,0.22,0.4,0.03,doorCol);
+  addBox(positions,normals,colors,indices,vcountRef,cx-0.75,gy+1.1,cz+1.6,0.18,0.18,0.03,winCol);
+  addBox(positions,normals,colors,indices,vcountRef,cx+0.75,gy+1.1,cz+1.6,0.18,0.18,0.03,winCol);
+  return;
+ }
+ if(tier===3){ // Big House -- two storeys, a chimney, windows on both floors
+  addBox(positions,normals,colors,indices,vcountRef,cx,gy,cz,1.6,1.3,2.0,[0.7,0.62,0.52]);
+  addBox(positions,normals,colors,indices,vcountRef,cx,gy+2.6,cz,1.3,0.9,1.6,[0.74,0.66,0.56]);
+  addRidgeRoof(positions,normals,colors,indices,vcountRef,cx,cz,gy+4.4,1.5,1.9,1.1,[0.5,0.22,0.18]);
+  addBox(positions,normals,colors,indices,vcountRef,cx+1.0,gy+4.4,cz-1.0,0.18,0.9,0.18,[0.4,0.38,0.36]);
+  addBox(positions,normals,colors,indices,vcountRef,cx,gy,cz+2.0,0.24,0.45,0.03,doorCol);
+  addBox(positions,normals,colors,indices,vcountRef,cx-0.9,gy+1.3,cz+2.0,0.2,0.2,0.03,winCol);
+  addBox(positions,normals,colors,indices,vcountRef,cx+0.9,gy+1.3,cz+2.0,0.2,0.2,0.03,winCol);
+  addBox(positions,normals,colors,indices,vcountRef,cx-0.6,gy+3.6,cz+1.6,0.2,0.2,0.03,winCol);
+  addBox(positions,normals,colors,indices,vcountRef,cx+0.6,gy+3.6,cz+1.6,0.2,0.2,0.03,winCol);
+  return;
+ }
+ // Castle -- a stone keep with battlements and a round turret
+ const stone=[0.58,0.57,0.56],darkStone=[0.42,0.41,0.4];
+ addBox(positions,normals,colors,indices,vcountRef,cx,gy,cz,2.2,2.0,2.2,stone);
+ const merlons=10,mr=2.0;
+ for(let i=0;i<merlons;i++){
+  const a=(i/merlons)*Math.PI*2;
+  const mx=cx+Math.cos(a)*mr,mz=cz+Math.sin(a)*mr;
+  addBox(positions,normals,colors,indices,vcountRef,mx,gy+3.9,mz,0.22,0.3,0.22,darkStone);
+ }
+ addBox(positions,normals,colors,indices,vcountRef,cx,gy,cz+2.2,0.26,0.55,0.03,doorCol);
+ const towerX=cx+2.0,towerZ=cz-2.0;
+ addTrunk(positions,normals,colors,indices,vcountRef,towerX,gy,towerZ,4.2,0.95,stone);
+ addCone(positions,normals,colors,indices,vcountRef,gy+4.2,towerX,towerZ,1.15,1.3,8,[0.32,0.22,0.5]);
+}
+
+function addDogBody(positions,normals,colors,indices,vcountRef){
+ const {x,z,y,heading:h}=dog;
+ const legH=0.18;
+ const bodyCol=[0.42,0.28,0.16],darkCol=[0.3,0.19,0.1];
+ {
+  const [wx,wz]=headingOffset(x,z,h,0,0);
+  addBox(positions,normals,colors,indices,vcountRef,wx,y+legH,wz,0.2,0.18,0.38,bodyCol);
+ }
+ { // head
+  const [wx,wz]=headingOffset(x,z,h,0.46,0);
+  addBox(positions,normals,colors,indices,vcountRef,wx,y+legH+0.12,wz,0.14,0.13,0.16,bodyCol);
+ }
+ { // snout
+  const [wx,wz]=headingOffset(x,z,h,0.64,0);
+  addBox(positions,normals,colors,indices,vcountRef,wx,y+legH+0.09,wz,0.08,0.07,0.12,darkCol);
+ }
+ for(const ro of [0.1,-0.1]){ // ears
+  const [wx,wz]=headingOffset(x,z,h,0.4,ro);
+  addBox(positions,normals,colors,indices,vcountRef,wx,y+legH+0.26,wz,0.05,0.08,0.04,darkCol);
+ }
+ for(const [fo,ro] of [[0.26,0.16],[0.26,-0.16],[-0.26,0.16],[-0.26,-0.16]]){ // legs
+  const [wx,wz]=headingOffset(x,z,h,fo,ro);
+  addBox(positions,normals,colors,indices,vcountRef,wx,y,wz,0.045,legH/2,0.045,darkCol);
+ }
+ { // tail
+  const [wx,wz]=headingOffset(x,z,h,-0.42,0);
+  addBox(positions,normals,colors,indices,vcountRef,wx,y+legH+0.18,wz,0.05,0.05,0.14,bodyCol);
+ }
+}
+
+/* a simple blocky person for the trader: legs, a robed torso, arms, a head, and a
+   flat brimmed hat -- enough silhouette to read as "a person standing there" rather
+   than a slab, without needing a real character rig for one stationary NPC */
+function addTraderBody(positions,normals,colors,indices,vcountRef){
+ const gy=groundHeightAt(TRADER_POS.x,TRADER_POS.z);
+ const h=TRADER_HEADING;
+ const robeCol=[0.55,0.42,0.63],skinCol=[0.82,0.66,0.52],hatCol=[0.4,0.3,0.22];
+ const legH=0.9;
+ for(const ro of [0.12,-0.12]){
+  const [wx,wz]=headingOffset(TRADER_POS.x,TRADER_POS.z,h,0,ro);
+  addBox(positions,normals,colors,indices,vcountRef,wx,gy,wz,0.09,legH/2,0.09,robeCol);
+ }
+ { // torso
+  const [wx,wz]=headingOffset(TRADER_POS.x,TRADER_POS.z,h,0,0);
+  addBox(positions,normals,colors,indices,vcountRef,wx,gy+legH,wz,0.22,0.35,0.14,robeCol);
+ }
+ for(const ro of [0.28,-0.28]){ // arms
+  const [wx,wz]=headingOffset(TRADER_POS.x,TRADER_POS.z,h,0,ro);
+  addBox(positions,normals,colors,indices,vcountRef,wx,gy+legH+0.25,wz,0.07,0.22,0.09,robeCol);
+ }
+ { // head
+  const [wx,wz]=headingOffset(TRADER_POS.x,TRADER_POS.z,h,0,0);
+  addBox(positions,normals,colors,indices,vcountRef,wx,gy+legH+0.7,wz,0.13,0.12,0.13,skinCol);
+ }
+ { // hat brim
+  const [wx,wz]=headingOffset(TRADER_POS.x,TRADER_POS.z,h,0,0);
+  addBox(positions,normals,colors,indices,vcountRef,wx,gy+legH+0.94,wz,0.16,0.05,0.16,hatCol);
+ }
+}
+
+function buildEntityMesh(){
+ const positions=[],normals=[],colors=[],indices=[];
+ const vcountRef={n:0};
+ for(const s of sheep){
+  // body color tracks fleece, not just lost/not -- bare pink skin right after a
+  // shear, fading back to full woolly white as it regrows, so which sheep are
+  // actually worth walking up to shear is visible at a glance instead of a guess
+  const woolT=Math.min(1,Math.max(0,s.wool??0));
+  const skinCol=[0.86,0.64,0.57],fleeceCol=[0.92,0.9,0.85];
+  const woolCol=[skinCol[0]+(fleeceCol[0]-skinCol[0])*woolT,skinCol[1]+(fleeceCol[1]-skinCol[1])*woolT,skinCol[2]+(fleeceCol[2]-skinCol[2])*woolT];
+  const col=s.lost?[0.86,0.36,0.3]:woolCol;
+  const darkCol=[0.16,0.13,0.11];
+  // lambs are visibly smaller than a grown sheep, scaling up toward full size as they
+  // near maturity, so growth is something you can actually see happening, not just a
+  // number changing in the background
+  const scale=s.isLamb?0.55+0.45*Math.min(1,(s.age||0)/LAMB_MATURE_SECONDS):1;
+  addQuadruped(positions,normals,colors,indices,vcountRef,s.x,s.y,s.z,s.heading||0,scale,col,darkCol,SHEEP_DIMS);
+ }
+ addDogBody(positions,normals,colors,indices,vcountRef);
+ addHouse(positions,normals,colors,indices,vcountRef);
+ addTraderBody(positions,normals,colors,indices,vcountRef);
+ // fence posts: upright and brown when intact, low and flat when broken, so a broken
+ // one reads as "down" at a glance rather than needing a color key to interpret
+ for(const f of fences){
+  const gy=groundHeightAt(f.x,f.z);
+  if(f.broken)addBox(positions,normals,colors,indices,vcountRef,f.x,gy,f.z,0.35,0.08,0.12,[0.4,0.32,0.22]);
+  else addBox(positions,normals,colors,indices,vcountRef,f.x,gy,f.z,0.08,0.55,0.08,[0.55,0.42,0.28]);
+ }
+ return {
+  positions:new Float32Array(positions),
+  normals:new Float32Array(normals),
+  colors:new Float32Array(colors),
+  indices:vcountRef.n>65535?new Uint32Array(indices):new Uint16Array(indices),
+  wide32:vcountRef.n>65535,
+  triCount:indices.length/3,
+ };
+}
+/* ---------- tiny mat4 helpers (column-major, Float32Array(16)), just enough for an
+   FPS camera -- no external math library needed ---------- */
+function mat4Identity(){const m=new Float32Array(16);m[0]=m[5]=m[10]=m[15]=1;return m}
+function mat4Multiply(a,b){
+ const o=new Float32Array(16);
+ for(let c=0;c<4;c++)for(let r=0;r<4;r++){
+  let s=0;for(let k=0;k<4;k++)s+=a[k*4+r]*b[c*4+k];
+  o[c*4+r]=s;
+ }
+ return o;
+}
+function mat4Perspective(fovy,aspect,near,far){
+ const f=1/Math.tan(fovy/2),nf=1/(near-far),m=new Float32Array(16);
+ m[0]=f/aspect;m[5]=f;m[10]=(far+near)*nf;m[11]=-1;m[14]=2*far*near*nf;
+ return m;
+}
+function vSub(a,b){return[a[0]-b[0],a[1]-b[1],a[2]-b[2]]}
+function vNorm(a){const l=Math.hypot(a[0],a[1],a[2])||1;return[a[0]/l,a[1]/l,a[2]/l]}
+function vCross(a,b){return[a[1]*b[2]-a[2]*b[1],a[2]*b[0]-a[0]*b[2],a[0]*b[1]-a[1]*b[0]]}
+function vDot(a,b){return a[0]*b[0]+a[1]*b[1]+a[2]*b[2]}
+function mat4LookAt(eye,center,up){
+ const z=vNorm(vSub(eye,center)),x=vNorm(vCross(up,z)),y=vCross(z,x);
+ const m=new Float32Array(16);
+ m[0]=x[0];m[1]=y[0];m[2]=z[0];m[3]=0;
+ m[4]=x[1];m[5]=y[1];m[6]=z[1];m[7]=0;
+ m[8]=x[2];m[9]=y[2];m[10]=z[2];m[11]=0;
+ m[12]=-vDot(x,eye);m[13]=-vDot(y,eye);m[14]=-vDot(z,eye);m[15]=1;
+ return m;
+}
+function forwardFromYawPitch(yaw,pitch){
+ return [Math.sin(yaw)*Math.cos(pitch),Math.sin(pitch),Math.cos(yaw)*Math.cos(pitch)];
+}
+
+/* ---------- shaders: per-vertex color + a simple fixed directional light, plus
+   distance fog so new terrain can load inside a soft haze instead of visibly
+   popping in at a hard edge ---------- */
+const SUN_DIR=vNorm([0.45,0.78,0.3]);
+const VS=`#version 300 es
+in vec3 aPos;in vec3 aNormal;in vec3 aColor;
+uniform mat4 uProj;uniform mat4 uView;
+out vec3 vColor;out float vFog;out float vLight;
+uniform vec3 uSunDir;uniform float uFogNear;uniform float uFogFar;
+void main(){
+ vColor=aColor;
+ vLight=max(dot(normalize(aNormal),uSunDir),0.0)*0.6+0.4;
+ vec4 viewPos=uView*vec4(aPos,1.0);
+ float dist=length(viewPos.xyz);
+ vFog=clamp((dist-uFogNear)/(uFogFar-uFogNear),0.0,1.0);
+ gl_Position=uProj*viewPos;
+}`;
+const FS=`#version 300 es
+precision mediump float;
+in vec3 vColor;in float vFog;in float vLight;
+uniform vec3 uFogColor;
+out vec4 o;
+void main(){
+ vec3 lit=vColor*vLight;
+ vec3 final=mix(lit,uFogColor,vFog);
+ o=vec4(final,1.0);
+}`;
+
+function compileShader(gl,type,src){
+ const s=gl.createShader(type);gl.shaderSource(s,src);gl.compileShader(s);
+ if(!gl.getShaderParameter(s,gl.COMPILE_STATUS))throw new Error("shader: "+gl.getShaderInfoLog(s));
+ return s;
+}
+function buildProgram(gl){
+ const p=gl.createProgram();
+ gl.attachShader(p,compileShader(gl,gl.VERTEX_SHADER,VS));
+ gl.attachShader(p,compileShader(gl,gl.FRAGMENT_SHADER,FS));
+ gl.linkProgram(p);
+ if(!gl.getProgramParameter(p,gl.LINK_STATUS))throw new Error("program: "+gl.getProgramInfoLog(p));
+ return p;
+}
+
+/* uploads one chunk's mesh (already baked in world-space coordinates) to GPU buffers */
+function uploadChunkMesh(gl,mesh){
+ const vao=gl.createVertexArray();
+ gl.bindVertexArray(vao);
+ const posBuf=gl.createBuffer();
+ gl.bindBuffer(gl.ARRAY_BUFFER,posBuf);gl.bufferData(gl.ARRAY_BUFFER,mesh.positions,gl.STATIC_DRAW);
+ gl.enableVertexAttribArray(0);gl.vertexAttribPointer(0,3,gl.FLOAT,false,0,0);
+ const normBuf=gl.createBuffer();
+ gl.bindBuffer(gl.ARRAY_BUFFER,normBuf);gl.bufferData(gl.ARRAY_BUFFER,mesh.normals,gl.STATIC_DRAW);
+ gl.enableVertexAttribArray(1);gl.vertexAttribPointer(1,3,gl.FLOAT,false,0,0);
+ const colBuf=gl.createBuffer();
+ gl.bindBuffer(gl.ARRAY_BUFFER,colBuf);gl.bufferData(gl.ARRAY_BUFFER,mesh.colors,gl.STATIC_DRAW);
+ gl.enableVertexAttribArray(2);gl.vertexAttribPointer(2,3,gl.FLOAT,false,0,0);
+ const idxBuf=gl.createBuffer();
+ gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER,idxBuf);gl.bufferData(gl.ELEMENT_ARRAY_BUFFER,mesh.indices,gl.STATIC_DRAW);
+ gl.bindVertexArray(null);
+ return {vao,idxType:mesh.wide32?gl.UNSIGNED_INT:gl.UNSIGNED_SHORT,count:mesh.indices.length,
+  originX:mesh.originX,originZ:mesh.originZ,triCount:mesh.triCount,
+  bufs:[posBuf,normBuf,colBuf,idxBuf]};
+}
+function freeChunkMesh(gl,h){
+ gl.deleteVertexArray(h.vao);
+ for(const b of h.bufs)gl.deleteBuffer(b);
+}
+/* ---------- chunk manager ---------- */
+let RENDER_RADIUS=8; // in chunks; terrain is far cheaper now (no per-block faces), so we can afford to start further out -- still auto-tuned if the frame rate sags (see main.js)
+const UNLOAD_MARGIN=3; // a chunk is only freed once it's drifted this far past RENDER_RADIUS, well outside what's being asked for right now.
+ // without this margin, a chunk right at the edge gets unloaded and re-wanted on
+ // consecutive frames whenever the player nudges back and forth across its boundary,
+ // or RENDER_RADIUS dips for a moment from the auto-tuner -- and since rebuilding is
+ // budgeted across several frames (see CHUNKS_PER_FRAME below), that flicker showed
+ // up as a chunk-sized hole of bare fog color flashing in right in front of the
+ // player. the margin means "about to be wanted again" chunks just stay loaded.
+const loadedChunks=new Map(); // "cx,cz" -> gl handle
+let buildQueue=[]; // chunk coords waiting to be meshed+uploaded, nearest first
+let chunksBuiltTotal=0,trisTotal=0;
+
+function chunkKey(cx,cz){return cx+","+cz}
+function worldToChunk(wx,wz){return [Math.floor(wx/CHUNK_W),Math.floor(wz/CHUNK_D)]}
+
+function recomputeDesiredChunks(px,pz){
+ const [pcx,pcz]=worldToChunk(px,pz);
+ const wanted=new Set();
+ const toBuild=[];
+ for(let dx=-RENDER_RADIUS;dx<=RENDER_RADIUS;dx++)for(let dz=-RENDER_RADIUS;dz<=RENDER_RADIUS;dz++){
+  if(dx*dx+dz*dz>RENDER_RADIUS*RENDER_RADIUS+1)continue; // roughly circular, not square, view area
+  const cx=pcx+dx,cz=pcz+dz,key=chunkKey(cx,cz);
+  wanted.add(key);
+  if(!loadedChunks.has(key))toBuild.push({cx,cz,d2:dx*dx+dz*dz});
+ }
+ // only unload chunks once they're well past the view radius -- see UNLOAD_MARGIN
+ const unloadR=RENDER_RADIUS+UNLOAD_MARGIN;
+ for(const key of Array.from(loadedChunks.keys())){
+  if(wanted.has(key))continue;
+  const parts=key.split(",");
+  const ddx=Number(parts[0])-pcx,ddz=Number(parts[1])-pcz;
+  if(ddx*ddx+ddz*ddz>unloadR*unloadR){
+   freeChunkMesh(GL,loadedChunks.get(key));
+   loadedChunks.delete(key);
+  }
+ }
+ toBuild.sort((a,b)=>a.d2-b.d2);
+ buildQueue=toBuild;
+}
+
+/* spread chunk building across frames so moving into new territory never causes a
+   single huge hitch -- but heightmap terrain is cheap to mesh (no per-voxel face
+   culling), so this can afford to be several chunks per frame rather than one: at
+   one per frame, catching up after crossing a chunk boundary took long enough to be
+   visible as missing terrain, which combined with the flicker above is what read as
+   "white boxes" while walking back and forth */
+let CHUNKS_PER_FRAME=4;
+function processBuildQueue(){
+ let n=CHUNKS_PER_FRAME;
+ while(n-->0 && buildQueue.length){
+  const {cx,cz}=buildQueue.shift();
+  const key=chunkKey(cx,cz);
+  if(loadedChunks.has(key))continue;
+  const mesh=buildChunkMesh(cx,cz);
+  const handle=uploadChunkMesh(GL,mesh);
+  loadedChunks.set(key,handle);
+  chunksBuiltTotal++;trisTotal+=mesh.triCount;
+ }
+}
+function totalLoadedTris(){
+ let t=0;for(const h of loadedChunks.values())t+=h.triCount;return t;
+}
+/* ---------- player + first-person controls ---------- */
+const EYE_HEIGHT=1.6;
+const GRAVITY=22,JUMP_SPEED=7,WALK_SPEED=5.2;
+
+const player={x:0.5,y:0,z:0.5,yaw:0,pitch:0,vy:0,grounded:false};
+const keys=Object.create(null);
+
+/* open pasture has no caves or overhangs, so the character controller is just
+   "stand on the ground here" -- gravity pulls you to the heightmap's surface,
+   walking off a rise means briefly falling to meet it, no voxel AABB needed */
+function dropToSurface(){
+ player.x=0.5;player.z=0.5;
+ player.y=groundHeightAt(player.x,player.z);
+ player.vy=0;player.grounded=true;
+}
+
+function updatePlayer(dt){
+ const fwd=forwardFromYawPitch(player.yaw,0); // flattened (pitch excluded) for ground movement
+ const right=[-Math.cos(player.yaw),0,Math.sin(player.yaw)]; // matches the camera-right basis mat4LookAt actually builds
+ let mx=0,mz=0;
+ if(keys["KeyW"]){mx+=fwd[0];mz+=fwd[2]}
+ if(keys["KeyS"]){mx-=fwd[0];mz-=fwd[2]}
+ if(keys["KeyD"]){mx+=right[0];mz+=right[2]}
+ if(keys["KeyA"]){mx-=right[0];mz-=right[2]}
+ const len=Math.hypot(mx,mz)||1;
+ mx=(mx/len)*WALK_SPEED;mz=(mz/len)*WALK_SPEED;
+
+ // resolve movement one axis at a time against tree trunks, the sheep/dog, the house,
+ // and the trader, so walking into any of them stops you there instead of passing
+ // through, and (because each axis is tried independently) still lets you slide along
+ // rather than sticking dead
+ const nx=player.x+mx*dt;
+ if(!treeBlockedAt(nx,player.z)&&!entityBlockedAt(nx,player.z)&&!houseBlockedAt(nx,player.z)&&!traderBlockedAt(nx,player.z))player.x=nx;
+ const nz=player.z+mz*dt;
+ if(!treeBlockedAt(player.x,nz)&&!entityBlockedAt(player.x,nz)&&!houseBlockedAt(player.x,nz)&&!traderBlockedAt(player.x,nz))player.z=nz;
+
+ const groundY=groundHeightAt(player.x,player.z);
+ if(keys["Space"]&&player.grounded){player.vy=JUMP_SPEED;player.grounded=false}
+ player.vy-=GRAVITY*dt;
+ player.y+=player.vy*dt;
+ if(player.y<=groundY){
+  player.y=groundY;player.vy=0;player.grounded=true;
+ } else {
+  player.grounded=false;
+ }
+}
+
+/* click-and-drag look only. An earlier build also offered a no-click "hover to
+   steer" mode as an option, but it proved unstable in practice and the player
+   much preferred drag once used to it, so that mode (and the toggle for it) was
+   removed rather than kept as unused surface area. Not Pointer Lock: Pointer
+   Lock's movementX/Y depends on the OS/browser delivering raw mouse deltas,
+   which turned out not to work reliably on real hardware (confirmed: it
+   silently did nothing at all) -- this reads plain clientX/clientY deltas
+   instead, which works everywhere. */
+let dragging=false,lastDragX=0,lastDragY=0;
+
+/* if focus leaves the page entirely -- clicking outside the game window, switching
+   tabs/apps, a browser dialog stealing focus -- the browser never delivers the
+   matching keyup for whatever was held, since there's no longer a page here to
+   deliver it to. Without this, a key held at that moment (reported: walking
+   backwards, then clicking outside) gets stuck "down" forever, because updatePlayer
+   just keeps reading keys[...] as true with nothing left to ever set it back to
+   false. Blur and hidden-tab both release everything and drop any in-progress
+   look-drag, so there's nothing left pinned when focus comes back. */
+function releaseAllHeldInput(){
+ for(const k in keys)keys[k]=false;
+ dragging=false;
+}
+
+function bindControls(canvasEl){
+ window.addEventListener("keydown",e=>{
+  keys[e.code]=true;
+  if(menuOpen)return; // the lounge is up -- WASD shouldn't act on the paused world behind it
+  if(e.code==="KeyC")toggleControlsLegend();
+ });
+ window.addEventListener("keyup",e=>{keys[e.code]=false});
+ window.addEventListener("blur",releaseAllHeldInput);
+ document.addEventListener("visibilitychange",()=>{if(document.hidden)releaseAllHeldInput()});
+
+ window.addEventListener("pointermove",e=>{
+  if(dragging){
+   const dx=e.clientX-lastDragX,dy=e.clientY-lastDragY;
+   lastDragX=e.clientX;lastDragY=e.clientY;
+   player.yaw-=dx*0.0045;player.pitch-=dy*0.0045;
+   const lim=Math.PI/2-0.01;
+   if(player.pitch>lim)player.pitch=lim;
+   if(player.pitch<-lim)player.pitch=-lim;
+  }
+ });
+ canvasEl.addEventListener("pointerdown",e=>{
+  if(e.button!==0)return; // left button only -- a stray right/middle click (easy to
+                           // trigger by accident on a trackpad while clicking to look)
+                           // shouldn't start a look-drag at all
+  dragging=true;lastDragX=e.clientX;lastDragY=e.clientY;
+  try{canvasEl.setPointerCapture(e.pointerId)}catch(err){}
+ });
+ canvasEl.addEventListener("pointerup",e=>{dragging=false;try{canvasEl.releasePointerCapture(e.pointerId)}catch(err){}});
+ canvasEl.addEventListener("pointercancel",()=>{dragging=false});
+ // a right-click (or its trackpad equivalent) popping up the browser's own context
+ // menu mid-game is exactly the kind of accidental interruption that was reported --
+ // nothing in this game uses a context menu, so just suppress it outright
+ canvasEl.addEventListener("contextmenu",e=>e.preventDefault());
+}
+/* ---------- the flock: simple boid-style sheep (separation + cohesion + a little
+   wander), Sophia (the dog) as a three-command herding assistant, and the harp's
+   pull on nearby sheep lives here too since it's just another force in the same
+   per-sheep sum ---------- */
+const SHEEP_COUNT=14;
+const SHEEP_SPEED=1.6,SHEEP_SEPARATION_R=1.1,SHEEP_COHESION_R=6,SHEEP_SEPARATION_W=2.2,SHEEP_COHESION_W=0.5;
+const LOST_DIST=14,LOST_TIME_TO_FLAG=4;
+// Sophia used to be a full 2x the sheep's own top speed (3.2 vs 1.6), which let her
+// pace well out ahead of a flock that couldn't ever close the gap -- slower now, so
+// she stays close enough that the flock can actually keep her in reach
+const DOG_SPEED=2.1;
+const HOME_POINT={x:0,z:0}; // stands in for the real abode/pen point, which hasn't been built yet
+
+// solid-body radii: the soft boid separation force above keeps sheep from wanting to
+// overlap, but a strong enough pull (harp, gather, home, a wandering player) can still
+// overpower a force and shove them into each other or into Sophia. These are a hard
+// floor under that -- nothing with a radius below gets to actually occupy the same
+// ground as something else with one.
+const SHEEP_RADIUS=0.45,DOG_RADIUS=0.4,PLAYER_RADIUS=0.35;
+
+const sheep=[];
+const dog={x:1.5,z:1.5,y:0,command:"stay",heading:0}; // command: "stay" | "gather" | "home"
+let flockCx=0,flockCz=0,flockRadius=3;
+
+// facing used to snap straight to whatever direction that frame's force-sum pointed,
+// which is noisy frame to frame (wander drifts continuously, separation flips sign as
+// neighbors jostle) -- a sheep could end up facing almost opposite ways two frames in
+// a row even while walking a perfectly steady line, which read as its head and legs
+// (offset from center by heading) popping between front and back. Turning at a capped
+// rate instead means the body settles toward the way it's actually trending rather
+// than chasing every frame's noise.
+const SHEEP_TURN_RATE=Math.PI*1.6,DOG_TURN_RATE=Math.PI*2.4;
+function turnHeadingTowards(cur,target,dt,rate){
+ let diff=target-cur;
+ while(diff>Math.PI)diff-=Math.PI*2;
+ while(diff<-Math.PI)diff+=Math.PI*2;
+ const maxStep=rate*dt;
+ if(diff>maxStep)diff=maxStep;
+ else if(diff<-maxStep)diff=-maxStep;
+ return cur+diff;
+}
+
+function initFlock(seedStr){
+ sheep.length=0;
+ const rng=makeRng(seedStr+":flock");
+ for(let i=0;i<SHEEP_COUNT;i++){
+  const ang=rng()*Math.PI*2,r=2+rng()*4;
+  const x=HOME_POINT.x+Math.cos(ang)*r,z=HOME_POINT.z+Math.sin(ang)*r;
+  sheep.push({x,z,y:0,vx:0,vz:0,wanderAngle:rng()*Math.PI*2,heading:rng()*Math.PI*2,lostTimer:0,lost:false,wool:1,nightExposure:0,bareExposure:0});
+ }
+ dog.x=HOME_POINT.x+1.5;dog.z=HOME_POINT.z+1.5;dog.command="stay";dog.heading=0;
+ flockCx=HOME_POINT.x;flockCz=HOME_POINT.z;
+ wool=0; // a new world is a fresh start -- back to a tent
+ initFences();
+}
+
+function updateDog(dt){
+ let tx=dog.x,tz=dog.z;
+ if(dog.command==="gather"){
+  // walk up to the flock's edge, not its exact center -- Sophia was aiming straight
+  // for the centroid, which is also what every sheep's own cohesion force is pulling
+  // it toward, so she'd arrive right in the middle of the huddle and be hidden inside
+  // the cluster of (same-size) sheep boxes. Standing off at the rim keeps her visible
+  // and still pulls strays in, since updateSheep's dog-attraction force only cares
+  // where she actually is, not that she's dead-center.
+  const dcx=dog.x-flockCx,dcz=dog.z-flockCz,dCur=Math.hypot(dcx,dcz);
+  const dAng=dCur>0.01?Math.atan2(dcz,dcx):0;
+  const standoff=flockRadius+1.5;
+  tx=flockCx+Math.cos(dAng)*standoff;tz=flockCz+Math.sin(dAng)*standoff;
+ }
+ else if(dog.command==="home"){tx=HOME_POINT.x;tz=HOME_POINT.z}
+ else {dog.y=groundHeightAt(dog.x,dog.z);return} // stay: hold position
+ const dx=tx-dog.x,dz=tz-dog.z,d=Math.hypot(dx,dz);
+ if(d>0.3){
+  const sp=Math.min(DOG_SPEED,d);
+  dog.x+=(dx/d)*sp*dt;dog.z+=(dz/d)*sp*dt;
+  dog.heading=turnHeadingTowards(dog.heading,Math.atan2(dx,dz),dt,DOG_TURN_RATE); // turn to face the way she's walking, don't snap to it
+ }
+ dog.y=groundHeightAt(dog.x,dog.z);
+}
+
+function updateSheep(dt,playerX,playerZ,harpActive){
+ // starvation and night-death both splice sheep out of the array, and between them
+ // losing the entire flock is a real possibility, not just a theoretical one -- without
+ // this, hitting zero sheep divides-by-zero below (flockCx/flockCz go NaN and stay
+ // that way, which then poisons Sophia's "gather" targeting permanently) and leaves no
+ // way back in at all: no sheep left to shear or trade means no way to ever reach
+ // another Castle. A couple of lambs washing back in keeps a total loss recoverable
+ // instead of a dead end.
+ if(sheep.length===0){
+  spawnLamb(HOME_POINT.x+1,HOME_POINT.z+1);
+  spawnLamb(HOME_POINT.x-1,HOME_POINT.z-1);
+  announce("The flock was lost entirely -- a couple of new lambs have wandered in to start again.",5);
+ }
+ let cx=0,cz=0;
+ for(const s of sheep){cx+=s.x;cz+=s.z}
+ cx/=sheep.length;cz/=sheep.length;
+ flockCx=cx;flockCz=cz;
+ let spread=0;
+ for(const s of sheep)spread+=Math.hypot(s.x-cx,s.z-cz);
+ flockRadius=Math.max(2,spread/sheep.length);
+
+ for(const s of sheep){
+  let fx=0,fz=0;
+  for(const o of sheep){
+   if(o===s)continue;
+   const dx=s.x-o.x,dz=s.z-o.z,d2=dx*dx+dz*dz;
+   if(d2<SHEEP_SEPARATION_R*SHEEP_SEPARATION_R&&d2>0.0001){
+    const d=Math.sqrt(d2);
+    fx+=(dx/d)*(SHEEP_SEPARATION_R-d)*SHEEP_SEPARATION_W;
+    fz+=(dz/d)*(SHEEP_SEPARATION_R-d)*SHEEP_SEPARATION_W;
+   }
+  }
+  {
+   const dx=cx-s.x,dz=cz-s.z,d=Math.hypot(dx,dz);
+   if(d>SHEEP_COHESION_R*0.3){fx+=(dx/d)*SHEEP_COHESION_W;fz+=(dz/d)*SHEEP_COHESION_W}
+  }
+  // wool-based sorting: a freshly-sheared sheep (low wool) drifts in toward the
+  // flock's middle, a fully fleeced one drifts out toward the rim -- otherwise the
+  // same few sheep that happened to end up on the outside stay the only ones
+  // actually reachable to shear, while an already-sheared sheep sitting right next
+  // to you looks identical and wastes a walk-up. This keeps shearable sheep cycling
+  // through the accessible edge instead of camping the few that got there first.
+  if(!s.isLamb){
+   const dx=cx-s.x,dz=cz-s.z,d=Math.hypot(dx,dz)||1;
+   const sortBias=(0.5-(s.wool??0))*1.6;
+   fx+=(dx/d)*sortBias;fz+=(dz/d)*sortBias;
+  }
+  // no distance cutoff on either pull anymore -- there used to be one (only within 10
+  // units of the dog), which meant that the moment Sophia paced far enough ahead of a
+  // straggler, that sheep's reason to follow switched off entirely and it gave up
+  // rather than keep trying to close the gap. The command being active is reason
+  // enough to keep pulling, at any range.
+  const ddx=dog.x-s.x,ddz=dog.z-s.z,dd=Math.hypot(ddx,ddz)||1;
+  if(dog.command==="gather"&&dd>0.6){fx+=(ddx/dd)*1.4;fz+=(ddz/dd)*1.4}
+  else if(dog.command==="home"){
+   const hx=HOME_POINT.x-s.x,hz=HOME_POINT.z-s.z,hd=Math.hypot(hx,hz)||1;
+   fx+=(hx/hd)*1.6;fz+=(hz/hd)*1.6;
+  }
+  if(harpActive){
+   const pdx=playerX-s.x,pdz=playerZ-s.z,pd=Math.hypot(pdx,pdz);
+   if(pd<HARP_RADIUS&&pd>0.5){fx+=(pdx/pd)*1.8;fz+=(pdz/pd)*1.8}
+  }
+  s.wanderAngle+=(Math.random()-0.5)*0.6*dt;
+  fx+=Math.cos(s.wanderAngle)*0.15;fz+=Math.sin(s.wanderAngle)*0.15;
+
+  const flen=Math.hypot(fx,fz)||1;
+  const speed=Math.min(SHEEP_SPEED,flen);
+  s.vx=(fx/flen)*speed;s.vz=(fz/flen)*speed;
+  s.x+=s.vx*dt;s.z+=s.vz*dt;
+  s.y=groundHeightAt(s.x,s.z);
+  if(speed>0.15)s.heading=turnHeadingTowards(s.heading,Math.atan2(s.vx,s.vz),dt,SHEEP_TURN_RATE); // turn to face the way it's actually moving, don't snap to it; hold the last heading while idle rather than snapping back to some default
+
+  if(isDaylight()&&Math.hypot(s.vx,s.vz)<0.4)depleteGrassAt(s.x,s.z,dt); // sheep don't graze after dark
+
+  const distFromFlock=Math.hypot(s.x-cx,s.z-cz);
+  if(distFromFlock>LOST_DIST){
+   s.lostTimer+=dt;
+   if(s.lostTimer>LOST_TIME_TO_FLAG)s.lost=true;
+  } else {
+   s.lostTimer=0;s.lost=false;
+  }
+ }
+ updateDog(dt);
+ resolveEntityCollisions();
+}
+
+/* hard separation pass, run after everyone's already moved for the frame: pushes any
+   sheep-sheep or sheep-dog pair that ended up overlapping back apart along the line
+   between them. A single pass rather than an iterative solver -- at 14 sheep plus one
+   dog, any rare leftover overlap from a three-way pileup irons itself out over the next
+   frame or two, which isn't worth a heavier solver to avoid. */
+// returns a unit push direction from (dx,dz) -- falls back to a fixed direction when
+// two things land exactly on top of each other (d==0), where dx/d would be 0/0. Rare
+// in ordinary play (continuous movement almost never lands exactly on a point), but a
+// script or an edge case forcing a perfect overlap should still resolve, not sit stuck
+// forever because the direction to push in was undefined.
+function pushDirOrFallback(dx,dz,d){
+ if(d>1e-6)return [dx/d,dz/d];
+ return [1,0];
+}
+function resolveEntityCollisions(){
+ for(let i=0;i<sheep.length;i++){
+  for(let j=i+1;j<sheep.length;j++){
+   const a=sheep[i],b=sheep[j];
+   const dx=b.x-a.x,dz=b.z-a.z,d=Math.hypot(dx,dz);
+   const minD=SHEEP_RADIUS*2;
+   if(d<minD){
+    const push=(minD-d)/2,[nx,nz]=pushDirOrFallback(dx,dz,d);
+    a.x-=nx*push;a.z-=nz*push;
+    b.x+=nx*push;b.z+=nz*push;
+   }
+  }
+ }
+ // dog pushes sheep out of her way rather than splitting the correction -- she's the
+ // one who was getting swallowed, so she should be the one who stays put and visible
+ for(const s of sheep){
+  const dx=s.x-dog.x,dz=s.z-dog.z,d=Math.hypot(dx,dz);
+  const minD=SHEEP_RADIUS+DOG_RADIUS;
+  if(d<minD){
+   const push=minD-d,[nx,nz]=pushDirOrFallback(dx,dz,d);
+   s.x+=nx*push;s.z+=nz*push;
+  }
+ }
+ // the player blocks their OWN movement into a sheep or Sophia (entityBlockedAt,
+ // below) -- but nothing was stopping a sheep or Sophia from walking INTO the player
+ // from their side, since their own movement only ever checked each other. Once one
+ // got close enough to overlap, the player was stuck: every nearby point the player
+ // tried to step to was still inside that same sheep's collision radius, since the
+ // sheep itself never got pushed back out of the way. Entities get shoved off the
+ // player here, the same way the dog shoves sheep off herself above, so nothing can
+ // ever press into the player far enough to trap them. (d<minD, not d>0.0001-gated --
+ // a perfect zero-distance overlap needs pushing apart too, via the fallback above,
+ // not left stuck forever just because the direction to push happened to be undefined.)
+ for(const s of sheep){
+  const dx=s.x-player.x,dz=s.z-player.z,d=Math.hypot(dx,dz);
+  const minD=PLAYER_RADIUS+SHEEP_RADIUS;
+  if(d<minD){
+   const push=minD-d,[nx,nz]=pushDirOrFallback(dx,dz,d);
+   s.x+=nx*push;s.z+=nz*push;
+  }
+ }
+ {
+  const dx=dog.x-player.x,dz=dog.z-player.z,d=Math.hypot(dx,dz);
+  const minD=PLAYER_RADIUS+DOG_RADIUS;
+  if(d<minD){
+   const push=minD-d,[nx,nz]=pushDirOrFallback(dx,dz,d);
+   dog.x+=nx*push;dog.z+=nz*push;
+  }
+ }
+ for(const s of sheep)s.y=groundHeightAt(s.x,s.z);
+ dog.y=groundHeightAt(dog.x,dog.z);
+}
+
+/* blocks the PLAYER from walking into a sheep or Sophia, the same way treeBlockedAt
+   blocks walking into a tree trunk -- entities use this one instead of the hard
+   push-apart above since the player isn't a boid the simulation is free to nudge,
+   their movement is just refused one axis at a time in updatePlayer, same as trees */
+function entityBlockedAt(x,z){
+ const minSheep=PLAYER_RADIUS+SHEEP_RADIUS;
+ for(const s of sheep){
+  const dx=x-s.x,dz=z-s.z;
+  if(dx*dx+dz*dz<minSheep*minSheep)return true;
+ }
+ const minDog=PLAYER_RADIUS+DOG_RADIUS;
+ const dx=x-dog.x,dz=z-dog.z;
+ return dx*dx+dz*dz<minDog*minDog;
+}
+
+function nearestLostSheep(px,pz){
+ let best=null,bestD=Infinity;
+ for(const s of sheep){
+  if(!s.lost)continue;
+  const d=Math.hypot(s.x-px,s.z-pz);
+  if(d<bestD){bestD=d;best=s}
+ }
+ return best;
+}
+function rescueSheep(s){s.lost=false;s.lostTimer=0}
+/* ---------- grazing depletion/regrowth, per patch of ground. Coarser than the
+   terrain's own 1-unit vertex grid (plenty visible at this scale, and keeps the
+   tracked area small -- only cells the flock has actually stood on ever get an
+   entry at all). Sheep standing still graze the cell under them; everything
+   tracked slowly regrows when it isn't currently being grazed. ---------- */
+const GRASS_CELL=2;
+const depletion=new Map(); // "cx,cz" -> 0 (lush) .. 1 (bare)
+
+function depletionKey(wx,wz){return Math.floor(wx/GRASS_CELL)+","+Math.floor(wz/GRASS_CELL)}
+function depletionAt(wx,wz){return depletion.get(depletionKey(wx,wz))||0}
+
+const GRAZE_RATE=0.04,REGROW_RATE=0.015; // slowed from 0.06 -- green pasture was wearing to brown a bit too readily
+function depleteGrassAt(wx,wz,dt){
+ const k=depletionKey(wx,wz);
+ depletion.set(k,Math.min(1,(depletion.get(k)||0)+GRAZE_RATE*dt));
+}
+let regrowAccum=0;
+function regrowGrassTick(dt){
+ regrowAccum+=dt;
+ if(regrowAccum<1)return;
+ regrowAccum=0;
+ for(const [k,v] of depletion){
+  const nv=v-REGROW_RATE;
+  if(nv<=0.01)depletion.delete(k);else depletion.set(k,nv);
+ }
+}
+
+/* overgrazing had no teeth at all before this -- a cell could sit fully bare under a
+   parked sheep forever with nothing but the (purely visual) brown patch to show for
+   it. Real stakes now, in the same spirit as the nightfall rule: a sheep that keeps
+   grazing a patch once there's nothing left in it starts starving, and if that goes
+   on too long it's a real, permanent loss, same as nightfall or a fence escape -- the
+   fix in all three cases is the same lesson, move the flock before it costs you one.
+   Only accrues while a sheep is actually parked grazing (the same near-stationary
+   check depleteGrassAt itself uses) on ground that's gone fully brown; a sheep just
+   passing through bare ground, or grazing anywhere still green, resets the clock.
+   Day-only, same as grazing itself (see depleteGrassAt's call site) -- a flock
+   settled in the home pen overnight isn't out grazing at all, so it was never
+   supposed to be able to starve there just because the pen's own well-trodden
+   ground had gone bare from daytime use. */
+const BARE_THRESHOLD=0.9,STARVE_SECONDS=120;
+function updateGrazingRisk(dt){
+ if(!isDaylight()){
+  for(const s of sheep)s.bareExposure=0;
+  return;
+ }
+ for(let i=sheep.length-1;i>=0;i--){
+  const s=sheep[i];
+  const grazing=Math.hypot(s.vx,s.vz)<0.4;
+  if(grazing&&depletionAt(s.x,s.z)>=BARE_THRESHOLD){
+   s.bareExposure=(s.bareExposure||0)+dt;
+   if(s.bareExposure>=STARVE_SECONDS){
+    sheep.splice(i,1);
+    announce("A sheep starved on overgrazed ground. It won't be coming back -- move the flock to fresh pasture before it's bare.",4.5);
+   }
+  } else {
+   s.bareExposure=0;
+  }
+ }
+}
+
+/* grazed cells only ever appear where the flock has actually walked, so the set of
+   chunks needing a visual refresh is always small -- rebuild those few (not the
+   whole loaded radius) every so often rather than on every single frame */
+let grazeRefreshAccum=0;
+function refreshGrazedChunksTick(dt){
+ grazeRefreshAccum+=dt;
+ if(grazeRefreshAccum<0.5)return;
+ grazeRefreshAccum=0;
+ const toRefresh=new Set();
+ for(const s of sheep){
+  const [cx,cz]=worldToChunk(s.x,s.z);
+  toRefresh.add(chunkKey(cx,cz));
+ }
+ for(const key of toRefresh){
+  const h=loadedChunks.get(key);
+  if(!h)continue;
+  const parts=key.split(",");
+  const cx=Number(parts[0]),cz=Number(parts[1]);
+  freeChunkMesh(GL,h);
+  loadedChunks.set(key,uploadChunkMesh(GL,buildChunkMesh(cx,cz)));
+ }
+}
+/* ---------- the harp: a procedural arpeggio (no audio files -- a handful of tiny
+   triangle-wave oscillators), cycling through a small pool of patterns so holding
+   it down doesn't get repetitive. While it's sounding, it pulls nearby sheep toward
+   the player -- the actual mechanic; the music is what tells the player it's
+   working, same as it would for a real shepherd's instrument. ---------- */
+const HARP_RADIUS=9;
+let audioCtx=null;
+function ensureAudio(){
+ if(audioCtx)return audioCtx;
+ try{audioCtx=new (window.AudioContext||window.webkitAudioContext)()}catch(e){audioCtx=null}
+ return audioCtx;
+}
+
+const ARPEGGIOS=[
+ [261.63,329.63,392.00,523.25],
+ [293.66,349.23,440.00,587.33],
+ [220.00,261.63,329.63,440.00],
+ [246.94,311.13,370.00,493.88],
+];
+let arpIndex=0;
+function playHarpArpeggio(){
+ const ctx=ensureAudio();
+ if(!ctx)return;
+ if(ctx.state==="suspended")ctx.resume().catch(()=>{});
+ const notes=ARPEGGIOS[arpIndex%ARPEGGIOS.length];
+ arpIndex++;
+ const now=ctx.currentTime;
+ notes.forEach((freq,i)=>{
+  const osc=ctx.createOscillator(),gain=ctx.createGain();
+  osc.type="triangle";osc.frequency.value=freq;
+  const t0=now+i*0.11;
+  gain.gain.setValueAtTime(0.0001,t0);
+  gain.gain.linearRampToValueAtTime(0.18,t0+0.02);
+  gain.gain.exponentialRampToValueAtTime(0.001,t0+0.5);
+  osc.connect(gain).connect(ctx.destination);
+  osc.start(t0);osc.stop(t0+0.55);
+ });
+}
+
+let harpActive=false,harpCooldown=0;
+function updateHarp(dt){
+ if(keys["KeyH"]){
+  harpActive=true;
+  harpCooldown-=dt;
+  if(harpCooldown<=0){playHarpArpeggio();harpCooldown=1.0}
+ } else {
+  harpActive=false;harpCooldown=0;
+ }
+}
+/* ---------- day/night cycle, the shared "lost" direction-arrow widget, Sophia's
+   command keys, and the single ambient HUD line (one glance-spot showing whichever
+   thing matters most right now, instead of several separate nagging boxes) ---------- */
+const DAY_LENGTH_SECONDS=18*60; // one full day+night cycle, in the ~15-20 real-minute range Wendell asked for
+let worldTime=0.25; // 0=midnight, 0.5=noon, 1=next midnight -- start mid-morning
+
+function updateWorldTime(dt){worldTime=(worldTime+dt/DAY_LENGTH_SECONDS)%1}
+function isDaylight(){return worldTime>0.22&&worldTime<0.78}
+function duskWarningActive(){return worldTime>0.68&&worldTime<0.78}
+
+// sleeping at the house skips straight to the same point in the morning the game
+// itself starts a new day at, rather than waiting out however much of the night is
+// actually left standing around
+const HOUSE_SLEEP_RANGE=3.5;
+function trySleep(){
+ const h=housePos();
+ if(Math.hypot(player.x-h.x,player.z-h.z)>HOUSE_SLEEP_RANGE){
+  announce("Walk up to the house to sleep till morning.",1.8);return;
+ }
+ if(isDaylight()){announce("Nothing to sleep through yet.",1.6);return}
+ worldTime=0.25;
+ announce("You sleep till morning.",2.5);
+}
+function lerp3(a,b,t){return [a[0]+(b[0]-a[0])*t,a[1]+(b[1]-a[1])*t,a[2]+(b[2]-a[2])*t]}
+
+function sunDirFromTime(){
+ const ang=(worldTime-0.5)*Math.PI*2; // 0 at noon
+ const elevation=Math.cos(ang);
+ return vNorm([Math.sin(ang)*0.6,Math.max(elevation,0.04),Math.cos(ang)*0.6+0.25]);
+}
+const SKY_DAY=[0.72,0.82,0.92],SKY_DUSK=[0.82,0.56,0.38],SKY_NIGHT=[0.05,0.06,0.11];
+function skyColorFromTime(){
+ const t=worldTime;
+ if(t<0.2)return lerp3(SKY_NIGHT,SKY_DAY,t/0.2); // dawn
+ if(t<0.68)return SKY_DAY;
+ if(t<0.8)return lerp3(SKY_DAY,SKY_NIGHT,(t-0.68)/(0.8-0.68)); // dusk into night
+ return SKY_NIGHT;
+}
+
+/* Sophia: number keys pick her current command. Lost sheep reuse this same arrow
+   widget (rather than a separate indicator type) since "which direction is the
+   thing I need to deal with" is the same question either way. */
+function bindCycleControls(){
+ window.addEventListener("keydown",e=>{
+  if(e.code==="Escape"){toggleMenu();return}
+  if(menuOpen)return; // the lounge is up -- don't let a hotkey act on the paused world behind it
+  if(e.code==="Digit1")dog.command="stay";
+  if(e.code==="Digit2")dog.command="gather";
+  if(e.code==="Digit3")dog.command="home";
+  if(e.code==="KeyE"){
+   const near=nearestLostSheep(player.x,player.z);
+   if(near&&Math.hypot(near.x-player.x,near.z-player.z)<2.5)rescueSheep(near);
+  }
+  if(e.code==="KeyQ"){
+   const near=nearestShearableSheep(player.x,player.z);
+   if(!near){announce("No sheep close enough to shear.",1.5);return}
+   const tierBefore=abodeTierIndex();
+   const got=shearSheep(near);
+   if(got<=0){announce("That fleece hasn't grown back yet.",1.5);return}
+   const tierAfter=abodeTierIndex();
+   if(tierAfter>tierBefore)announce(`Enough wool banked — your abode is now a ${abodeTierName()}!`,4);
+   else announce(`Sheared +${got} wool (${wool} total).`,2);
+   saveGame();
+  }
+  if(e.code==="KeyT"){tryTrade();saveGame()}
+  if(e.code==="KeyR"){repairNearestFence();saveGame()}
+  if(e.code==="KeyZ"){trySleep();saveGame()}
+  if(e.code==="KeyG"){giveAwayFlock();saveGame()}
+ });
+}
+
+/* a sheep caught more than this far from home after dark is "out", and starts
+   risking the one real, permanent loss in the game -- everything else (a stray by
+   day, a fence escape) is recoverable if you get to it; this one isn't, on purpose,
+   because a shepherd's negligence overnight is meant to have real consequences. */
+const NIGHT_DEATH_SECONDS=50;
+function safeHomeRadius(){return FENCE_RADIUS+1.5}
+function updateNightRisk(dt){
+ if(isDaylight()){
+  for(const s of sheep)s.nightExposure=0;
+  return;
+ }
+ const safeR=safeHomeRadius();
+ for(let i=sheep.length-1;i>=0;i--){
+  const s=sheep[i];
+  if(Math.hypot(s.x-HOME_POINT.x,s.z-HOME_POINT.z)<=safeR){s.nightExposure=0;continue}
+  s.nightExposure=(s.nightExposure||0)+dt;
+  if(s.nightExposure>=NIGHT_DEATH_SECONDS){
+   sheep.splice(i,1);
+   announce("A sheep was lost to the night. It won't be coming back.",4);
+  }
+ }
+}
+
+/* a short-lived message that temporarily outranks the glance-spot's normal priority
+   order below -- for things worth a beat of attention (a shear, an abode tier-up)
+   without adding a second UI element competing for the same strip of screen */
+let announcement=null,announcementTimer=0;
+function announce(text,duration){announcement=text;announcementTimer=duration}
+function updateAnnouncement(dt){
+ if(announcementTimer>0){announcementTimer-=dt;if(announcementTimer<=0)announcement=null}
+}
+
+/* one shared arrow: point it at whatever the player most needs to go deal with.
+   Right now that's only a lost sheep, but it's built to take other targets later
+   (fences, home-at-dusk) without a second widget. */
+function currentArrowTarget(){
+ const s=nearestLostSheep(player.x,player.z);
+ if(s)return {x:s.x,z:s.z,label:"Lost sheep"};
+ const f=fences.find(f=>f.broken);
+ if(f)return {x:f.x,z:f.z,label:"Broken fence"};
+ // while Sophia is actively driving the flock somewhere, show where -- without this
+ // there was no way to tell gather and home apart beyond watching the flock drift,
+ // and no way to tell which direction either one actually was
+ if(dog.command==="home")return {x:HOME_POINT.x,z:HOME_POINT.z,label:"Home"};
+ if(dog.command==="gather")return {x:flockCx,z:flockCz,label:"Flock"};
+ return null;
+}
+function updateCompassArrow(){
+ const el=$("compassArrow"),triEl=$("compassTriangle"),labelEl=$("compassLabel");
+ const target=currentArrowTarget();
+ if(!target){el.classList.add("hidden");return}
+ el.classList.remove("hidden");
+ const dx=target.x-player.x,dz=target.z-player.z,dist=Math.hypot(dx,dz);
+ const bearing=Math.atan2(dx,dz)-player.yaw;
+ triEl.style.transform=`rotate(${bearing}rad)`; // only the arrow itself rotates -- the label stays upright and readable
+ labelEl.textContent=`${target.label} • ${dist.toFixed(0)}m`;
+}
+
+/* the single ambient HUD line: highest-priority thing first, otherwise a calm
+   flock summary -- never more than one line competing for attention */
+function glanceSpotText(){
+ if(announcement)return announcement;
+ if(duskWarningActive())return "Dusk is coming — get the flock home.";
+ if(anyFenceBroken())return "A fence is broken — press R near it to repair.";
+ const starving=sheep.filter(s=>(s.bareExposure||0)>20).length;
+ if(starving>0)return `${starving} sheep grazing ground with nothing left in it — move the flock before it costs you one.`;
+ if(!isDaylight()){
+  const atRisk=sheep.filter(s=>(s.nightExposure||0)>5).length;
+  if(atRisk>0)return `${atRisk} sheep caught out in the dark — get them home!`;
+  const h=housePos();
+  if(Math.hypot(player.x-h.x,player.z-h.z)<HOUSE_SLEEP_RANGE)return "Press Z to sleep till morning.";
+  return "Night. Visibility is low.";
+ }
+ const lostCount=sheep.filter(s=>s.lost).length;
+ if(lostCount>0)return `${lostCount} sheep stray${lostCount>1?"ing":""} — follow the arrow.`;
+ if(Math.hypot(player.x-TRADER_POS.x,player.z-TRADER_POS.z)<TRADE_RANGE)
+  return "Trader: press T to trade 1 adult sheep for 2 lambs.";
+ if(sheep.length>=penCapacity()){
+  // the give-away ending is only on offer once there's nowhere further to grow --
+  // hitting capacity at any earlier abode just means it's time to shear and trade
+  // your way to a bigger house, which raises the cap and opens the pen back up
+  if(abodeTierIndex()===ABODE_TIERS.length-1)
+   return "Flock at capacity, at your Castle — press G to give it away and start anew.";
+  return "Pen's full — keep shearing so the abode can grow; a bigger house means more room.";
+ }
+ return `Flock: ${sheep.length} sheep, grazing calmly.`;
+}
+/* ---------- shearing + wool, and the wool-funded abode tier it unlocks ----------
+   wool is tracked as a lifetime total, never spent down, specifically so the abode
+   tier it unlocks is sticky -- once a trader/economy exists and wool actually gets
+   spent on things, that will need its own separate spendable balance; this lifetime
+   counter stays untouched by that so a tier, once reached, never regresses. */
+const WOOL_PER_SHEEP=3; // wool yielded by a fully-grown fleece
+const WOOL_REGROW_SECONDS=150; // lengthened from 75 -- shearing was outpacing everything else in the loop
+const SHEAR_RANGE=2.2;
+
+let wool=0;
+
+// penCapacity grows with the abode -- a bigger house means more room to actually keep
+// a bigger flock, which is also what makes trading for lambs eventually hit a wall
+// (the point of the pen cap, per Wendell's design: one shepherd can't manage an
+// unlimited flock, so growth tops out and the endgame choice -- still to be built --
+// takes over from there)
+// starts above SHEEP_COUNT (14) with a little headroom, so a brand new game can
+// actually make at least one trade before needing to upgrade the abode at all --
+// capacity climbing to the 40-60 range by Castle matches the range asked for.
+// Thresholds raised well past the original [0,20,50,100,200] -- with shearing and
+// lamb growth both slowed too, the old thresholds meant reaching a Castle (and so
+// the ending) took hardly any time at all; this stretches the whole climb out.
+const ABODE_TIERS=[
+ {name:"Tent",threshold:0,penCapacity:17},
+ {name:"Shack",threshold:45,penCapacity:24},
+ {name:"Small House",threshold:120,penCapacity:34},
+ {name:"Big House",threshold:260,penCapacity:46},
+ {name:"Castle",threshold:480,penCapacity:58},
+];
+function abodeTierIndex(){
+ let idx=0;
+ for(let i=0;i<ABODE_TIERS.length;i++)if(wool>=ABODE_TIERS[i].threshold)idx=i;
+ return idx;
+}
+function abodeTierName(){return ABODE_TIERS[abodeTierIndex()].name}
+function nextAbodeTier(){
+ const idx=abodeTierIndex();
+ return idx<ABODE_TIERS.length-1?ABODE_TIERS[idx+1]:null;
+}
+function penCapacity(){return ABODE_TIERS[abodeTierIndex()].penCapacity}
+
+function updateWoolGrowth(dt){
+ for(const s of sheep)s.wool=Math.min(1,(s.wool??0)+dt/WOOL_REGROW_SECONDS);
+}
+
+function nearestShearableSheep(px,pz){
+ let best=null,bestD=Infinity;
+ for(const s of sheep){
+  if(s.isLamb)continue; // a lamb has no fleece worth taking yet
+  const d=Math.hypot(s.x-px,s.z-pz);
+  if(d<SHEAR_RANGE&&d<bestD){bestD=d;best=s}
+ }
+ return best;
+}
+// shearing and the adult-for-lambs trade (once the trader exists) stay fully
+// independent -- a freshly-sheared sheep is exactly as valuable to trade as a woolly
+// one, so this only ever touches the sheep's own wool field, nothing about its
+// eligibility for anything else
+function shearSheep(s){
+ const amt=s.wool??0;
+ const got=Math.round(amt*WOOL_PER_SHEEP);
+ if(got>0){wool+=got;s.wool=0}
+ return got;
+}
+/* ---------- the trader NPC: trade one adult sheep for two lambs, growing the flock
+   -- up to whatever the current abode's pen can actually hold ---------- */
+const TRADER_POS={x:HOME_POINT.x+4,z:HOME_POINT.z+3};
+const TRADE_RANGE=2.6;
+// rough body footprint (torso/arms extend to about this far from center) -- the trader
+// had no collision at all before, same complaint as the house had: you could just walk
+// straight through him. Comfortably smaller than TRADE_RANGE so you can still walk up
+// close enough to trade before getting stopped.
+const TRADER_RADIUS=0.45;
+function traderBlockedAt(x,z){
+ const minD=PLAYER_RADIUS+TRADER_RADIUS;
+ const dx=x-TRADER_POS.x,dz=z-TRADER_POS.z;
+ return dx*dx+dz*dz<minD*minD;
+}
+// a fixed facing toward home, so the trader's compound body (built in 04_mesher.js)
+// reads as "facing the pasture" rather than pointed at an arbitrary angle
+const TRADER_HEADING=Math.atan2(HOME_POINT.x-TRADER_POS.x,HOME_POINT.z-TRADER_POS.z);
+// lengthened from 150 -- after playing it through, the full game was coming together
+// too quickly; a lamb now takes noticeably longer to become tradeable/shearable stock
+const LAMB_MATURE_SECONDS=300;
+
+function spawnLamb(x,z){
+ sheep.push({x,z,y:0,vx:0,vz:0,wanderAngle:Math.random()*Math.PI*2,heading:Math.random()*Math.PI*2,lostTimer:0,lost:false,wool:0,isLamb:true,age:0,nightExposure:0,bareExposure:0});
+}
+function updateLambs(dt){
+ for(const s of sheep){
+  if(!s.isLamb)continue;
+  s.age=(s.age||0)+dt;
+  if(s.age>=LAMB_MATURE_SECONDS){s.isLamb=false;s.wool=0.3} // grown -- can be sheared and traded from here on
+ }
+}
+
+// the sheep given up in a trade doesn't have to be any particular one -- nearest to
+// the trader is just a reasonable, deterministic pick
+function nearestAdultSheep(){
+ let best=null,bestD=Infinity;
+ for(const s of sheep){
+  // a lost sheep is off wandering outside the flock, not actually standing here to
+  // hand over -- without this check it could still get picked (and silently vanish
+  // off the trade) if nothing closer to the trader happened to be an adult, which
+  // would quietly let a trade dodge the point of rescuing it at all
+  if(s.isLamb||s.lost)continue;
+  const d=Math.hypot(s.x-TRADER_POS.x,s.z-TRADER_POS.z);
+  if(d<bestD){bestD=d;best=s}
+ }
+ return best;
+}
+
+function tryTrade(){
+ if(Math.hypot(player.x-TRADER_POS.x,player.z-TRADER_POS.z)>TRADE_RANGE){
+  announce("Walk up to the trader to make a trade.",1.8);return;
+ }
+ const cap=penCapacity();
+ if(sheep.length+1>cap){
+  const atMax=abodeTierIndex()===ABODE_TIERS.length-1;
+  announce(atMax?`Pen's full (${sheep.length}/${cap}) at your Castle — give the flock away to start anew (G).`
+                :`Pen's full (${sheep.length}/${cap}) — shear to grow the abode and open up more room.`,3);
+  return;
+ }
+ const victim=nearestAdultSheep();
+ if(!victim){announce("No adult sheep ready to trade -- only lambs left.",2);return}
+ sheep.splice(sheep.indexOf(victim),1);
+ spawnLamb(TRADER_POS.x-0.6,TRADER_POS.z+0.3);
+ spawnLamb(TRADER_POS.x+0.6,TRADER_POS.z+0.3);
+ announce(`Traded 1 sheep for 2 lambs (${sheep.length}/${cap}).`,2.5);
+}
+
+/* ---------- the end-game: one shepherd can't manage an unlimited flock forever, so
+   hitting the pen cap is the natural ceiling -- rather than just stopping there, give
+   the whole flock away and start a new farm, carrying forward a small, deliberately
+   modest bonus each time (a couple of starting lambs, and the abode never starts below
+   wherever it previously reached). Nothing here scales aggressively run over run --
+   it's meant to feel like starting a new chapter, not stacking power. ---------- */
+let legacyRuns=0; // how many times the flock has been given away
+let legacyStartLambs=0; // bonus lambs a new run starts with, from past giveaways
+let legacyAbodeFloor=0; // the abode tier (index into ABODE_TIERS) a new run never starts below
+const STARTING_FLOCK_BASE=6; // a fresh run starts smaller than a first playthrough -- this is a restart, not a reset to zero
+
+function giveAwayFlock(){
+ // the ending only opens at the Castle -- hitting the pen cap at any earlier abode
+ // just means it's time to shear and grow the house, not time to start over
+ if(abodeTierIndex()<ABODE_TIERS.length-1){
+  announce("The flock is still growing. The giving-away ending is for when you've built all the way up to a Castle.",3.5);
+  return;
+ }
+ const cap=penCapacity();
+ if(sheep.length<cap){announce(`The flock isn't at capacity yet (${sheep.length}/${cap}).`,2.2);return}
+ legacyRuns++;
+ legacyStartLambs=Math.min(6,legacyStartLambs+2); // capped so it stays a modest head start, not a snowball
+ legacyAbodeFloor=Math.min(ABODE_TIERS.length-1,legacyAbodeFloor+1);
+ startNewRun();
+ announce(`You gave your flock to a family in need. A new flock begins (chapter ${legacyRuns+1}).`,5);
+}
+
+function startNewRun(){
+ sheep.length=0;
+ const rng=makeRng(currentSeed+":run"+legacyRuns);
+ for(let i=0;i<STARTING_FLOCK_BASE;i++){
+  const ang=rng()*Math.PI*2,r=2+rng()*4;
+  sheep.push({x:HOME_POINT.x+Math.cos(ang)*r,z:HOME_POINT.z+Math.sin(ang)*r,y:0,vx:0,vz:0,
+   wanderAngle:rng()*Math.PI*2,heading:rng()*Math.PI*2,lostTimer:0,lost:false,wool:1,nightExposure:0,bareExposure:0});
+ }
+ for(let i=0;i<legacyStartLambs;i++)spawnLamb(HOME_POINT.x+(rng()-0.5)*3,HOME_POINT.z+(rng()-0.5)*3);
+ dog.x=HOME_POINT.x+1.5;dog.z=HOME_POINT.z+1.5;dog.command="stay";dog.heading=0;
+ flockCx=HOME_POINT.x;flockCz=HOME_POINT.z;
+ // the abode floor is a guarantee, not a reset -- if wool already earned this game
+ // exceeds the floor's threshold, that stands; this only ever raises wool, never lowers it
+ wool=Math.max(wool,ABODE_TIERS[legacyAbodeFloor].threshold);
+ initFences();
+}
+/* ---------- pen fences around home: break occasionally, must be repaired (R) within
+   a window or a sheep gets out near home and goes lost -- reuses the existing
+   lost/rescue system for the consequence (same avoidable-loss spirit as the
+   nightfall rule in 12_cycle.js) rather than inventing a second mechanic for it. ---------- */
+const FENCE_COUNT=8,FENCE_RADIUS=6.5;
+// seconds between random breaks, per segment -- with 8 independent segments each
+// rolling on its own timer, the time to the NEXT break anywhere in the ring is roughly
+// this average divided by 8, so a per-segment range that sounds "occasional" on its
+// own (every minute or two) still meant something broke pretty much constantly once
+// all 8 were running. Widened well out so a break ring-wide lands roughly once a
+// minute instead of once every ten seconds.
+const FENCE_BREAK_MIN=300,FENCE_BREAK_MAX=600
+const FENCE_ESCAPE_SECONDS=35; // how long a break can sit unrepaired before it costs a sheep
+const FENCE_REPAIR_RANGE=2.2;
+
+const fences=[];
+function initFences(){
+ fences.length=0;
+ for(let i=0;i<FENCE_COUNT;i++){
+  const ang=(i/FENCE_COUNT)*Math.PI*2;
+  fences.push({
+   x:HOME_POINT.x+Math.cos(ang)*FENCE_RADIUS,
+   z:HOME_POINT.z+Math.sin(ang)*FENCE_RADIUS,
+   ang,
+   broken:false,
+   breakIn:FENCE_BREAK_MIN+Math.random()*(FENCE_BREAK_MAX-FENCE_BREAK_MIN),
+   brokenFor:0,
+  });
+ }
+}
+
+function updateFences(dt){
+ for(const f of fences){
+  if(!f.broken){
+   f.breakIn-=dt;
+   if(f.breakIn<=0){f.broken=true;f.brokenFor=0;announce("A fence has broken near the pen!",2.5)}
+  } else {
+   f.brokenFor+=dt;
+   if(f.brokenFor>=FENCE_ESCAPE_SECONDS){
+    escapeSheepThroughFence(f);
+    f.broken=false;
+    f.breakIn=FENCE_BREAK_MIN+Math.random()*(FENCE_BREAK_MAX-FENCE_BREAK_MIN);
+   }
+  }
+ }
+}
+
+function escapeSheepThroughFence(f){
+ let best=null,bestD=Infinity;
+ for(const s of sheep){
+  if(s.lost)continue;
+  const d=Math.hypot(s.x-HOME_POINT.x,s.z-HOME_POINT.z);
+  if(d<bestD){bestD=d;best=s}
+ }
+ if(!best)return;
+ const ang=f.ang+(Math.random()-0.5)*0.6;
+ best.x=HOME_POINT.x+Math.cos(ang)*(LOST_DIST+6);
+ best.z=HOME_POINT.z+Math.sin(ang)*(LOST_DIST+6);
+ best.lost=true;best.lostTimer=LOST_TIME_TO_FLAG+1;
+ announce("A sheep got out through the broken fence!",3);
+}
+
+function nearestBrokenFence(px,pz){
+ let best=null,bestD=Infinity;
+ for(const f of fences){
+  if(!f.broken)continue;
+  const d=Math.hypot(f.x-px,f.z-pz);
+  if(d<FENCE_REPAIR_RANGE&&d<bestD){bestD=d;best=f}
+ }
+ return best;
+}
+function repairNearestFence(){
+ const f=nearestBrokenFence(player.x,player.z);
+ if(!f){announce("No broken fence close enough to repair.",1.6);return}
+ f.broken=false;
+ f.breakIn=FENCE_BREAK_MIN+Math.random()*(FENCE_BREAK_MAX-FENCE_BREAK_MIN);
+ announce("Fence repaired.",1.6);
+}
+function anyFenceBroken(){return fences.some(f=>f.broken)}
+let GL=null,canvas=null,program=null;
+let uProj,uView,uSunDir,uFogNear,uFogFar,uFogColor;
+let hud,seedInput,lockHint,menuOverlay,statsGrid;
+let currentSeed="";
+let menuOpen=false;
+const FOG_COLOR=[0.72,0.82,0.92];
+const CHUNK_BOUND_RADIUS=Math.SQRT2*CHUNK_W/2; // half-diagonal of a chunk's footprint, used by the behind-camera cull below
+
+function buildDom(){
+ canvas=document.createElement("canvas");canvas.id="gl";
+ const crosshair=document.createElement("div");crosshair.id="crosshair";
+ hud=document.createElement("div");hud.id="hud";
+ const menuBtn=document.createElement("button");menuBtn.id="menuBtn";menuBtn.textContent="☰ Menu";
+ menuBtn.onclick=()=>toggleMenu();
+ lockHint=document.createElement("div");lockHint.id="lockHint";lockHint.classList.add("hidden");
+ lockHint.textContent="Click and drag to look around • WASD move • Space jump • H hold to play harp • E rescue stray • Q shear nearby sheep • T trade at the trader • R repair a broken fence • Z sleep till morning at the house • G give away flock at capacity • 1/2/3 Sophia: Stay/Gather/Home • C or this button to hide";
+ const controlsBtn=document.createElement("button");controlsBtn.id="controlsBtn";controlsBtn.textContent="Controls";
+ controlsBtn.onclick=()=>toggleControlsLegend();
+ const topLeftStack=document.createElement("div");topLeftStack.id="topLeftStack";
+ topLeftStack.append(menuBtn,hud);
+ const glance=document.createElement("div");glance.id="glanceSpot";
+ const compassArrow=document.createElement("div");compassArrow.id="compassArrow";compassArrow.classList.add("hidden");
+ // a notched arrowhead instead of a plain triangle -- concave tail + sharp tip reads
+ // unambiguously as "pointing this way" at a glance, the way a map-ping arrow does,
+ // where a plain isoceles triangle has no clear front/back and just looks rotated
+ compassArrow.innerHTML=`<svg id="compassTriangle" width="26" height="30" viewBox="0 0 26 30"><polygon points="13,0 25,28 13,20 1,28" fill="#ffd76b" stroke="#000" stroke-width="1.5" stroke-linejoin="round"/></svg><div id="compassLabel"></div>`;
+
+ // the lounge: seed/new-world controls plus a glance at how the current flock is
+ // doing, shown before play starts and reachable any time after via the Menu button.
+ // Appended last so it's on top of (and catches clicks meant for) everything else.
+ menuOverlay=document.createElement("div");menuOverlay.id="menuOverlay";menuOverlay.classList.add("hidden");
+ const panel=document.createElement("div");panel.id="menuPanel";
+ const h1=document.createElement("h1");h1.textContent="Harp of David";
+ const sub=document.createElement("div");sub.className="sub";sub.textContent="a shepherd, a dog, a flock, and a harp";
+ statsGrid=document.createElement("div");statsGrid.id="statsGrid";
+ const instrBtn=document.createElement("button");instrBtn.id="instrBtn";instrBtn.textContent="▸ How to Play";
+ const instructions=document.createElement("div");instructions.id="instructions";instructions.classList.add("hidden");
+ instrBtn.onclick=()=>{
+  const nowHidden=instructions.classList.toggle("hidden"); // toggle() returns whether the class is present AFTER the toggle
+  instrBtn.textContent=(nowHidden?"▸":"▾")+" How to Play";
+ };
+ instructions.innerHTML=
+  `<p><b>Tend the flock.</b> Hold <b>H</b> near sheep to call them in with the harp. Tell Sophia what to do with <b>1</b> Stay, <b>2</b> Gather, or <b>3</b> Home — she'll do the herding.</p>`+
+  `<p><b>Keep them moving.</b> Grass wears thin and browns where the flock stands too long. By day, a sheep that keeps grazing ground with nothing left in it will eventually starve for good — rotate them onto fresh pasture before that happens. Sheep don't graze at night, so a flock resting in the pen overnight is never at risk from this.</p>`+
+  `<p><b>Shear and grow.</b> Press <b>Q</b> near a grown sheep for wool (fleece regrows over time; a sheared sheep looks bare and pink until it does). Banked wool grows your abode from a Tent all the way to a Castle, which is also what raises how many sheep the pen can hold.</p>`+
+  `<p><b>Trade.</b> Press <b>T</b> at the trader to swap one adult sheep for two lambs, which grow into adults themselves over time. Trading pauses once the pen's full — shearing your way to a bigger abode opens it back up.</p>`+
+  `<p><b>Mind the fences and the dark.</b> A broken fence (<b>R</b> to repair) left too long lets a sheep escape; a stray caught out past nightfall is lost for good too. Both are avoidable — that's the point. Press <b>Z</b> near the house at night to sleep till morning instead of waiting it out.</p>`+
+  `<p><b>The ending.</b> Once you've reached a Castle with a full pen, <b>G</b> gives the whole flock to a family in need and starts a new chapter, with a small carried-over head start.</p>`+
+  `<p><b>Getting around.</b> Click and drag to look, <b>WASD</b> to move, <b>Space</b> to jump. <b>E</b> rescues a stray you've reached.</p>`;
+ const seedRow=document.createElement("div");seedRow.className="row";
+ seedInput=document.createElement("input");seedInput.placeholder="seed";seedInput.value=randomSeedWord();
+ const seedBtn=document.createElement("button");seedBtn.textContent="⟳ New World";
+ seedBtn.onclick=()=>{regenerateWorld(seedInput.value||randomSeedWord());saveGame();refreshMenuStats();closeMenu()};
+ seedRow.append(seedInput,seedBtn);
+ const hr=document.createElement("hr");
+ const continueBtn=document.createElement("button");continueBtn.className="primary";continueBtn.textContent="Continue";
+ continueBtn.onclick=()=>closeMenu();
+ panel.append(h1,sub,statsGrid,instrBtn,instructions,hr,seedRow,continueBtn);
+ menuOverlay.append(panel);
+
+ host.append(canvas,crosshair,topLeftStack,controlsBtn,lockHint,glance,compassArrow,menuOverlay);
+}
+function toggleControlsLegend(){
+ lockHint.classList.toggle("hidden");
+}
+function refreshMenuStats(){
+ const nextTier=nextAbodeTier();
+ statsGrid.innerHTML=
+  `<div class="label">Seed</div><div class="val">${esc(currentSeed)}</div>`+
+  `<div class="label">Chapter</div><div class="val">${legacyRuns+1}</div>`+
+  // legacyRuns is already exactly "how many times the flock has been given away" --
+  // it was already being tracked for the carryover-bonus math, this just surfaces
+  // the same count as a visible success rating rather than adding a second counter
+  `<div class="label">Flocks given away</div><div class="val">${legacyRuns}</div>`+
+  `<div class="label">Abode</div><div class="val">${esc(abodeTierName())}</div>`+
+  `<div class="label">Next tier</div><div class="val">${nextTier?`${esc(nextTier.name)} at ${nextTier.threshold} wool`:"max"}</div>`+
+  `<div class="label">Wool</div><div class="val">${wool}</div>`+
+  `<div class="label">Flock</div><div class="val">${sheep.length}/${penCapacity()}</div>`;
+}
+function openMenu(){menuOpen=true;refreshMenuStats();menuOverlay.classList.remove("hidden")}
+function closeMenu(){menuOpen=false;menuOverlay.classList.add("hidden")}
+function toggleMenu(){menuOpen?closeMenu():openMenu()}
+function randomSeedWord(){
+ const a=["mossy","quiet","amber","hollow","velvet","drifting","copper","still","wandering","faint"];
+ const b=["summit","hollow","meadow","delta","grove","ridge","cove","expanse","hearth","spire"];
+ const r=Math.random;
+ return a[(r()*a.length)|0]+"-"+b[(r()*b.length)|0]+"-"+((r()*900+100)|0);
+}
+
+function regenerateWorld(seedStr){
+ currentSeed=seedStr;
+ setWorldSeed(seedStr);
+ for(const h of loadedChunks.values())freeChunkMesh(GL,h);
+ loadedChunks.clear();buildQueue=[];
+ chunksBuiltTotal=0;trisTotal=0;
+ depletion.clear();
+ initFlock(seedStr);
+ dropToSurface();
+ player.vy=0;
+}
+
+/* ---------- save/load. Plain localStorage -- inside Cartridges that's transparently
+   proxied to a per-game save blob that the OS syncs to Backup on its own (the whole
+   point of that shim: a game only has to behave like any ordinary web page and it
+   gets persistence for free); opened as a standalone file, it's the browser's own
+   real localStorage. Either way, nothing else here needs to know or care which one
+   it's actually talking to.
+   Doesn't persist grazing depletion/regrowth (cosmetic, and would mean saving a
+   potentially large per-cell map for very little payoff) or the sheep's short-lived
+   per-frame fields (velocity, wander angle, night/bare exposure clocks) -- those are
+   all fine to come back fresh; what actually matters to a returning player (the
+   flock itself, the abode, the fences, where things stand) is what's saved. */
+const SAVE_KEY="harpOfDavid.save";
+function saveGame(){
+ try{
+  const data={
+   v:1,seed:currentSeed,wool,worldTime,legacyRuns,legacyStartLambs,legacyAbodeFloor,
+   dog:{x:dog.x,z:dog.z,command:dog.command,heading:dog.heading},
+   sheep:sheep.map(s=>({x:s.x,z:s.z,wool:s.wool||0,isLamb:!!s.isLamb,age:s.age||0,lost:!!s.lost,heading:s.heading||0})),
+   fences:fences.map(f=>({broken:f.broken,breakIn:f.breakIn,brokenFor:f.brokenFor})),
+   player:{x:player.x,z:player.z,yaw:player.yaw},
+  };
+  localStorage.setItem(SAVE_KEY,JSON.stringify(data));
+ }catch(e){/* storage can be unavailable in some contexts -- just skip the save, not worth surfacing to the player */}
+}
+function loadGame(){
+ try{
+  const raw=localStorage.getItem(SAVE_KEY);
+  return raw?JSON.parse(raw):null;
+ }catch(e){return null}
+}
+function restoreGame(save){
+ currentSeed=save.seed||randomSeedWord();
+ setWorldSeed(currentSeed);
+ for(const h of loadedChunks.values())freeChunkMesh(GL,h);
+ loadedChunks.clear();buildQueue=[];
+ chunksBuiltTotal=0;trisTotal=0;
+ depletion.clear();
+
+ wool=save.wool||0;
+ worldTime=typeof save.worldTime==="number"?save.worldTime:0.25;
+ legacyRuns=save.legacyRuns||0;
+ legacyStartLambs=save.legacyStartLambs||0;
+ legacyAbodeFloor=save.legacyAbodeFloor||0;
+
+ sheep.length=0;
+ for(const sd of (save.sheep||[])){
+  sheep.push({x:sd.x,z:sd.z,y:0,vx:0,vz:0,wanderAngle:Math.random()*Math.PI*2,heading:sd.heading||0,
+   lostTimer:0,lost:!!sd.lost,wool:sd.wool||0,isLamb:!!sd.isLamb,age:sd.age||0,nightExposure:0,bareExposure:0});
+ }
+ if(sheep.length===0){
+  // a corrupt/empty save shouldn't leave an unplayable flock -- but initFlock()
+  // would also reset wool/abode progress back to zero as a side effect, which is
+  // exactly the progress this whole system exists to protect. A couple of plain
+  // lambs, not a full reset, is the right-sized fix here.
+  spawnLamb(HOME_POINT.x+1,HOME_POINT.z+1);
+  spawnLamb(HOME_POINT.x-1,HOME_POINT.z-1);
+ }
+ flockCx=HOME_POINT.x;flockCz=HOME_POINT.z;
+
+ if(save.dog){dog.x=save.dog.x;dog.z=save.dog.z;dog.command=save.dog.command||"stay";dog.heading=save.dog.heading||0}
+
+ initFences();
+ if(save.fences)for(let i=0;i<fences.length&&i<save.fences.length;i++){
+  fences[i].broken=!!save.fences[i].broken;
+  fences[i].breakIn=save.fences[i].breakIn;
+  fences[i].brokenFor=save.fences[i].brokenFor||0;
+ }
+
+ if(save.player){
+  player.x=save.player.x;player.z=save.player.z;player.yaw=save.player.yaw||0;
+  player.y=groundHeightAt(player.x,player.z);player.vy=0;player.grounded=true;
+ } else dropToSurface();
+}
+
+function initGL(){
+ GL=canvas.getContext("webgl2",{antialias:true,powerPreference:"low-power"});
+ if(!GL){
+  hud.innerHTML="<b>WebGL2 is not available in this browser.</b>";
+  return false;
+ }
+ program=buildProgram(GL);
+ GL.useProgram(program);
+ uProj=GL.getUniformLocation(program,"uProj");
+ uView=GL.getUniformLocation(program,"uView");
+ uSunDir=GL.getUniformLocation(program,"uSunDir");
+ uFogNear=GL.getUniformLocation(program,"uFogNear");
+ uFogFar=GL.getUniformLocation(program,"uFogFar");
+ uFogColor=GL.getUniformLocation(program,"uFogColor");
+ GL.enable(GL.DEPTH_TEST);
+ GL.enable(GL.CULL_FACE);
+ GL.clearColor(FOG_COLOR[0],FOG_COLOR[1],FOG_COLOR[2],1);
+ return true;
+}
+let entityHandle=null;
+function ensureEntityHandle(){
+ if(entityHandle)return entityHandle;
+ const vao=GL.createVertexArray();
+ GL.bindVertexArray(vao);
+ const posBuf=GL.createBuffer();GL.bindBuffer(GL.ARRAY_BUFFER,posBuf);GL.enableVertexAttribArray(0);GL.vertexAttribPointer(0,3,GL.FLOAT,false,0,0);
+ const normBuf=GL.createBuffer();GL.bindBuffer(GL.ARRAY_BUFFER,normBuf);GL.enableVertexAttribArray(1);GL.vertexAttribPointer(1,3,GL.FLOAT,false,0,0);
+ const colBuf=GL.createBuffer();GL.bindBuffer(GL.ARRAY_BUFFER,colBuf);GL.enableVertexAttribArray(2);GL.vertexAttribPointer(2,3,GL.FLOAT,false,0,0);
+ // the element-array binding is part of a VAO's own state in WebGL2, so it has to be
+ // bound here, while THIS vao is active, not later in updateEntityMesh() -- binding it
+ // there instead (as the first build did) sets the ELEMENT_ARRAY_BUFFER slot of
+ // whichever VAO happens to still be bound at that moment, which after the terrain
+ // loop in render() is always the last-drawn CHUNK's vao. That silently rewired one
+ // terrain chunk's index buffer to the entity mesh's (much smaller) one every single
+ // frame -- leaving that chunk reading past the end of its real index data (so it drew
+ // as a blank, sky-colored gap) and leaving this vao with no index buffer of its own at
+ // all (so the sheep and dog never drew). Both of the bugs reported turned out to be
+ // this one binding-order mistake.
+ const idxBuf=GL.createBuffer();GL.bindBuffer(GL.ELEMENT_ARRAY_BUFFER,idxBuf);
+ GL.bindVertexArray(null);
+ entityHandle={vao,posBuf,normBuf,colBuf,idxBuf,count:0,idxType:GL.UNSIGNED_SHORT};
+ return entityHandle;
+}
+/* sheep and Sophia move every frame, so unlike terrain chunks (baked once, static)
+   their mesh is rebuilt and re-uploaded fresh each frame -- cheap at this entity
+   count (a dozen-odd boxes), and far simpler than a per-instance transform system */
+function updateEntityMesh(){
+ const h=ensureEntityHandle();
+ const mesh=buildEntityMesh();
+ GL.bindVertexArray(h.vao); // make sure the buffer binds below land on THIS vao's slots, not whatever vao the terrain loop left bound
+ GL.bindBuffer(GL.ARRAY_BUFFER,h.posBuf);GL.bufferData(GL.ARRAY_BUFFER,mesh.positions,GL.DYNAMIC_DRAW);
+ GL.bindBuffer(GL.ARRAY_BUFFER,h.normBuf);GL.bufferData(GL.ARRAY_BUFFER,mesh.normals,GL.DYNAMIC_DRAW);
+ GL.bindBuffer(GL.ARRAY_BUFFER,h.colBuf);GL.bufferData(GL.ARRAY_BUFFER,mesh.colors,GL.DYNAMIC_DRAW);
+ GL.bindBuffer(GL.ELEMENT_ARRAY_BUFFER,h.idxBuf);GL.bufferData(GL.ELEMENT_ARRAY_BUFFER,mesh.indices,GL.DYNAMIC_DRAW);
+ h.count=mesh.indices.length;h.idxType=mesh.wide32?GL.UNSIGNED_INT:GL.UNSIGNED_SHORT;
+ GL.bindVertexArray(null);
+}
+
+function resize(){
+ const w=innerWidth,h=innerHeight,dpr=Math.min(devicePixelRatio||1,2);
+ canvas.width=Math.floor(w*dpr);canvas.height=Math.floor(h*dpr);
+ canvas.style.width=w+"px";canvas.style.height=h+"px";
+ GL.viewport(0,0,canvas.width,canvas.height);
+}
+
+let lastT=0,fps=60,fpsSmoothed=60,startT=0,autosaveAccum=0;
+const projCache={aspect:0,m:null};
+function render(t){
+ if(!startT)startT=t;
+ const dt=Math.min((t-lastT)/1000||0,0.05);lastT=t;
+ fps=1/Math.max(dt,0.0001);
+ fpsSmoothed+=(fps-fpsSmoothed)*0.08;
+
+ // the lounge menu pauses the world rather than just overlaying it -- without this,
+ // a player who stepped away with the menu open would come back to a flock that had
+ // wandered, grazed, and possibly lost a sheep to the night while they weren't even
+ // playing. The frame still renders every tick below so the menu has a live-looking
+ // backdrop; only the simulation itself freezes.
+ if(!menuOpen){
+  updatePlayer(dt);
+  updateWorldTime(dt);
+  updateHarp(dt);
+  updateSheep(dt,player.x,player.z,harpActive);
+  regrowGrassTick(dt);
+  updateGrazingRisk(dt);
+  updateWoolGrowth(dt);
+  updateLambs(dt);
+  updateFences(dt);
+  updateNightRisk(dt);
+  updateAnnouncement(dt);
+  refreshGrazedChunksTick(dt);
+  updateCompassArrow();
+  recomputeDesiredChunks(player.x,player.z);
+  processBuildQueue();
+  autosaveAccum+=dt;
+  if(autosaveAccum>8){autosaveAccum=0;saveGame()}
+ }
+
+ // auto-tune render radius if the frame rate is genuinely struggling, so this keeps
+ // working on weaker hardware instead of just getting slower and slower forever --
+ // skip the first couple seconds, since shader compile + first-chunk-build cold
+ // start is naturally slow and shouldn't permanently crater the draw distance
+ if(t-startT>2000)
+ if(fpsSmoothed<28&&RENDER_RADIUS>3){RENDER_RADIUS--;}
+ else if(fpsSmoothed>55&&RENDER_RADIUS<8){RENDER_RADIUS++;}
+
+ const aspect=canvas.width/canvas.height;
+ if(projCache.aspect!==aspect){projCache.aspect=aspect;projCache.m=mat4Perspective(Math.PI/2.6,aspect,0.1,400)}
+ const eye=[player.x,player.y+EYE_HEIGHT,player.z];
+ const fwd=forwardFromYawPitch(player.yaw,player.pitch);
+ const center=[eye[0]+fwd[0],eye[1]+fwd[1],eye[2]+fwd[2]];
+ const view=mat4LookAt(eye,center,[0,1,0]);
+
+ const skyColor=skyColorFromTime(),sunDir=sunDirFromTime();
+ GL.clearColor(skyColor[0],skyColor[1],skyColor[2],1);
+ GL.viewport(0,0,canvas.width,canvas.height);
+ GL.clear(GL.COLOR_BUFFER_BIT|GL.DEPTH_BUFFER_BIT);
+ GL.useProgram(program);
+ GL.uniformMatrix4fv(uProj,false,projCache.m);
+ GL.uniformMatrix4fv(uView,false,view);
+ GL.uniform3f(uSunDir,sunDir[0],sunDir[1],sunDir[2]);
+ GL.uniform3f(uFogColor,skyColor[0],skyColor[1],skyColor[2]);
+ const fogFar=RENDER_RADIUS*CHUNK_W*0.92,fogNear=fogFar*0.5;
+ GL.uniform1f(uFogNear,fogNear);GL.uniform1f(uFogFar,fogFar);
+
+ let drawn=0;
+ for(const h of loadedChunks.values()){
+  // cheap behind-camera cull: skip a chunk only once its whole footprint is behind
+  // the view direction, not just its center point. The old test compared the
+  // center-to-camera angle against a fixed threshold, so standing close to any part
+  // of a chunk -- its near edge, or anything planted near that edge, like a tree --
+  // could read as "behind" by that angle even though what's actually in view (the
+  // ground and the tree right in front of you) plainly wasn't. That's what was
+  // making whole chunks vanish -- showing the bare fog color through the gap -- when
+  // walking up close to things, or across a chunk boundary.
+  const ccx=h.originX+CHUNK_W/2,ccz=h.originZ+CHUNK_D/2;
+  const toC=[ccx-eye[0],0,ccz-eye[2]];
+  const forwardDist=toC[0]*fwd[0]+toC[2]*fwd[2]; // signed distance to chunk center along view axis
+  if(forwardDist<-CHUNK_BOUND_RADIUS)continue; // only cull once the whole chunk is behind
+  GL.bindVertexArray(h.vao);
+  GL.drawElements(GL.TRIANGLES,h.count,h.idxType,0);
+  drawn++;
+ }
+
+ updateEntityMesh();
+ GL.bindVertexArray(entityHandle.vao);
+ GL.drawElements(GL.TRIANGLES,entityHandle.count,entityHandle.idxType,0);
+ GL.bindVertexArray(null);
+
+ const commandLabel={stay:"Stay",gather:"Gather",home:"Go Home"}[dog.command];
+ const nextTier=nextAbodeTier();
+ const nextTierText=nextTier?` (next: ${esc(nextTier.name)} at ${nextTier.threshold})`:" (max)";
+ hud.innerHTML=`<b>Harp of David</b><br>`+
+  `time: <b>${(worldTime*24).toFixed(1)}h</b><br>`+
+  `Sophia: <b>${commandLabel}</b> &nbsp; harp: <b>${harpActive?"playing":"(hold H)"}</b><br>`+
+  `wool: <b>${wool}</b> &nbsp; abode: <b>${esc(abodeTierName())}</b>${nextTierText}<br>`+
+  `flock: <b>${sheep.length}/${penCapacity()}</b> &nbsp; chapter: <b>${legacyRuns+1}</b>`;
+ $("glanceSpot").textContent=menuOpen?"":glanceSpotText();
+
+ requestAnimationFrame(render);
+}
+
+function boot(){
+ buildDom();
+ bindControls(canvas);
+ bindCycleControls();
+ if(!initGL())return;
+ resize();window.addEventListener("resize",resize);
+ const saved=loadGame();
+ if(saved){restoreGame(saved);seedInput.value=currentSeed}
+ else{regenerateWorld(seedInput.value);saveGame()}
+ openMenu(); // the lounge greets you before the flock does
+ requestAnimationFrame(render);
+ // belt-and-braces beyond the periodic autosave in render() -- catches the tab
+ // closing or backgrounding right in between two autosave ticks
+ window.addEventListener("pagehide",saveGame);
+ document.addEventListener("visibilitychange",()=>{if(document.hidden)saveGame()});
+}
+boot();
+<~/script></body></html>
+</script>
+<script type="text/plain" class="cartsrc" data-meta='{"name": "Plushie Providence", "sub": "Rainbow&#39;s Hearth", "desc": "A weary little misfit knocks at the door. Wrap them up or pour them tea \u2014 either one always works \u2014 and watch them turn to stars, leave a small gift, and settle in by the fire for good. No scores, no losing, just a room that slowly fills with warm little friends.", "color": "#F49AC2", "glyph": "M12 21s-7-4.35-9.5-8.5C.5 9 2 5.5 5.5 5c2-.3 3.8.8 4.6 2.3.8-1.5 2.6-2.6 4.6-2.3C18.2 5.5 19.7 9 17.5 12.5 15 16.65 12 21 12 21z M12 9.5v3 M10.5 11h3", "tags": ["Cozy", "Kids", "Comfort"], "id": "hearth"}'><!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Plushie Providence</title>
+<style>
+:root{
+ --bg:#FFFDF5;--bg2:#FFF6E8;--panel:#FFFFFF;--line:#F0E4D0;--ink:#5b4a3a;--ink2:#8a7a68;
+ --tea:#E2574C;--hearth:#F6C177;--star:#F6E05E;--fern:#6FB98F;--wool:#9CCFD8;--plushie:#C9A6E0;--bow:#F49AC2;
+ --sky:#EAF6FB;
+}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%}
+body{
+ background:linear-gradient(180deg,var(--sky),var(--bg) 40%);color:var(--ink);
+ font:15px/1.5 -apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+ overflow:hidden;
+}
+#app{position:absolute;inset:0;display:flex;flex-direction:column}
+h1,h2,h3{margin:0;font-weight:800;letter-spacing:.01em}
+.dim{color:var(--ink2)}
+.small{font-size:12.5px}
+button{font:inherit;cursor:pointer;background:#fff;color:var(--ink);border:2px solid var(--line);border-radius:14px;padding:9px 16px;min-height:40px}
+button:hover{border-color:var(--hearth)}
+button:disabled{opacity:.45;cursor:default}
+button.pri{background:var(--hearth);border-color:var(--hearth);color:#5b3a12;font-weight:700}
+button.pri:hover{filter:brightness(1.05)}
+.spacer{flex:1}
+header{flex:none;display:flex;align-items:center;gap:10px;padding:10px 16px;border-bottom:2px solid var(--line);background:rgba(255,255,255,.6);flex-wrap:wrap}
+header .brand{font-size:20px}
+.pill{display:flex;align-items:center;gap:6px;background:#fff;border:2px solid var(--line);border-radius:999px;padding:5px 12px;font-size:13px;font-weight:600}
+.pill .ico{font-size:15px}
+
+/* ---------- the room ---------- */
+main{flex:1;min-height:0;display:flex;flex-direction:column;position:relative}
+#room{flex:1;min-height:0;position:relative;overflow:hidden;display:flex;flex-direction:column}
+
+/* ---------- the room as one continuous scene: a back wall above a wooden floor,
+   joined at a single seam, so everything in it shares one real space. ---------- */
+#wallBand{position:relative;flex:0 0 64%;background:
+  linear-gradient(180deg,rgba(246,193,119,.18),rgba(246,193,119,0) 55%),
+  var(--bg2);
+ border-bottom:3px solid #e2c9a0}
+#floorBand{position:relative;flex:1;min-height:0;background:
+  repeating-linear-gradient(90deg,#e7c597 0 38px,#dcb682 38px 40px),
+  #e7c597}
+
+#window{position:absolute;left:7%;top:12%;width:19%;height:52%;background:linear-gradient(180deg,#bfe3f2,#eaf6fb);
+ border:5px solid #fff;border-radius:6px;box-shadow:0 0 0 3px #d9c9a8,0 3px 8px rgba(0,0,0,.12);overflow:hidden}
+#window::before,#window::after{content:"";position:absolute;top:50%;left:0;width:100%;height:3px;background:#fff;box-shadow:0 -24px 0 #fff,0 24px 0 #fff;opacity:.9}
+.cloud{position:absolute;font-size:20px;animation:drift 14s linear infinite;opacity:.9}
+.cloud.c2{top:55%;font-size:15px;animation-duration:19s;animation-delay:-6s}
+@keyframes drift{0%{transform:translateX(-30px)}100%{transform:translateX(160px)}}
+
+#fireplace{position:absolute;right:16%;bottom:0;width:22%;min-width:120px;height:72%;
+ background:linear-gradient(180deg,#caa06c,#b3875a);border-radius:10px 10px 0 0;box-shadow:inset 0 0 0 4px rgba(0,0,0,.08)}
+#mantleZone{position:absolute;left:4%;right:4%;top:6%;height:18%}
+#fireOpening{position:absolute;left:12%;right:12%;bottom:0;top:34%;background:#2b1710;border-radius:6px 6px 0 0}
+#hearthFire{position:absolute;left:50%;bottom:6%;transform:translateX(-50%);font-size:34px;animation:flick 2.2s ease-in-out infinite}
+@keyframes flick{0%,100%{transform:translateX(-50%) scale(1) rotate(-1deg)}50%{transform:translateX(-50%) scale(1.08) rotate(1deg)}}
+
+#wallZone{position:absolute;left:3%;right:3%;top:4%;height:10%}
+#floorZone{position:absolute;left:3%;right:3%;top:30%;height:30%}
+.zone{z-index:3}
+.zoneItem{position:absolute;top:50%;transform:translate(-50%,-50%);font-size:30px;cursor:grab;touch-action:none;user-select:none;
+ filter:drop-shadow(0 2px 2px rgba(0,0,0,.1))}
+.zoneItem:active{cursor:grabbing}
+
+#door{position:absolute;left:3%;bottom:0;width:60px;height:86px;border-radius:8px 8px 3px 3px;
+ background:linear-gradient(180deg,#e8d2ae,#d9bd92);border:3px solid #b99a6b;display:flex;align-items:center;justify-content:center;font-size:26px;cursor:pointer;z-index:4}
+#door.knock{animation:knock .45s ease-in-out 3}
+@keyframes knock{0%,100%{transform:translateX(0)}25%{transform:translateX(-4px)}75%{transform:translateX(4px)}}
+
+#sophiaWrap{position:absolute;width:62px;height:62px;cursor:pointer;transition:left 2.2s linear,top 2.2s linear;z-index:5;transform:translate(-50%,-50%)}
+#sophiaWrap canvas{width:100%;height:100%;pointer-events:none}
+.heartburst{position:absolute;font-size:20px;pointer-events:none;animation:riseFade 1s ease-out forwards;z-index:10}
+@keyframes riseFade{0%{opacity:1;transform:translateY(0) scale(.8)}100%{opacity:0;transform:translateY(-38px) scale(1.2)}}
+
+.visitor{position:absolute;left:50%;top:42%;transform:translate(-50%,-50%);text-align:center;transition:opacity .4s;z-index:6}
+.visitor .sprite{font-size:50px;display:block;transition:transform .5s}
+.visitor .bubble{display:inline-block;margin-top:4px;background:#fff;border:2px solid var(--line);border-radius:12px;padding:5px 10px;font-size:12.5px;max-width:200px}
+.visitor .hint{font-size:16px}
+.visitor.stage-shiver .sprite{animation:shiver .35s linear infinite}
+@keyframes shiver{0%,100%{transform:translateX(0) rotate(0)}25%{transform:translateX(-2px) rotate(-2deg)}75%{transform:translateX(2px) rotate(2deg)}}
+.visitor.stage-relax .sprite{transform:scale(1.05)}
+.visitor.stage-sparkle{animation:popSparkle .7s ease-out forwards}
+@keyframes popSparkle{0%{transform:translate(-50%,-50%) scale(1);opacity:1}100%{transform:translate(-50%,-50%) scale(1.4);opacity:0}}
+
+/* settled visitors rest along the back of the floor, near the wall seam, so they read
+   as part of the same room rather than a separate scoreboard strip */
+#settledStrip{position:absolute;left:2%;right:2%;top:2%;height:22%;display:flex;gap:6px;overflow-x:auto;overflow-y:hidden;align-items:center;z-index:2;padding:2px}
+.settled{font-size:20px;background:rgba(255,255,255,.85);border:2px solid var(--line);border-radius:10px;padding:2px 5px;position:relative;flex:none}
+.settled .z{position:absolute;top:-6px;right:-2px;font-size:10px}
+
+footer{flex:none;display:flex;align-items:center;justify-content:center;gap:14px;padding:12px 14px;border-top:2px solid var(--line);background:rgba(255,255,255,.6);flex-wrap:wrap}
+footer button{min-width:120px}
+footer button.tea{border-color:var(--tea);color:#9c2a20}
+footer button.blanket{border-color:var(--wool);color:#1f6672}
+
+/* ---------- shop ---------- */
+#shopOverlay{position:fixed;inset:0;background:rgba(91,74,58,.35);display:flex;align-items:center;justify-content:center;z-index:40;padding:16px}
+#shopCard{background:#fff;border-radius:16px;max-width:460px;width:100%;max-height:82vh;overflow:auto;padding:18px}
+.shopItem{display:flex;align-items:center;gap:10px;border:2px solid var(--line);border-radius:12px;padding:8px 10px;margin-bottom:8px}
+.shopItem .ic{font-size:26px}
+.shopItem .nm{font-weight:700;flex:1}
+.shopItem .cost{font-size:13px}
+
+::-webkit-scrollbar{width:10px}::-webkit-scrollbar-thumb{background:var(--line);border-radius:5px}
+@media (max-width:520px){
+ .visitor .bubble{max-width:150px}
+ header{gap:6px}
+ footer button{min-width:100px}
+ #fireplace{right:8%;width:34%}
+ #window{left:5%;width:26%}
+ .zoneItem{font-size:24px}
+ #door{width:48px;height:70px;font-size:22px}
+ #sophiaWrap{width:48px;height:48px}
+}
+</style>
+</head><body>
+<div id="tlhost"></div>
+<script>
+(()=>{"use strict";
+const host=document.getElementById("tlhost");
+const $=id=>document.getElementById(id);
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
+const h=(tag,attrs,...kids)=>{const e=document.createElement(tag);if(attrs)for(const k in attrs){if(k==="class")e.className=attrs[k];else if(k.startsWith("on"))e.addEventListener(k.slice(2),attrs[k]);else if(k==="style")e.style.cssText=attrs[k];else if(k==="disabled"||k==="checked")e[k]=!!attrs[k];else e.setAttribute(k,attrs[k])}
+ for(const k of kids.flat(Infinity))if(k!=null)e.append(k.nodeType?k:document.createTextNode(String(k)));return e};
+const pick=arr=>arr[Math.floor(Math.random()*arr.length)];
+const randInt=(a,b)=>a+Math.floor(Math.random()*(b-a+1));
+let UID=1;const uid=()=>UID++;
+
+/* ---------- visitors: ten tender misfits, each with a couple of names and a single
+   one-line want. the want is flavor for anyone reading along -- the game never requires
+   reading it to be played. "hint" is purely a gentle visual nudge (snowflake/teacup) that
+   suggests Blanket or Tea; it is never a requirement -- either comfort always works. ---------- */
+const SPECIES=[
+ {emoji:"🐰",names:["Bramble","Thimble"],want:"My left ear is trailing in the snow.",hint:"cold"},
+ {emoji:"📺",names:["Pip","Phosphor"],want:"My screen has goosebumps.",hint:"cold"},
+ {emoji:"🎵",names:["Chime","Tinker"],want:"Everything was playing too loud outside.",hint:"none"},
+ {emoji:"🧦",names:["Puddle","Stitch"],want:"I got separated from the laundry line.",hint:"cold"},
+ {emoji:"🌙",names:["Dusk","Glimmer"],want:"The sun went down too fast.",hint:"none"},
+ {emoji:"⭐",names:["Twinkle","Nova"],want:"I tumbled down the chimney.",hint:"cold"},
+ {emoji:"🍂",names:["Amber","Crisp"],want:"The wind was being so bossy.",hint:"cold"},
+ {emoji:"👻",names:["Sprout","Wisp"],want:"I'm feeling a little transparent today.",hint:"hungry"},
+ {emoji:"🦔",names:["Quill","Pipkin"],want:"I tried to be tough, but it made me tired.",hint:"hungry"},
+ {emoji:"🦉",names:["Barnaby","Hootie"],want:"The night storm ruffled my feathers backwards.",hint:"cold"}
+];
+
+const GIFTS=[
+ "a polished river pebble, warm to hold",
+ "a glowing glass marble with a swirl of lavender mist inside",
+ "a shiny brass button with four heart-shaped holes",
+ "a dried chamomile blossom that smells like sweet apples",
+ "a tiny golden bell that rings with a gentle, muffled chime",
+ "a folded origami star made from a scrap of old sheet music",
+ "a soft pastel ribbon untangled from a kite tail",
+ "a warm pocket acorn with a little felt cap",
+ "a sea glass chip worn smooth by gentle waves",
+ "a feather dipped in golden starlight"
+];
+
+function genVisitor(){
+ const sp=pick(SPECIES);
+ return {id:uid(),emoji:sp.emoji,name:pick(sp.names),want:sp.want,hint:sp.hint,gift:pick(GIFTS)};
+}
+
+/* ---------- decorations: each belongs to one of three snapping zones (floor / mantle /
+   wall) and either a one-time centerpiece or a repeatable cozy that can be bought again
+   and again, each purchase a little pricier than the last. ---------- */
+const DECOR=[
+ {id:"armchair",emoji:"🛋️",name:"Grand Velvet Armchair",zone:"floor",repeatable:false,baseCost:6},
+ {id:"teapot",emoji:"🫖",name:"Hand-Painted Ceramic Teapot",zone:"mantle",repeatable:false,baseCost:5},
+ {id:"starchart",emoji:"🖼️",name:"Celestial Star Chart",zone:"wall",repeatable:false,baseCost:7},
+ {id:"rug",emoji:"🟫",name:"CC0 Braided Rug",zone:"floor",repeatable:false,baseCost:5},
+ {id:"lights",emoji:"✨",name:"Fairy Light Strand",zone:"wall",repeatable:true,baseCost:4,inc:2},
+ {id:"candle",emoji:"🕯️",name:"Honey Beeswax Candle",zone:"mantle",repeatable:true,baseCost:3,inc:1},
+ {id:"plushie",emoji:"🧸",name:"Plushie Pillow",zone:"floor",repeatable:true,baseCost:5,inc:2},
+ {id:"fern",emoji:"🪴",name:"Chamomile & Fern Pot",zone:"floor",repeatable:true,baseCost:3,inc:1}
+];
+const STARS_PER_VISITOR=3;
+
+/* current price of the next purchase of a decoration: fixed for a one-time piece,
+   escalating by its own increment for each copy already owned, for a repeatable one. */
+function decorCost(d,ownedCount){return d.repeatable?d.baseCost+ownedCount*(d.inc||1):d.baseCost}
+/* ---------- Sophia, ported from her real portrait in Terminal Velocity OS: she is drawn
+   entirely in procedural canvas (ellipses and curves), never an image or emoji. This is the
+   same drawing code (SPC palette, SPA.blob/el/ear/eye/head/tail/leg), trimmed to the two
+   poses this room actually uses -- standing/walking side-on, and curled asleep -- so she
+   reads as herself rather than a generic dog stand-in. ---------- */
+const SPC={blk:"#17151c",blk2:"#2b2733",wht:"#f7f2ea",wht2:"#d8d0c5",tan:"#c98f55",tan2:"#e3bd8a",nose:"#0c0b10",pink:"#ea8c9c",earIn:"#d8c2a2"};
+const SPA={};
+SPA.blob=(c,cx,cy,rx,ry,n,amp)=>{c.beginPath();for(let i=0;i<n;i++){const a0=i/n*6.2832,a1=(i+1)/n*6.2832,am=(a0+a1)/2;const x0=cx+Math.cos(a0)*rx,y0=cy+Math.sin(a0)*ry,x1=cx+Math.cos(a1)*rx,y1=cy+Math.sin(a1)*ry,xm=cx+Math.cos(am)*rx*(1+amp),ym=cy+Math.sin(am)*ry*(1+amp);if(!i)c.moveTo(x0,y0);c.quadraticCurveTo(xm,ym,x1,y1)}c.closePath()};
+SPA.el=(c,x,y,rx,ry,col,rot)=>{c.fillStyle=col;c.beginPath();c.ellipse(x,y,rx,ry,rot||0,0,6.2832);c.fill()};
+SPA.ear=(c,side,perk)=>{
+ const px=1-perk,tx=side*(18+px*7),ty=-29+px*13;
+ c.fillStyle=SPC.blk;c.beginPath();c.moveTo(side*3,-10);c.quadraticCurveTo(side*9,-24+px*6,tx,ty);c.quadraticCurveTo(side*21+px*2,-13,side*14.5,-3);c.closePath();c.fill();
+ c.strokeStyle=SPC.blk;c.lineWidth=1.7;c.lineCap="round";
+ for(let i=0;i<3;i++){const t=.3+i*.22,bx=tx*(1-t)+side*14.5*t+side*.3,by=ty*(1-t)-3*t;c.beginPath();c.moveTo(bx,by);c.lineTo(bx+side*(2.8-i*.4),by+(2.2+px*1.5));c.stroke()}
+ c.fillStyle=SPC.earIn;c.beginPath();c.moveTo(side*5.2,-9);c.quadraticCurveTo(side*9.5,-19+px*5,side*(14+px*5),-22+px*10);c.quadraticCurveTo(side*15,-12,side*12.5,-5);c.closePath();c.fill();
+ c.fillStyle="rgba(23,21,28,.55)";c.beginPath();c.moveTo(side*8,-10);c.quadraticCurveTo(side*11,-16,side*(14+px*5),-22+px*10);c.quadraticCurveTo(side*15.5,-13,side*13,-6);c.closePath();c.fill();
+};
+SPA.eye=(c,ex,ey,lk,o)=>{
+ c.fillStyle="#2b1810";c.beginPath();c.ellipse(ex,ey,4.7,5.4,0,0,6.2832);c.fill();
+ c.strokeStyle="#7a5238";c.lineWidth=.7;c.stroke();
+ const g=c.createLinearGradient(0,ey-5,0,ey+5);g.addColorStop(0,"#5a3118");g.addColorStop(.55,"#b8742f");g.addColorStop(1,"#f0b863");
+ c.fillStyle=g;c.beginPath();c.ellipse(ex+lk*.6,ey+.3,4.05,4.8,0,0,6.2832);c.fill();
+ SPA.el(c,ex+lk*.9,ey+.2,2.2,3,"#120a07");
+ SPA.el(c,ex+lk*.6-1.5,ey-2.3,1.8,1.9,"#fff");
+ SPA.el(c,ex+lk*.6+1.6,ey+2.4,.9,.9,"rgba(255,255,255,.92)");
+ SPA.el(c,ex+lk*.6+2.2,ey-.6,.45,.45,"rgba(255,255,255,.8)");
+};
+SPA.head=(c,x,y,s,o)=>{
+ c.save();c.translate(x,y);c.rotate(o.tilt||0);c.scale(s,s);
+ SPA.ear(c,-1,o.ear==null?.7:o.ear);SPA.ear(c,1,o.ear==null?.7:o.ear);
+ SPA.el(c,0,0,15.8,14,SPC.blk);
+ SPA.el(c,0,-8.4,10,3.4,"rgba(70,62,86,.55)");
+ c.fillStyle=SPC.wht;SPA.blob(c,-10.8,8.4,3.8,3.1,6,.22);c.fill();SPA.blob(c,10.8,8.4,3.8,3.1,6,.22);c.fill();
+ SPA.el(c,0,8.4,6.6,4.9,SPC.wht);SPA.el(c,0,12.6,4.6,2.4,SPC.wht);
+ SPA.el(c,0,2.4,3.5,3.1,SPC.blk);
+ SPA.el(c,-10.6,4.4,2.5,1.5,"rgba(240,120,140,.55)");SPA.el(c,10.6,4.4,2.5,1.5,"rgba(240,120,140,.55)");
+ SPA.el(c,0,5.4,3.1,2.2,SPC.nose);SPA.el(c,-1,4.7,1.05,.6,"rgba(255,255,255,.55)");
+ const lk=o.look||0,e=o.eye||"open";
+ for(const sd of[-1,1]){
+  const ex=sd*6.7,ey=-2;
+  if(e==="open")SPA.eye(c,ex,ey,lk,o);
+  else{c.strokeStyle="#e4d6c8";c.lineWidth=1.5;c.lineCap="round";c.beginPath();
+   if(e==="happy"){c.moveTo(ex-3.4,ey+1.8);c.quadraticCurveTo(ex,ey-3.8,ex+3.4,ey+1.8)}
+   else if(e==="closed"){c.moveTo(ex-3.2,ey-.6);c.quadraticCurveTo(ex,ey+2.8,ex+3.2,ey-.6)}
+   else{c.moveTo(ex-3.2,ey+.4);c.lineTo(ex+3.2,ey+.4)}
+   c.stroke()}
+  c.save();c.translate(sd*7,-9.4);c.rotate(sd*-.22);SPA.el(c,0,0,2.9,1.65,SPC.tan2);c.restore();
+ }
+ const m=o.mouth||"closed";c.strokeStyle="#6d6258";c.lineWidth=.9;c.lineCap="round";
+ if(m==="closed"){c.beginPath();c.moveTo(-3.2,10.4);c.quadraticCurveTo(-1.5,12,0,10.6);c.quadraticCurveTo(1.5,12,3.2,10.4);c.stroke();c.beginPath();c.moveTo(0,7.2);c.lineTo(0,10.6);c.stroke()}
+ else{SPA.el(c,0,11.6,3.4,2.8,"#3a1e26");SPA.el(c,0,12.8,2.1,1.6,SPC.pink)}
+ c.restore();
+};
+SPA.tail=(c,x,y,ang,len)=>{
+ c.save();c.translate(x,y);c.rotate(ang);c.strokeStyle=SPC.blk;c.lineCap="round";
+ c.lineWidth=6.5;c.beginPath();c.moveTo(0,0);c.quadraticCurveTo(len*.5,-len*.1,len*.8,-len*.55);c.stroke();
+ c.lineWidth=4.2;c.beginPath();c.moveTo(len*.5,-len*.1);c.quadraticCurveTo(len*.95,-len*.4,len*.95,-len*.85);c.stroke();
+ c.strokeStyle=SPC.blk2;c.lineWidth=1.3;for(let i=0;i<4;i++){const t=.25+i*.2;c.beginPath();c.moveTo(len*t,-len*t*.16);c.lineTo(len*t+1.6,-len*t*.16-4.2);c.stroke()}
+ c.restore();
+};
+SPA.leg=(c,hx,hy,ang,len,lift,dark)=>{
+ const fx=hx+Math.sin(ang)*len,fy=hy+Math.cos(ang)*len-lift;
+ c.lineCap="round";
+ c.strokeStyle=dark?SPC.blk2:SPC.blk;c.lineWidth=6;c.beginPath();c.moveTo(hx,hy);c.lineTo(fx,fy);c.stroke();
+ const p=(t)=>[hx+(fx-hx)*t,hy+(fy-hy)*t];let a=p(.46),b=p(.78);
+ c.strokeStyle=SPC.tan;c.lineWidth=5.6;c.beginPath();c.moveTo(a[0],a[1]);c.lineTo(b[0],b[1]);c.stroke();
+ SPA.el(c,fx+.6,fy,4.4,3,SPC.wht);
+};
+SPA.side=(c,o)=>{
+ const ph=o.ph||0,tuck=o.jump?1:0;
+ SPA.tail(c,22,64,-.55+(o.tailUp||0)+Math.sin(o.wag||0)*.3,22);
+ const L=(off,hx,dark)=>{
+  const p=(ph+off)*6.2832;let ang=Math.sin(p)*.55,lift=Math.max(0,Math.cos(p))*4;
+  if(tuck){ang=dark?.9:-.8;lift=7}
+  if(o.still){ang=0;lift=0}
+  SPA.leg(c,hx,68,ang,22-tuck*5,lift,dark);
+ };
+ L(.5,56,1);L(0,32,1);
+ SPA.el(c,43,66,21,11,SPC.blk);
+ c.fillStyle=SPC.blk;SPA.blob(c,43,72,17,4.6,8,.3);c.fill();
+ SPA.el(c,58,59,9,9.5,SPC.blk);
+ L(.25,59,0);L(.75,36,0);
+ c.fillStyle=SPC.wht;SPA.blob(c,63,67,7,8.4,7,.16);c.fill();
+ SPA.head(c,67+(o.hx||0),44+(o.hy||0),1.18,o);
+};
+SPA.sleep=(c,o)=>{
+ const b=Math.sin((o.t||0)*2.1)*.9;
+ SPA.tail(c,20,86,.45,24);
+ SPA.el(c,44,82,26,10.5+b*.4,SPC.blk);
+ c.fillStyle=SPC.blk;SPA.blob(c,44,89,23,4,9,.25);c.fill();
+ c.strokeStyle=SPC.blk2;c.lineWidth=1.3;c.lineCap="round";for(let i=0;i<5;i++){c.beginPath();c.moveTo(27+i*9,76+b*.4);c.lineTo(28+i*9,80)}c.stroke();
+ SPA.el(c,79,91,6,3.2,SPC.wht);SPA.el(c,67,91.5,5,3,SPC.wht);
+ c.fillStyle=SPC.wht;SPA.blob(c,64,84,6,7,6,.16);c.fill();
+ SPA.head(c,69,76+b*.4,1.1,Object.assign({},o,{tilt:.2,ear:.14,eye:"closed",mouth:"closed"}));
+};
+/* draws one frame into a canvas sized in real pixels; the drawing code itself always
+   works in a fixed 100x100 unit square, scaled up to fit. face:-1 flips her to walk left. */
+function drawSophia(canvas,o){
+ const c=canvas.getContext("2d");
+ c.setTransform(1,0,0,1,0,0);c.clearRect(0,0,canvas.width,canvas.height);
+ const s=canvas.width/100;c.setTransform(s,0,0,s,0,0);
+ if((o.face||1)<0){c.translate(100,0);c.scale(-1,1)}
+ if(o.pose==="sleep")SPA.sleep(c,o);else SPA.side(c,o);
+}
+/* ---------- persistence: stars, every placed decoration (with its own position inside
+   whichever zone it belongs to), and a capped settled-visitor log. nothing about an
+   in-progress visitor is saved -- a refresh mid-comfort just returns to a fresh, patient
+   idle room, which is fine for a toy with no fail states to protect. ---------- */
+const SAVE_KEY="tvos_cartridge_rainbow_toybox";
+function loadSave(){
+ try{
+  const raw=localStorage.getItem(SAVE_KEY);if(!raw)return {stars:0,placed:[],settled:[],muted:false};
+  const d=JSON.parse(raw);
+  return {
+   stars:d.stars|0,
+   placed:Array.isArray(d.placed)?d.placed.filter(p=>p&&p.itemId&&typeof p.x==="number"):[],
+   settled:Array.isArray(d.settled)?d.settled:[],
+   muted:!!d.muted
+  };
+ }catch(e){return {stars:0,placed:[],settled:[],muted:false}}
+}
+function writeSave(sv){try{localStorage.setItem(SAVE_KEY,JSON.stringify(sv))}catch(e){}}
+const SV=loadSave();
+
+/* ---------- tiny, optional Web Audio chimes -- a handful of soft tones, never required
+   to play or understand the game. SV.muted persists whatever the player last chose. ---------- */
+let actx=null;
+function tone(freq,dur,vol){
+ if(SV.muted)return;
+ try{
+  if(!actx)actx=new (window.AudioContext||window.webkitAudioContext)();
+  const o=actx.createOscillator(),g=actx.createGain();
+  o.type="sine";o.frequency.value=freq;
+  g.gain.value=0;
+  o.connect(g);g.connect(actx.destination);
+  const t=actx.currentTime;
+  g.gain.linearRampToValueAtTime(vol||.05,t+.03);
+  g.gain.linearRampToValueAtTime(0,t+(dur||.4));
+  o.start(t);o.stop(t+(dur||.4)+.02);
+ }catch(e){}
+}
+function chimeKnock(){tone(392,.18,.04);setTimeout(()=>tone(392,.18,.04),140)}
+function chimeComfort(){tone(523.25,.3,.04)}
+function chimeStar(){tone(659.25,.25,.05);setTimeout(()=>tone(783.99,.35,.05),120)}
+function chimeBuy(){tone(587.33,.2,.04)}
+
+/* ---------- runtime state: one continuous room, no view switching, no scores ---------- */
+const S={
+ phase:"idle",        // "idle" | "knocking" | "comforting" | "resolving"
+ visitor:null,
+ stage:null,           // "shiver" | "relax" | "sparkle"
+ shopOpen:false,
+ sophia:{left:50,top:62,face:1,ph:0,still:true}
+};
+let knockTimer=null,resolveTimer1=null,resolveTimer2=null,sophiaMoveTimer=null,sophiaWalkTick=null;
+
+function scheduleKnock(){
+ clearTimeout(knockTimer);
+ knockTimer=setTimeout(()=>{
+  S.phase="knocking";
+  chimeKnock();
+  render();
+ },randInt(2500,5000));
+}
+
+function letIn(){
+ if(S.phase!=="knocking")return;
+ S.visitor=genVisitor();
+ S.phase="comforting";
+ S.stage="shiver";
+ render();
+}
+
+function comfort(kind){
+ if(S.phase!=="comforting")return;
+ S.phase="resolving";
+ S.stage="relax";
+ chimeComfort();
+ render();
+ clearTimeout(resolveTimer1);clearTimeout(resolveTimer2);
+ resolveTimer1=setTimeout(()=>{
+  S.stage="sparkle";
+  chimeStar();
+  render();
+ },650);
+ resolveTimer2=setTimeout(()=>{
+  const v=S.visitor;
+  SV.settled.unshift({emoji:v.emoji,name:v.name,gift:v.gift,ts:Date.now()});
+  if(SV.settled.length>60)SV.settled.length=60;
+  SV.stars+=STARS_PER_VISITOR;
+  writeSave(SV);
+  S.visitor=null;S.stage=null;S.phase="idle";
+  render();
+  scheduleKnock();
+ },650+700);
+}
+
+/* ---------- the shop: one-time centerpieces buy once; repeatable cozies can always be
+   bought again, each purchase a little pricier than the last. a bought item gets a
+   deterministic starting spot in its zone (not just dumped at the same point every time)
+   and can then be dragged anywhere along that zone's strip. ---------- */
+const SPREAD=[50,20,80,35,65,10,90,25,75,42,58];
+function ownedCount(id){return SV.placed.filter(p=>p.itemId===id).length}
+function zoneCount(zone){return SV.placed.filter(p=>{const d=DECOR.find(x=>x.id===p.itemId);return d&&d.zone===zone}).length}
+function buyDecor(id){
+ const d=DECOR.find(x=>x.id===id);if(!d)return;
+ const n=ownedCount(id);
+ if(!d.repeatable&&n>0)return;
+ const cost=decorCost(d,n);
+ if(SV.stars<cost)return;
+ SV.stars-=cost;
+ const spreadIdx=zoneCount(d.zone); // spread by how many things already share this zone, not this item alone, so different items don't land on top of each other
+ SV.placed.push({uid:uid(),itemId:id,x:SPREAD[spreadIdx%SPREAD.length]});
+ writeSave(SV);
+ chimeBuy();
+ render();
+}
+
+function toggleMute(){
+ SV.muted=!SV.muted;writeSave(SV);render();
+}
+
+/* ---------- dragging a placed decoration along its own zone strip. moves are drawn
+   directly on the element (no full re-render mid-drag, so it stays smooth); the new
+   position is only written back into SV, and persisted, once the player lets go. ---------- */
+let dragCtx=null;
+function onItemPointerDown(ev,uidVal,zoneElId){
+ ev.preventDefault();
+ const el=ev.currentTarget,zoneEl=$(zoneElId);
+ if(!zoneEl)return;
+ const item=SV.placed.find(p=>p.uid===uidVal);if(!item)return;
+ dragCtx={uidVal,el,zoneRect:zoneEl.getBoundingClientRect(),startClientX:ev.clientX,startPct:item.x,liveX:item.x};
+ try{el.setPointerCapture(ev.pointerId)}catch(e){}
+ el.addEventListener("pointermove",onItemPointerMove);
+ el.addEventListener("pointerup",onItemPointerUp);
+ el.addEventListener("pointercancel",onItemPointerUp);
+}
+function onItemPointerMove(ev){
+ if(!dragCtx)return;
+ const dx=ev.clientX-dragCtx.startClientX;
+ const pct=clamp(dragCtx.startPct+(dx/Math.max(1,dragCtx.zoneRect.width))*100,2,98);
+ dragCtx.liveX=pct;
+ dragCtx.el.style.left=pct+"%";
+}
+function onItemPointerUp(){
+ if(!dragCtx)return;
+ const item=SV.placed.find(p=>p.uid===dragCtx.uidVal);
+ if(item)item.x=dragCtx.liveX;
+ writeSave(SV);
+ dragCtx.el.removeEventListener("pointermove",onItemPointerMove);
+ dragCtx.el.removeEventListener("pointerup",onItemPointerUp);
+ dragCtx.el.removeEventListener("pointercancel",onItemPointerUp);
+ dragCtx=null;
+}
+
+/* ---------- Sophia: wanders the floor on her own clock. her CSS left/top transition
+   provides the smooth glide; a short-lived tick redraws her walk cycle on the canvas for
+   the length of that glide, then she settles into a still standing frame. ---------- */
+function drawSophiaNow(){
+ const cv=$("sophiaCv");if(!cv)return;
+ drawSophia(cv,Object.assign({pose:"side"},S.sophia));
+}
+function sophiaWander(){
+ const newLeft=randInt(8,86),newTop=randInt(58,80);
+ S.sophia.face=newLeft<S.sophia.left?-1:1;
+ S.sophia.left=newLeft;S.sophia.top=newTop;
+ S.sophia.still=false;
+ const el=$("sophiaWrap");
+ if(el){el.style.left=newLeft+"%";el.style.top=newTop+"%"}
+ clearInterval(sophiaWalkTick);
+ sophiaWalkTick=setInterval(()=>{S.sophia.ph=(S.sophia.ph+.09)%1;drawSophiaNow()},70);
+ clearTimeout(sophiaMoveTimer);
+ sophiaMoveTimer=setTimeout(()=>{
+  clearInterval(sophiaWalkTick);
+  S.sophia.still=true;
+  drawSophiaNow();
+  sophiaMoveTimer=setTimeout(sophiaWander,randInt(2200,4200));
+ },2200);
+}
+
+function heartBurstAt(x,y){
+ const room=$("room");if(!room)return;
+ const hb=h("div",{class:"heartburst",style:`left:${x}px;top:${y}px`},pick(["💖","💕","✨"]));
+ room.appendChild(hb);
+ setTimeout(()=>hb.remove(),1000);
+}
+function patSophia(ev){
+ const rect=$("room").getBoundingClientRect();
+ heartBurstAt(ev.clientX-rect.left,ev.clientY-rect.top-20);
+}
+function render(){
+ host.innerHTML="";
+ host.append(
+  h("div",{id:"app"},
+   renderHeader(),
+   h("main",{},renderRoom()),
+   renderFooter()
+  )
+ );
+ if(S.shopOpen)host.append(renderShop());
+ drawSophiaNow();
+}
+
+function renderHeader(){
+ return h("header",{},
+  h("div",{class:"brand"},"🌈 Plushie Providence"),
+  h("span",{class:"pill"},h("span",{class:"ico"},"✨"),SV.stars+" stars"),
+  h("div",{class:"spacer"}),
+  h("button",{onclick:()=>{S.shopOpen=true;render()}},"🏪 Shop"),
+  h("button",{onclick:toggleMute},SV.muted?"🔇 Muted":"🔊 Sound")
+ );
+}
+
+function zoneElIdFor(zone){return zone==="wall"?"wallZone":zone==="mantle"?"mantleZone":"floorZone"}
+function placedItemEl(p){
+ const d=DECOR.find(x=>x.id===p.itemId);if(!d)return null;
+ return h("div",{
+  class:"zoneItem",style:`left:${p.x}%`,
+  onpointerdown:ev=>{onItemPointerDown(ev,p.uid,zoneElIdFor(d.zone))}
+ },d.emoji);
+}
+
+function renderRoom(){
+ const wallItems=SV.placed.filter(p=>{const d=DECOR.find(x=>x.id===p.itemId);return d&&d.zone==="wall"});
+ const mantleItems=SV.placed.filter(p=>{const d=DECOR.find(x=>x.id===p.itemId);return d&&d.zone==="mantle"});
+ const floorItems=SV.placed.filter(p=>{const d=DECOR.find(x=>x.id===p.itemId);return d&&d.zone==="floor"});
+
+ const wallBand=h("div",{id:"wallBand"},
+  h("div",{id:"window"},h("span",{class:"cloud"},"☁️"),h("span",{class:"cloud c2"},"☁️")),
+  h("div",{id:"wallZone",class:"zone"},...wallItems.map(placedItemEl)),
+  h("div",{id:"fireplace"},
+   h("div",{id:"mantleZone",class:"zone"},...mantleItems.map(placedItemEl)),
+   h("div",{id:"fireOpening"},h("div",{id:"hearthFire"},"🔥"))
+  ),
+  h("div",{id:"door",class:S.phase==="knocking"?"knock":"",onclick:letIn},"🚪")
+ );
+
+ const floorBand=h("div",{id:"floorBand"},
+  renderSettled(),
+  h("div",{id:"floorZone",class:"zone"},...floorItems.map(placedItemEl)),
+  h("div",{id:"sophiaWrap",style:`left:${S.sophia.left}%;top:${S.sophia.top}%`,onclick:e=>{patSophia(e)}},
+   h("canvas",{id:"sophiaCv",width:"120",height:"120"})
+  ),
+  S.visitor?renderVisitor():null
+ );
+
+ return h("div",{id:"room"},wallBand,floorBand);
+}
+
+function renderVisitor(){
+ const v=S.visitor;
+ const hint=v.hint==="cold"?"❄️":v.hint==="hungry"?"🍵":"";
+ return h("div",{class:"visitor stage-"+S.stage},
+  h("span",{class:"sprite"},v.emoji),
+  hint?h("div",{class:"hint"},hint):null,
+  S.phase==="comforting"||S.phase==="resolving"?h("div",{class:"bubble"},v.name+": “"+v.want+"”"):null
+ );
+}
+
+function renderSettled(){
+ if(!SV.settled.length)return h("div",{id:"settledStrip"},h("div",{class:"dim small"},"No one's settled in yet — someone will knock soon."));
+ return h("div",{id:"settledStrip"},...SV.settled.map(v=>
+  h("div",{class:"settled",title:v.name+" left "+v.gift},v.emoji,h("span",{class:"z"},"💤"))
+ ));
+}
+
+function renderFooter(){
+ const active=S.phase==="comforting";
+ return h("footer",{},
+  h("button",{class:"tea",disabled:!active,onclick:()=>{comfort("tea")}},"🫖 Tea"),
+  h("button",{class:"blanket",disabled:!active,onclick:()=>{comfort("blanket")}},"🧶 Blanket")
+ );
+}
+
+function renderShop(){
+ return h("div",{id:"shopOverlay",onclick:e=>{if(e.target.id==="shopOverlay"){S.shopOpen=false;render()}}},
+  h("div",{id:"shopCard"},
+   h("h2",{},"🏪 The Hearth Shop"),
+   h("div",{class:"dim small",style:"margin:4px 0 12px"},"Spend stars on little things for the room. Everything can be dragged once it's placed."),
+   ...DECOR.map(d=>{
+    const n=ownedCount(d.id);
+    const cost=decorCost(d,n);
+    const maxedOneTime=!d.repeatable&&n>0;
+    return h("div",{class:"shopItem"},
+     h("div",{class:"ic"},d.emoji),
+     h("div",{class:"nm"},d.name,d.repeatable&&n>0?h("div",{class:"small dim"},"Owned "+n):null),
+     maxedOneTime?h("span",{class:"pill"},"Owned"):h("button",{class:"pri",disabled:SV.stars<cost,onclick:()=>{buyDecor(d.id)}},(d.repeatable&&n>0?"Another — ":"")+cost+" ✨")
+    );
+   }),
+   h("button",{style:"margin-top:10px;width:100%",onclick:()=>{S.shopOpen=false;render()}},"Close")
+  )
+ );
+}
+function boot(){
+ render();
+ sophiaWander();
+ scheduleKnock();
+}
 boot();
 })();
 <~/script></body></html>
