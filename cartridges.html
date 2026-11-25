@@ -2248,7 +2248,7 @@ function crownProgress(S){
  ]}
 let S=loadSave();
 const rnd=mulberry32(freshSeed());
-const VIEW={screen:"lounge",tab:"shelf",selA:null,selB:null,pending:null,playId:null};
+const VIEW={screen:"lounge",tab:"shelf",selA:null,selB:null,pending:null,playId:null,showHelp:false};
 let bodyEl=null,ctxA=null,engineCache=new Map();
 
 function allParents(){return[...SPECIES.map(founderInstance),...S.inst]}
@@ -2407,6 +2407,10 @@ async function ensureAudio(){if(!ctxA){ctxA=new(window.AudioContext||window.webk
 function stopPlayState(){if(playState){clearInterval(playState.autoT);if(playState.engine)try{playState.engine.m.disconnect()}catch(e){}}playState=null}
 
 function renderPlay(){
+ /* always tear down the previous instrument's listeners/timers before attaching new
+    ones — renderAll()'s own cleanup only fires when LEAVING the play screen entirely,
+    which doesn't cover swapping to a different instrument while staying on it */
+ if(VIEW._playCleanup){VIEW._playCleanup();VIEW._playCleanup=null}
  const inst=findParent(VIEW.playId);
  if(!inst){VIEW.screen="lounge";renderAll();return}
  if(!playState||playState.inst.id!==inst.id){
@@ -2425,6 +2429,25 @@ function renderPlay(){
  wrap.append(h("div",{style:"font-size:19px;color:var(--gold2);font-weight:700"},inst.custom||inst.name),
   h("div",{class:"dim small ui"},inst.founder?"Founding instrument":"Generation "+inst.gen+" · "+inst.parents.join(" × ")));
  wrap.append(stage);
+ const helpToggle=h("button",{class:"btn sm",style:"margin:6px 0"},VIEW.showHelp?"Hide controls":"How do I play this?");
+ helpToggle.onclick=()=>{VIEW.showHelp=!VIEW.showHelp;renderAll()};
+ wrap.append(helpToggle);
+ if(VIEW.showHelp){
+  const N=nStrings(inst.n);
+  const keyRow=["A","S","D","F","G","H","J","K","L",";","'","[","]","\\","Shift+A","Shift+S"].slice(0,N).join("  ");
+  wrap.append(h("div",{class:"ui small dim",style:"max-width:420px;line-height:1.6;text-align:left;border:1px solid var(--line);border-radius:8px;padding:10px 12px;margin-bottom:10px"},
+   h("div",null,h("b",{style:"color:var(--ink)"},"Click or tap")," a string to pluck it."),
+   h("div",null,h("b",{style:"color:var(--ink)"},"Press and drag")," across the strings to strum — sweep right to go up, left to go down, as fast or slow as you move."),
+   h("div",null,h("b",{style:"color:var(--ink)"},"Keyboard:")," "+keyRow+" — each key is one string, low to high."),
+   h("div",null,h("b",{style:"color:var(--ink)"},"Space")," — strum up through every string. Hold it down to keep strumming."),
+   h("div",null,h("b",{style:"color:var(--ink)"},"Shift + Space")," — strum down instead. Also holds."),
+   h("div",null,h("b",{style:"color:var(--ink)"},"Mood")," picks the scale and style it plays in — works on any instrument."),
+   h("div",null,h("b",{style:"color:var(--ink)"},"Pace")," slows or speeds up autoplay."),
+   h("div",null,h("b",{style:"color:var(--ink)"},"Let it play itself")," turns autoplay on or off."),
+   h("div",null,h("b",{style:"color:var(--ink)"},"Wander between moods")," lets autoplay drift to a new mood on its own."),
+   !inst.founder?h("div",null,h("b",{style:"color:var(--ink)"},"Rename, Shareable seed, Give as a gift")," only appear for instruments you've bred."):null
+  ));
+ }
 
  function paintStrings(){
   const N=nStrings(inst.n);let svg=`<svg viewBox="0 0 400 180" xmlns="http://www.w3.org/2000/svg">`;
@@ -2441,17 +2464,77 @@ function renderPlay(){
   const t=ctxA.currentTime;PS.engine.pluck(PS.mood.scale,PS.mood.root,PS.mood.oct,i,vel||.75,t);
   flashString(i);
  }
- const pointerHandler=e=>{
-  const rect=strings.getBoundingClientRect();const x=(e.touches?e.touches[0].clientX:e.clientX)-rect.left;
-  const N=nStrings(inst.n),frac=clamp(x/rect.width,0,1);const i=clamp(Math.round(frac*(N-1)),0,N-1);
-  doPluck(i);
+ function stringIndexAt(clientX){
+  const rect=strings.getBoundingClientRect();const x=clientX-rect.left;
+  const N=nStrings(inst.n),frac=clamp(x/rect.width,0,1);
+  return clamp(Math.round(frac*(N-1)),0,N-1);
+ }
+ /* press-and-drag strumming directly on the strings: pointerdown plucks the string under
+    the cursor/finger and starts a drag; pointermove, as long as the drag is held, plucks
+    every string the cursor crosses (not just endpoints, so a fast swipe still sounds every
+    string in between) — dragging right sweeps up in pitch, left sweeps down. Pointer
+    capture keeps the drag alive even if the cursor momentarily leaves the strings' bounds
+    mid-swipe. A plain click with no movement still plucks just the one string. */
+ let dragLast=null;
+ const pointerDown=e=>{
+  const i=stringIndexAt(e.clientX);dragLast=i;doPluck(i);
+  if(strings.setPointerCapture)try{strings.setPointerCapture(e.pointerId)}catch(_){}
  };
- strings.addEventListener("pointerdown",pointerHandler);
+ const pointerMove=e=>{
+  if(dragLast===null)return;
+  const i=stringIndexAt(e.clientX);if(i===dragLast)return;
+  const step=i>dragLast?1:-1;
+  for(let idx=dragLast+step;;idx+=step){doPluck(idx,.7);if(idx===i)break}
+  dragLast=i;
+ };
+ const pointerEnd=()=>{dragLast=null};
+ const pointerLeave=e=>{if(e.buttons===0)pointerEnd()};
+ strings.addEventListener("pointerdown",pointerDown);
+ strings.addEventListener("pointermove",pointerMove);
+ strings.addEventListener("pointerup",pointerEnd);
+ strings.addEventListener("pointercancel",pointerEnd);
+ strings.addEventListener("pointerleave",pointerLeave);
  VIEW._doPluck=doPluck;
- const keys=["a","s","d","f","g","h","j","k","l",";","'","[","]","\\","shift+a","shift+s"];
- function keyHandler(e){if(e.repeat)return;const idx=keys.indexOf(e.key.toLowerCase());if(idx<0||idx>=nStrings(inst.n))return;doPluck(idx)}
+ /* each entry is a physical key + whether Shift must be held, so Shift+A genuinely
+    differs from plain A (checking e.key instead of e.code+e.shiftKey can't tell these
+    apart, since Shift+A and A both report e.key "a" once lower-cased) */
+ const KEYMAP=[["KeyA",false],["KeyS",false],["KeyD",false],["KeyF",false],["KeyG",false],["KeyH",false],
+  ["KeyJ",false],["KeyK",false],["KeyL",false],["Semicolon",false],["Quote",false],["BracketLeft",false],
+  ["BracketRight",false],["Backslash",false],["KeyA",true],["KeyS",true]];
+ /* keyboard strum (Space/Shift+Space): one pass plucks every string in order, and holding
+    the key repeats that pass for as long as it's held down. */
+ let strumInterval=null,strumTimeouts=[];
+ function clearStrumTimeouts(){strumTimeouts.forEach(clearTimeout);strumTimeouts=[]}
+ function doStrum(down){
+  clearStrumTimeouts();
+  const N=nStrings(inst.n),step=14;
+  for(let pos=0;pos<N;pos++){const idx=down?N-1-pos:pos;strumTimeouts.push(setTimeout(()=>doPluck(idx,.7),pos*step))}
+ }
+ function stopStrum(){if(strumInterval){clearInterval(strumInterval);strumInterval=null}clearStrumTimeouts()}
+ function keyHandler(e){
+  if(e.code==="Space"){
+   e.preventDefault();if(e.repeat)return;
+   const down=e.shiftKey;doStrum(down);
+   const period=Math.max(160,(nStrings(inst.n)-1)*14+150);
+   clearInterval(strumInterval);strumInterval=setInterval(()=>doStrum(down),period);
+   return;
+  }
+  if(e.repeat)return;
+  const idx=KEYMAP.findIndex(k=>k[0]===e.code&&k[1]===e.shiftKey);
+  if(idx<0||idx>=nStrings(inst.n))return;doPluck(idx);
+ }
+ function keyUpHandler(e){if(e.code==="Space")stopStrum()}
  document.addEventListener("keydown",keyHandler);
- VIEW._playCleanup=()=>{strings.removeEventListener("pointerdown",pointerHandler);document.removeEventListener("keydown",keyHandler)};
+ document.addEventListener("keyup",keyUpHandler);
+ VIEW._playCleanup=()=>{
+  strings.removeEventListener("pointerdown",pointerDown);
+  strings.removeEventListener("pointermove",pointerMove);
+  strings.removeEventListener("pointerup",pointerEnd);
+  strings.removeEventListener("pointercancel",pointerEnd);
+  strings.removeEventListener("pointerleave",pointerLeave);
+  document.removeEventListener("keydown",keyHandler);document.removeEventListener("keyup",keyUpHandler);
+  stopStrum();dragLast=null;
+ };
 
  /* mood picker */
  const row=h("div",{class:"row ui ok-row"});
