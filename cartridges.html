@@ -2723,7 +2723,13 @@ h2.sh{font:700 20px var(--sans);text-transform:uppercase;letter-spacing:.05em;co
 #top .ttl{font-weight:bold;flex:1;font-size:15px}
 #stage{flex:1;min-height:0;display:flex;gap:0;overflow:hidden}
 #pane{flex:1;min-width:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;padding:16px;overflow:auto}
-#flagwrap{width:100%;max-width:560px;border-radius:8px;overflow:hidden;box-shadow:0 16px 40px rgba(0,0,0,.55),inset 0 0 0 1px rgba(216,165,61,.3)}
+/* flex-shrink:0 matters here: #flagwrap has overflow:hidden, and a flex item with
+   overflow:hidden gets an automatic minimum size of 0 instead of being floored at its
+   own content size — so on a short screen, #pane's flex column was free to crush the
+   flag preview down to a sliver (clipping most of the canvas) to make room for the
+   chips/declaration box below it, instead of letting #pane's own overflow:auto scroll
+   do that job. Pinning flagwrap's size keeps the flag itself always fully visible. */
+#flagwrap{width:100%;max-width:560px;flex-shrink:0;border-radius:8px;overflow:hidden;box-shadow:0 16px 40px rgba(0,0,0,.55),inset 0 0 0 1px rgba(216,165,61,.3)}
 #flagwrap canvas{width:100%;display:block;background:#000}
 .favrow{display:flex;align-items:center;gap:12px}
 .favrow canvas{width:32px;height:32px;image-rendering:pixelated;border-radius:3px;box-shadow:0 0 0 1px rgba(216,165,61,.4)}
