@@ -2722,7 +2722,14 @@ h2.sh{font:700 20px var(--sans);text-transform:uppercase;letter-spacing:.05em;co
 #top{flex:none;display:flex;align-items:center;gap:10px;padding:10px 14px;background:linear-gradient(#141a30,#0e1324);border-bottom:1px solid var(--ln)}
 #top .ttl{font-weight:bold;flex:1;font-size:15px}
 #stage{flex:1;min-height:0;display:flex;gap:0;overflow:hidden}
-#pane{flex:1;min-width:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;padding:16px;overflow:auto}
+/* justify-content:flex-start, not center: #pane scrolls (overflow:auto) when its content
+   is taller than the space available, and a CENTERED flex container clips the START of
+   overflowing content instead of the end — scrolling to scrollTop 0 doesn't help, because
+   the content's natural top is already positioned above the visible area. On a short
+   screen that meant the TOP of the flag itself (the first, most important child) could go
+   permanently unreachable. Start-aligned content simply flows down and scrolls normally,
+   so nothing is ever clipped regardless of viewport height. */
+#pane{flex:1;min-width:0;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;gap:14px;padding:16px;overflow:auto}
 /* flex-shrink:0 matters here: #flagwrap has overflow:hidden, and a flex item with
    overflow:hidden gets an automatic minimum size of 0 instead of being floored at its
    own content size — so on a short screen, #pane's flex column was free to crush the
