@@ -37,47 +37,76 @@
  this file lists below. An id, once shipped, is never renamed or reused — a
  player's save is keyed to it.
 
- MAKING A *NEW* SEPARATE PACK (a second store)
- 1. Name the file cartridges-<name>.html — e.g. "cartridges-risingsun.html" for
-    a "Rising Sun" pack. This exact prefix is REQUIRED, not just a convention:
-    the server only sends the CORS header that a saved/offline copy of the OS
-    needs to fetch the file for names matching cartridges*.html. A pack named
-    just "risingsun.html" would work on the live site but silently fail to
-    load for anyone using a saved copy of the OS. The filename itself is never
-    shown to players — its display name comes from cartridges-pack-name below.
- 2. Make it a new, separate HTML file with this exact same shape: doctype/head,
-    then one <script class="cartsrc"> block per game in its body. Give its
-    head these two metas (ask Wendell for the display name if he hasn't said):
-      <meta name="cartridges-pack" content="risingsun">
-      <meta name="cartridges-pack-name" content="Rising Sun">
- 3. Every game id in the new pack must be globally unique across every pack —
-    use a short prefix per pack (e.g. ids like "rs-dawnrun") so it can never
-    collide with "core" or any other pack's ids. Never rename or reuse an id
-    once shipped — a player's save is keyed to it. If two packs ever do share
-    an id, the earlier-listed pack wins and the later game is hidden with a
-    warning, so check against every other pack's ids before shipping.
- 4. Back in THIS file's head, list the new pack's bare filename (no path, no
-    URL; letters/digits/./_/- only; must live in the same folder as this
-    file, i.e. next to the live cartridges.html on republicka.life) in a
-    comma-separated cartridges-more meta, added right after cartridges-pack-name
-    above:
-      
-    Multiple packs: comma-separate them, e.g.
-    content="cartridges-risingsun.html, cartridges-other.html" (max 40, every
-    name must match cartridges-*.html or the OS rejects it). Add this meta
-    even if it means editing only this one line and nothing else in this
-    file — that line is what makes the OS discover the new pack, and packs
-    are shown in the Store under their own heading in the order listed here.
-    Leave the meta out entirely while there is no second pack.
- 5. Guideline, not a hard cap: keep each pack to roughly 20 games / 3MB — the
-    OS downloads a whole pack before it can show anything in it, and Wendell's
-    Chromebook and phone both feel a slow one.
- 6. Per-game saves live in localStorage shared across the whole OS (~5MB
+ MAKING A *NEW* SEPARATE PACK (a second store) — READ THIS FIRST
+ If you are a fresh Claude session starting Wendell's SECOND (or third, or
+ Nth) cartridge pack and he's handed you only this file for reference: the
+ OS now finds extra packs on its own. After loading this file (and any pack
+ named below in cartridges-more, if one is listed), it also tries, in the
+ same folder: cartridges-2.html, then cartridges-3.html, cartridges-4.html,
+ and so on. It stops once TWO tries in a row come back missing — a 404, or
+ a file that doesn't contain any cartsrc blocks (so a soft-404 page can't
+ fool it) — so a single gap is tolerated but not two in a row. Up to 60
+ numbers are tried. This means: for an ordinary new pack, you make ONE new
+ file and Wendell uploads it next to this one. THIS file (cartridges.html)
+ does not need to change, does not need a rebuild, and does not need a
+ cartridges-more edit, to pick up a new numbered pack.
+ 1. Name the new file cartridges-N.html, where N is the next number not
+    already in use (nothing yet → cartridges-2.html; that exists → the next
+    one is cartridges-3.html; etc. — ask Wendell which numbers already exist
+    if you're not sure). This exact "cartridges-" prefix is REQUIRED, not
+    just a convention: it's what gets the CORS header a saved/offline copy
+    of the OS needs to fetch the file, and what the auto-discovery above
+    looks for. Numbers are NEVER reused, even once a pack is retired. Don't
+    skip more than one number in a row — skipping two or more permanently
+    hides every pack after the gap, since discovery stops there for good.
+ 2. Give the new file this exact same shape as this one: doctype/head, then
+    one <script class="cartsrc"> block per game in its body, same format,
+    same escaping rules, as described above. Its head needs:
+      <meta name="cartridges-pack" content="SHORT-ID">
+      <meta name="cartridges-pack-name" content="Display Name">
+    The display name is what players see in the Store — it does NOT come
+    from the filename ("cartridges-2.html" can show as "Rising Sun"). Always
+    ask Wendell what it should be; never invent one. SHORT-ID is a short
+    lowercase slug unique to this pack, used only internally, never shown.
+ 3. Every game id in the new pack must be globally unique across every pack
+    that exists anywhere — use a short prefix per pack (e.g. ids like
+    "rs-dawnrun" for a "Rising Sun" pack) so it can never collide with
+    "core" or any other pack's ids. Never rename or reuse an id once
+    shipped — a player's save is keyed to it. If two packs ever do share an
+    id, whichever loads first wins and the later one is hidden with a
+    warning — so check against every other pack's ids (ask Wendell, or have
+    him paste you the other pack files) before shipping.
+ 4. Guideline, not a hard cap: keep each pack to roughly 20 games / 3MB — the
+    OS downloads a whole pack before it can show anything in it, and
+    Wendell's Chromebook and phone both feel a slow one.
+ 5. Per-game saves live in localStorage shared across the whole OS (~5MB
     total, ~600KB hard cap per game) — keep a game's save to a few KB.
- 7. Packs are cached offline: the first (core) pack is re-checked every time
-    Cartridges opens, but any extra pack is re-checked at most once a day —
-    so a same-day edit to an already-installed extra pack's games may not
-    show up until the next day, or until its local cache is cleared.
+ 6. Test the new pack file served over plain HTTP before it goes anywhere
+    near republicka.life — e.g. `python3 -m http.server` in the folder that
+    holds it and open it that way, not as a bare file:// page.
+ 7. Packs are cached offline: THIS file (the "core" pack) is re-checked
+    every time Cartridges opens, but any extra pack — named or numbered —
+    is re-checked at most once a day, or when a player presses "Check for
+    updates". So a same-day edit to an already-installed extra pack's games
+    may not show up for a day for people who already have the OS.
+ 8. Retiring a pack: just delete the file. A player with none of its games
+    installed loses that store entry on their next check; a player who
+    still has one of its games installed keeps seeing the pack until they
+    uninstall it. Never reuse that pack's number for a different pack.
+
+ An alternate path exists for a pack that genuinely needs a name that ISN'T
+ the next sequential number: list its bare filename (no path, no URL;
+ letters/digits/./_/- only; must live in this same folder) in a comma-
+ separated cartridges-more meta, added right after cartridges-pack-name
+ above, e.g.:
+   
+ (max 40 names, every one must match cartridges-*.html or the OS rejects
+ it; comma-separate for more than one). A pack listed by name here always
+ wins over the same file found by number, and named packs show before
+ numbered ones, in the order listed. This is the exception, not the rule —
+ for almost every new pack, just upload cartridges-N.html and touch
+ nothing in this file at all.
+
  Nothing about the OS itself (the Cartridges app, install/uninstall, Backup)
  is decided here — that's a different, OS-side file Wendell maintains with
  OS Claude.
@@ -1784,6 +1813,756 @@ boot();
 })();
 <~/script></body></html>
 </script>
+<script type="text/plain" class="cartsrc" data-meta='{"name": "Divine Tragedy", "sub": "Breed plucked instruments, voice by voice, generation by generation", "desc": "Pick two instruments and breed a third that never existed: its own voice, its own look, its own name. Play it yourself, or let it play for you. Give one away, and its star stays lit in Ariadne&#39;s crown.", "color": "#c9a24a", "glyph": "M4 18l2-9 4 5 2-7 2 7 4-5 2 9z", "tags": ["Music", "Mythology", "Creativity"], "id": "divinetragedy"}'><!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Divine Tragedy</title>
+<style>
+:root{
+ --bg:#0a0810;--bg2:#120e1c;--pan:#171226;--pan2:#201a33;--line:#3a2f52;
+ --gold:#c9a24a;--gold2:#e8c874;--ink:#ece6f5;--dim:#9c92b8;
+ --star:#eef0ff;--star2:#b9c4ff;--crimson:#a8405a;--ok:#7fd6a8;
+}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%}
+body{
+ background:
+  radial-gradient(70% 50% at 50% -10%,#241a38 0%,var(--bg) 60%);
+ color:var(--ink);font:15px/1.5 Georgia,"Iowan Old Style","Palatino Linotype",serif;
+ overflow:hidden;
+}
+h1,h2,h3,.pix{font-family:Georgia,"Palatino Linotype",serif;letter-spacing:.02em}
+.ui{font-family:-apple-system,"Segoe UI",Roboto,sans-serif}
+#app{position:absolute;inset:0;display:flex;flex-direction:column}
+header{
+ display:flex;align-items:center;gap:10px;padding:10px 16px;
+ background:linear-gradient(180deg,var(--bg2),var(--bg));
+ border-bottom:1px solid var(--line);flex:none;flex-wrap:wrap;
+}
+.brand{font-weight:700;letter-spacing:.14em;color:var(--gold2);font-size:16px;display:flex;align-items:center;gap:8px;text-transform:uppercase}
+.brand svg{width:22px;height:22px}
+nav{display:flex;gap:6px;flex-wrap:wrap;flex:1}
+.btn{
+ background:var(--pan2);color:var(--ink);border:1px solid var(--line);border-radius:3px;
+ padding:7px 14px;font:inherit;cursor:pointer;min-height:36px;font-family:inherit;
+}
+.btn:hover{border-color:var(--gold)}
+.btn.on{border-color:var(--gold);color:var(--gold2)}
+.btn.pri{background:linear-gradient(180deg,var(--gold2),var(--gold));color:#1a1206;border-color:var(--gold);font-weight:700}
+.btn.pri:disabled{opacity:.5;cursor:default}
+.btn.sm{padding:4px 10px;min-height:30px;font-size:13px}
+.btn.bad:hover{border-color:var(--crimson);color:var(--crimson)}
+main{flex:1;min-height:0;overflow:auto;padding:18px}
+.wrap{max-width:1000px;margin:0 auto}
+.center{display:flex;flex-direction:column;align-items:center;gap:14px;text-align:center;padding:10px 0 30px}
+.dim{color:var(--dim)}.small{font-size:13px}.ui{font-size:14px}
+h1{font-size:23px;margin:0 0 6px;font-weight:700;color:var(--gold2)}
+h2{font-size:17px;margin:16px 0 8px;font-weight:700;color:var(--gold2)}
+/* the stage: where an instrument is shown and played */
+.stage{
+ position:relative;border-radius:6px;padding:22px;
+ background:radial-gradient(60% 90% at 50% 20%,#2a2040 0%,#140f22 70%);
+ border:1px solid var(--line);
+ box-shadow:inset 0 0 60px #00000080,0 0 0 1px #000,0 10px 30px #00000060;
+}
+.stage::before{
+ content:"";position:absolute;inset:0;pointer-events:none;border-radius:6px;
+ box-shadow:inset 0 0 0 1px var(--line),inset 0 40px 60px -40px #000;
+}
+.spotlight{
+ position:absolute;left:50%;top:-10%;width:140%;height:70%;transform:translateX(-50%);
+ background:radial-gradient(ellipse at 50% 0%,#ffe9b833 0%,transparent 65%);
+ pointer-events:none;
+}
+/* shelf cards */
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:14px}
+.card{
+ background:var(--pan);border:1px solid var(--line);border-radius:6px;overflow:hidden;
+ display:flex;flex-direction:column;cursor:pointer;position:relative;text-align:left;
+}
+.card:hover{border-color:var(--gold)}
+.card.sel{border-color:var(--gold2);box-shadow:0 0 0 1px var(--gold2)}
+.card .pic{height:110px;display:flex;align-items:center;justify-content:center;background:radial-gradient(60% 100% at 50% 10%,#2a2040,#120e1c)}
+.card .pic svg{width:72px;height:88px}
+.card .bd{padding:10px 12px 12px;display:flex;flex-direction:column;gap:3px}
+.card .nm{font-size:15px;font-weight:700;color:var(--gold2)}
+.card .sb{color:var(--dim);font-size:12px}
+.tag{font-size:10.5px;border:1px solid var(--line);border-radius:999px;padding:1px 8px;color:var(--dim);display:inline-block;margin-top:4px;width:fit-content}
+.tag.gold{color:var(--gold2);border-color:#6b5420}
+/* crown / constellation */
+.sky{
+ position:relative;width:min(92vw,560px);aspect-ratio:1/0.72;margin:0 auto;
+ background:radial-gradient(ellipse at 50% 30%,#1a1430 0%,#07060d 75%);
+ border-radius:10px;border:1px solid var(--line);overflow:hidden;
+}
+.sky svg{width:100%;height:100%;display:block}
+.starpt{cursor:pointer}
+.starpt circle{transition:r .2s,opacity .2s}
+.lorebox{max-width:420px;font-size:13.5px;color:var(--ink);background:var(--pan);border:1px solid var(--line);border-radius:6px;padding:14px 16px;margin-top:10px}
+/* strings / pluck surface */
+.strings{position:relative;width:min(92vw,460px);height:200px;touch-action:none;user-select:none}
+.strings svg{width:100%;height:100%;display:block}
+.string-ln{cursor:pointer}
+input[type=range]{accent-color:var(--gold)}
+select,input[type=text]{background:var(--bg2);color:var(--ink);border:1px solid var(--line);border-radius:4px;padding:7px 9px;font:inherit}
+label{display:block;font-size:12.5px;color:var(--dim);margin:8px 0 3px}
+.row{display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end;justify-content:center}
+.empty{border:1px dashed var(--line);border-radius:10px;padding:28px;text-align:center;color:var(--dim)}
+.flavorpick button{display:block;width:100%;max-width:440px;margin:6px auto;text-align:left;padding:10px 14px;background:var(--pan2);border:1px solid var(--line);border-radius:4px;color:var(--ink);cursor:pointer;font:inherit}
+.flavorpick button:hover{border-color:var(--gold)}
+.step-row{display:flex;justify-content:center;gap:6px;padding:8px 0}
+.step-dot{width:7px;height:7px;border-radius:50%;background:var(--line)}
+.step-dot.on{background:var(--gold2)}
+.grace{color:var(--gold2);font-weight:700}
+::-webkit-scrollbar{width:10px}::-webkit-scrollbar-thumb{background:var(--line);border-radius:5px}
+</style>
+</head><body>
+<div id="tlhost"></div>
+<script>
+(()=>{"use strict";
+const host=document.getElementById("tlhost");
+const $=id=>document.getElementById(id);
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
+const h=(tag,attrs,...kids)=>{const e=document.createElement(tag);if(attrs)for(const k in attrs){if(k==="class")e.className=attrs[k];else if(k.startsWith("on"))e.addEventListener(k.slice(2),attrs[k]);else if(k==="style")e.style.cssText=attrs[k];else e.setAttribute(k,attrs[k])}
+ for(const k of kids.flat(Infinity))if(k!=null)e.append(k.nodeType?k:document.createTextNode(String(k)));return e};
+
+/* ---------- RNG ---------- */
+function mulberry32(a){return function(){a|=0;a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296}}
+function hashStr(s){let h=1779033703^s.length;for(let i=0;i<s.length;i++){h=Math.imul(h^s.charCodeAt(i),3432918353);h=h<<13|h>>>19}return(h^h>>>16)>>>0}
+function freshSeed(){return(Math.random()*4294967296)>>>0}
+
+/* ---------- the full Lyre mood library, reused verbatim: any instrument can be ----------
+   played in any of these moods. What's bred is the instrument's own VOICE (how its
+   strings actually sound) and its string count -- never the scale, tuning or pace. */
+const NOTES=["C","C#","D","D#","E","F","F#","G","G#","A","A#","B"];
+const SCALES=[["Major pentatonic",[0,2,4,7,9]],["Minor pentatonic",[0,3,5,7,10]],["Major (Ionian)",[0,2,4,5,7,9,11]],["Natural minor (Aeolian)",[0,2,3,5,7,8,10]],["Dorian",[0,2,3,5,7,9,10]],["Phrygian",[0,1,3,5,7,8,10]],["Lydian",[0,2,4,6,7,9,11]],["Mixolydian",[0,2,4,5,7,9,10]],["Harmonic minor",[0,2,3,5,7,8,11]],["Hirajoshi (Japanese)",[0,2,3,7,8]],["Hijaz (Middle Eastern)",[0,1,4,5,7,8,10]],["Whole tone",[0,2,4,6,8,10]],["Chromatic",[0,1,2,3,4,5,6,7,8,9,10,11]]];
+const PATS=["Lullaby","Dawn","Tide","Rain","Campfire","Starlight","Drone","Wander","Procession","Echoes","Fanfare","Mystery","Dance","Heartbeat","Cascade","Carousel","Hymn","March","Barcarolle","Chimes","Lament","Chase"];
+const PATTIP=["a slow rocking cradle song","a gentle climb, like light arriving","waves that rise and fall","soft drops, with quiet between","fingerpicked, like by the fire","a music box under the stars","one long low hum, nothing else","a little tune that wanders and returns","slow, solemn chords with a walking tune","a phrase, then its quiet echo","bright rising notes and a ringing chord","low, sparse and unsettling","a gentle waltz","a slow, low pulse with a held breath","a rushing run, up and back down","a small turning pattern that drifts","slow reverent chords, like a choir","a steady, determined step","a lilting rocking boat","wind chimes in a quiet air","a long falling tune, full of missing someone","a fast, driving pulse"];
+const MOODS=[
+ ["Gentle and tender",{"Lullaby":{scale:0,root:7,oct:3,sus:.7,soft:.6,room:.45,pat:0,bpm:46},"Tender":{scale:2,root:5,oct:3,sus:.7,soft:.55,room:.4,pat:7,bpm:50},"Dreamy":{scale:6,root:2,oct:3,sus:.85,soft:.65,room:.6,pat:2,bpm:42},"Starry night":{scale:0,root:2,oct:4,sus:.8,soft:.3,room:.55,pat:5,bpm:52}}],
+ ["Bright and hopeful",{"Sunrise":{scale:2,root:2,oct:3,sus:.6,soft:.3,room:.4,pat:1,bpm:56},"Wonder":{scale:6,root:7,oct:3,sus:.65,soft:.25,room:.5,pat:9,bpm:60},"Joyful":{scale:7,root:7,oct:3,sus:.45,soft:.2,room:.3,pat:12,bpm:96},"Campfire":{scale:0,root:9,oct:2,sus:.55,soft:.5,room:.3,pat:4,bpm:84}}],
+ ["Journey and epic",{"Adventure":{scale:4,root:2,oct:3,sus:.5,soft:.25,room:.4,pat:7,bpm:92},"Triumph":{scale:2,root:2,oct:3,sus:.55,soft:.2,room:.5,pat:10,bpm:100},"Procession":{scale:3,root:9,oct:2,sus:.7,soft:.4,room:.55,pat:8,bpm:58},"Hero's road":{scale:2,root:2,oct:3,sus:.55,soft:.25,room:.45,pat:17,bpm:88},"Voyage":{scale:4,root:7,oct:3,sus:.65,soft:.35,room:.5,pat:18,bpm:72}}],
+ ["Dark and deep",{"Mystery":{scale:11,root:4,oct:2,sus:.85,soft:.5,room:.6,pat:11,bpm:40},"Sorrow":{scale:3,root:4,oct:2,sus:.9,soft:.7,room:.5,pat:9,bpm:40},"Dread":{scale:5,root:4,oct:1,sus:.95,soft:.6,room:.65,pat:6,bpm:30},"Ancient Greece":{scale:4,root:9,oct:2,sus:.65,soft:.3,room:.45,pat:7,bpm:44}}],
+ ["Places",{"Forest":{scale:0,root:4,oct:3,sus:.75,soft:.55,room:.5,pat:3,bpm:50},"Sakura garden":{scale:9,root:2,oct:3,sus:.55,soft:.35,room:.4,pat:5,bpm:56},"Desert":{scale:10,root:2,oct:2,sus:.7,soft:.3,room:.45,pat:7,bpm:62},"Flowing river":{scale:2,root:0,oct:3,sus:.6,soft:.4,room:.35,pat:2,bpm:60}}],
+ ["Love and longing",{"Longing":{scale:3,root:9,oct:2,sus:.85,soft:.7,room:.55,pat:20,bpm:40},"First love":{scale:2,root:7,oct:3,sus:.7,soft:.5,room:.45,pat:15,bpm:66},"Farewell":{scale:4,root:2,oct:2,sus:.85,soft:.65,room:.55,pat:20,bpm:44},"Reunion":{scale:2,root:5,oct:3,sus:.7,soft:.4,room:.45,pat:1,bpm:60},"Embrace":{scale:0,root:0,oct:3,sus:.8,soft:.7,room:.5,pat:16,bpm:42},"Nostalgia":{scale:7,root:0,oct:3,sus:.7,soft:.6,room:.5,pat:15,bpm:56}}],
+ ["Sacred and still",{"Prayer":{scale:2,root:0,oct:2,sus:.9,soft:.6,room:.7,pat:16,bpm:38},"Temple bells":{scale:9,root:9,oct:4,sus:.95,soft:.2,room:.65,pat:19,bpm:44},"Stillness":{scale:0,root:7,oct:2,sus:.95,soft:.7,room:.7,pat:6,bpm:30},"Meditation":{scale:0,root:2,oct:3,sus:.9,soft:.65,room:.6,pat:2,bpm:34},"Moonlight":{scale:1,root:9,oct:3,sus:.85,soft:.6,room:.6,pat:5,bpm:44}}],
+ ["Wonder and magic",{"Fairy tale":{scale:6,root:7,oct:4,sus:.6,soft:.2,room:.55,pat:19,bpm:58},"Magic":{scale:11,root:0,oct:3,sus:.7,soft:.25,room:.6,pat:14,bpm:84},"Discovery":{scale:6,root:2,oct:3,sus:.6,soft:.25,room:.5,pat:14,bpm:76},"Snowfall":{scale:0,root:9,oct:4,sus:.85,soft:.4,room:.65,pat:19,bpm:40},"Playful":{scale:0,root:7,oct:3,sus:.4,soft:.2,room:.25,pat:15,bpm:112}}],
+ ["Danger and suspense",{"Suspense":{scale:5,root:4,oct:1,sus:.9,soft:.5,room:.6,pat:13,bpm:52},"Haunting":{scale:8,root:9,oct:2,sus:.9,soft:.6,room:.65,pat:13,bpm:44},"Ruins":{scale:3,root:2,oct:1,sus:.95,soft:.7,room:.7,pat:9,bpm:36},"The chase":{scale:8,root:4,oct:2,sus:.35,soft:.2,room:.25,pat:21,bpm:130},"Battle":{scale:5,root:4,oct:1,sus:.5,soft:.15,room:.35,pat:17,bpm:100},"Storm":{scale:3,root:4,oct:2,sus:.6,soft:.25,room:.5,pat:14,bpm:120}}],
+ ["Everyday scenes",{"Ocean":{scale:0,root:2,oct:3,sus:.75,soft:.5,room:.5,pat:18,bpm:54},"Rainy window":{scale:1,root:9,oct:3,sus:.85,soft:.65,room:.55,pat:3,bpm:44},"Medieval court":{scale:4,root:2,oct:3,sus:.45,soft:.2,room:.4,pat:12,bpm:92},"Harvest":{scale:7,root:7,oct:2,sus:.5,soft:.45,room:.3,pat:4,bpm:92},"Lake at dawn":{scale:0,root:4,oct:3,sus:.75,soft:.45,room:.5,pat:1,bpm:46},"Celebration":{scale:7,root:2,oct:3,sus:.5,soft:.2,room:.4,pat:10,bpm:112}}]];
+function moodDef(name){for(const g of MOODS)if(g[1][name])return g[1][name];return null}
+function moodList(){const o=[];for(const g of MOODS)for(const k of Object.keys(g[1]))o.push(k);return o}
+/* a mood here only ever supplies scale/root/oct/pat/bpm -- an instrument's own n and
+   voice (sus/soft/room) always override whatever the mood would otherwise carry,
+   because the string's own voice is what's bred, not the mood. */
+function midi(scale,root,oct,n,i){const sc=SCALES[scale][1],L=sc.length;return 12*(oct+1)+root+Math.floor(i/L)*12+sc[i%L]}
+function freq(scale,root,oct,i){return 440*Math.pow(2,(midi(scale,root,oct,99,i)-69)/12)}
+
+/* ---------- instrument species: the founders breeding draws from ---------- */
+/* body: a shape id the renderer knows how to draw. voice: the string's own fixed
+   character (sus=ring/decay, soft=how damped/breathy vs. bright the pluck is,
+   room=natural resonance). n: string count. warm: a -1..1 axis used only for
+   naming (dark/iron names vs. bright/gilt names), not for sound. */
+/* voice tuning grounded in how each real instrument actually sounds:
+   - Qanun: many sympathetic strings over a wide wooden soundboard — the brightest,
+     most metallic, shimmering/ringing of the set ("rings like a bell tower").
+   - Psaltery: metal strings over a box resonator — clear, bright, almost glassy.
+   - Harp: bell-like clarity with no damper, so notes ring on a long time — bright
+     but a touch warmer than qanun/psaltery; famous for very long natural sustain.
+   - Koto: silk/nylon strings plucked with picks — balanced, can go soft or hard,
+     sits in the middle of the brightness range with a clean, moderate decay.
+   - Lyre: gut strings over a small soundbox (turtle shell/small wood frame) — warm
+     but the small body means it decays faster than the bigger instruments here.
+   - Oud: warm, mellow, rounded — fretless lute players favor a shorter, fast-decaying
+     pluck over a long ring, unlike the zithers and harp in this set.
+   - Guqin: the darkest and quietest by far, but famous for its long, breathing decay —
+     notes are subtle but linger. */
+const SPECIES=[
+ {id:"harp",name:"Harp",body:"harp",n:11,voice:{sus:.80,soft:.32,room:.60},warm:.1,color:"#d9b45c"},
+ {id:"lyre",name:"Lyre",body:"lyre",n:9,voice:{sus:.42,soft:.48,room:.28},warm:.3,color:"#c98a4a"},
+ {id:"psaltery",name:"Psaltery",body:"psaltery",n:13,voice:{sus:.52,soft:.26,room:.36},warm:-.2,color:"#8aa0c9"},
+ {id:"qanun",name:"Qanun",body:"qanun",n:13,voice:{sus:.62,soft:.18,room:.55},warm:.5,color:"#caa23a"},
+ {id:"koto",name:"Koto",body:"koto",n:9,voice:{sus:.46,soft:.40,room:.48},warm:-.4,color:"#d65b5b"},
+ {id:"oud",name:"Oud",body:"oud",n:7,voice:{sus:.38,soft:.58,room:.50},warm:-.6,color:"#7a5a3a"},
+ {id:"guqin",name:"Guqin",body:"guqin",n:7,voice:{sus:.92,soft:.68,room:.58},warm:-.8,color:"#4a6a5a"}
+];
+function speciesOf(id){return SPECIES.find(s=>s.id===id)||SPECIES[0]}
+
+/* ---------- bred-name generator ----------
+   Names are blended from the parents along the same "warm" axis used to pick a
+   register, then assembled from syllable banks -- never a literal splice of the
+   parents' own name strings (that reliably produces ugly, unreadable results). */
+const SYL_DARK_A=["Nyx","Thal","Mor","Vael","Sorr","Um","Kael","Dros","Ash","Vey"];
+const SYL_DARK_B=["indor","assia","ileth","orac","yssa","aveth","undir","ethra","omir","ancia"];
+const SYL_WARM_A=["Sol","Aur","Lyr","Thei","Cal","Ori","Hesp","Gild","Pyr","Ser"];
+const SYL_WARM_B=["anthe","adys","essian","oria","ythe","andra","elion","assara","inel","aphyr"];
+const EPITHETS=["of the Hollow String","of the Last Chord","of Quiet Strings","of the Low Room","of the Thread","of the First Dusk","of Still Air","of the Long Dusk","of the Open Hand","of the Narrow Light",null,null,null,null];
+function pick(a,rnd){return a[Math.floor(rnd()*a.length)]}
+function breedName(warmth,rnd){
+ /* warmth in -1..1 steers which syllable banks lead; a little of the other
+    bank gets mixed in too, so the name still carries both parents. */
+ const leadWarm=rnd()<clamp(.5+warmth*.5,.05,.95);
+ const Aset=leadWarm?SYL_WARM_A:SYL_DARK_A, Bset=leadWarm?SYL_WARM_B:SYL_DARK_B;
+ const AsetMix=leadWarm?SYL_DARK_A:SYL_WARM_A, BsetMix=leadWarm?SYL_DARK_B:SYL_WARM_B;
+ const a=rnd()<.78?pick(Aset,rnd):pick(AsetMix,rnd);
+ const b=rnd()<.78?pick(Bset,rnd):pick(BsetMix,rnd);
+ let nm=a+b;
+ const ep=pick(EPITHETS,rnd);
+ return ep?nm+" "+ep:nm;
+}
+
+/* ---------- save ---------- */
+const SAVEKEY="dt_save_v1";
+function loadSave(){let d;try{d=JSON.parse(localStorage.getItem(SAVEKEY)||"null")}catch(e){d=null}
+ if(!d||typeof d!=="object")d={};
+ if(!Array.isArray(d.inst))d.inst=[];
+ if(!d.grace)d.grace=0;
+ if(!d.totalMade)d.totalMade=0;
+ if(!d.maxGen)d.maxGen=1;
+ if(!d.gifts)d.gifts=0;
+ if(!Array.isArray(d.speciesSeen))d.speciesSeen=[];
+ return d}
+function saveNow(S){try{localStorage.setItem(SAVEKEY,JSON.stringify(S))}catch(e){}}
+/* ---------- procedural instrument body art ---------- */
+/* Every shape is drawn in a 120x160 box so cards and the stage can both use it.
+   n strings are always actually drawn (clamped to a sane range for legibility),
+   so string count is something you can SEE, not just a number in a tooltip. */
+function shade(hex,amt){const n=parseInt(hex.slice(1),16);let r=(n>>16)+amt,g=(n>>8&255)+amt,b=(n&255)+amt;
+ r=Math.max(0,Math.min(255,r));g=Math.max(0,Math.min(255,g));b=Math.max(0,Math.min(255,b));
+ return"#"+(r<<16|g<<8|b).toString(16).padStart(6,"0")}
+function nStrings(n){return clamp(Math.round(n),5,16)}
+
+function bodySVG(shape,n,mainC,accC){
+ const N=nStrings(n),dark=shade(mainC,-60),mid=shade(mainC,-25),light=shade(mainC,30);
+ let frame="",strings="";
+ function strLines(x0,x1,yTop,yBot,count,color,curveTop){
+  let s="";for(let i=0;i<count;i++){const t=count<=1?.5:i/(count-1);const x=x0+(x1-x0)*t;
+   s+=`<line class="string-ln" data-i="${i}" x1="${x.toFixed(1)}" y1="${yTop}" x2="${x.toFixed(1)}" y2="${yBot}" stroke="${light}" stroke-width="${i%2?1:1.3}" opacity="${.55+((i%3)*.12)}"/>`}
+  return s}
+ if(shape==="harp"){
+  frame=`<path d="M30 148 C 28 70, 46 24, 86 16 L 96 24 C 60 34, 44 74, 46 148 Z" fill="${mid}" stroke="${dark}" stroke-width="2"/>
+   <path d="M30 148 L46 148" stroke="${dark}" stroke-width="3"/>`;
+  strings=strLines(42,80,34,144,N,light);
+ } else if(shape==="lyre"){
+  frame=`<path d="M28 140 C 18 90, 26 36, 44 18" fill="none" stroke="${mid}" stroke-width="7" stroke-linecap="round"/>
+   <path d="M92 140 C 102 90, 94 36, 76 18" fill="none" stroke="${mid}" stroke-width="7" stroke-linecap="round"/>
+   <rect x="26" y="134" width="68" height="14" rx="5" fill="${dark}"/>
+   <line x1="40" y1="24" x2="80" y2="24" stroke="${dark}" stroke-width="6"/>`;
+  strings=strLines(40,80,26,136,N,light);
+ } else if(shape==="psaltery"){
+  frame=`<path d="M20 36 L100 24 L108 132 L14 134 Z" fill="${mid}" stroke="${dark}" stroke-width="2"/>
+   <circle cx="60" cy="86" r="8" fill="${dark}"/>`;
+  let s="";for(let i=0;i<N;i++){const t=N<=1?.5:i/(N-1);const y=42+t*84;
+   s+=`<line x1="24" y1="${(y-4).toFixed(1)}" x2="104" y2="${(y+2).toFixed(1)}" stroke="${light}" stroke-width="1.2" opacity="${.5+((i%3)*.12)}"/>`}
+  strings=s;
+ } else if(shape==="qanun"){
+  frame=`<path d="M12 40 L104 22 L112 128 L16 146 Z" fill="${mid}" stroke="${dark}" stroke-width="2"/>
+   <circle cx="40" cy="60" r="5" fill="${dark}"/><circle cx="70" cy="54" r="5" fill="${dark}"/>`;
+  let s="";for(let i=0;i<N;i++){const t=N<=1?.5:i/(N-1);const y=36+t*96;
+   s+=`<line x1="18" y1="${(y-6).toFixed(1)}" x2="106" y2="${(y+4).toFixed(1)}" stroke="${light}" stroke-width="1" opacity="${.45+((i%4)*.1)}"/>`}
+  strings=s;
+ } else if(shape==="koto"){
+  frame=`<path d="M10 70 Q60 54 110 70 L104 108 Q60 96 16 108 Z" fill="${mid}" stroke="${dark}" stroke-width="2"/>`;
+  let s="";for(let i=0;i<N;i++){const t=N<=1?.5:i/(N-1);const x=18+t*88;
+   s+=`<line x1="${x.toFixed(1)}" y1="${(68+Math.sin(t*3.1)*8).toFixed(1)}" x2="${x.toFixed(1)}" y2="${(102+Math.sin(t*3.1)*6).toFixed(1)}" stroke="${light}" stroke-width="1.4" opacity="${.55+((i%3)*.12)}"/>
+    <polygon points="${(x-3).toFixed(1)},${(108+Math.sin(t*3.1)*6).toFixed(1)} ${(x+3).toFixed(1)},${(108+Math.sin(t*3.1)*6).toFixed(1)} ${x.toFixed(1)},${(118+Math.sin(t*3.1)*6).toFixed(1)}" fill="${dark}"/>`}
+  strings=s;
+ } else if(shape==="oud"){
+  frame=`<path d="M60 18 C30 22 20 50 24 82 C28 116 42 138 62 142 C84 138 100 114 102 82 C104 50 90 22 60 18 Z" fill="${mid}" stroke="${dark}" stroke-width="2"/>
+   <rect x="52" y="10" width="16" height="16" rx="3" fill="${dark}" transform="rotate(-18 60 18)"/>
+   <circle cx="62" cy="76" r="10" fill="${dark}" opacity=".85"/>`;
+  strings=strLines(44,80,26,128,Math.min(N,8),light);
+ } else { /* guqin */
+  frame=`<path d="M14 78 Q60 66 118 80 L116 98 Q60 86 16 96 Z" fill="${mid}" stroke="${dark}" stroke-width="2"/>`;
+  let s="";for(let i=0;i<Math.min(N,8);i++){const t=Math.min(N,8)<=1?.5:i/(Math.min(N,8)-1);const y=78+t*14;
+   s+=`<line x1="20" y1="${(y-2).toFixed(1)}" x2="112" y2="${(y+2).toFixed(1)}" stroke="${light}" stroke-width="1" opacity="${.5+((i%3)*.1)}"/>`}
+  strings=s;
+ }
+ return`<svg viewBox="0 0 120 160" xmlns="http://www.w3.org/2000/svg">
+  <rect x="0" y="0" width="120" height="160" fill="none"/>
+  ${frame}${strings}
+  <rect x="0" y="0" width="120" height="160" fill="none" stroke="${accC}" stroke-width="0" opacity="0"/>
+ </svg>`;
+}
+
+/* ---------- the Corona Borealis crown ---------- */
+/* Seven real stars of the constellation, scaled into a 0..1 box, used as the
+   milestone slots. Positions are illustrative, not a planetarium. */
+const CROWN_STARS=[
+ {x:.5,y:.72,r:1.0,name:"Alphecca"},
+ {x:.355,y:.6,r:.75},
+ {x:.26,y:.42,r:.7},
+ {x:.32,y:.22,r:.65},
+ {x:.5,y:.12,r:.6},
+ {x:.68,y:.22,r:.65},
+ {x:.74,y:.42,r:.7},
+];
+function crownSVG(litArr,onStarClick){
+ const W=560,H=400,pad=60;
+ const pts=CROWN_STARS.map(s=>({...s,px:pad+s.x*(W-2*pad),py:pad+s.y*(H-2*pad)}));
+ let bg="";for(let i=0;i<70;i++){const rnd=mulberry32(900+i)();const x=rnd*W,y=mulberry32(1400+i)()*H,r=.4+mulberry32(1900+i)()*.9;
+  bg+=`<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="${r.toFixed(1)}" fill="#cfd3ff" opacity="${(.15+mulberry32(2300+i)()*.35).toFixed(2)}"/>`}
+ let arcs="";for(let i=0;i<pts.length-1;i++)arcs+=`<line x1="${pts[i].px.toFixed(1)}" y1="${pts[i].py.toFixed(1)}" x2="${pts[i+1].px.toFixed(1)}" y2="${pts[i+1].py.toFixed(1)}" stroke="#7a7aa8" stroke-width="1" opacity=".5"/>`;
+ let stars="";pts.forEach((p,i)=>{const lit=!!litArr[i];const r=p.r*(lit?7:5);
+  stars+=`<g class="starpt" data-i="${i}">
+   ${lit?`<circle cx="${p.px.toFixed(1)}" cy="${p.py.toFixed(1)}" r="${(r*2.4).toFixed(1)}" fill="url(#glow)"/>`:""}
+   <circle cx="${p.px.toFixed(1)}" cy="${p.py.toFixed(1)}" r="${r.toFixed(1)}" fill="${lit?"#fff8e0":"#4a4a6a"}" stroke="${lit?"#ffe9a8":"#6a6a8a"}" stroke-width="1"/>
+  </g>`});
+ return`<svg viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg">
+  <defs><radialGradient id="glow"><stop offset="0%" stop-color="#ffe9a8" stop-opacity=".55"/><stop offset="100%" stop-color="#ffe9a8" stop-opacity="0"/></radialGradient></defs>
+  ${bg}${arcs}${stars}
+ </svg>`;
+}
+/* ---------- audio engine: the Karplus-Strong string, ported from Lyre ---------- */
+function instrString(sr,f,secs,seed,dec,soft){
+ soft=soft==null?.4:soft;const n=Math.floor(sr*secs),L=Math.max(2,Math.round(sr/f-.5)),buf=new Float32Array(n),d=new Float32Array(L);
+ let r=seed>>>0||1;const rnd=()=>{r=(r*1664525+1013904223)>>>0;return r/2147483648-1};
+ let p=0;for(let i=0;i<L;i++){const x=rnd();d[i]=x*(1-soft)+p*soft;p=x}
+ let k=0;const decay=(dec||.9965)-Math.min(.0015,f/1e6);
+ /* loop filter's own damping tracks brightness too (not just the initial pluck noise),
+    so the timbre difference between instruments persists across the whole note instead
+    of vanishing after the first few milliseconds — a plain fixed averaging filter here
+    makes every instrument converge to the same steady-state tone regardless of "soft". */
+ for(let i=0;i<n;i++){const cur=d[k],nxt=d[(k+1)%L];const avg=(cur+nxt)*.5;
+  const v=(cur*(1-soft)+avg*soft)*decay;d[k]=v;k=(k+1)%L;buf[i]=cur;
+  if(i<90)buf[i]*=i/90}
+ let pk=0;for(let i=0;i<n;i++){const a=Math.abs(buf[i]);if(a>pk)pk=a}if(pk>0)for(let i=0;i<n;i++)buf[i]/=pk;
+ {const o=1500,m=Math.min(2048,n-o-L-8),ac=[];for(let lag=L-3;lag<=L+3;lag++){let sum=0;for(let i=0;i<m;i++)sum+=buf[o+i]*buf[o+i+lag];ac.push(sum)}
+  let bi=0;for(let i=1;i<ac.length;i++)if(ac[i]>ac[bi])bi=i;let P=L-3+bi;if(bi>0&&bi<ac.length-1){const y0=ac[bi-1],y1=ac[bi],y2=ac[bi+1],dn=y0-2*y1+y2;if(dn)P+=.5*(y0-y2)/dn}buf.fa=sr/P}
+ const fo=Math.floor(sr*.4);for(let i=0;i<fo;i++)buf[n-1-i]*=i/fo;return buf}
+function instrRoom(ctx,secs){const sr=ctx.sampleRate,n=Math.floor(sr*(secs||1.6)),b=ctx.createBuffer(2,n,sr);
+ for(let c=0;c<2;c++){const d=b.getChannelData(c);let r=12345+c*777;for(let i=0;i<n;i++){r=(r*1664525+1013904223)>>>0;d[i]=((r/2147483648)-1)*Math.pow(1-i/n,3.2)}}return b}
+
+function makeEngine(ctx,inst,vol){
+ const voice=inst.voice;
+ const E={c:ctx,bufs:new Map(),voices:[],max:14};
+ const m=ctx.createGain();m.gain.value=vol;const cp=ctx.createDynamicsCompressor();cp.threshold.value=-14;cp.knee.value=14;cp.ratio.value=5;cp.attack.value=.004;cp.release.value=.2;m.connect(cp);cp.connect(ctx.destination);
+ const dry=ctx.createGain();dry.gain.value=1;dry.connect(m);E.m=m;
+ if(ctx.createConvolver){const rv=ctx.createConvolver();rv.buffer=instrRoom(ctx,1.6);const w=ctx.createGain();w.gain.value=voice.room*.9;rv.connect(w);w.connect(m);E.rv=rv;E.wet=w}
+ E.key=(scale,root,oct,i)=>ctx.sampleRate+"|"+freq(scale,root,oct,i).toFixed(3)+"|"+voice.sus.toFixed(2)+"|"+voice.soft.toFixed(2);
+ E.get=(scale,root,oct,i)=>{const k=E.key(scale,root,oct,i);let b=E.bufs.get(k);if(b)return b;
+  const sr=ctx.sampleRate,f=freq(scale,root,oct,i),secs=2.2+voice.sus*4,dec=.992+voice.sus*.0068;
+  const raw=instrString(sr,f,secs,0x51ed+i*977,dec,.1+voice.soft*.65),ab=ctx.createBuffer(1,raw.length,sr);ab.copyToChannel(raw,0);
+  b={ab,rate:f/raw.fa};E.bufs.set(k,b);return b};
+ E.setVol=v=>m.gain.setTargetAtTime(v,ctx.currentTime,.03);
+ E.fade=(v,t,q)=>{try{v.g.gain.cancelScheduledValues(t);v.g.gain.setValueAtTime(v.g.gain.value,t);v.g.gain.setTargetAtTime(0,t,q||.04);v.s.stop(t+(q||.04)*6)}catch(e){}};
+ E.pluck=(scale,root,oct,i,vel,t)=>{t=Math.max(t||0,ctx.currentTime);const b=E.get(scale,root,oct,i),s=ctx.createBufferSource();s.buffer=b.ab;s.playbackRate.value=b.rate;
+  const g=ctx.createGain();g.gain.value=Math.max(.05,Math.min(1,vel))*.8;s.connect(g);
+  const pn=ctx.createStereoPanner?ctx.createStereoPanner():null;const nMax=Math.max(1,inst.n-1);
+  if(pn){pn.pan.value=(i/nMax-.5)*.7;g.connect(pn);pn.connect(dry);if(E.rv)pn.connect(E.rv)}else{g.connect(dry);if(E.rv)g.connect(E.rv)}
+  const v={s,g,i,t};
+  for(const o of E.voices)if(o.i===i&&o.t<=t&&!o.cut){o.cut=1;E.fade(o,t,.05)}
+  E.voices.push(v);while(E.voices.filter(o=>!o.cut).length>E.max){const o=E.voices.find(x=>!x.cut);if(!o)break;o.cut=1;E.fade(o,t,.05)}
+  s.onended=()=>{E.voices=E.voices.filter(o=>o!==v);try{g.disconnect();pn&&pn.disconnect()}catch(e){}};s.start(t);return v};
+ return E;
+}
+
+/* ---------- the phrase generator: how an instrument plays itself, ported from Lyre ---------- */
+function phrase(n,scaleIdx,pat,st){
+ const L=SCALES[scaleIdx][1].length,R=Math.random,o=[],big=L>=12;
+ const rnd=k=>Math.floor(R()*k),pickA=a=>a[rnd(a.length)];
+ const fd=d=>{d=Math.round(d);while(d>n-1)d-=L;while(d<0)d+=L;return Math.max(0,Math.min(n-1,d))};
+ const N=(d,v,g,s)=>{o.push({i:fd(d),v,g,s})},Z=g=>o.push({i:-1,v:0,g});
+ const T=(d,v)=>o.push({i:fd(d),v,g:0});
+ const ch=big?[0,4,7]:[0,2,4],pr=big?[0,9,5,7]:L>=7?[0,5,3,4]:[0,3,1,4];
+ const r=pr[(st.bar++)%pr.length];
+ const lo=Math.floor(n*.45);
+ const walk=()=>{st.mel=st.mel==null?lo+2:st.mel+pickA([-2,-1,-1,0,1,1,2]);st.mel=Math.max(lo,Math.min(n-1,st.mel));return st.mel};
+ const fit=(b,seq)=>{const f=seq.filter(d=>b+d>=0&&b+d<=n-1);return f.length>=3?f.map(d=>b+d):seq.map(d=>fd(b+d))};
+ switch(pat%22){
+  case 0:N(r,.62,1);N(r+ch[2],.36,.5);N(r+ch[1]+L,.34,.5);if(st.bar%2)N(r+ch[2]+L,.42,1);else if(R()<.2)Z(1);else N(walk(),.5,1);break;
+  case 1:{N(r,.5,1);const f=fit(r,[ch[0],ch[1],ch[2],L+ch[0],L+ch[1],L+ch[2]]);f.forEach((d,k)=>N(d,.26+.5*k/f.length,.75));Z(1.5);break}
+  case 2:{const len=4+rnd(4),a=rnd(Math.max(1,n-len));T(r%L,.4);for(let k=0;k<2*len;k++){const d=k<=len?a+k:a+2*len-k;N(d,.3+.3*Math.sin(Math.PI*k/(2*len)),.75)}Z(1);break}
+  case 3:{const c=2+rnd(3);for(let k=0;k<c;k++)N(lo+rnd(Math.max(1,n-lo)),.22+R()*.3,.25+R()*.3);if(R()<.15)N(r,.32,.5);Z(1.5+R()*3);break}
+  case 4:{const c1=r+ch[1]+L,c2=r+ch[2]+L;N(r,.68,.5);N(c2,.4,.5);N(c1,.4,.5);N(c2,.42,.5);N(r+ch[2],.62,.5);N(c2,.4,.5);N(R()<.5?walk():c1,.55,.5);N(c2,.4,.5);break}
+  case 5:{let d=n-1-rnd(3);if(R()<.5)T(r,.45);const run=3+rnd(3);for(let k=0;k<run;k++){N(d,.52-.06*k,.5);d=Math.max(0,d-pickA([1,1,2]))}Z(1+R()*2.5);break}
+  case 6:{const dr=st.bar%4===0?(big?5:L>=7?3:1):0;T(dr,.58);N(dr+ch[2],.36,2.5);if(R()<.7)N(n-1-rnd(Math.min(4,n)),.2,2+R()*2);else Z(2);Z(1.5);break}
+  case 7:{if(!st.mo||st.mc<=0){const len=4+rnd(3);st.mo=[];let d=0;for(let k=0;k<len;k++){st.mo.push(d);d+=pickA([-2,-1,-1,1,1,2])}
+    st.rh=pickA([[1,1,2,1,1,2],[1.5,.5,1,1.5,.5,2],[.5,.5,1,.5,.5,1,2],[1,2,1,2,1,3]]);st.mc=4;st.at=lo+rnd(Math.max(1,Math.ceil(n*.35)))}
+   st.mc--;const sh=pickA([0,0,1,-1,2]);st.mo.forEach((d,k)=>N(Math.max(0,st.at+d+sh),.42+.2*R(),st.rh[k%st.rh.length]));Z(R()<.5?1:2);break}
+  case 8:{const cs=[r+ch[0],r+ch[1],r+ch[2],r+L+ch[0]];cs.forEach((d,k)=>{const last=k===cs.length-1;o.push({i:fd(d),v:.5+.04*k,g:last?2.2:0,s:last?undefined:.085})});N(walk(),.5,1);N(walk(),.45,1.5);break}
+  case 9:{st.at=st.at==null?lo:Math.max(Math.floor(n*.25),Math.min(n-4,st.at+pickA([-2,-1,1,2])));
+   const m=[0,pickA([1,2,-1]),pickA([2,3,4])].map(d=>Math.max(0,st.at+d)),e=m.every(d=>d+L<=n-1)?L:0;T(r,.38);m.forEach((d,k)=>N(d,.6,k<2?.75:1.5));m.forEach((d,k)=>N(d+e,.24,k<2?.75:2.5));break}
+  default:{N(r,.5,1);N(r+ch[1],.4,.75);N(r+ch[2],.45,.75);if(R()<.3)Z(1);else N(walk(),.42,1);break}
+ }
+ return o;
+}
+
+/* ---------- breeding ---------- */
+function blend(a,b,w,rnd,jitter){const base=a+(b-a)*w;const j=jitter?(rnd()-rnd())*jitter:0;return base+j}
+function breedInstrument(pa,pb,rnd){
+ const w=.3+rnd()*.4+(rnd()<.5?0:0); // weight toward one parent, never a flat 50/50 every time
+ let n=clamp(Math.round(blend(pa.n,pb.n,w,rnd,1.4)),5,16);
+ if(rnd()<.12)n=clamp(n+(rnd()<.5?-3:3),5,16); // rare wildcard: a notably sparser or denser instrument
+ let sus=clamp(blend(pa.voice.sus,pb.voice.sus,w,rnd,.09),.15,.97);
+ let soft=clamp(blend(pa.voice.soft,pb.voice.soft,w,rnd,.09),.05,.95);
+ let room=clamp(blend(pa.voice.room,pb.voice.room,w,rnd,.08),.1,.85);
+ if(rnd()<.1)sus=rnd()<.5?clamp(sus-.3,.1,.97):clamp(sus+.3,.1,.97);
+ if(rnd()<.1)soft=rnd()<.5?clamp(soft-.3,.05,.95):clamp(soft+.3,.05,.95);
+ const warm=blend(pa.warm,pb.warm,w,rnd,.15);
+ const body=rnd()<w?pa.body:pb.body;
+ const mainC=blend2hex(pa.color,pb.color,w),accC=blend2hex(pb.color,pa.color,w);
+ const name=breedName(warm,rnd);
+ const gen=Math.max(pa.gen||1,pb.gen||1)+1;
+ return{id:"dt"+freshSeed().toString(36),name,custom:"",body,color:mainC,accent:accC,n,warm,
+  voice:{sus,soft,room},gen,parents:[pa.name,pb.name],seed:(freshSeed()>>>0)};
+}
+function blend2hex(h1,h2,w){const n1=parseInt(h1.slice(1),16),n2=parseInt(h2.slice(1),16);
+ const r=Math.round(((n1>>16)*(1-w))+((n2>>16)*w)),g=Math.round(((n1>>8&255)*(1-w))+((n2>>8&255)*w)),b=Math.round(((n1&255)*(1-w))+((n2&255)*w));
+ return"#"+((r<<16)|(g<<8)|b).toString(16).padStart(6,"0")}
+
+function founderInstance(sp){return{id:"f_"+sp.id,name:sp.name,custom:"",body:sp.body,color:sp.color,accent:shade(sp.color,40),
+ n:sp.n,warm:sp.warm,voice:{...sp.voice},gen:1,parents:null,seed:hashStr(sp.id),founder:sp.id}}
+
+/* ---------- seed codec ---------- */
+function encodeSeed(inst){const j=JSON.stringify({nm:inst.name,cu:inst.custom,bd:inst.body,co:inst.color,ac:inst.accent,n:inst.n,wa:inst.warm,v:inst.voice,g:inst.gen,p:inst.parents,sd:inst.seed});
+ return"DT1-"+btoa(unescape(encodeURIComponent(j)))}
+function decodeSeed(s){if(!s||!s.startsWith("DT1-"))return null;try{const j=JSON.parse(decodeURIComponent(escape(atob(s.slice(4)))));
+ return{id:"dt"+freshSeed().toString(36),name:j.nm,custom:j.cu||"",body:j.bd,color:j.co,accent:j.ac,n:j.n,warm:j.wa,voice:j.v,gen:j.g,parents:j.p,seed:j.sd}}catch(e){return null}}
+
+/* ---------- Ariadne's crown: the myth, told in pieces ---------- */
+const MYTH=[
+ "Ariadne gave Theseus a single thread, and asked only one thing: that he come back for her.",
+ "He found what waited in the dark heart of the maze, and did what he had come to do. He did not come back.",
+ "Left on the shore at Naxos, she wept until there was nothing left to weep with — and still, for a long while, no one came.",
+ "Then Dionysus found her. He did not try to console her the way the others might have. He simply stayed.",
+ "When she let herself be loved again, he lifted the crown from her hair and threw it into the night sky, so that no part of her could ever be lost again.",
+ "It circles there still, low in the northern sky — a small ring of stars sailors call the Crown. Some still call it hers.",
+ "They say nothing thrown into the sky is ever truly gone. Only farther away — and somehow, because of that, easier for anyone to find."
+];
+/* each star lights on its OWN condition — they are not guaranteed to complete in order
+   (e.g. breeding with all 7 founding species can easily happen before 10 total breeds or
+   3 gifts), so lit state must never be "the highest milestone reached so far". */
+function crownLitArr(S){return crownProgress(S).map(r=>r.done)}
+function crownLitCount(S){return crownLitArr(S).filter(Boolean).length}
+/* what each star of the crown actually asks of the player, so the Crown screen can say so */
+function crownProgress(S){
+ const g=(cur,target,label)=>({label,cur:Math.min(cur,target),target,done:cur>=target});
+ return[
+  g(S.totalMade||0,1,"Breed your first instrument"),
+  g(S.grace||0,1,"Give an instrument away as a gift"),
+  g(S.maxGen||1,3,"Breed an instrument to generation 3"),
+  g(S.maxGen||1,5,"Breed an instrument to generation 5"),
+  g(S.totalMade||0,10,"Breed 10 instruments in total"),
+  g(S.gifts||0,3,"Give away 3 instruments"),
+  g((S.speciesSeen||[]).length,7,"Breed with all 7 founding species")
+ ]}
+let S=loadSave();
+const rnd=mulberry32(freshSeed());
+const VIEW={screen:"lounge",tab:"shelf",selA:null,selB:null,pending:null,playId:null};
+let bodyEl=null,ctxA=null,engineCache=new Map();
+
+function allParents(){return[...SPECIES.map(founderInstance),...S.inst]}
+function findParent(id){return allParents().find(x=>x.id===id)}
+function stepDots(cur,total){const row=h("div",{class:"step-row"});for(let i=0;i<total;i++)row.append(h("div",{class:"step-dot"+(i<=cur?" on":"")}));return row}
+
+function renderAll(){
+ bodyEl=bodyEl||$("main");
+ if(!bodyEl)return;
+ if(VIEW.screen!=="play"&&playState){stopPlayState();if(VIEW._playCleanup){VIEW._playCleanup();VIEW._playCleanup=null}}
+ bodyEl.innerHTML="";
+ if(VIEW.screen==="lounge")renderLounge();
+ else if(VIEW.screen==="pick")renderPick();
+ else if(VIEW.screen==="reveal")renderReveal();
+ else if(VIEW.screen==="play")renderPlay();
+}
+
+/* ---------- lounge: shelf + crown ---------- */
+function instCard(inst,opts){opts=opts||{};
+ const nmShown=inst.custom||inst.name;
+ const card=h("div",{class:"card"+(opts.sel?" sel":"")});
+ const pic=h("div",{class:"pic"});pic.innerHTML=bodySVG(inst.body,inst.n,inst.color,inst.accent||inst.color);
+ card.append(pic);
+ const bd=h("div",{class:"bd"});
+ bd.append(h("div",{class:"nm"},nmShown));
+ if(inst.custom)bd.append(h("div",{class:"sb"},"born ",inst.name));
+ bd.append(h("div",{class:"sb"},inst.founder?"Founder instrument":"Generation "+inst.gen+(inst.parents?" · "+inst.parents.join(" × "):"")));
+ bd.append(h("div",{class:"tag"+(inst.founder?"":" gold")},inst.n+" strings"));
+ card.append(bd);
+ card.onclick=()=>opts.onClick&&opts.onClick(inst);
+ return card}
+
+function renderLounge(){
+ const wrap=h("div",{class:"wrap"});
+ const tabs=h("div",{class:"row ui",style:"justify-content:flex-start;margin-bottom:14px"},
+  h("button",{class:"btn sm"+(VIEW.tab==="shelf"?" on":""),onclick:()=>{VIEW.tab="shelf";renderAll()}},"Your instruments"),
+  h("button",{class:"btn sm"+(VIEW.tab==="crown"?" on":""),onclick:()=>{VIEW.tab="crown";renderAll()}},"The Crown"),
+  h("button",{class:"btn sm pri",style:"margin-left:auto",onclick:()=>{VIEW.selA=null;VIEW.selB=null;VIEW.screen="pick";renderAll()}},"Breed"));
+ wrap.append(tabs);
+ if(VIEW.tab==="shelf"){
+  wrap.append(h("h1",null,"Divine Tragedy"),h("p",{class:"dim ui"},"Pluck a string yourself, or let an instrument play for you. Breed two to make a voice that never existed before."));
+  if(!S.inst.length)wrap.append(h("div",{class:"empty ui"},"Nothing of your own yet. Breed two of the founding instruments to begin."));
+  else{const grid=h("div",{class:"grid"});
+   for(const inst of S.inst){
+    const card=instCard(inst,{onClick:()=>openInstMenu(inst)});
+    grid.append(card)}
+   wrap.append(grid)}
+  wrap.append(h("h2",null,"Founding instruments"),h("p",{class:"dim small ui"},"Always here to breed from. Giving one away never uses these up."));
+  const fgrid=h("div",{class:"grid"});
+  for(const sp of SPECIES)fgrid.append(instCard(founderInstance(sp),{onClick:i=>openInstMenu(i)}));
+  wrap.append(fgrid);
+  wrap.append(h("p",{class:"ui small dim",style:"margin-top:18px"},h("span",{class:"grace"},"Grace: "+S.grace)," — given away to those who'll play them next."));
+ } else {
+  renderCrown(wrap);
+ }
+ bodyEl.append(wrap);
+}
+
+function openInstMenu(inst){
+ VIEW.playId=inst.id;VIEW.screen="play";renderAll();
+}
+
+function renderCrown(wrap){
+ const prog=crownProgress(S),litArr=prog.map(r=>r.done),lit=litArr.filter(Boolean).length;
+ wrap.append(h("h1",null,"The Crown Ariadne Wore"));
+ const sky=h("div",{class:"sky"});
+ sky.innerHTML=crownSVG(litArr);
+ [].forEach.call(sky.querySelectorAll(".starpt"),(g,i)=>{g.addEventListener("click",()=>{if(litArr[i]){VIEW.loreIdx=i;renderAll()}})});
+ wrap.append(sky);
+ if(lit<=0){
+  wrap.append(h("p",{class:"dim ui"},"Breed your first instrument, and the first star will light."));
+ }else{
+  const loreList=h("div",{style:"display:flex;flex-direction:column;gap:10px"});
+  for(let i=0;i<MYTH.length;i++){
+   if(!litArr[i])continue;
+   const sel=VIEW.loreIdx===i;
+   loreList.append(h("div",{class:"lorebox ui",style:sel?"border-left:3px solid var(--gold2)":""},MYTH[i]));
+  }
+  wrap.append(loreList);
+ }
+ wrap.append(h("p",{class:"dim small ui",style:"margin-top:8px"},(lit)+" of 7 stars lit."));
+ const checklist=h("div",{class:"ui",style:"margin-top:14px;max-width:420px"});
+ checklist.append(h("div",{class:"small dim",style:"margin-bottom:6px"},"How each star lights:"));
+ for(const req of prog){
+  const row=h("div",{style:"display:flex;align-items:center;gap:8px;padding:3px 0;font-size:13px"+(req.done?"":";opacity:.8")});
+  row.append(h("span",{style:"color:"+(req.done?"var(--gold2)":"var(--dim)")},req.done?"★":"☆"));
+  row.append(h("span",{style:req.done?"text-decoration:line-through;text-decoration-color:var(--dim)":""},req.label));
+  if(!req.done)row.append(h("span",{class:"dim",style:"margin-left:auto"},req.cur+" / "+req.target));
+  checklist.append(row);
+ }
+ wrap.append(checklist);
+}
+
+/* ---------- pick two parents ---------- */
+function renderPick(){
+ const wrap=h("div",{class:"wrap center"});
+ wrap.append(h("h1",null,"Choose two to breed"));
+ const pool=allParents();
+ const grid=h("div",{class:"grid"});
+ for(const inst of pool){
+  const sel=inst.id===VIEW.selA||inst.id===VIEW.selB;
+  grid.append(instCard(inst,{sel,onClick:i=>{
+   if(VIEW.selA===i.id){VIEW.selA=null}
+   else if(VIEW.selB===i.id){VIEW.selB=null}
+   else if(!VIEW.selA)VIEW.selA=i.id;
+   else if(!VIEW.selB)VIEW.selB=i.id;
+   renderAll()}}));
+ }
+ wrap.append(grid);
+ const go=h("button",{class:"btn pri",style:"margin-top:14px"},"Breed these two");
+ go.disabled=!(VIEW.selA&&VIEW.selB);
+ go.onclick=()=>{const pa=findParent(VIEW.selA),pb=findParent(VIEW.selB);if(!pa||!pb)return;
+  VIEW.pending=breedInstrument(pa,pb,rnd);VIEW.screen="reveal";renderAll()};
+ wrap.append(go,h("button",{class:"btn sm",style:"margin-top:8px",onclick:()=>{VIEW.screen="lounge";renderAll()}},"Back"));
+ bodyEl.append(wrap);
+}
+
+/* ---------- reveal ---------- */
+function renderReveal(){
+ const inst=VIEW.pending;
+ const wrap=h("div",{class:"wrap center"});
+ const stage=h("div",{class:"stage"});stage.append(h("div",{class:"spotlight"}));
+ const pic=h("div",{style:"width:140px;margin:0 auto;position:relative;z-index:1"});pic.innerHTML=bodySVG(inst.body,inst.n,inst.color,inst.accent);
+ stage.append(pic);wrap.append(stage);
+ const nameEl=h("div",{class:"pix",style:"font-size:20px;color:var(--gold2);margin-top:10px"},inst.name);
+ wrap.append(nameEl,h("div",{class:"dim small ui"},"Generation "+inst.gen+" · bred from "+inst.parents.join(" and ")+" · "+inst.n+" strings"));
+ const nmRow=h("div",{class:"ui",style:"margin-top:10px"},
+  h("label",null,"Give it your own name (optional)"),
+  h("input",{type:"text",id:"renameBox",placeholder:inst.name,oninput:e=>{inst.custom=e.target.value}}));
+ wrap.append(nmRow);
+ const placeBtn=h("button",{class:"btn pri",style:"margin-top:14px"},"Place on the shelf");
+ placeBtn.onclick=()=>{
+  S.inst.push(inst);S.totalMade=(S.totalMade||0)+1;S.maxGen=Math.max(S.maxGen||1,inst.gen);
+  if(inst.parents){for(const sp of SPECIES)if(inst.parents.includes(sp.name)&&!S.speciesSeen.includes(sp.id))S.speciesSeen.push(sp.id)}
+  for(const pid of[VIEW.selA,VIEW.selB]){const sp=SPECIES.find(s=>"f_"+s.id===pid);if(sp&&!S.speciesSeen.includes(sp.id))S.speciesSeen.push(sp.id)}
+  saveNow(S);VIEW.pending=null;VIEW.selA=null;VIEW.selB=null;VIEW.screen="lounge";VIEW.tab="shelf";renderAll()};
+ wrap.append(placeBtn);
+ bodyEl.append(wrap);
+}
+
+/* ---------- play: manual pluck + autoplay + mood picker ---------- */
+let playState=null; // {inst, engine, mood:{scale,root,oct,pat,bpm}, auto, autoT, nextT, st, queue}
+async function ensureAudio(){if(!ctxA){ctxA=new(window.AudioContext||window.webkitAudioContext)()}
+ if(ctxA.state!=="running"){try{await ctxA.resume()}catch(e){}}return ctxA}
+function stopPlayState(){if(playState){clearInterval(playState.autoT);if(playState.engine)try{playState.engine.m.disconnect()}catch(e){}}playState=null}
+
+function renderPlay(){
+ const inst=findParent(VIEW.playId);
+ if(!inst){VIEW.screen="lounge";renderAll();return}
+ if(!playState||playState.inst.id!==inst.id){
+  stopPlayState();
+  const def=moodDef("Lullaby");
+  playState={inst,engine:null,mood:{name:"Lullaby",scale:def.scale,root:def.root,oct:def.oct,pat:def.pat,bpm:def.bpm},auto:false,autoT:null,nextT:0,st:{bar:0},queue:[],cycle:false,cycleNextAt:0};
+ }
+ const PS=playState;
+ const wrap=h("div",{class:"wrap center"});
+ const stage=h("div",{class:"stage"});stage.append(h("div",{class:"spotlight"}));
+ const pic=h("div",{style:"width:120px;margin:0 auto;position:relative;z-index:1"});pic.innerHTML=bodySVG(inst.body,inst.n,inst.color,inst.accent||inst.color);
+ stage.append(pic);
+ const strings=h("div",{class:"strings"});
+ const svgWrap=h("div",{style:"position:relative;z-index:1"});svgWrap.append(strings);
+ stage.append(svgWrap);
+ wrap.append(h("div",{style:"font-size:19px;color:var(--gold2);font-weight:700"},inst.custom||inst.name),
+  h("div",{class:"dim small ui"},inst.founder?"Founding instrument":"Generation "+inst.gen+" · "+inst.parents.join(" × ")));
+ wrap.append(stage);
+
+ function paintStrings(){
+  const N=nStrings(inst.n);let svg=`<svg viewBox="0 0 400 180" xmlns="http://www.w3.org/2000/svg">`;
+  for(let i=0;i<N;i++){const x=20+(380-40)*(N<=1?.5:i/(N-1));
+   svg+=`<line class="string-ln" data-i="${i}" x1="${x.toFixed(1)}" y1="10" x2="${x.toFixed(1)}" y2="170" stroke="${inst.color}" stroke-width="2" opacity=".75"/>`}
+  svg+="</svg>";strings.innerHTML=svg;
+ }
+ paintStrings();
+ function flashString(i){
+  const ln=strings.querySelector(`[data-i="${i}"]`);if(ln){ln.setAttribute("stroke-width","4");setTimeout(()=>ln&&ln.setAttribute("stroke-width","2"),140)}
+ }
+ async function doPluck(i,vel){
+  await ensureAudio();if(!PS.engine)PS.engine=makeEngine(ctxA,inst,.8);
+  const t=ctxA.currentTime;PS.engine.pluck(PS.mood.scale,PS.mood.root,PS.mood.oct,i,vel||.75,t);
+  flashString(i);
+ }
+ const pointerHandler=e=>{
+  const rect=strings.getBoundingClientRect();const x=(e.touches?e.touches[0].clientX:e.clientX)-rect.left;
+  const N=nStrings(inst.n),frac=clamp(x/rect.width,0,1);const i=clamp(Math.round(frac*(N-1)),0,N-1);
+  doPluck(i);
+ };
+ strings.addEventListener("pointerdown",pointerHandler);
+ VIEW._doPluck=doPluck;
+ const keys=["a","s","d","f","g","h","j","k","l",";","'","[","]","\\","shift+a","shift+s"];
+ function keyHandler(e){if(e.repeat)return;const idx=keys.indexOf(e.key.toLowerCase());if(idx<0||idx>=nStrings(inst.n))return;doPluck(idx)}
+ document.addEventListener("keydown",keyHandler);
+ VIEW._playCleanup=()=>{strings.removeEventListener("pointerdown",pointerHandler);document.removeEventListener("keydown",keyHandler)};
+
+ /* mood picker */
+ const row=h("div",{class:"row ui ok-row"});
+ const moodSel=h("select",null,...moodList().map(nm=>nm===PS.mood.name?h("option",{value:nm,selected:true},nm):h("option",{value:nm},nm)));
+ function setMood(name,keepBpm){const d=moodDef(name);PS.mood={name,scale:d.scale,root:d.root,oct:d.oct,pat:d.pat,bpm:keepBpm?PS.mood.bpm:d.bpm};PS.st={bar:0};PS.queue=[];moodSel.value=name;bpmSl.value=PS.mood.bpm}
+ moodSel.onchange=e=>setMood(e.target.value,true);
+ row.append(h("div",null,h("label",null,"Mood"),moodSel));
+ const bpmSl=h("input",{type:"range",min:20,max:160,value:PS.mood.bpm,oninput:e=>PS.mood.bpm=+e.target.value});
+ row.append(h("div",null,h("label",null,"Pace"),bpmSl));
+ wrap.append(row);
+ const cycleRow=h("div",{class:"row ui"});
+ const cycleChk=h("input",PS.cycle?{type:"checkbox",checked:true}:{type:"checkbox"});
+ cycleChk.onchange=e=>{PS.cycle=e.target.checked;if(PS.cycle)PS.cycleNextAt=(ctxA?ctxA.currentTime:0)+12+rnd()*8};
+ cycleRow.append(h("label",{class:"small dim",style:"display:flex;align-items:center;gap:6px;cursor:pointer"},cycleChk,"Wander between moods while it plays"));
+ wrap.append(cycleRow);
+
+ const auto=h("button",{class:"btn pri"},PS.auto?"Stop":"Let it play itself");
+ auto.onclick=async()=>{
+  if(PS.auto){PS.auto=false;clearInterval(PS.autoT);auto.textContent="Let it play itself";return}
+  await ensureAudio();if(!PS.engine)PS.engine=makeEngine(ctxA,inst,.8);
+  PS.auto=true;auto.textContent="Stop";PS.nextT=ctxA.currentTime+.08;
+  if(PS.cycle)PS.cycleNextAt=ctxA.currentTime+12+rnd()*8;
+  PS.autoT=setInterval(()=>{
+   if(!PS.auto)return;const now=ctxA.currentTime;let guard=0;
+   if(PS.cycle&&now>=PS.cycleNextAt){
+    const list=moodList().filter(nm=>nm!==PS.mood.name);
+    if(list.length)setMood(list[Math.floor(rnd()*list.length)],false);
+    PS.cycleNextAt=now+12+rnd()*8;
+    toast("Wandering into: "+PS.mood.name);
+   }
+   while(PS.nextT<now+.2&&guard++<40){
+    if(!PS.queue.length)PS.queue=phrase(inst.n,PS.mood.scale,PS.mood.pat,PS.st);
+    const it=PS.queue.shift(),beat=60/PS.mood.bpm;
+    if(it.i>=0){PS.engine.pluck(PS.mood.scale,PS.mood.root,PS.mood.oct,it.i,it.v,PS.nextT);
+     const delay=Math.max(0,(PS.nextT-now)*1000);
+     setTimeout(()=>{if(PS.auto)flashString(it.i)},delay);
+    }
+    PS.nextT+=it.s!=null?it.s:it.g*beat;
+   }
+  },40);
+ };
+ wrap.append(auto);
+
+ if(!inst.founder){
+  const tools=h("div",{class:"row ui",style:"margin-top:16px"});
+  const seedField=h("input",{type:"text",readonly:"",value:encodeSeed(inst),style:"max-width:220px;font-family:monospace;font-size:11.5px"});
+  const renameBox=h("input",{type:"text",value:inst.custom||"",placeholder:inst.name,style:"max-width:220px"});
+  renameBox.oninput=e=>{inst.custom=e.target.value;saveNow(S);seedField.value=encodeSeed(inst)};
+  tools.append(h("div",null,h("label",null,"Rename"),renameBox));
+  seedField.onclick=()=>seedField.select();
+  const seedBtn=h("button",{class:"btn sm"},"Copy");
+  seedBtn.onclick=async()=>{
+   const s=seedField.value;let ok=false;
+   try{if(navigator.clipboard&&navigator.clipboard.writeText){await navigator.clipboard.writeText(s);ok=true}}catch(e){}
+   if(!ok){try{seedField.focus();seedField.select();ok=document.execCommand("copy")}catch(e){}}
+   toast(ok?"Seed copied: "+s.slice(0,18)+"…":"Couldn't auto-copy — seed is selected, press Ctrl/Cmd+C");
+  };
+  tools.append(h("div",null,h("label",null,"Shareable seed"),h("div",{style:"display:flex;gap:6px;align-items:center;flex-wrap:wrap"},seedField,seedBtn)));
+  const giftBtn=h("button",{class:"btn sm"},"Give as a gift");
+  giftBtn.onclick=()=>{giftInstrument(inst)};
+  tools.append(giftBtn);
+  wrap.append(tools);
+ }
+ const backBtn=h("button",{class:"btn sm",style:"margin-top:14px"},"Back to the shelf");
+ backBtn.onclick=()=>{if(VIEW._playCleanup)VIEW._playCleanup();VIEW.screen="lounge";renderAll()};
+ wrap.append(backBtn);
+ bodyEl.append(wrap);
+}
+function giftInstrument(inst){
+ S.inst=S.inst.filter(i=>i.id!==inst.id);
+ S.grace=(S.grace||0)+1;S.gifts=(S.gifts||0)+1;saveNow(S);
+ if(VIEW._playCleanup)VIEW._playCleanup();
+ VIEW.screen="lounge";VIEW.tab="shelf";renderAll();
+ toast("Given away, with Grace. Its star stays lit.");
+}
+let toastT=0;
+function toast(t){let e=$("dtoast");if(!e){e=h("div",{id:"dtoast",class:"ui",style:"position:fixed;left:50%;bottom:20px;transform:translateX(-50%);background:var(--pan2);border:1px solid var(--gold);border-radius:6px;padding:8px 16px;font-size:13.5px;z-index:9;display:none"});document.body.append(e)}
+ e.textContent=t;e.style.display="block";clearTimeout(toastT);toastT=setTimeout(()=>e.style.display="none",2800);
+}
+function crownGlyph(){return h("svg",{viewBox:"0 0 24 24",fill:"none",stroke:"currentColor","stroke-width":"1.6"},
+ (()=>{const p=document.createElementNS("http://www.w3.org/2000/svg","path");
+  p.setAttribute("d","M4 18l2-9 4 5 2-7 2 7 4-5 2 9z");return p})());}
+
+function boot(){
+ const app=h("div",{id:"app"});
+ const header=h("header");
+ header.append(h("div",{class:"brand"},crownGlyph(),"Divine Tragedy"));
+ app.append(header,h("main",{id:"main"}));
+ host.append(app);
+ bodyEl=$("main");
+ renderAll();
+
+ host.RT={
+  state(){return{screen:VIEW.screen,tab:VIEW.tab,selA:VIEW.selA,selB:VIEW.selB,grace:S.grace,
+   totalMade:S.totalMade,maxGen:S.maxGen,gifts:S.gifts,instCount:S.inst.length,speciesSeen:S.speciesSeen.length,
+   litStars:crownLitCount(S)}},
+  raw(){return JSON.parse(JSON.stringify(S))},
+  goto(scr){VIEW.screen=scr;renderAll();return true},
+  pickParents(aId,bId){VIEW.screen="pick";VIEW.selA=aId;VIEW.selB=bId;renderAll();return true},
+  breedNow(aId,bId){const pa=findParent(aId),pb=findParent(bId);if(!pa||!pb)return false;
+   VIEW.pending=breedInstrument(pa,pb,rnd);VIEW.selA=aId;VIEW.selB=bId;VIEW.screen="reveal";renderAll();return true},
+  place(){const b=bodyEl.querySelector("button.btn.pri");if(b&&/shelf/i.test(b.textContent)){b.click();return true}return false},
+  playFirstOwned(){if(!S.inst.length)return false;VIEW.playId=S.inst[0].id;VIEW.screen="play";renderAll();return true},
+  pluck(i){if(VIEW.screen!=="play"||!VIEW._doPluck)return false;VIEW._doPluck(i);return true},
+  toggleAuto(){const b=[...bodyEl.querySelectorAll("button.btn.pri")].find(x=>/play itself|Stop/.test(x.textContent));if(b){b.click();return true}return false},
+  gift(instId){const inst=S.inst.find(i=>i.id===instId);if(!inst)return false;giftInstrument(inst);return true},
+  rename(instId,name){const inst=S.inst.find(i=>i.id===instId)||SPECIES.map(founderInstance).find(i=>i.id===instId);if(!inst)return false;inst.custom=name;saveNow(S);return true},
+  seedOf(instId){const inst=findParent(instId);return inst?encodeSeed(inst):null},
+  importSeed(s){const inst=decodeSeed(s);if(!inst)return false;S.inst.push(inst);S.totalMade=(S.totalMade||0)+1;S.maxGen=Math.max(S.maxGen||1,inst.gen||1);saveNow(S);return inst.id},
+  async full(){ // breed two founders, place it, return the resulting id
+   this.breedNow("f_harp","f_lyre");
+   for(let i=0;i<30;i++){if(VIEW.screen==="reveal")break;await new Promise(r=>setTimeout(r,30))}
+   const id=VIEW.pending&&VIEW.pending.id;this.place();
+   for(let i=0;i<30;i++){if(VIEW.screen==="lounge")break;await new Promise(r=>setTimeout(r,30))}
+   return id;
+  }
+ };
+}
+boot();
+})();
+<~/script></body></html>
+</script>
 <script type="text/plain" class="cartsrc" data-meta='{"name": "Flagger", "sub": "A sewing bench for small, sovereign flags", "desc": "Every flag stitched here is its own nation \u2014 not a claim on land, just a device for one person, or a few by choice, to fly. Pick a simple layout, two or three honest colors, and at most one charge; write a spoken declaration instead of stitching on letters. Save it, share its seed, and fly it for real as a favicon on your own site.", "color": "#d8a53d", "glyph": "M5 3v18 M5 4h11l-2 3 2 3H5", "tags": ["Craft", "Philosophy", "Design"], "id": "flagger"}'><!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><title>Flagger</title>
 <style>
 :root{--linen:#f3e6cf;--linen2:#e9d6b2;--navy:#1c2440;--navy2:#141a30;--navy3:#0e1324;--gold:#d8a53d;--gold2:#f0c766;--thread:#b3453c;--tx:#f6ecd8;--mu:#a99a7c;--sans:"Trebuchet MS","Segoe UI",system-ui,sans-serif;
@@ -2460,7 +3239,7 @@ html,body{margin:0;height:100%;overflow:hidden;background:var(--desk);font-famil
 .card.fame{box-shadow:0 0 0 2px var(--neon3),2px 3px 0 rgba(0,0,0,.35),0 0 16px rgba(255,225,77,.5)}
 .crt{background:radial-gradient(ellipse at 50% 20%,var(--crt2),var(--crt) 75%);border-radius:10px;border:3px solid #000;box-shadow:inset 0 0 40px #000,0 0 0 3px #3a2c1c,0 6px 0 #1a130b;position:relative;overflow:hidden}
 .crt::after{content:"";position:absolute;inset:0;background:repeating-linear-gradient(0deg,rgba(255,255,255,.035) 0 1px,transparent 1px 3px);pointer-events:none}
-.marquee{background:linear-gradient(180deg,#1a0f24,#0a0612);border:3px solid var(--neon2);box-shadow:0 0 18px var(--neon2),inset 0 0 30px rgba(54,240,255,.15);border-radius:10px;position:relative;overflow:hidden}
+.marquee{background:linear-gradient(180deg,#1a0f24,#0a0612);border:3px solid var(--neon2);box-shadow:0 0 18px var(--neon2),inset 0 0 30px rgba(54,240,255,.15);border-radius:10px;position:relative;overflow:hidden;touch-action:none}
 .marquee::after{content:"";position:absolute;inset:0;background:repeating-linear-gradient(0deg,rgba(0,0,0,.25) 0 2px,transparent 2px 4px);pointer-events:none}
 .pix{font-family:var(--mono);letter-spacing:.04em}
 .step-row{display:flex;justify-content:center;gap:6px;padding:8px 0}
@@ -2963,9 +3742,17 @@ function renderRhythm(){
   }
   raf=requestAnimationFrame(draw);
  }
- function judgeTap(){
+ // Pointer taps (mouse click / touch) reach judgeTap a bit later than a keydown
+ // does, in effect: they route through the browser's gesture/compositor path,
+ // keydown doesn't. Left uncorrected this makes the rhythm step objectively
+ // harder to play well with a mouse or finger than with the spacebar, for a
+ // reason that has nothing to do with the player's actual timing. Comping a
+ // fixed amount off the measured time for non-keyboard taps restores parity.
+ // Tune here only if it still feels off; it does not touch keyboard scoring.
+ const POINTER_LATENCY_COMP=.05;
+ function judgeTap(bias){
   if(!started)return;
-  const now=ctxA.currentTime-t0;
+  const now=ctxA.currentTime-t0-(bias||0);
   let best=null,bd=Infinity;
   for(const n of chart.notes){if(n.hit)continue;const d=Math.abs(n.at-now);if(d<bd){bd=d;best=n}}
   if(best&&bd<.35){
@@ -2991,10 +3778,17 @@ function renderRhythm(){
   const lastAt=chart.notes[chart.notes.length-1].at+1.2;
   endT=setTimeout(finish,lastAt*1000);
   draw();
-  const tapHandler=e=>{if(e.type==="keydown"&&e.code!=="Space")return;judgeTap()};
-  marq.addEventListener("pointerdown",tapHandler);
+  const tapHandler=e=>{
+   if(e.type==="keydown"){if(e.code!=="Space")return;judgeTap(0);}
+   else judgeTap(POINTER_LATENCY_COMP);
+  };
+  // Bound to the whole step (not just the narrow marquee strip) so a click or
+  // tap anywhere on this screen counts — timing is what's judged, not where
+  // you land, so there's no reason to make someone aim precisely as well as
+  // keep time, especially with a finger on a small screen.
+  wrap.addEventListener("pointerdown",tapHandler);
   document.addEventListener("keydown",tapHandler);
-  VIEW.rec={cleanup(){marq.removeEventListener("pointerdown",tapHandler);document.removeEventListener("keydown",tapHandler)}};
+  VIEW.rec={cleanup(){wrap.removeEventListener("pointerdown",tapHandler);document.removeEventListener("keydown",tapHandler)}};
  };
  host.RT=host.RT||{};host.RT.rhythmAutoPerfect=()=>{ // test hook: simulate a perfect run
   if(!started)startBtn.onclick();
