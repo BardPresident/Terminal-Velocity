@@ -13857,6 +13857,12 @@ function clipReactToClick(){
 let bubbleTimer=null;
 let lastSpokeAt=0;
 function clipSay(text){
+ // No hide timer at all, on purpose, after two wrong attempts at one: a flat
+ // duration either lingered for 8+ seconds (blocking everything else) or, cut
+ // down to fix that, started clearing lines before they could be read. There
+ // isn't a duration that's right for both a two-word aside and a long line --
+ // so instead his last line just stays up until the next one actually
+ // replaces it. He's chatty enough that there's always a next one coming.
  lastSpokeAt=performance.now();
  const bubble=$("clipBubble");
  bubble.textContent="";
@@ -13869,17 +13875,6 @@ function clipSay(text){
   i++;
   if(i>=text.length){clearInterval(bubbleTimer)}
  },18);
- clearTimeout(window._bubbleHide);
- // Was a flat 6000ms plus 40ms/char -- for even a short quip that's 8+
- // seconds, and since a bend quip can fire every few clicks, the bubble (and
- // the pencil, which only taps while it's showing) never actually got a
- // chance to close during real play: it just chained into the next one.
- // Scaled to roughly reading speed with a much lower floor and ceiling, so
- // it reads comfortably but actually clears between triggers.
- window._bubbleHide=setTimeout(()=>{
-  bubble.classList.remove("show");
-  $("pencilGrp").classList.remove("show");
- },Math.min(5000,1400+text.length*45));
 }
 // Every gesture below (celebrate, spin, and the idle pool further down) is a
 // one-shot CSS animation layered on top of the always-on "sway" loop. A
