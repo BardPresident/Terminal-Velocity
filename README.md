@@ -254,9 +254,12 @@ Desktop icons (how the desktop is laid out, and what you can change)
   The desktop shows its icons in named groups: Library (the apps built on
   your archive manifest, then Media Player, Image Viewer, Reader), Games
   (Cartridges first, then Terminal Velocity and the built-in games),
-  Everyday, Create, Computer and Tools. On a wide screen each group starts
-  at the top of its own column with a small heading (a long group continues
-  in the next column); on a phone the groups are rows under their headings.
+  Everyday, Create, Computer and Tools. Each group has its own column with
+  its heading on top (a long group continues in the next column, heading
+  dimmed). On a PC the icons only use the LEFT HALF of the screen, so an
+  app can sit on the right; on a phone they may use the whole screen. If
+  your chosen size does not fit, every icon shrinks a little until it does,
+  so there is nothing to scroll.
   An app that is not in the list lands in the group that matches its
   category. Apps you install in Programs and games in Cartridges never get
   desktop icons, so the desktop does not fill up.
