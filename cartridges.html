@@ -6616,6 +6616,7 @@ function repairNearestFence(){
 }
 function anyFenceBroken(){return fences.some(f=>f.broken)}
 let GL=null,canvas=null,program=null;
+let contextLost=false; // see the guard at the top of render()
 let uProj,uView,uSunDir,uFogNear,uFogFar,uFogColor;
 let hud,seedInput,lockHint,menuOverlay,statsGrid;
 let currentSeed="";
@@ -6857,6 +6858,16 @@ function resize(){
 let lastT=0,fps=60,fpsSmoothed=60,startT=0,autosaveAccum=0;
 const projCache={aspect:0,m:null};
 function render(t){
+ // a lost WebGL context (the browser can reclaim one any time under GPU memory
+ // pressure, or after a tab's been backgrounded a while -- both far more likely
+ // to have happened by the time someone comes back to resume a save than during
+ // a single sitting) turns every GL call below into a silent no-op: nothing
+ // throws, nothing logs, the canvas just freezes on whatever was last drawn.
+ // Bailing out here instead of plowing on through dead GL calls, and waiting
+ // for "webglcontextrestored" (wired up in boot()) to rebuild everything and
+ // kick the loop back off, is what turns that permanent black freeze into a
+ // few-frame hiccup.
+ if(contextLost)return;
  if(!startT)startT=t;
  const dt=Math.min((t-lastT)/1000||0,0.05);lastT=t;
  fps=1/Math.max(dt,0.0001);
@@ -6951,10 +6962,35 @@ function render(t){
  requestAnimationFrame(render);
 }
 
+// A lost context without this pair of listeners is lost for good -- the
+// browser won't even try to hand the GPU resources back unless the
+// "webglcontextlost" event's default action (abandoning the context
+// permanently) is prevented. With it prevented, the browser fires
+// "webglcontextrestored" once a context is available again, and this is the
+// one chance to rebuild every GPU-side object (the shader program, every
+// chunk mesh, the sheep/dog entity buffers) from scratch -- none of them
+// survive the loss, even though the JS-side state that describes them
+// (loadedChunks' keys, the sheep array, etc.) does.
+function bindContextLossHandlers(){
+ canvas.addEventListener("webglcontextlost",(e)=>{
+  e.preventDefault();
+  contextLost=true;
+ },false);
+ canvas.addEventListener("webglcontextrestored",()=>{
+  entityHandle=null; // GPU-side; the handle from before the loss is dead
+  loadedChunks.clear();buildQueue=[]; // same -- their vao/buffers are gone too
+  chunksBuiltTotal=0;trisTotal=0;
+  if(!initGL())return; // rebuilds the program/uniforms against the restored context
+  contextLost=false;
+  recomputeDesiredChunks(player.x,player.z);
+  requestAnimationFrame(render);
+ },false);
+}
 function boot(){
  buildDom();
  bindControls(canvas);
  bindCycleControls();
+ bindContextLossHandlers();
  if(!initGL())return;
  resize();window.addEventListener("resize",resize);
  const saved=loadGame();
@@ -12277,6 +12313,1029 @@ function boot(){
 }
 boot();
 <~/script></body></html>
+</script>
+<script type="text/plain" class="cartsrc" data-meta='{"name": "Alembic", "sub": "A witch&#39;s cottage apothecary, outside time", "desc": "Someone knocks at the door most nights with a trouble to untangle: ask what&#39;s wrong, then choose the matter, the direction and the intention that answers it, all three taught openly rather than guessed at. One night a cycle, someone comes to accuse a neighbor instead of asking for help, and what you do about it costs something different than being right. Nothing worked is ever erased \u2014 only carried, until the Lounge tips it out at the new moon and shows you plainly what the cycle held.", "color": "#8a6f9e", "glyph": "M9 3h6 M10 3v4l-5 9a2 2 0 002 3h10a2 2 0 002-3l-5-9V3 M8 15h8", "tags": ["Philosophy", "Story", "Puzzle"], "id": "alembic"}'><!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Alembic</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{width:100%;height:100%;overflow:hidden;background:#0c0806;font-family:Georgia,'Times New Roman',serif}
+#host{position:fixed;inset:0;color:#e8d9b8}
+#bg{position:absolute;inset:0;width:100%;height:100%;display:block}
+#ashOverlay{position:absolute;inset:0;background:#000;opacity:0;pointer-events:none;transition:opacity 1.2s ease;z-index:1}
+
+/* ---------- every screen is a full page, swapped in and out, same technique as
+   the other cottage/workshop cartridges -- a place you're standing, not a box
+   floating over a paused scene. ---------- */
+section.scr{position:absolute;inset:0;display:none;overflow:auto;-webkit-overflow-scrolling:touch;z-index:2}
+section.scr.on{display:flex;flex-direction:column;align-items:center}
+.wrap{max-width:720px;width:100%;padding:24px 20px 60px;margin:0 auto}
+
+h1,h2,h3{font-weight:normal;letter-spacing:.02em}
+.ltitle{font-size:40px;color:#f3e6c4;text-shadow:0 2px 0 #000,0 0 30px rgba(212,162,78,.25)}
+.lsub{font-style:italic;color:#b99b64;margin-top:6px}
+.topbar{position:absolute;left:0;right:0;top:0;display:flex;justify-content:space-between;align-items:center;padding:10px 16px;font:13px/1.4 Georgia,serif;color:#cdb183;z-index:5}
+.topbar button{background:rgba(30,18,8,.6);border:1px solid #6b5230;color:#e8d9b8;padding:6px 12px;border-radius:7px;cursor:pointer;font:13px Georgia,serif}
+.topbar button:hover{background:rgba(60,38,16,.8)}
+
+.card{background:rgba(20,12,6,.72);border:1px solid #6b5230;border-radius:12px;padding:18px 20px;margin:12px 0;box-shadow:0 8px 24px rgba(0,0,0,.4)}
+.quote{font-style:italic;color:#cdb183;border-left:3px solid #d4a24e;padding:10px 16px;background:rgba(0,0,0,.2);border-radius:0 8px 8px 0;margin:10px 0}
+
+button.b{background:#3a2412;border:1px solid #a87d44;color:#f1dfb8;padding:10px 16px;border-radius:8px;cursor:pointer;font:15px Georgia,serif;margin:4px 6px 4px 0}
+button.b:hover{background:#4a2e18}
+button.b.pri{background:#2a4a2a;border-color:#6ea35c}
+button.b.pri:hover{background:#355f36}
+button.b:disabled{opacity:.35;cursor:default}
+button.b.sel{outline:2px solid #e8c46a;background:#4a2e18}
+
+.row{display:flex;flex-wrap:wrap;gap:8px;margin:10px 0}
+
+/* ---------- the Door: a visitor's portrait, speech, and the Socratic questions ---------- */
+#doorPortrait{width:120px;height:120px;border-radius:50%;flex:none;background:radial-gradient(120% 120% at 35% 30%,#2c1c0e,#0c0804 75%);box-shadow:inset 0 0 0 1px rgba(212,162,78,.35),0 10px 26px rgba(0,0,0,.5)}
+.doorHead{display:flex;gap:18px;align-items:center;margin-bottom:10px}
+.visitorName{font-size:22px;color:#f3e6c4}
+.visitorLine{font-style:italic;color:#d8c398;margin-top:4px}
+.detailLine{color:#cdb183;margin:8px 0;padding-left:14px;border-left:2px solid #6b5230}
+
+/* ---------- the Bench: ingredient cards + the grind/shave gesture ---------- */
+.ingredGrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin:14px 0}
+.ingredCard{background:rgba(0,0,0,.25);border:1px solid #6b5230;border-radius:10px;padding:14px;cursor:pointer;text-align:center}
+.ingredCard:hover{background:rgba(212,162,78,.08)}
+.ingredCard.sel{outline:2px solid #e8c46a;background:rgba(212,162,78,.12)}
+.ingredCard b{display:block;font-size:17px;color:#f3e6c4;margin-bottom:4px}
+.ingredCard span{display:block;font-size:12.5px;color:#b99b64;margin-top:4px}
+.resonance{font-size:12px;color:#8fae7a;font-style:italic}
+.smallNote{font-size:12.5px;color:#9a8463;margin:6px 0 10px}
+#jarBars{height:22px;border-radius:6px;overflow:hidden;background:#cfd6da;margin:12px 0 4px;border:1px solid #6b5230}
+#jarBarFill{height:100%;background:#1a1512;transition:width .4s ease}
+button.b .resonance{display:block;font-size:11.5px;margin-top:3px;color:#cfe0c0}
+#grindBar{height:14px;border-radius:7px;background:rgba(0,0,0,.4);overflow:hidden;border:1px solid #6b5230;margin:14px 0}
+#grindFill{height:100%;width:0%;background:linear-gradient(90deg,#8a6a3a,#e8c46a)}
+#grindBtn{width:100%;padding:16px;font-size:16px}
+
+/* ---------- the Cauldron: heat + stir, and the four Works as an honest color read ---------- */
+#cauldronSwatch{width:160px;height:160px;border-radius:50%;margin:16px auto;background:#1a1a1a;box-shadow:inset 0 0 30px rgba(0,0,0,.6),0 0 40px rgba(212,162,78,.15);transition:background 1.2s linear}
+.phaseLabel{text-align:center;color:#cdb183;font-style:italic;min-height:1.4em}
+
+/* ---------- the Desk: the verb, laid beside what the bench and cauldron already chose ---------- */
+.slotRow{display:flex;justify-content:center;gap:18px;margin:16px 0;flex-wrap:wrap}
+.slot{background:rgba(0,0,0,.3);border:1px dashed #6b5230;border-radius:10px;padding:14px 18px;min-width:120px;text-align:center}
+.slot b{display:block;color:#f3e6c4}
+.slot span{font-size:12px;color:#8a7250}
+
+/* ---------- Field Notes: what you've actually learned, so far ---------- */
+.noteGrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px}
+.noteCard{background:rgba(0,0,0,.25);border:1px solid #6b5230;border-radius:10px;padding:12px 14px}
+.noteCard.locked{opacity:.4}
+.noteCard b{display:block;color:#f3e6c4;margin-bottom:3px}
+.noteCard .k{font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:#8a7250}
+.noteCard p{font-size:13px;color:#cdb183;margin-top:4px}
+
+#hint{font-size:13px;color:#8a7250;font-style:italic;min-height:1.4em;text-align:center}
+.hidden{display:none !important}
+</style>
+</head><body>
+<div id="host"><canvas id="bg"></canvas><div id="ashOverlay"></div></div>
+<script>
+const host=document.getElementById("host");
+const $=id=>document.getElementById(id);
+const esc=s=>String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+function pick(rng,arr){return arr[(rng()*arr.length)|0]}
+function makeRng(seedStr){
+ let h=1779033703^seedStr.length;
+ for(let i=0;i<seedStr.length;i++){h=Math.imul(h^seedStr.charCodeAt(i),3432918353);h=h<<13|h>>>19}
+ return function(){h=Math.imul(h^(h>>>16),2246822507);h=Math.imul(h^(h>>>13),3266489909);h^=h>>>16;return (h>>>0)/4294967296}
+}
+
+/* =====================================================================
+   THE MAGICKA GRAMMAR
+   The whole craft is three choices, made at three different stations:
+   the Bench gives you the CARRIER (the matter), the Cauldron gives you
+   the CATALYST (the direction the work is turned), the Desk gives you
+   the VERB (the intention). This is a small, real vocabulary of each --
+   deliberately small, so it stays fully learnable within one cycle.
+   ===================================================================== */
+const VERBS=[
+ {id:"BIND",name:"Bind",glyph:"∞",effect:"draws together and mends what's come apart",
+  shadow:"overdone, it smothers -- it can refuse an ending that needed to happen"},
+ {id:"CLEANSE",name:"Cleanse",glyph:"◇",effect:"strips away what doesn't belong, washes out rot or residue",
+  shadow:"overdone, it scours too deep -- it can strip away things that needed to stay"},
+ {id:"STILL",name:"Still",glyph:"≈",effect:"quiets panic, slows a racing heart, settles a fever",
+  shadow:"overdone, it numbs -- it can flatten a grief that needed to be felt, not silenced"},
+];
+const CARRIERS=[
+ {id:"WILLOW",name:"Willow",lore:"Bends in the wind rather than breaking. Old folk medicine for pain and fever.",
+  resonance:"grief, water, flexibility"},
+ {id:"SALT",name:"Salt",lore:"Preserves, purifies, draws moisture out. The oldest ward there is.",
+  resonance:"protection, boundary, preservation"},
+ {id:"YARROW",name:"Yarrow",lore:"Staunches a wound; named for a warrior said to have carried it onto the battlefield.",
+  resonance:"courage, healing, resolve"},
+];
+const CATALYSTS=[
+ {id:"DEOSIL",name:"Deosil",arrow:"↻",phrase:"turned sunwise to build, call in, and grow toward"},
+ {id:"WIDDERSHINS",name:"Widdershins",arrow:"↺",phrase:"turned against the sun to unbind, strip away, and let go"},
+];
+function composeWorking(verb,carrier,catalyst){
+ return `A working that ${verb.effect}, carried in ${carrier.name.toLowerCase()} (${carrier.resonance}), ${catalyst.phrase}.`;
+}
+
+/* =====================================================================
+   VISITORS -- six archetypes, one per regular night (there are six of
+   these plus one accusation night per cycle, so every one of them is
+   seen exactly once and nothing repeats word-for-word in a single
+   cycle). Each has a surface story and a true cause underneath it (a
+   verb, a carrier, AND a catalyst -- all three axes are taught
+   somewhere in the set, so no ingredient or direction goes a whole
+   cycle without ever being the right answer). Procedurally dressed in
+   different names every night.
+   ===================================================================== */
+const FIRST_NAMES=["Agna","Berta","Corwin","Dietric","Enna","Falk","Greta","Hob","Ismay","Jorah","Katla","Leif","Marta","Nils","Odile","Perrin"];
+function rndName(rng){return pick(rng,FIRST_NAMES)}
+// a small pronoun kit so every archetype can gender whichever character
+// it actually names, instead of leaving "he"/"his" hardcoded and letting
+// it drift out of sync with whoever the rng actually picked.
+function pron(female){return female?{He:"She",he:"she",him:"her",His:"Her",his:"her",man:"woman"}:{He:"He",he:"he",him:"him",His:"His",his:"his",man:"man"}}
+
+const ARCHETYPES=[
+ {
+  id:"grief-curse",
+  trueCauseVerb:"STILL",trueCauseCarrier:"WILLOW",trueCauseCatalyst:"WIDDERSHINS",
+  theme:"Grief and fever-panic sit under this, more than rot or an enemy's ill will.",
+  directionTheme:"Something here needs letting go, not held tight.",
+  makeDetail(rng){
+   const kidFemale=rng()<0.5, accFemale=rng()<0.5;
+   return {who:kidFemale?"daughter":"son", ...pron(kidFemale), accusedName:rndName(rng), a:pron(accFemale)};
+  },
+  open:(d)=>`My ${d.who} won't eat. ${d.He} just stares into corners. I think ${d.accusedName} across the ditch has cursed us -- there's bad blood between our houses.`,
+  questions:[
+   {q:"Show me what your child has been keeping down.",
+    a:(d)=>`${d.He} unwraps a small cloth. The grain inside is damp, flecked here and there with dark purple-black spots.`},
+   {q:`When did the staring begin?`,
+    a:(d)=>`"A week after the burying," the father says, quieter now. "${d.His} little brother. The fever took him in the spring."`},
+   {q:"Tell me about the neighbor across the ditch.",
+    a:(d)=>`"${d.a.He} never done us harm," he admits. "We've just never spoken since the fence dispute, years back now."`},
+  ],
+  resolutionGood:(d)=>`The ${d.who} eats a little, that first night. ${d.He} doesn't say what ${d.he} saw in the corners. But ${d.he} sleeps, and keeps sleeping.`,
+  resolutionPartial:(d)=>`The staring eases, some. ${d.He} still won't eat much. Something in the grain, you think, more than something in ${d.his} head -- or the other way around. Hard to say which you reached.`,
+  resolutionOther:(d)=>`The ${d.who} takes the draught. The staring doesn't stop. The father still won't speak to the family across the ditch.`,
+ },
+ {
+  id:"haunting-grief",
+  trueCauseVerb:"BIND",trueCauseCarrier:"WILLOW",trueCauseCatalyst:"DEOSIL",
+  theme:"Grief sits under this -- not a stranger's ghost to banish, but something unfinished that still wants mending.",
+  directionTheme:"Something here needs calling back in and seen through, not pushed away.",
+  makeDetail(rng){
+   const vFemale=rng()<0.5;
+   return {...pron(vFemale), spouse:vFemale?"husband":"wife"};
+  },
+  open:(d)=>`I hear footsteps on the stair at night. There's no one there when I look. I wonder if the old place is haunted -- maybe by whoever lived here before us.`,
+  questions:[
+   {q:"When did the footsteps start?",
+    a:(d)=>`${d.He} counts on ${d.his} fingers. "A year ago this week," ${d.he} says, and ${d.his} voice catches. "Almost to the day."`},
+   {q:"Could it be whoever lived here before you?",
+    a:(d)=>`"No -- no one lived here before us," ${d.he} says, firm now. "I've had this house forty years. It's always been just me and my ${d.spouse}."`},
+   {q:"Is there anyone you haven't said goodbye to?",
+    a:(d)=>`${d.He} is quiet a long moment. "I never got to bury ${d.his==="his"?"her":"him"} properly. The ground was frozen. I've always meant to go back."`},
+  ],
+  resolutionGood:(d)=>`${d.He} sits with the working a long while before ${d.he} drinks it. In the morning ${d.he} tells you ${d.he}'s decided to walk back to the churchyard, finally, before winter.`,
+  resolutionPartial:(d)=>`${d.He} drinks it down. The footsteps, ${d.he} tells you later, are quieter now -- but ${d.he} still hasn't gone back to the churchyard, and you don't think quiet is the same as done.`,
+  resolutionOther:(d)=>`${d.He} thanks you and drinks it down. The footsteps don't stop. ${d.He} still hasn't gone back to the churchyard.`,
+ },
+ {
+  id:"spoiled-well",
+  trueCauseVerb:"CLEANSE",trueCauseCarrier:"SALT",trueCauseCatalyst:"WIDDERSHINS",
+  theme:"Something that doesn't belong is crossing a boundary that should hold -- not sorrow, not an enemy's threat.",
+  directionTheme:"Something here needs stripping out and letting go of, not kept close.",
+  makeDetail(rng){
+   const vFemale=rng()<0.5;
+   return {...pron(vFemale)};
+  },
+  open:(d)=>`Our milk's been souring overnight, two weeks running, and now a hen's died for no reason I can find. ${d.He}'s sure someone's ill-wished us.`,
+  questions:[
+   {q:"Show me where you keep the milk.",
+    a:(d)=>`A cool larder, half underground. ${d.He} points to a crack low in the stone wall you hadn't noticed. "Been there since spring," ${d.he} says, like it's nothing.`},
+   {q:"Has anything else changed these two weeks?",
+    a:(d)=>`${d.He} thinks. "We dug a new drain, out past the coop. Been wetter than usual back there ever since."`},
+   {q:"Who do you think has ill-wished you?",
+    a:(d)=>`${d.He} names a cousin ${d.he} hasn't spoken to in years, over an inheritance. There's no real evidence of it -- just old hurt looking for a shape to wear.`},
+  ],
+  resolutionGood:(d)=>`You set the ward along the larder wall and the drain line both. A week on, word comes back: the milk's holding, and no more hens have dropped.`,
+  resolutionPartial:(d)=>`The milk holds a few more days than before, then turns again. Something in the ground's still finding its way in. You half-wonder if you warded the wrong crack.`,
+  resolutionOther:(d)=>`The milk sours again within the week. ${d.He} is now certain the cousin is to blame, and you don't think anything you gave ${d.him} will talk ${d.him} out of it.`,
+ },
+ {
+  id:"shellshock",
+  trueCauseVerb:"STILL",trueCauseCarrier:"YARROW",trueCauseCatalyst:"WIDDERSHINS",
+  theme:"A fear calcified into panic sits under this -- something that will take real courage to face, more than sorrow or an intruder's doing.",
+  directionTheme:"Something here needs quieting and releasing, not kept close.",
+  makeDetail(rng){
+   const vFemale=rng()<0.5;
+   return {...pron(vFemale)};
+  },
+  open:(d)=>`My brother's home from the war a season now and he won't go near the barn anymore. Won't say why. ${d.He} shakes if a door slams.`,
+  questions:[
+   {q:"What happened the last time he went in the barn?",
+    a:(d)=>`"Nothing happened in the barn," ${d.he} says. "It's that the barn roof collapsed in the shelling, where he was billeted. He won't say it plain, but I know that's it."`},
+   {q:"Does he sleep?",
+    a:(d)=>`"Badly. Wakes shouting some nights. Mother says not to wake him sudden -- he came up swinging, once."`},
+   {q:"Has he spoken about any of it, to anyone?",
+    a:(d)=>`${d.He} shakes ${d.his} head. "Not one word, to me or the priest or anyone. It's all just sitting in him."`},
+  ],
+  resolutionGood:(d)=>`He takes it quiet, says nothing for a long while. Weeks later, word comes: he walked into the barn on his own, stood there a minute, and walked back out. Didn't shake once.`,
+  resolutionPartial:(d)=>`He's calmer around sudden noise, some. Still won't set foot in the barn. Quieter isn't the same as healed, and you're not sure you reached whatever's underneath.`,
+  resolutionOther:(d)=>`He takes it to be polite. Nothing changes. He still won't go near the barn, and now he flinches at you too, a little, like you might be one more thing that goes bang.`,
+ },
+ {
+  id:"broken-trust",
+  trueCauseVerb:"BIND",trueCauseCarrier:"SALT",trueCauseCatalyst:"DEOSIL",
+  theme:"A boundary's been crossed, but the bond itself still wants mending more than cutting away.",
+  directionTheme:"Something here needs drawing back together, not cut loose.",
+  makeDetail(rng){
+   const vFemale=rng()<0.5;
+   return {...pron(vFemale), spouse:vFemale?"husband":"wife"};
+  },
+  open:(d)=>`My ${d.spouse} and I haven't spoken a civil word in a month. ${d.He} found a letter I'd kept from an old sweetheart and won't believe nothing came of it.`,
+  questions:[
+   {q:"Did anything come of it?",
+    a:(d)=>`"No," ${d.he} says, meeting your eye. "I kept it because I was young once and it felt important then. I should have burned it years ago."`},
+   {q:"What does your spouse say they need?",
+    a:(d)=>`${d.He} sighs. "${d.His} own words, to be honest. ${d.His} own promise. Not mine explained again. I've tried that three times already."`},
+   {q:"Is this the first hurt between you, or does it sit on older ones?",
+    a:(d)=>`${d.He} goes quiet. "There was a bad year, before the children. Things were said. We never really finished saying them."`},
+  ],
+  resolutionGood:(d)=>`${d.He} comes back a week later, easier in the shoulders. "We talked properly, finally," ${d.he} says. "Really talked. It's not fixed, but it's moving again."`,
+  resolutionPartial:(d)=>`${d.He} says things are "better, mostly." The letter's been burned. But you get the sense the older hurt ${d.he} mentioned is still sitting there, untouched, waiting for the next spark.`,
+  resolutionOther:(d)=>`${d.He} doesn't come back to tell you anything, which you take as its own answer. You hear secondhand, weeks on, that ${d.he}'s moved to ${d.his} mother's house.`,
+ },
+ {
+  id:"wound-wont-close",
+  trueCauseVerb:"CLEANSE",trueCauseCarrier:"YARROW",trueCauseCatalyst:"DEOSIL",
+  theme:"Something stalled mid-healing sits under this -- residue, more than sorrow or dread.",
+  directionTheme:"Even so, this needs calling forward into finishing, not left half-done.",
+  makeDetail(rng){
+   const vFemale=rng()<0.5;
+   return {...pron(vFemale)};
+  },
+  open:(d)=>`My daughter cut her hand on the plow a month back. It won't close right -- keeps weeping, won't scar over. The barber-surgeon's run out of ideas.`,
+  questions:[
+   {q:"May I see the wound?",
+    a:(d)=>`The edges are proud and red, not angry-hot, just... stalled. Like it started healing and then thought better of it.`},
+   {q:"Has she been favoring the hand, or still working it?",
+    a:(d)=>`"Still working it," ${d.he} admits. "We can't spare her from the plowing, not this season. I know that's likely no help to it."`},
+   {q:"Is she frightened of it scarring?",
+    a:(d)=>`${d.He} pauses. "She says a scarred hand won't find a husband. I've told her that's foolishness, but she's young, and young ones believe what they believe."`},
+  ],
+  resolutionGood:(d)=>`Within the week the wound's drawn closed, pink and whole. Her father sends word she's back on the plow, scar and all, and not hiding the hand anymore either.`,
+  resolutionPartial:(d)=>`The wound closes most of the way, then stalls again at the last of it. Could be the plowing never really stopped. Could be something else never did either.`,
+  resolutionOther:(d)=>`The wound doesn't change. Word comes a fortnight later that it's gone angry and hot, and they've sent for a different kind of help than yours.`,
+ },
+];
+
+/* =====================================================================
+   ACCUSATION NIGHTS -- "the night of torches." A different kind of
+   knock: someone arrives already certain a neighbor has cursed them,
+   wanting it answered rather than diagnosed. There's no verb/carrier/
+   catalyst working to brew -- instead you choose a posture. None of
+   the three postures is flagged as the objectively right one (the
+   same non-judgment the main cases already keep); what differs is
+   what each one costs and leaves behind.
+     - Retaliation ("grant the hex"): give them what they came for.
+     - Pharmakos Inversion ("the fault is mine"): draw the blame onto
+       yourself instead of the accused.
+     - Diagnostic De-escalation ("show them what's there"): examine a
+       visible specimen and name which of the three known resonances
+       (the same ones taught at the Bench, same words, nothing new)
+       actually accounts for it -- a small, fully legible puzzle, not
+       a hidden die-roll dressed as insight.
+   Each archetype below names a trueCauseCarrier: the resonance the
+   specimen actually matches, same three ids as CARRIERS above.
+   ===================================================================== */
+const ACCUSATIONS=[
+ {
+  id:"leaky-feed-shed",
+  trueCauseCarrier:"SALT",
+  theme:"Something mundane is failing to keep the damp out here, more than any neighbor's ill will.",
+  directionTheme:"Something here can be shown and settled, not just answered in kind or carried alone.",
+  makeDetail(rng){
+   const accFemale=rng()<0.5;
+   return {accusedName:rndName(rng), a:pron(accFemale)};
+  },
+  open:(d)=>`My cow's gone dry since the day I crossed ${d.accusedName} over the fence line. ${d.a.He} hexed her out of spite, I know it. I want it answered in kind.`,
+  questions:[
+   {q:"When exactly did the cow stop giving milk?",
+    a:(d)=>`"Gone thin a week, maybe more, before it stopped altogether," they admit. "Not sudden. I hadn't thought on that till you asked."`},
+   {q:"Where do you keep her feed?",
+    a:(d)=>`"Shed out back, same as always." A pause. "Smells a bit close in there lately, now you mention it."`},
+   {q:"What happened between you and the neighbor?",
+    a:(d)=>`"Crossed ${d.a.his} fence line chasing a loose hen, months back. Words were had. Nothing since -- but ${d.a.he}'s not spoken to me either."`},
+  ],
+  specimen:{name:"a handful of the cow's feed",
+   desc:(d)=>`A handful of feed from the shed: damp through, with a gray-green bloom of mold starting up one side of the sack.`},
+  outcomeRetaliation:(d)=>`You grant what's asked. They leave grim-satisfied. Word comes within days that ${d.accusedName}'s own milk has soured too -- whether by your hand or plain bad luck, no one in that lane will say which anymore.`,
+  outcomePharmakos:(d)=>`You tell them the fault's likelier some working of your own gone astray than ${d.accusedName}'s doing. They leave almost comforted. The cow still doesn't give milk the next day, or the one after -- but the feud quiets, at least.`,
+  outcomeDiagnosticGood:(d)=>`You open the feed sack and show them the mold climbing up from the damp corner of the shed. They go quiet, shamefaced almost. By week's end the roof's patched and the cow's back to giving.`,
+  outcomeDiagnosticMiss:(d)=>`You tell them what you think you've found, but it doesn't sit right against what's actually there, and they can tell. They leave half-convinced, still eyeing ${d.accusedName}'s gate on the way out.`,
+ },
+ {
+  id:"mended-rope",
+  trueCauseCarrier:"YARROW",
+  theme:"Something ordinary has simply worn past its limit here, more than a look across a market stall.",
+  directionTheme:"Something here can be shown and settled, not just answered in kind or carried alone.",
+  makeDetail(rng){
+   const accFemale=rng()<0.5;
+   return {accusedName:rndName(rng), a:pron(accFemale)};
+  },
+  open:(d)=>`My boy's hand slipped drawing water and he near went down the well after it. He swears old ${d.accusedName} looked at him wrong at market, days before. I want ${d.a.him} to answer for it.`,
+  questions:[
+   {q:"May I see the rope?",
+    a:(d)=>`They fetch it. Patched and spliced in three places already, the last mend closest to the bucket end, frayed near through.`},
+   {q:"How long have you had that rope?",
+    a:(d)=>`"Years now. Good rope's dear, and it's held this long -- didn't think to replace it, not with it still holding."`},
+   {q:`What exactly did the neighbor do, that day at market?`,
+    a:(d)=>`"Just a look. No words. There's old ground between our families, from a boundary dispute years back -- nothing since, but nothing forgotten either."`},
+  ],
+  specimen:{name:"the well-rope",
+   desc:(d)=>`The rope itself: three old splices down its length, and the newest one, nearest the bucket, frayed nearly through where it finally gave.`},
+  outcomeRetaliation:(d)=>`You grant what's asked. The father leaves satisfied. Within the week, word comes that ${d.accusedName} has taken a fall of ${d.a.his} own -- nothing broken, but enough to set the old boundary dispute burning fresh.`,
+  outcomePharmakos:(d)=>`You tell them you likely owe them a rope, that something of yours must have weakened it. They leave easier, rope in hand for a replacement. The boy's shaken for a few days yet, but no more accusations fly toward ${d.accusedName}'s door.`,
+  outcomeDiagnosticGood:(d)=>`You show them the splice nearest the bucket, frayed through from years of bearing weight. "It held on past when it should have given out," you tell them. They replace it that same week, muttering about never knowing rope could wear so quiet.`,
+  outcomeDiagnosticMiss:(d)=>`You point to something that doesn't match what's actually frayed, and they can see you're guessing. They thank you stiffly and leave no less certain it was ${d.accusedName}'s doing.`,
+ },
+ {
+  id:"restless-floor",
+  trueCauseCarrier:"WILLOW",
+  theme:"Something ordinary is shifting with the weather here, more than an old dispute's lingering reach.",
+  directionTheme:"Something here can be shown and settled, not just answered in kind or carried alone.",
+  makeDetail(rng){
+   const accFemale=rng()<0.5;
+   return {accusedName:rndName(rng), a:pron(accFemale)};
+  },
+  open:(d)=>`The cradle rocks on its own at night, I've seen it with my own eyes. We think ${d.accusedName}'s set something against the little one -- there was bad blood after the harvest dispute.`,
+  questions:[
+   {q:"Where does the cradle stand?",
+    a:(d)=>`"Back wall, nearest the stream side. Coolest corner of the house, out of the draft from the door."`},
+   {q:"Has the rocking always happened, or did it start recently?",
+    a:(d)=>`"Worse since the rains set in, now you ask. Hadn't thought the two were tied together."`},
+   {q:`What happened with the neighbor, after the harvest?`,
+    a:(d)=>`"A dispute over shared ground, nothing since. We don't speak. I'd not have thought of ${d.a.him} at all if the rocking hadn't started."`},
+  ],
+  specimen:{name:"the floorboards by the back wall",
+   desc:(d)=>`The floorboards themselves, nearest the stream side: swollen along their edges, sitting unevenly from board to board.`},
+  outcomeRetaliation:(d)=>`You grant what's asked. They leave grim-satisfied. ${d.accusedName} falls ill within the fortnight -- likely the same damp season that's swelling everyone's floorboards, though no one in that house will hear it put that way now.`,
+  outcomePharmakos:(d)=>`You tell them the working's likely slipped from your own hands and found its way to the cradle by accident. They leave unsettled but no longer blaming ${d.accusedName}. The rocking doesn't stop -- the stream hasn't gone anywhere -- but at least the old dispute isn't reopened.`,
+  outcomeDiagnosticGood:(d)=>`You kneel by the back wall and show them the swollen, uneven boards. "The stream's damp gets into the wood, and it settles differently every night, not the same twice," you tell them. They move the cradle to the far wall before you've even finished saying so.`,
+  outcomeDiagnosticMiss:(d)=>`You point them toward something that doesn't match what's actually swollen underfoot, and the explanation doesn't hold together. They leave no less convinced it's ${d.accusedName}'s doing.`,
+ },
+];
+
+// six regular cases, then one night of torches (an accusation) -- then the
+// pattern repeats, forever. There's no longer a hard stop at the end of one
+// turn through this list: G.day only ever counts up (it's the Lounge's and
+// the dayLabel's running tally), so the pattern it selects from has to be
+// read off dayIndex MOD this length, not off the raw unbounded dayIndex.
+const CYCLE_LEN=ARCHETYPES.length+1;
+function genVisitor(rng,dayIndex){
+ const cyclePos=dayIndex%CYCLE_LEN;
+ if(cyclePos>=ARCHETYPES.length){
+  const arche=pick(rng,ACCUSATIONS);
+  const name=rndName(rng);
+  const d=arche.makeDetail(rng);
+  return {
+   name, archetype:arche, detail:d, isAccusation:true,
+   opening: arche.open(d),
+   questions: arche.questions.map(q=>({...q, asked:false})),
+   posture:null, diagnosticPick:null, resolved:false,
+  };
+ }
+ const arche=ARCHETYPES[cyclePos];
+ const name=rndName(rng);
+ const d=arche.makeDetail(rng);
+ return {
+  name, archetype:arche, detail:d,
+  opening: arche.open(d),
+  questions: arche.questions.map(q=>({...q, asked:false})),
+  verb:null, carrier:null, catalyst:null, resolved:false,
+ };
+}
+
+
+/* =====================================================================
+   STATE + SAVE
+   ===================================================================== */
+const SAVE_KEY="alembic_proto_v2";
+let G={day:0, hintsOn:true, learned:{verb:{}, carrier:{}, catalyst:{}}, visitor:null, stage:"lounge", bench:{carrier:null,grindPct:0,grinding:false}, cauldron:{heat:null,stir:null,phaseIdx:0,running:false},
+ ash:{cinder:0,calx:0,ink:0}, sessionLog:[], justEnded:false};
+function saveGame(){try{localStorage.setItem(SAVE_KEY,JSON.stringify({day:G.day,hintsOn:G.hintsOn,learned:G.learned,ash:G.ash,sessionLog:G.sessionLog}))}catch(e){}}
+function loadGame(){try{const raw=localStorage.getItem(SAVE_KEY);if(!raw)return null;return JSON.parse(raw)}catch(e){return null}}
+
+/* =====================================================================
+   PROCEDURAL AUDIO -- everything generated at runtime, nothing decoded
+   ===================================================================== */
+let actx=null;
+function audio(){if(!actx){try{actx=new (window.AudioContext||window.webkitAudioContext)()}catch(e){}}return actx}
+function noiseBuffer(ctx,seconds){
+ const n=ctx.sampleRate*seconds,buf=ctx.createBuffer(1,n,ctx.sampleRate),d=buf.getChannelData(0);
+ for(let i=0;i<n;i++)d[i]=Math.random()*2-1;
+ return buf;
+}
+function playGrindTick(){
+ const ctx=audio();if(!ctx)return;
+ const src=ctx.createBufferSource();src.buffer=noiseBuffer(ctx,0.08);
+ const bp=ctx.createBiquadFilter();bp.type="bandpass";bp.frequency.value=900+Math.random()*500;bp.Q.value=2;
+ const g=ctx.createGain();g.gain.setValueAtTime(0.18,ctx.currentTime);g.gain.exponentialRampToValueAtTime(0.001,ctx.currentTime+0.08);
+ src.connect(bp);bp.connect(g);g.connect(ctx.destination);src.start();
+}
+function playSimmerBed(){
+ const ctx=audio();if(!ctx)return null;
+ const src=ctx.createBufferSource();src.buffer=noiseBuffer(ctx,2);src.loop=true;
+ const bp=ctx.createBiquadFilter();bp.type="bandpass";bp.frequency.value=400;bp.Q.value=0.6;
+ const lfo=ctx.createOscillator();lfo.frequency.value=0.4;
+ const lfoGain=ctx.createGain();lfoGain.gain.value=150;
+ lfo.connect(lfoGain);lfoGain.connect(bp.frequency);lfo.start();
+ const g=ctx.createGain();g.gain.value=0.05;
+ src.connect(bp);bp.connect(g);g.connect(ctx.destination);src.start();
+ return {src,lfo,g};
+}
+function stopSimmerBed(h){if(!h)return;try{h.src.stop();h.lfo.stop()}catch(e){}}
+// a low, raspy grain for ash left sitting on the shelf -- rougher and lower
+// than the cauldron's simmer bed, barely-there until the jar is quite full.
+function playAshGrain(){
+ const ctx=audio();if(!ctx)return null;
+ const src=ctx.createBufferSource();src.buffer=noiseBuffer(ctx,2.5);src.loop=true;
+ const bp=ctx.createBiquadFilter();bp.type="lowpass";bp.frequency.value=180;bp.Q.value=3;
+ const g=ctx.createGain();g.gain.value=0.025;
+ src.connect(bp);bp.connect(g);g.connect(ctx.destination);src.start();
+ return {src,g};
+}
+function stopAshGrain(h){if(!h)return;try{h.src.stop()}catch(e){}}
+function playChime(){
+ const ctx=audio();if(!ctx)return;
+ [660,990,1320].forEach((f,i)=>{
+  const o=ctx.createOscillator();o.type="sine";o.frequency.value=f*(1+ (Math.random()-0.5)*0.01);
+  const g=ctx.createGain();const t=ctx.currentTime+i*0.09;
+  g.gain.setValueAtTime(0,t);g.gain.linearRampToValueAtTime(0.1,t+0.02);g.gain.exponentialRampToValueAtTime(0.0001,t+1.6);
+  o.connect(g);g.connect(ctx.destination);o.start(t);o.stop(t+1.7);
+ });
+}
+function playKnock(){
+ const ctx=audio();if(!ctx)return;
+ for(let i=0;i<2;i++){
+  const t=ctx.currentTime+i*0.22;
+  const o=ctx.createOscillator();o.type="sine";o.frequency.value=90;
+  const g=ctx.createGain();g.gain.setValueAtTime(0.3,t);g.gain.exponentialRampToValueAtTime(0.001,t+0.12);
+  o.connect(g);g.connect(ctx.destination);o.start(t);o.stop(t+0.13);
+ }
+}
+
+/* =====================================================================
+   BACKGROUND: a procedurally cross-hatched, candlelit cottage interior --
+   drawn once per load, not re-rendered every frame (static scene, no
+   animation budget needed for this).
+   ===================================================================== */
+function drawBackground(){
+ const c=$("bg"),ctx=c.getContext("2d"),w=innerWidth,h=innerHeight,dpr=Math.min(devicePixelRatio||1,2);
+ c.width=w*dpr;c.height=h*dpr;c.style.width=w+"px";c.style.height=h+"px";ctx.scale(dpr,dpr);
+ const sky=ctx.createRadialGradient(w*0.5,h*0.15,10,w*0.5,h*0.9,h*1.1);
+ sky.addColorStop(0,"#241607");sky.addColorStop(1,"#080503");
+ ctx.fillStyle=sky;ctx.fillRect(0,0,w,h);
+ // cross-hatched linework, seeded so it's the same each load but costs nothing to generate
+ const rng=makeRng("alembic-bg");
+ ctx.strokeStyle="rgba(212,162,78,0.07)";ctx.lineWidth=1;
+ for(let i=0;i<70;i++){
+  const x=rng()*w,y=rng()*h,len=30+rng()*70,ang=(rng()<0.5?0.5:-0.5)+((rng()-0.5)*0.3);
+  ctx.beginPath();ctx.moveTo(x,y);ctx.lineTo(x+Math.cos(ang)*len,y+Math.sin(ang)*len);ctx.stroke();
+ }
+ for(let i=0;i<70;i++){
+  const x=rng()*w,y=rng()*h,len=30+rng()*70,ang=(rng()<0.5?-0.5:0.5)+((rng()-0.5)*0.3)+Math.PI/2;
+  ctx.beginPath();ctx.moveTo(x,y);ctx.lineTo(x+Math.cos(ang)*len,y+Math.sin(ang)*len);ctx.stroke();
+ }
+ // a warm hearth glow, low and off-center, like the one real light source in the room
+ const glow=ctx.createRadialGradient(w*0.18,h*0.82,10,w*0.18,h*0.82,w*0.5);
+ glow.addColorStop(0,"rgba(255,170,90,0.22)");glow.addColorStop(1,"rgba(255,170,90,0)");
+ ctx.fillStyle=glow;ctx.fillRect(0,0,w,h);
+}
+addEventListener("resize",()=>drawBackground());
+
+/* =====================================================================
+   SCREENS -- same full-page swap technique the other cottage/workshop
+   cartridges use: one screen is "on" at a time, nothing floats over a
+   paused scene underneath it.
+   ===================================================================== */
+const SCREENS=["door","bench","cauldron","desk","torches","notes","case","lounge"];
+function buildDom(){
+ const topbar=document.createElement("div");topbar.className="topbar";
+ topbar.innerHTML=`<span id="dayLabel"></span><span><button class="b sm" id="loungeBtn">&#8962; The Lounge</button> <button class="b sm" id="caseBtn">The Case</button> <button class="b sm" id="notesBtn">Field Notes</button> <button class="b sm" id="hintBtn"></button></span>`;
+ host.append(topbar);
+ for(const id of SCREENS){
+  const s=document.createElement("section");s.id="scr-"+id;s.className="scr";
+  const w=document.createElement("div");w.className="wrap";w.id="wrap-"+id;
+  s.append(w);host.append(s);
+ }
+ $("notesBtn").onclick=()=>setScreen("notes");
+ $("caseBtn").onclick=()=>setScreen("case");
+ $("loungeBtn").onclick=()=>{G.stage="lounge";renderCurrentStage()};
+ $("hintBtn").onclick=()=>{G.hintsOn=!G.hintsOn;saveGame();refreshHintBtn();if(G.stage)renderCurrentStage()};
+}
+function refreshHintBtn(){$("hintBtn").textContent="Hints: "+(G.hintsOn?"on":"off")}
+let returnScreen="door";
+function setScreen(id){
+ if(id!=="notes"&&id!=="case")returnScreen=id;
+ else if(id==="notes")renderNotes();
+ else if(id==="case")renderCase();   // notes/case have no render path of their
+ for(const s of SCREENS)$("scr-"+s).classList.toggle("on",s===id); // own -- each is filled in on the way here
+ $("dayLabel").textContent=id==="lounge"?"":`Night ${G.day+1}`;
+ applyAshAmbience();
+}
+function renderCurrentStage(){
+ if(G.stage==="door")renderDoor();
+ else if(G.stage==="bench")renderBench();
+ else if(G.stage==="cauldron")renderCauldron();
+ else if(G.stage==="desk")renderDesk();
+ else if(G.stage==="torches")renderTorches();
+ else if(G.stage==="lounge")renderLounge();
+ setScreen(G.stage);
+}
+
+/* ---------- the Door ---------- */
+function renderDoor(){
+ const v=G.visitor,w=$("wrap-door");
+ const qRows=v.questions.map((q,i)=>
+  q.asked
+   ? `<div class="detailLine"><b>${esc(q.q)}</b><br>${esc(q.a(v.detail))}</div>`
+   : `<button class="b" data-q="${i}">${esc(q.q)}</button>`
+ ).join("");
+ w.innerHTML=`
+  <div class="card">
+   <div class="doorHead"><canvas id="doorPortrait" width="140" height="140"></canvas>
+    <div><div class="visitorName">${esc(v.name)}</div></div></div>
+   <div class="visitorLine">&ldquo;${esc(v.opening)}&rdquo;</div>
+   <div class="row">${qRows}</div>
+   <p style="margin-top:14px"><button class="b pri" id="toBench">${v.isAccusation?"Decide what to do":"Go to the bench"}</button></p>
+  </div>`;
+ w.querySelectorAll("button[data-q]").forEach(b=>b.onclick=()=>{
+  const i=+b.dataset.q;v.questions[i].asked=true;renderDoor();
+ });
+ $("toBench").onclick=()=>{G.stage=v.isAccusation?"torches":"bench";renderCurrentStage()};
+ drawPortrait($("doorPortrait"),v);
+}
+/* ---------- the Case: a read-only recap of the door, reachable from every
+   stage so the questions you asked don't just vanish from memory once you've
+   moved on to the bench, the cauldron, or the desk ---------- */
+function renderCase(){
+ const v=G.visitor,w=$("wrap-case");
+ if(!v){w.innerHTML=`<div class="card"><h2>The Case</h2><p class="quote">No one's at the door tonight.</p></div>`;return}
+ const asked=v.questions.filter(q=>q.asked);
+ const qRows=asked.length
+  ? asked.map(q=>`<div class="detailLine"><b>${esc(q.q)}</b><br>${esc(q.a(v.detail))}</div>`).join("")
+  : `<p class="quote">You haven't asked anything yet. Go back to the door while there's still time.</p>`;
+ // the read: a plain-language pull on what this case is and isn't, in the
+ // same resonance/effect words the ingredients themselves use -- so you can
+ // match it against what the Bench, Cauldron and Desk now tell you outright,
+ // rather than being handed the ingredient name directly.
+ const readBlock=asked.length
+  ? `<h3 style="margin:16px 0 8px">Your read on it</h3>
+     <p class="quote">${esc(v.archetype.theme)} ${esc(v.archetype.directionTheme)}</p>`
+  : `<h3 style="margin:16px 0 8px">Your read on it</h3>
+     <p class="quote">Ask something first -- there's nothing to read yet.</p>`;
+ w.innerHTML=`
+  <div class="card">
+   <h2>${esc(v.name)}'s case</h2>
+   <div class="visitorLine">&ldquo;${esc(v.opening)}&rdquo;</div>
+   <h3 style="margin:16px 0 8px">What you've learned</h3>
+   ${qRows}
+   ${readBlock}
+   <p style="margin-top:14px"><button class="b pri" id="backFromCase">Back</button></p>
+  </div>`;
+ $("backFromCase").onclick=()=>setScreen(returnScreen);
+}
+
+/* ---------- Cinder and Calx: nothing worked is ever cleared on its own,
+   only carried, until it's dealt with at the Lounge. Cinder is the coarse,
+   jagged residue of a working that went badly or not at all; Calx is the
+   fine, pale residue of one that landed clean. A partial resolution leaves
+   a little of both. Tending it (or not) is the player's choice, never a
+   requirement. ---------- */
+function ashDelta(matches){
+ if(matches===3)return{cinder:0,calx:2};
+ if(matches===0)return{cinder:2,calx:0};
+ return{cinder:1,calx:1};
+}
+// the shelf state is the default -- ash left untended darkens the room and
+// adds a low grain to the background hum, scaling with how much is held.
+let ashNoiseHandle=null;
+function applyAshAmbience(){
+ const total=G.ash.cinder+G.ash.calx, level=Math.min(1,total/12);
+ const overlay=document.getElementById("ashOverlay");
+ if(overlay)overlay.style.opacity=(level*0.35).toFixed(2);
+ if(level>0.25&&!ashNoiseHandle){ashNoiseHandle=playAshGrain()}
+ else if(level<=0.25&&ashNoiseHandle){stopAshGrain(ashNoiseHandle);ashNoiseHandle=null}
+}
+function drawPortrait(c,v){
+ const ctx=c.getContext("2d"),w=c.width,h=c.height,rng=makeRng("portrait-"+v.name);
+ ctx.clearRect(0,0,w,h);
+ const g=ctx.createRadialGradient(w*0.4,h*0.35,4,w*0.5,h*0.5,w*0.6);
+ g.addColorStop(0,"#3a2812");g.addColorStop(1,"#0c0804");
+ ctx.fillStyle=g;ctx.fillRect(0,0,w,h);
+ ctx.strokeStyle="rgba(212,162,78,0.5)";ctx.lineWidth=2;
+ ctx.beginPath();ctx.arc(w/2,h*0.42,w*0.22,0,Math.PI*2);ctx.stroke(); // head
+ ctx.beginPath();ctx.moveTo(w*0.28,h*0.95);ctx.quadraticCurveTo(w*0.5,h*0.58,w*0.72,h*0.95);ctx.stroke(); // shoulders/cloak
+ ctx.strokeStyle="rgba(212,162,78,0.25)";
+ for(let i=0;i<20;i++){
+  const x=rng()*w,y=rng()*h*0.5+h*0.5;
+  ctx.beginPath();ctx.moveTo(x,y);ctx.lineTo(x+6+rng()*8,y+6+rng()*8);ctx.stroke();
+ }
+}
+
+/* ---------- the Bench: choose a Carrier, prepare it by hand ---------- */
+function renderBench(){
+ const w=$("wrap-bench");
+ const cards=CARRIERS.map(c=>{
+  const known=G.learned.carrier[c.id];
+  // the resonance is always shown -- that's the thing you actually reason
+  // from. the longer lore line is still something you discover by using it,
+  // but it's flavor on top of the reasoning, not the reasoning itself.
+  return `<div class="ingredCard${G.bench.carrier===c.id?" sel":""}" data-c="${c.id}">
+   <b>${esc(c.name)}</b>
+   <span class="resonance">resonance: ${esc(c.resonance)}</span>
+   <span>${known?esc(c.lore):""}</span>
+  </div>`;
+ }).join("");
+ w.innerHTML=`
+  <div class="card">
+   <h2>The Bench</h2>
+   <p class="quote">Choose what you'll carry the work in, then grind or bruise it by hand. Check The Case for your read on tonight's visitor, and match it against what's below.</p>
+   <div class="ingredGrid">${cards}</div>
+   <div id="grindBar"><div id="grindFill"></div></div>
+   <button class="b pri" id="grindBtn" disabled>Hold to grind</button>
+   <div id="hint-bench"></div>
+   <p style="margin-top:10px"><button class="b" id="toDesk" disabled>Take it to the cauldron</button></p>
+  </div>`;
+ w.querySelectorAll(".ingredCard").forEach(el=>el.onclick=()=>{
+  G.bench.carrier=el.dataset.c;G.bench.grindPct=0;renderBench();
+ });
+ const grindBtn=$("grindBtn"),fill=$("grindFill"),nextBtn=$("toDesk");
+ grindBtn.disabled=!G.bench.carrier;
+ nextBtn.disabled=G.bench.grindPct<100;
+ if(G.bench.carrier){
+  grindBtn.textContent=G.bench.grindPct>=100?"Ground fine":"Hold to grind";
+ }
+ let holdTimer=null;
+ function startGrind(){
+  if(!G.bench.carrier||G.bench.grindPct>=100)return;
+  holdTimer=setInterval(()=>{
+   G.bench.grindPct=Math.min(100,G.bench.grindPct+6);
+   fill.style.width=G.bench.grindPct+"%";
+   playGrindTick();
+   if(G.bench.grindPct>=100){
+    clearInterval(holdTimer);
+    G.learned.carrier[G.bench.carrier]=true;saveGame();
+    renderBench();
+   }
+  },90);
+ }
+ function stopGrind(){if(holdTimer)clearInterval(holdTimer)}
+ grindBtn.onpointerdown=startGrind;
+ grindBtn.onpointerup=stopGrind;grindBtn.onpointerleave=stopGrind;
+ nextBtn.onclick=()=>{G.stage="cauldron";renderCurrentStage()};
+ showHint("hint-bench",()=>{
+  const asked=G.visitor.questions.some(q=>q.asked);
+  if(!asked)return `Ask something at the door before you reach for anything here.`;
+  const t=G.visitor.archetype.theme;
+  return `Your read on it: ${t[0].toLowerCase()}${t.slice(1)} -- which resonance above matches that?`;
+ });
+}
+
+/* ---------- the Cauldron: heat + stir choose the Catalyst, and the four
+   Works play out honestly as a slow color change you can watch happen ---------- */
+const PHASE_COLORS=["#0e0e10","#cfd6da","#e6b84a","#8a2a1e"]; // nigredo, albedo, citrinitas, rubedo
+const PHASE_NAMES=["Nigredo -- the raw matter, undifferentiated","Albedo -- the washing-clear","Citrinitas -- the remedy taking shape","Rubedo -- the living work, finished"];
+function renderCauldron(){
+ const w=$("wrap-cauldron");
+ w.innerHTML=`
+  <div class="card">
+   <h2>The Cauldron</h2>
+   <p class="quote">Set the heat. Choose which way you'll turn it.</p>
+   <div class="row" id="heatRow"></div>
+   <p class="smallNote">Heat only changes how fast you watch it change -- there's no right heat. The turn is what matters.</p>
+   <div class="row" id="stirRow"></div>
+   <div id="cauldronSwatch"></div>
+   <div class="phaseLabel" id="phaseLabel">&nbsp;</div>
+   <div id="hint-cauldron"></div>
+   <p style="margin-top:10px"><button class="b pri" id="toDesk2" disabled>Carry it to the desk</button></p>
+  </div>`;
+ const heatRow=$("heatRow"),stirRow=$("stirRow");
+ ["Ember","Simmer","Rolling Boil"].forEach((n,i)=>{
+  const b=document.createElement("button");b.className="b"+(G.cauldron.heat===i?" sel":"");b.textContent=n;
+  b.onclick=()=>{G.cauldron.heat=i;renderCauldron();maybeStartCauldron()};
+  heatRow.append(b);
+ });
+ CATALYSTS.forEach(c=>{
+  const b=document.createElement("button");b.className="b"+(G.cauldron.stir===c.id?" sel":"");
+  b.innerHTML=`${c.arrow} ${esc(c.name)}<br><span class="resonance">${esc(c.phrase)}</span>`;
+  b.onclick=()=>{G.cauldron.stir=c.id;renderCauldron();maybeStartCauldron()};
+  stirRow.append(b);
+ });
+ $("cauldronSwatch").style.background=PHASE_COLORS[G.cauldron.phaseIdx];
+ $("phaseLabel").textContent=G.cauldron.phaseIdx>0||G.cauldron.running?PHASE_NAMES[G.cauldron.phaseIdx]:"";
+ $("toDesk2").disabled=G.cauldron.phaseIdx<3;
+ $("toDesk2").onclick=()=>{
+  G.learned.catalyst[G.cauldron.stir]=true;saveGame();
+  G.stage="desk";renderCurrentStage();
+ };
+ showHint("hint-cauldron",()=>{
+  const asked=G.visitor.questions.some(q=>q.asked);
+  if(!asked)return `Ask something at the door before you commit a direction here.`;
+  return `Your read on it: ${G.visitor.archetype.directionTheme} Which turn matches that?`;
+ });
+}
+let cauldronTimer=null,simmerHandle=null;
+function maybeStartCauldron(){
+ if(G.cauldron.heat==null||!G.cauldron.stir||G.cauldron.running)return;
+ G.cauldron.running=true;G.cauldron.phaseIdx=0;
+ if(!simmerHandle)simmerHandle=playSimmerBed();
+ const speed=[2200,1400,800][G.cauldron.heat]; // ember is slow and patient, a boil is fast
+ cauldronTimer=setInterval(()=>{
+  G.cauldron.phaseIdx=Math.min(3,G.cauldron.phaseIdx+1);
+  const sw=$("cauldronSwatch"),lbl=$("phaseLabel"),btn=$("toDesk2");
+  if(sw)sw.style.background=PHASE_COLORS[G.cauldron.phaseIdx];
+  if(lbl)lbl.textContent=PHASE_NAMES[G.cauldron.phaseIdx];
+  if(btn)btn.disabled=G.cauldron.phaseIdx<3;
+  if(G.cauldron.phaseIdx>=3){clearInterval(cauldronTimer);stopSimmerBed(simmerHandle);simmerHandle=null}
+ },speed);
+}
+
+/* ---------- the Desk: the Verb, laid beside what the Bench and Cauldron
+   already decided -- then the working is composed and handed over ---------- */
+function renderDesk(){
+ const w=$("wrap-desk");
+ const carrier=CARRIERS.find(c=>c.id===G.bench.carrier);
+ const catalyst=CATALYSTS.find(c=>c.id===G.cauldron.stir);
+ const verbCards=VERBS.map(v=>`<button class="b${G.visitor.verb===v.id?" sel":""}" data-v="${v.id}">${v.glyph} ${esc(v.name)}<br><span class="resonance">${esc(v.effect)}</span></button>`).join("");
+ w.innerHTML=`
+  <div class="card">
+   <h2>The Desk</h2>
+   <p class="quote">What is this working, at its heart? Choose the verb.</p>
+   <div class="row">${verbCards}</div>
+   <div class="slotRow">
+    <div class="slot"><b>${esc(G.visitor.verb?VERBS.find(v=>v.id===G.visitor.verb).name:"?")}</b><span>intention</span></div>
+    <div class="slot"><b>${esc(carrier.name)}</b><span>matter</span></div>
+    <div class="slot"><b>${esc(catalyst.name)}</b><span>direction</span></div>
+   </div>
+   <div id="composed"></div>
+   <div id="hint-desk"></div>
+   <p style="margin-top:10px"><button class="b pri" id="castBtn" disabled>Hand it over</button></p>
+  </div>`;
+ w.querySelectorAll("button[data-v]").forEach(b=>b.onclick=()=>{
+  G.visitor.verb=b.dataset.v;G.learned.verb[G.visitor.verb]=true;saveGame();renderDesk();
+ });
+ const castBtn=$("castBtn");
+ castBtn.disabled=!G.visitor.verb;
+ if(G.visitor.verb){
+  const verb=VERBS.find(v=>v.id===G.visitor.verb);
+  $("composed").innerHTML=`<p class="quote">${esc(composeWorking(verb,carrier,catalyst))}</p>`;
+ }
+ castBtn.onclick=()=>{
+  G.visitor.carrier=carrier.id;G.visitor.catalyst=catalyst.id;G.visitor.resolved=true;
+  playChime();
+  renderResolution();
+ };
+ showHint("hint-desk",()=>{
+  const asked=G.visitor.questions.some(q=>q.asked);
+  if(!asked)return `A working needs a true heart under it, not just the right shape.`;
+  const t=G.visitor.archetype.theme;
+  return `Your read on it: ${t[0].toLowerCase()}${t.slice(1)} -- which verb's effect matches that?`;
+ });
+}
+function renderResolution(){
+ const w=$("wrap-desk"),v=G.visitor,arche=v.archetype;
+ // never shown as a score -- but all three choices (verb/carrier/catalyst)
+ // genuinely count, so the case can be gotten exactly right, partly right,
+ // or missed, and the outcome text (never a checkmark) is what tells you.
+ const matches=(v.verb===arche.trueCauseVerb?1:0)+(v.carrier===arche.trueCauseCarrier?1:0)+(v.catalyst===arche.trueCauseCatalyst?1:0);
+ const line=matches===3?arche.resolutionGood(v.detail):matches===0?arche.resolutionOther(v.detail):arche.resolutionPartial(v.detail);
+ // the working leaves residue whatever the outcome -- a clean match leaves
+ // the fine pale Calx, a miss leaves coarse Cinder, a partial leaves both.
+ // this is the Ash Jar's only input for now; nothing here is scored or
+ // shown to the player as a verdict, it's just what's left over afterward.
+ const delta=ashDelta(matches);
+ G.ash.cinder+=delta.cinder;G.ash.calx+=delta.calx;
+ G.sessionLog.push(line);
+ saveGame();
+ w.innerHTML=`
+  <div class="card">
+   <h2>${esc(v.name)} leaves</h2>
+   <p class="quote">${esc(line)}</p>
+   <p style="margin-top:10px"><button class="b pri" id="nextNight">Return to the Lounge</button></p>
+  </div>`;
+ $("nextNight").onclick=goToLoungeAfterVisit;
+}
+// shared by both the regular resolution and the accusation outcome: no more
+// forced march straight into the next visitor. Every job, of either kind,
+// lets off at the Lounge -- answering the next knock is a choice made there,
+// not an automatic next step.
+function goToLoungeAfterVisit(){
+ G.day++;
+ G.justEnded=true;
+ G.stage="lounge";
+ saveGame();
+ renderCurrentStage();
+}
+/* ---------- the Night of Torches: an accusation, not a request. No
+   verb/carrier/catalyst working here -- you choose a posture instead.
+   Retaliation and Pharmakos Inversion are single choices; Diagnostic
+   De-escalation opens one more small, fully visible step -- a specimen
+   to read against the same three resonances taught at the Bench. ---------- */
+function renderTorches(){
+ const w=$("wrap-torches"),v=G.visitor;
+ if(v.resolved){renderAccusationOutcome();return}
+ if(v.posture==="diagnostic"){
+  const arche=v.archetype;
+  const cards=CARRIERS.map(c=>`<button class="b" data-c="${c.id}">${esc(c.name)}<br><span class="resonance">resonance: ${esc(c.resonance)}</span></button>`).join("");
+  w.innerHTML=`
+   <div class="card">
+    <h2>What's Actually There</h2>
+    <p class="quote">${esc(arche.specimen.desc(v.detail))}</p>
+    <p>Which resonance does that actually match?</p>
+    <div class="row">${cards}</div>
+    <p style="margin-top:10px"><button class="b" id="backToPosture">Reconsider</button></p>
+   </div>`;
+  w.querySelectorAll("button[data-c]").forEach(b=>b.onclick=()=>{
+   v.diagnosticPick=b.dataset.c;v.resolved=true;renderTorches();
+  });
+  $("backToPosture").onclick=()=>{v.posture=null;renderTorches()};
+  return;
+ }
+ w.innerHTML=`
+  <div class="card">
+   <h2>The Night of Torches</h2>
+   <p class="quote">${esc(v.opening)}</p>
+   <p>What do you do?</p>
+   <div class="row">
+    <button class="b" id="postureA">Grant the hex they're asking for</button>
+    <button class="b" id="postureB">Tell them the fault is yours</button>
+    <button class="b" id="postureC">Show them what's actually there</button>
+   </div>
+   <div id="hint-torches"></div>
+  </div>`;
+ $("postureA").onclick=()=>{v.posture="retaliation";v.resolved=true;renderTorches()};
+ $("postureB").onclick=()=>{v.posture="pharmakos";v.resolved=true;renderTorches()};
+ $("postureC").onclick=()=>{v.posture="diagnostic";renderTorches()};
+ showHint("hint-torches",()=>`None of these is the "right" answer -- each costs something different, and leaves something different behind. Check The Case for what you've actually learned before you choose.`);
+}
+function renderAccusationOutcome(){
+ const w=$("wrap-torches"),v=G.visitor,arche=v.archetype,d=v.detail;
+ let line,delta;
+ if(v.posture==="retaliation"){
+  line=arche.outcomeRetaliation(d);delta={cinder:2,calx:0};
+ }else if(v.posture==="pharmakos"){
+  line=arche.outcomePharmakos(d);delta={cinder:1,calx:1};
+ }else{
+  const hit=v.diagnosticPick===arche.trueCauseCarrier;
+  line=hit?arche.outcomeDiagnosticGood(d):arche.outcomeDiagnosticMiss(d);
+  delta=ashDelta(hit?3:0);
+ }
+ G.ash.cinder+=delta.cinder;G.ash.calx+=delta.calx;
+ G.sessionLog.push(line);
+ saveGame();
+ w.innerHTML=`
+  <div class="card">
+   <h2>${esc(v.name)} leaves</h2>
+   <p class="quote">${esc(line)}</p>
+   <p style="margin-top:10px"><button class="b pri" id="nextNightAcc">Return to the Lounge</button></p>
+  </div>`;
+ $("nextNightAcc").onclick=goToLoungeAfterVisit;
+}
+/* ---------- the Lounge: the cottage's own hearth room -- landed on when
+   the game first opens, landed on again after every single visitor (of
+   either kind), and reachable at any other time from the topbar besides.
+   Nothing here is on a timer or a forced count: answering the next knock
+   is always a choice made from here, never an automatic next step. What's
+   held in Cinder and Calx is drawn as a procedural ash mandala (no two
+   showings draw it quite the same way, since it comes straight from
+   today's own numbers and the shape of the ledger, not a fixed picture),
+   alongside a plain, undecorated ledger of what's happened since it was
+   last tended, outcome by outcome, nothing added and nothing softened.
+   Tending it -- "blowing upon the embers" -- spends the Cinder and Calx
+   in the telling; Ink, set deliberately by sifting, is the one thing
+   tending doesn't spend. It just carries forward. ---------- */
+function drawMandala(canvas,cinder,calx,ink){
+ const ctx=canvas.getContext("2d"),w=canvas.width,h=canvas.height,cx=w/2,cy=h/2;
+ ctx.clearRect(0,0,w,h);
+ const total=cinder+calx+ink;
+ if(!total){
+  ctx.beginPath();ctx.arc(cx,cy,5,0,Math.PI*2);ctx.fillStyle="#6b5230";ctx.fill();
+  return;
+ }
+ const rng=makeRng("mandala-"+cinder+"-"+calx+"-"+ink+"-"+G.sessionLog.join("|").length);
+ for(let r=6;r>=1;r--){
+  const radius=(r/6)*(Math.min(w,h)/2-14);
+  const petals=5+r*2;
+  for(let i=0;i<petals;i++){
+   const roll=rng()*total;
+   const col=roll<cinder?"rgba(24,18,13,0.88)":roll<cinder+calx?"rgba(230,219,193,0.88)":"rgba(122,150,178,0.88)";
+   const ang=(i/petals)*Math.PI*2+r*0.18;
+   const x=cx+Math.cos(ang)*radius,y=cy+Math.sin(ang)*radius;
+   ctx.beginPath();ctx.arc(x,y,4+r*0.55,0,Math.PI*2);ctx.fillStyle=col;ctx.fill();
+  }
+ }
+ ctx.beginPath();ctx.arc(cx,cy,5,0,Math.PI*2);ctx.fillStyle="#d4a24e";ctx.fill();
+}
+function renderLounge(){
+ const a=G.ash,total=a.cinder+a.calx;
+ const status=G.justEnded
+  ?"That visit's over. Here's what it left behind."
+  :G.day===0&&!total&&!G.sessionLog.length
+  ?"The fire's lit and the kettle's on. Nobody's knocked yet."
+  :"The fire's lit and the kettle's on. Stay as long as you like.";
+ const ledgerRows=G.sessionLog.length
+  ? G.sessionLog.map(line=>`<p class="detailLine">${esc(line)}</p>`).join("")
+  : `<p class="quote">Nothing's been worked since this was last tended.</p>`;
+ $("wrap-lounge").innerHTML=`
+  <div class="card" style="text-align:center">
+   <h2>The Lounge</h2>
+   <p class="quote">${status}</p>
+   <canvas id="mandala" width="260" height="260" style="margin:10px auto;display:block"></canvas>
+   <p class="smallNote">Cinder held: ${a.cinder}g &nbsp; Calx held: ${a.calx}g ${a.ink?`&nbsp; Ink carried: ${a.ink}g`:""}</p>
+   <h3 style="margin:16px 0 8px;text-align:left">What's happened here</h3>
+   <div style="text-align:left">${ledgerRows}</div>
+   <div class="row" style="margin-top:14px;justify-content:center">
+    <button class="b" id="buryBtn" ${total?"":"disabled"}>Bury it under the threshold</button>
+    <button class="b" id="siftBtn" ${total?"":"disabled"}>Sift it into ink</button>
+   </div>
+   <p class="smallNote">Leaving it as it is costs nothing to choose -- it just sits there, and the room remembers it's there.</p>
+   <p style="margin-top:14px">
+    <button class="b pri" id="answerDoor">Answer the door</button>
+    <button class="b" id="seeNotes2">Open Field Notes</button>
+   </p>
+  </div>`;
+ drawMandala($("mandala"),a.cinder,a.calx,a.ink);
+ $("buryBtn").onclick=()=>{
+  if(!total)return;
+  G.ash.cinder=0;G.ash.calx=0;G.sessionLog=[];saveGame();renderLounge();applyAshAmbience();
+ };
+ $("siftBtn").onclick=()=>{
+  if(!total)return;
+  G.ash.ink+=total;G.ash.cinder=0;G.ash.calx=0;G.sessionLog=[];saveGame();renderLounge();applyAshAmbience();
+ };
+ $("answerDoor").onclick=()=>{G.justEnded=false;startNight()};
+ $("seeNotes2").onclick=()=>setScreen("notes");
+}
+
+/* ---------- Field Notes: what's actually been learned, nothing invented ---------- */
+function renderNotes(){
+ const w=$("wrap-notes");
+ function section(title,items,known){
+  return `<h3 style="margin:16px 0 8px">${title}</h3><div class="noteGrid">`+items.map(it=>{
+   const k=known(it);
+   return `<div class="noteCard${k?"":" locked"}"><span class="k">${title}</span><b>${k?esc(it.name):"?"}</b>
+    <p>${k?esc(it.lore||it.effect||it.phrase):"Not yet used."}</p>
+    ${k&&it.shadow?`<p style="color:#9a6a4a">Overdone: ${esc(it.shadow)}</p>`:""}
+    ${k&&it.resonance?`<p>Resonance: ${esc(it.resonance)}</p>`:""}
+   </div>`;
+  }).join("")+`</div>`;
+ }
+ w.innerHTML=`<div class="card">
+  <h2>Field Notes</h2>
+  <p class="quote">Nothing here is lore you're told. It's only the magicka your own hands have actually worked.</p>
+  ${section("Verb",VERBS,v=>G.learned.verb[v.id])}
+  ${section("Carrier",CARRIERS,c=>G.learned.carrier[c.id])}
+  ${section("Catalyst",CATALYSTS,c=>G.learned.catalyst[c.id])}
+  <p style="margin-top:16px"><button class="b pri" id="backFromNotes">Back</button></p>
+ </div>`;
+ $("backFromNotes").onclick=()=>setScreen(returnScreen);
+}
+
+function showHint(id,fn){
+ const el=$(id);if(!el)return;
+ el.textContent=G.hintsOn?fn():"";
+}
+
+function startNight(){
+ const seed="night-"+G.day+"-"+(window._runSalt||0);
+ G.visitor=genVisitor(makeRng(seed),G.day);
+ G.stage="door";
+ G.bench={carrier:null,grindPct:0,grinding:false};
+ G.cauldron={heat:null,stir:null,phaseIdx:0,running:false};
+ playKnock();
+ renderCurrentStage();
+ saveGame();
+}
+
+function boot(){
+ drawBackground();
+ buildDom();
+ const save=loadGame();
+ if(save){G.day=save.day||0;G.hintsOn=save.hintsOn!==false;G.learned=save.learned||G.learned;G.ash=save.ash||G.ash;G.sessionLog=save.sessionLog||G.sessionLog}
+ refreshHintBtn();
+ window._runSalt=Math.floor(Math.random()*1e6);
+ // always open on the Lounge -- never straight into a job, whether this is
+ // the very first boot or the hundredth
+ G.stage="lounge";
+ renderCurrentStage();
+}
+boot();
+<~/script>
+</body></html>
 </script>
 <script>
 (function(){
