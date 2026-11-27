@@ -17,9 +17,16 @@ svg.i{width:1em;height:1em;stroke:currentColor;fill:none;stroke-width:1.7;stroke
 body.scan #fx{display:block;background:repeating-linear-gradient(0deg,rgba(0,0,0,.18) 0 1px,transparent 1px 3px);mix-blend-mode:multiply}
 body.vig #fx{display:block;box-shadow:inset 0 0 160px rgba(0,0,0,.55)}
 #desk{position:fixed;left:0;right:0;top:0;bottom:42px;z-index:1;overflow:hidden;overflow:clip}
-#dic{position:absolute;top:6px;left:6px;bottom:6px;display:flex;flex-flow:column wrap;align-content:flex-start;gap:2px}
-.dic{width:82px;padding:6px 2px 4px;text-align:center;border-radius:6px;cursor:pointer;user-select:none;border:1px solid transparent;font-size:12px;line-height:1.2;text-shadow:0 1px 3px #000a}
-.dic svg{width:32px;height:32px;display:block;margin:0 auto 4px;color:var(--ac);filter:drop-shadow(0 0 var(--glow) var(--ac))}
+#dic{--dw:82px;--di:32px;--df:12px;--dh:76px;position:absolute;top:6px;left:6px;bottom:6px;right:50%;display:flex;flex-flow:row nowrap;align-items:flex-start;gap:6px;overflow:auto;scrollbar-width:thin}
+#dic .dcol,#dic .dflat{display:flex;flex-direction:column;gap:2px;flex:none}
+#dic .dflat{flex-flow:column wrap;align-content:flex-start;height:100%}
+.dgh{font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--ac);opacity:.75;padding:2px 4px 4px;border-bottom:1px solid var(--bd);margin-bottom:4px;white-space:nowrap;width:var(--dw);box-sizing:border-box;overflow:hidden;text-overflow:ellipsis;text-shadow:none}
+.dgh.more{opacity:.45}
+.dic{width:var(--dw);height:var(--dh);box-sizing:border-box;overflow:hidden;padding:6px 0 4px;text-align:center;border-radius:6px;cursor:pointer;user-select:none;border:1px solid transparent;font-size:var(--df);line-height:1.2;text-shadow:0 1px 3px #000a}
+.dic .dl{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;overflow-wrap:anywhere}
+#dic.nolab .dic .dl{display:none}#dic.nolab 
+.dic .dl{overflow-wrap:anywhere}#dic.full{right:6px}#dic.tiny .dgh{letter-spacing:0;font-size:8px;padding:2px 0 3px;text-overflow:clip}#dic.tiny .dic{letter-spacing:-.2px}#dic.tiny .dic{padding:4px 0 2px}
+.dic svg{width:var(--di);height:var(--di);display:block;margin:0 auto 4px;color:var(--ac);filter:drop-shadow(0 0 var(--glow) var(--ac))}
 .dic:hover,.dic:focus{background:var(--hv);border-color:var(--bd);outline:0}
 .win{position:absolute;display:flex;flex-direction:column;background:var(--pn);border:1px solid var(--bd);border-radius:var(--rad);box-shadow:0 10px 36px rgba(0,0,0,.55);min-width:240px;min-height:120px;overflow:hidden}
 .win.focus{border-color:var(--ac);box-shadow:0 10px 40px rgba(0,0,0,.6),0 0 calc(var(--glow)*2) var(--aca)}
@@ -91,7 +98,7 @@ input.t:focus,select.t:focus,textarea.t:focus{border-color:var(--ac)}
 pre.out{margin:0;white-space:pre-wrap;word-break:break-word;font:inherit}
 .sw{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px}
 .swc{border:2px solid var(--bd);border-radius:8px;padding:8px;cursor:pointer}.swc.on{border-color:var(--ac)}.swc .bar{height:34px;border-radius:5px;display:flex;overflow:hidden;margin-bottom:6px}.swc .bar i{flex:1}
-@media(max-width:700px){#mcd{display:none}.tb button[title=Maximise],.tb button[title=Restore]{display:none}.win{left:0!important;top:0!important;width:100%!important;height:100%!important;border-radius:0}.win .rz{display:none}.fl.lst .it{padding:8px 10px;min-height:42px;border-bottom:1px solid var(--bd)}.fl.lst .it .n{white-space:normal;overflow-wrap:anywhere;line-height:1.25}.fl.lst .it .m{width:auto!important;min-width:0;font-size:11px;white-space:nowrap}.fl.lst .it .m+.m{display:none}.sc-side{display:none;position:absolute;left:0;top:0;bottom:0;width:82%!important;max-height:none!important;z-index:6;border-right:1px solid var(--bd)!important;border-bottom:0!important;box-shadow:6px 0 18px #000a}.sc-side.open{display:block}.sc-sbtn{display:inline-flex!important}.mm-side{width:auto!important;max-height:34%;border-right:0!important;border-bottom:1px solid var(--bd);flex:none}.mm-row,.md-row{flex-direction:column}.mm-cover{width:72px!important;height:72px!important}.mm-ctl{flex-wrap:wrap}.mm-ctl input[type=range]:not([max="1"]){flex:1 1 100%!important;order:9;min-width:0}.md-pl{width:auto!important;max-height:36%;border-left:0!important;border-top:1px solid var(--bd)}.bk-lib{width:100%!important;border-right:0!important}.cm-top{flex-wrap:wrap!important;gap:4px}.cm-top .grow{display:none}.cm-top select{flex:1 1 30%;min-width:0;max-width:48%}.row{flex-wrap:wrap}.btn{min-height:34px}.tk{flex:0 0 40px;min-width:40px;padding:0 8px}.tk .ti{display:none}#tray .hide{display:none}#dic{flex-flow:row wrap;align-content:flex-start;right:8px}.dic{width:calc(20% - 2px);padding:4px 1px 3px;font-size:10.5px;line-height:1.15;overflow-wrap:anywhere}.dic svg{width:26px;height:26px;margin-bottom:2px}.side{width:96px}}
+@media(max-width:700px){#mcd{display:none}.tb button[title=Maximise],.tb button[title=Restore]{display:none}.win{left:0!important;top:0!important;width:100%!important;height:100%!important;border-radius:0}.win .rz{display:none}.fl.lst .it{padding:8px 10px;min-height:42px;border-bottom:1px solid var(--bd)}.fl.lst .it .n{white-space:normal;overflow-wrap:anywhere;line-height:1.25}.fl.lst .it .m{width:auto!important;min-width:0;font-size:11px;white-space:nowrap}.fl.lst .it .m+.m{display:none}.sc-side{display:none;position:absolute;left:0;top:0;bottom:0;width:82%!important;max-height:none!important;z-index:6;border-right:1px solid var(--bd)!important;border-bottom:0!important;box-shadow:6px 0 18px #000a}.sc-side.open{display:block}.sc-sbtn{display:inline-flex!important}.mm-side{width:auto!important;max-height:34%;border-right:0!important;border-bottom:1px solid var(--bd);flex:none}.mm-row,.md-row{flex-direction:column}.mm-cover{width:72px!important;height:72px!important}.mm-ctl{flex-wrap:wrap}.mm-ctl input[type=range]:not([max="1"]){flex:1 1 100%!important;order:9;min-width:0}.md-pl{width:auto!important;max-height:36%;border-left:0!important;border-top:1px solid var(--bd)}.bk-lib{width:100%!important;border-right:0!important}.cm-top{flex-wrap:wrap!important;gap:4px}.cm-top .grow{display:none}.cm-top select{flex:1 1 30%;min-width:0;max-width:48%}.row{flex-wrap:wrap}.btn{min-height:34px}.tk{flex:0 0 40px;min-width:40px;padding:0 8px}.tk .ti{display:none}#tray .hide{display:none}#dic #dic .dgh:first-child{margin-top:0}#dic .dflat{flex-direction:row;flex-wrap:wrap;height:auto}.dic svg{width:26px;height:26px;margin-bottom:2px}.side{width:96px}}
 #boot{position:fixed;inset:0;z-index:9900;background:var(--bg);color:var(--ac);padding:14px 16px;font:12px/1.5 var(--ff);overflow:hidden;display:flex;flex-direction:column}
 #boot pre{margin:0;white-space:pre;color:var(--ac)}#boot #bl{flex:1;overflow:hidden;white-space:pre-wrap;word-break:break-all;display:flex;flex-direction:column;justify-content:flex-end}
 #boot .ok{color:var(--ok)}#boot .wn{color:var(--wn)}#boot .er{color:var(--er)}#boot .dm{color:var(--dim)}
@@ -1258,7 +1265,7 @@ const fmtDate=t=>{const d=new Date(t),hm=" "+pad(d.getHours())+":"+pad(d.getMinu
 const sleep=ms=>new Promise(r=>setTimeout(r,ms));
 const LS={get(k,d){try{const v=localStorage.getItem(k);return v==null?d:JSON.parse(v)}catch(e){return d}},set(k,v){try{localStorage.setItem(k,JSON.stringify(v));return true}catch(e){try{window.tvosStorageFull&&window.tvosStorageFull(e)}catch(_){}return false}}};
 const fmtUp=s=>{s=Math.max(0,Math.round(s));const d=Math.floor(s/86400),hr=Math.floor(s%86400/3600),m=Math.floor(s%3600/60),sc=s%60;if(d)return d+" d "+hr+" h";if(hr)return hr+" h "+m+" min";if(m)return m+" min "+sc+" s";return sc+" s"};
-const OS={apps:{},wins:[],z:10,bus:{},boot:performance.now(),ver:"1.0 build 1125-0643"};
+const OS={apps:{},wins:[],z:10,bus:{},boot:performance.now(),ver:"1.0 build 1127-0838"};
 OS.on=(ev,f)=>{(OS.bus[ev]=OS.bus[ev]||[]).push(f);return f};
 OS.off=(ev,f)=>{OS.bus[ev]=(OS.bus[ev]||[]).filter(x=>x!==f)};
 /* reboot that always fetches the newest copy of this page (like Ctrl+Shift+R), then reloads */
@@ -1317,7 +1324,7 @@ const THEMES={
 };
 const THEME_ORDER=Object.keys(THEMES);
 const WALLS=["stars","rings","grid","rain","flow","plain","none"];
-const DEF={theme:"phosphor",wall:"auto",scan:false,vig:true,anim:true,verbose:true,bootSpeed:"normal",autostart:true,autostartMin:true,fsize:13,sound:false,restoreSession:true,rememberWin:true,showDataApps:false,lowPower:"auto",dateMode:"mc",manifestUrl:"",startupSound:true};
+const DEF={theme:"phosphor",wall:"auto",scan:false,vig:true,anim:true,verbose:true,bootSpeed:"normal",startApp:"",fsize:13,sound:false,restoreSession:true,rememberWin:true,showDataApps:false,lowPower:"auto",dateMode:"mc",manifestUrl:"",startupSound:true};
 const SET=Object.assign({},DEF,LS.get("tvos_settings",{}));if(!SET.scanOff1){SET.scan=false;SET.scanOff1=true;try{LS.set("tvos_settings",SET)}catch(e){}}
 /* low power mode: Off / On / Auto (Auto switches on for weak devices: 2 cores or less, or 2 GB of memory or less) */
 function lpWeak(){return (navigator.hardwareConcurrency||8)<=2||(navigator.deviceMemory&&navigator.deviceMemory<=2)}
@@ -1552,12 +1559,10 @@ function buildTray(){const tr=$("#tray");tr.innerHTML="";tr.append(h("span",{cla
 function cycleTheme(d){const i=(THEME_ORDER.indexOf(SET.theme)+d+THEME_ORDER.length)%THEME_ORDER.length;applyTheme(THEME_ORDER[i]);toast("Theme: "+THEMES[SET.theme].n)}
 OS.on("manifest",m=>{try{buildDesk()}catch(e){}const a=$("#arc");if(a)a.textContent="archive: "+m.files.toLocaleString()+" files"});
 /* ---- desktop icons & start menu ---- */
-const DESK_FIRST=["tv","terminal","files","music","books","audiobooks","comic","school","media","images","notepad","archive","reader","calc","settings","programs","cartridges"];
-function buildDesk(){const d=$("#dic");d.innerHTML="";const rest=Object.keys(OS.apps).filter(i=>!DESK_FIRST.includes(i)&&appVisible(OS.apps[i])&&!OS.apps[i].deskHide).sort((x,y)=>(!!OS.apps[x].user-!!OS.apps[y].user)||OS.apps[x].cat.localeCompare(OS.apps[y].cat)||OS.apps[x].name.localeCompare(OS.apps[y].name));for(const id of DESK_FIRST.concat(rest)){const a=OS.apps[id];if(!a||!appVisible(a))continue;const e=h("div",{class:"dic",tabindex:"0",title:a.name,onclick:e=>{if(isMob()||e.detail>=2)OS.open(id)},onkeydown:e=>{if(e.key==="Enter")OS.open(id)}},ic(a.icon),a.name);e.addEventListener("contextmenu",ev=>{ev.preventDefault();ctxMenu(ev.clientX,ev.clientY,[{t:"Open",fn:()=>OS.open(id)}])});d.append(e)}}
-$("#desk").addEventListener("contextmenu",e=>{if(e.target.id!=="desk"&&e.target.id!=="dic")return;e.preventDefault();ctxMenu(e.clientX,e.clientY,[{t:"Terminal here",ic:"term",fn:()=>OS.open("terminal")},{t:"Files",ic:"folder",fn:()=>OS.open("files")},{t:"New note",ic:"note",fn:()=>OS.open("notepad")},"-",{t:"Next theme",ic:"eye",fn:()=>cycleTheme(1)},{t:"Next wallpaper",ic:"image",fn:()=>{const i=(WALLS.indexOf(wallId())+1)%WALLS.length;SET.wall=WALLS[i];saveSet();setWall();toast("Wallpaper: "+SET.wall)}},{t:"Settings",ic:"gear",fn:()=>OS.open("settings")}])});
+$("#desk").addEventListener("contextmenu",e=>{if(e.target.id!=="desk"&&e.target.id!=="dic")return;e.preventDefault();ctxMenu(e.clientX,e.clientY,[{t:"Terminal here",ic:"term",fn:()=>OS.open("terminal")},{t:"Files",ic:"folder",fn:()=>OS.open("files")},{t:"New note",ic:"note",fn:()=>OS.open("notepad")},"-",{t:"Next theme",ic:"eye",fn:()=>cycleTheme(1)},{t:"Next wallpaper",ic:"image",fn:()=>{const i=(WALLS.indexOf(wallId())+1)%WALLS.length;SET.wall=WALLS[i];saveSet();setWall();toast("Wallpaper: "+SET.wall)}},"-",{t:"Desktop icons"+(DK.hiddenCount()?" ("+DK.hiddenCount()+" hidden)":"")+"…",ic:"gear",fn:()=>OS.open("settings",{tab:"Desktop"})},{t:"Reset icons to default",fn:()=>{DK.resetAll();toast("Desktop icons are back to the default.")}},{t:"Settings",ic:"gear",fn:()=>OS.open("settings")}])});
 let startSel=0;
 function startList(q){const l=$("#sl");l.innerHTML="";q=(q||"").toLowerCase().trim();const cats={};for(const id in OS.apps){const a=OS.apps[id];if(!appVisible(a))continue;if(q&&!(a.name+" "+a.cat+" "+(a.kw||"")).toLowerCase().includes(q))continue;const ck=a.user?"Installed: "+a.cat:a.cat;(cats[ck]=cats[ck]||[]).push(a)}
- const order=["Games","System","Accessories","Media","Tools"];let n=0;for(const c of Object.keys(cats).sort((a,b)=>{const ia=a.startsWith("Installed: "),ib=b.startsWith("Installed: ");if(ia||ib)return ia===ib?a.localeCompare(b):ia?1:-1;return order.indexOf(a)-order.indexOf(b)})){l.append(h("h6",{},c));for(const a of cats[c].sort((x,y)=>x.name.localeCompare(y.name))){l.append(h("div",{class:"si"+(n++===startSel?" sel":""),"data-app":a.id,onclick:()=>{startToggle(false);OS.open(a.id)}},ic(a.icon),a.name,h("small",{},a.desc||"")))}}
+ const order=["Games","System","Accessories","Media","Tools"];let n=0;for(const c of Object.keys(cats).sort((a,b)=>{const ia=a.startsWith("Installed: "),ib=b.startsWith("Installed: ");if(ia||ib)return ia===ib?a.localeCompare(b):ia?1:-1;return order.indexOf(a)-order.indexOf(b)})){l.append(h("h6",{},c));for(const a of cats[c].sort((x,y)=>x.name.localeCompare(y.name))){l.append(h("div",{class:"si"+(n++===startSel?" sel":""),"data-app":a.id,oncontextmenu:ev=>{ev.preventDefault();const id=a.id,hd=DK.isHidden(id);ctxMenu(ev.clientX,ev.clientY,[{t:"Open",fn:()=>{startToggle(false);OS.open(id)}},{t:hd?"Show on desktop":"Hide from desktop",fn:()=>{DK.setHidden(id,!hd);startList($("#sq").value)}}])},onclick:()=>{startToggle(false);OS.open(a.id)}},ic(a.icon),a.name,h("small",{},(!a.deskHide&&DK.isHidden(a.id)?"not on the desktop · ":"")+(a.desc||""))))}}
  if(!n)l.append(h("div",{class:"pad dim"},"No app matches."))}
 function startToggle(on){const s=$("#start");on=on==null?!s.classList.contains("on"):on;s.classList.toggle("on",on);$("#sbtn").classList.toggle("on",on);if(on){startSel=0;$("#sq").value="";startList("");if(!matchMedia("(pointer:coarse)").matches)setTimeout(()=>$("#sq").focus(),0)}else $("#sq").blur()}
 function buildStart(){$("#sbtn").append(ic("logo"),h("span",{},"TV·OS"));$("#sbtn").onclick=e=>{e.stopPropagation();startToggle()};
@@ -1635,6 +1640,71 @@ function drawWall(t,once){const id=wallId(),bg=css("bg"),ac=css("ac"),a2=css("ac
  document.addEventListener("fullscreenchange",chg);document.addEventListener("webkitfullscreenchange",chg);
  document.addEventListener("dblclick",e=>{const x=fe();if(!x||!x.dataset||!x.dataset.fsx||!x.contains(e.target)||e.target.closest&&e.target.closest("input,textarea,select"))return;out()},true);
 })();
+
+/* ===================== DESKTOP ICONS: groups, hide, reorder, size ===================== */
+/* Icons are shown in named groups (each group starts a new column on a wide screen, and has a heading on a phone).
+   Everything the user changes (hidden icons, order inside a group, sort, size, labels) lives under one key, tvos_deskicons,
+   so Backup and Clean-up cover it. An app that is not listed here lands in the group that matches its category. */
+const DGROUPS=[
+ ["Library",["music","books","audiobooks","comic","school","archive","media","images","reader"]],
+ ["Games",["cartridges","tv","circuit","theseus","sysadmin","mysky","hearth","firework","sophia","mines","snake"]],
+ ["Everyday",["files","browser","chat","notepad","diary","calendar","tasks","calc","clock"]],
+ ["Create",["paint","camera","recorder","deejay","sequencer","lyre","metronome"]],
+ ["Computer",["help","settings","programs","themes","backup","cleaner","terminal","taskmgr","benchmark","quine"]],
+ ["Tools",["runner","toolbox","bookbinder","manifest"]]];
+const DCATGROUP={Games:"Games",Media:"Create",Internet:"Everyday",Accessories:"Everyday",System:"Computer",Tools:"Tools",Companions:"Games"};
+const DK={KEY:"tvos_deskicons",S:{size:"m",labels:true,sort:"groups",order:{},used:{}},
+ /* on a phone, the first start hides the rarely used apps so the desktop stays calm; they stay in Start and in Settings > Desktop */
+ MOBHIDE:["runner","toolbox","bookbinder","manifest","benchmark","quine","taskmgr","cleaner","metronome","mines","terminal"],
+ load(){try{const r=JSON.parse(localStorage.getItem(DK.KEY)||"null");if(r&&typeof r==="object")DK.S=Object.assign({size:"m",labels:true,sort:"groups",order:{},used:{}},r)}catch(e){}
+  if(!["s","m","l"].includes(DK.S.size))DK.S.size="m";if(!["groups","az","used"].includes(DK.S.sort))DK.S.sort="groups";if(!DK.S.order||typeof DK.S.order!=="object"||Array.isArray(DK.S.order))DK.S.order={};if(!DK.S.used||typeof DK.S.used!=="object"||Array.isArray(DK.S.used))DK.S.used={};if(DK.S.hidden!==undefined&&!Array.isArray(DK.S.hidden))delete DK.S.hidden},
+ save(){try{localStorage.setItem(DK.KEY,JSON.stringify(DK.S))}catch(e){}},
+ hiddenNow(){return DK.S.hidden!==undefined?DK.S.hidden:(isMob()?DK.MOBHIDE:[])},
+ isHidden(id){return DK.hiddenNow().indexOf(id)>=0},
+ setHidden(id,on){const l=DK.hiddenNow().slice().filter(x=>x!==id);if(on)l.push(id);DK.S.hidden=l;DK.save();buildDesk()},
+ groupOf(id){const a=OS.apps[id];for(const [n,ids] of DGROUPS)if(ids.indexOf(id)>=0)return n;return a&&DCATGROUP[a.cat]||"More"},
+ /* every app that can be on the desktop, in groups, with the saved order applied (hidden ones included, so Settings can list them) */
+ groups(){const ids=Object.keys(OS.apps).filter(i=>{const a=OS.apps[i];return appVisible(a)&&!a.deskHide}),by={};
+  for(const i of ids)(by[DK.groupOf(i)]=by[DK.groupOf(i)]||[]).push(i);const out=[];
+  const names=DGROUPS.map(g=>g[0]).concat(["More"]);
+  for(const n of names){const base=DGROUPS.find(g=>g[0]===n);let l=(by[n]||[]).slice();if(!l.length)continue;
+   const listed=base?base[1].filter(i=>l.indexOf(i)>=0):[],extra=l.filter(i=>!base||base[1].indexOf(i)<0).sort((x,y)=>(!!OS.apps[x].user-!!OS.apps[y].user)||OS.apps[x].name.localeCompare(OS.apps[y].name));
+   l=listed.concat(extra);const c=DK.S.order[n];if(Array.isArray(c)){const k=c.filter(i=>l.indexOf(i)>=0);l=k.concat(l.filter(i=>k.indexOf(i)<0))}
+   out.push({name:n,ids:l})}return out},
+ flat(){const g=DK.groups().reduce((a,x)=>a.concat(x.ids),[]);
+  if(DK.S.sort==="az")return g.slice().sort((x,y)=>OS.apps[x].name.localeCompare(OS.apps[y].name));
+  if(DK.S.sort==="used")return g.slice().sort((x,y)=>(DK.S.used[y]||0)-(DK.S.used[x]||0)||g.indexOf(x)-g.indexOf(y));return g},
+ bump(id){if(!OS.apps[id]||OS.apps[id].hidden)return;DK.S.used[id]=(DK.S.used[id]||0)+1;clearTimeout(DK._t);DK._t=setTimeout(DK.save,2500)},
+ move(id,dir){const gn=DK.groupOf(id),g=DK.groups().find(x=>x.name===gn);if(!g)return;const l=g.ids.slice(),i=l.indexOf(id),j=i+dir;if(i<0||j<0||j>=l.length)return;l.splice(i,1);l.splice(j,0,id);DK.S.order[gn]=l;DK.save();buildDesk()},
+ resetOrder(){DK.S.order={};DK.save();buildDesk()},
+ resetAll(){DK.S={size:"m",labels:true,sort:"groups",order:{},used:DK.S.used};DK.save();buildDesk()},
+ hiddenCount(){const h=DK.hiddenNow();return Object.keys(OS.apps).filter(i=>h.indexOf(i)>=0&&appVisible(OS.apps[i])&&!OS.apps[i].deskHide).length}};
+DK.load();
+{const _open=OS.open;OS.open=function(id,a,o){DK.bump(id);return _open.call(OS,id,a,o)}}
+function deskMenu(id,ev){const a=OS.apps[id],hid=DK.isHidden(id),m=[{t:"Open",fn:()=>OS.open(id)},{t:hid?"Show on desktop":"Hide from desktop",fn:()=>{DK.setHidden(id,!hid)}}];
+ if(DK.S.sort==="groups"&&!hid){m.push({t:"Move earlier",fn:()=>DK.move(id,-1)},{t:"Move later",fn:()=>DK.move(id,1)})}
+ m.push("-",{t:"Desktop icon settings…",ic:"gear",fn:()=>OS.open("settings",{tab:"Desktop"})});ctxMenu(ev.clientX,ev.clientY,m)}
+const DSZ={s:{w:70,i:26,f:11,h:62},m:{w:82,i:32,f:12,h:76},l:{w:104,i:44,f:13,h:98}},DSZM={s:{w:50,i:22,f:9.5,h:54},m:{w:60,i:28,f:10,h:62},l:{w:90,i:36,f:11.5,h:80}};
+/* On a PC the icons only use the LEFT HALF of the screen (an app can sit on the right); on a phone they may use the whole screen. Every group has its own column(s) with its heading on top,
+   and if the chosen size does not fit that half, the whole set is shrunk step by step until it does (so no scrolling). */
+function buildDesk(){const d=$("#dic");if(!d)return;d.innerHTML="";const mob=isMob(),base=(mob?DSZM:DSZ)[DK.S.size]||DSZ.m,hid=DK.hiddenNow(),nolab=DK.S.labels===false,grouped=DK.S.sort==="groups";
+ d.classList.toggle("full",mob);const W=Math.max(60,d.clientWidth||(mob?innerWidth-12:Math.floor((innerWidth-12)/2))),H=Math.max(120,d.clientHeight||(innerHeight-60)),GAP=6,HH=26;
+ let sets;
+ if(grouped)sets=DK.groups().map(g=>({name:g.name,ids:g.ids.filter(i=>hid.indexOf(i)<0)})).filter(g=>g.ids.length);
+ else sets=[{name:"",ids:DK.flat().filter(i=>hid.indexOf(i)<0)}];
+ const zf=k=>({w:Math.round(base.w*k),i:Math.max(16,Math.round(base.i*k)),f:Math.max(8,Math.round(base.f*k*2)/2),h:nolab?Math.max(16,Math.round(base.i*k))+Math.round(16*k):Math.round(base.h*k)});
+ /* lay the icons out in columns for a size z: returns the columns, each a list of {head} or {id} */
+ const lay=z=>{const cols=[],ih=z.h+2,HH2=g=>g?HH:0;
+  for(const g of sets){const ids=g.ids.slice(),per=Math.max(1,Math.floor((H-HH2(g.name))/ih));let first=true;
+   while(ids.length){const col=[];if(g.name)col.push({head:g.name,more:!first});for(const id of ids.splice(0,per))col.push({id});cols.push(col);first=false}}
+  return cols};
+ let z=zf(1),cols,k=1;const steps=[1,.92,.85,.78,.72,.66,.6,.55,.5];
+ for(const st of steps){k=st;z=zf(st);cols=lay(z);if(cols.length*(z.w+GAP)-GAP<=W)break}
+ d.style.setProperty("--dw",z.w+"px");d.style.setProperty("--di",z.i+"px");d.style.setProperty("--df",z.f+"px");d.style.setProperty("--dh",z.h+"px");d.classList.toggle("nolab",nolab);d.classList.toggle("grp",grouped);d.classList.toggle("tiny",z.w<46);
+ const icon=id=>{const a=OS.apps[id];const e=h("div",{class:"dic",tabindex:"0",title:a.name,"data-app":id,onclick:ev=>{if(mob||ev.detail>=2)OS.open(id)},onkeydown:ev=>{if(ev.key==="Enter")OS.open(id)}},ic(a.icon),h("span",{class:"dl"},a.name));
+  e.addEventListener("contextmenu",ev=>{ev.preventDefault();deskMenu(id,ev)});return e};
+ for(const c of cols){const el=h("div",{class:"dcol"});for(const x of c)el.append(x.head!==undefined?h("div",{class:"dgh"+(x.more?" more":"")},x.head):icon(x.id));d.append(el)}}
+{let rt=0,lm=isMob();addEventListener("resize",()=>{clearTimeout(rt);rt=setTimeout(()=>{try{buildDesk()}catch(e){}},200)})}
 
 /* ===================== APPS 1: game, terminal, files ===================== */
 /* --- Terminal Velocity (the game) runs in an iframe, from the copy embedded in this file --- */
@@ -1918,13 +1988,26 @@ defApp("archive",{needs:()=>MAN.files>0,name:"Archive",icon:"search",cat:"Media"
 
 /* ===================== APPS 3: settings, clock, calendar, metronome, paint, taskmgr, toolbox, games, tasks, recorder, help ===================== */
 defApp("settings",{name:"Settings",icon:"gear",cat:"System",w:700,h:520,single:true,desc:"themes, wallpaper, archive, storage",kw:"theme appearance wallpaper manifest archive backup storage boot",
- init(win,b,arg){const tabs=["Appearance","Boot","Archive","Storage","About"];let cur=(arg&&arg.tab)||"Appearance";const side=h("div",{class:"side"}),main=h("div",{class:"scr pad grow",style:"display:flex;flex-direction:column;gap:12px"});
+ init(win,b,arg){const tabs=["Appearance","Desktop","Boot","Archive","Storage","About"];let cur=(arg&&arg.tab)||"Appearance";const side=h("div",{class:"side"}),main=h("div",{class:"scr pad grow",style:"display:flex;flex-direction:column;gap:12px"});
   const chk=(k,label,fn)=>h("label",{style:"display:flex;gap:8px;align-items:center;cursor:pointer"},h("input",{type:"checkbox",checked:!!SET[k],onchange:e=>{SET[k]=e.target.checked;saveSet();fn&&fn()}}),label);
   const P={
    Appearance(){
     const ws=h("select",{class:"t",onchange:e=>{SET.wall=e.target.value;saveSet();setWall()}},...["auto",...WALLS].map(w=>h("option",{value:w,selected:SET.wall===w},w==="auto"?"auto (theme default)":w)));
     return[h("h3",{class:"ac",style:"margin:0"},"Appearance"),h("div",{class:"row",style:"border:0;padding:0;gap:8px;flex-wrap:wrap;align-items:center"},h("span",{},"Themes have their own app now: roll, collect, breed and save them."),h("button",{class:"btn pri",onclick:()=>OS.open("themes")},"Open Themes")),h("div",{class:"row",style:"border:0;padding:0"},"Wallpaper (canvas, no images):",ws),h("div",{class:"row",style:"border:0;padding:0"},"Low power mode:",h("select",{class:"t",title:"Stops animations, glow and the moving wallpaper to save CPU and battery",onchange:e=>{SET.lowPower=e.target.value;saveSet();OS.lpSlow=false;document.body.classList.toggle("lp",lpOn());setWall();lpWatch();toast("Low power mode: "+(lpOn()?"on":"off"))}},...[["auto","Auto (measured: on only if it cannot keep up)"],["on","On"],["off","Off"]].map(x=>h("option",{value:x[0],selected:SET.lowPower===x[0]},x[1]))),h("span",{class:"dim",style:"font-size:12px"},lpOn()?"currently ON":"currently off")),h("div",{class:"row",style:"border:0;padding:0"},"Calendar & dates:",calSel()),chk("scan","CRT scanlines",()=>applyTheme(SET.theme)),chk("vig","Vignette",()=>applyTheme(SET.theme)),chk("anim","Window animations"),chk("showDataApps","Show Music, Books, Comics, Audiobooks and Archive even when their files are not mounted",()=>{buildDesk()}),h("div",{class:"row",style:"border:0;padding:0"},"Text size",h("input",{type:"range",min:11,max:18,value:SET.fsize,oninput:e=>{SET.fsize=+e.target.value;applyTheme(SET.theme)}}),h("span",{class:"dim"},"light themes skip scanlines automatically"))]},
-   Boot(){return[h("h3",{class:"ac",style:"margin:0"},"Boot"),chk("verbose","Verbose boot log (say what it is doing at all times)"),h("label",{style:"display:flex;gap:8px;align-items:center"},"Boot speed",h("select",{class:"t",onchange:e=>{SET.bootSpeed=e.target.value;saveSet()}},...[["slow","Slow (about 14 s)"],["normal","Normal (about 7 s)"],["fast","Fast"],["instant","Instant"]].map(([v,l])=>h("option",{value:v,selected:(SET.bootSpeed||"normal")===v},l)))),chk("restoreSession","Reopen my windows, and where they were, after a reboot or refresh (close everything and reboot to start fresh)"),chk("rememberWin","Remember where each app's window was (size, position, snapped sides) and put it back when I open that app again"),chk("autostart","First boot: start Terminal Velocity (the game) automatically"),chk("autostartMin","...and keep it minimised in the taskbar (desktop first)"),h("div",{style:"display:flex;gap:10px;align-items:center;flex-wrap:wrap"},chk("startupSound","Play a short lyre chime when the desktop appears"),h("button",{class:"btn sm",onclick:()=>startupChime(true)},"Play it now")),h("div",{class:"dim"},"Press any key or click during boot to skip the delays. The checks still run.")]},
+   Desktop(){
+    const sel=(opts,cur,fn)=>h("select",{class:"t",onchange:e=>fn(e.target.value)},...opts.map(([v,l])=>h("option",{value:v,selected:cur===v},l)));
+    const bl=h("label",{style:"display:flex;gap:6px;align-items:center;cursor:pointer"},h("input",{type:"checkbox",checked:DK.S.labels!==false,onchange:e=>{DK.S.labels=e.target.checked;DK.save();buildDesk()}}),"Show names under icons");
+    const grouped=DK.S.sort==="groups",hid=DK.hiddenNow(),gs=DK.groups();
+    const out=[h("h3",{class:"ac",style:"margin:0"},"Desktop icons"),h("div",{class:"dim"},"Choose which icons are on the desktop, in what order, and how big. A hidden app is still in Start and in search. You can also right-click an icon, or the empty desktop."),
+     h("div",{class:"row",style:"border:0;padding:0;gap:10px;flex-wrap:wrap;align-items:center"},"Arrange:",sel([["groups","By group (suggested)"],["az","A to Z"],["used","Most used first"]],DK.S.sort,v=>{DK.S.sort=v;DK.save();buildDesk();draw()}),"Size:",sel([["s","Small"],["m","Medium"],["l","Large"]],DK.S.size,v=>{DK.S.size=v;DK.save();buildDesk()}),bl),
+     h("div",{class:"row",style:"border:0;padding:0;gap:8px;flex-wrap:wrap;align-items:center"},h("button",{class:"btn",onclick:()=>{DK.S.hidden=[];DK.save();buildDesk();draw()}},"Show all hidden icons ("+DK.hiddenCount()+")"),h("button",{class:"btn",onclick:()=>{DK.resetOrder();toast("Icon order is back to the default.");draw()}},"Reset order"),h("button",{class:"btn",onclick:()=>{DK.resetAll();toast("Desktop icons are back to the default.");draw()}},"Reset everything"))];
+    if(DK.hiddenCount())out.push(h("div",{class:"dim"},DK.hiddenCount()+" hidden: "+gs.reduce((a,g)=>a.concat(g.ids),[]).filter(i=>hid.indexOf(i)>=0).map(i=>OS.apps[i].name).join(", ")+"."));
+    for(const g of gs){out.push(h("h4",{style:"margin:10px 0 2px"},g.name));
+     for(const id of g.ids){const hd=hid.indexOf(id)>=0,i=g.ids.indexOf(id);out.push(h("div",{class:"row",style:"gap:8px;align-items:center;padding:3px 0;border:0;"+(hd?"opacity:.55":"")},ic(OS.apps[id].icon),h("span",{class:"grow"},OS.apps[id].name),
+      grouped&&!hd?h("button",{class:"btn sm",title:"Move earlier",disabled:i===0,onclick:()=>{DK.move(id,-1);draw()}},"▲"):"",grouped&&!hd?h("button",{class:"btn sm",title:"Move later",disabled:i===g.ids.length-1,onclick:()=>{DK.move(id,1);draw()}},"▼"):"",
+      h("button",{class:"btn sm",onclick:()=>{DK.setHidden(id,!hd);draw()}},hd?"Show":"Hide")))}}
+    return out},
+   Boot(){return[h("h3",{class:"ac",style:"margin:0"},"Boot"),chk("verbose","Verbose boot log (say what it is doing at all times)"),h("label",{style:"display:flex;gap:8px;align-items:center"},"Boot speed",h("select",{class:"t",onchange:e=>{SET.bootSpeed=e.target.value;saveSet()}},...[["slow","Slow (about 14 s)"],["normal","Normal (about 7 s)"],["fast","Fast"],["instant","Instant"]].map(([v,l])=>h("option",{value:v,selected:(SET.bootSpeed||"normal")===v},l)))),chk("restoreSession","Reopen my windows, and where they were, after a reboot or refresh (close everything and reboot to start fresh)"),chk("rememberWin","Remember where each app's window was (size, position, snapped sides) and put it back when I open that app again"),h("label",{style:"display:flex;gap:8px;align-items:center;flex-wrap:wrap"},"When the OS starts, open:",h("select",{class:"t",onchange:e=>{SET.startApp=e.target.value;saveSet()}},h("option",{value:""},"Nothing (a clean desktop)"),...Object.keys(OS.apps).filter(i=>appVisible(OS.apps[i])).sort((x,y)=>OS.apps[x].name.localeCompare(OS.apps[y].name)).map(i=>h("option",{value:i,selected:SET.startApp===i},OS.apps[i].name)))),h("div",{class:"dim"},"The very first time the OS is opened, Welcome shows once to explain where things are."),h("div",{style:"display:flex;gap:10px;align-items:center;flex-wrap:wrap"},chk("startupSound","Play a short lyre chime when the desktop appears"),h("button",{class:"btn sm",onclick:()=>startupChime(true)},"Play it now")),h("div",{class:"dim"},"Press any key or click during boot to skip the delays. The checks still run.")]},
    Archive(){const c=h("pre",{class:"out dim"},MAN.json?`Mounted: ${MAN.files.toLocaleString()} files · ${fmtBytes(MAN.size)}\nSource : ${MAN.src}\nFormat : {generated, webPrefix, items:[{name,type:"folder"|"file",children,path,size}]}`:"No manifest mounted.\n"+MAN.tried.map(t=>"  fail "+t.u+" ("+t.why+")").join("\n"));
     const u=h("input",{class:"t grow",placeholder:"https://example.org/files/manifest.json",value:SET.manifestUrl||""});
     const apply=async j=>{try{buildArchive(j,"custom");toast("Archive mounted: "+MAN.files.toLocaleString()+" files. Restart the game window to let it see the new manifest.");draw()}catch(e){dlgAlert("That manifest could not be used: "+e.message,"Manifest")}};
@@ -8606,6 +8689,17 @@ const SPA={};
 /* a fluffy ellipse: n little scallops around the edge, so fur looks like fur */
 SPA.blob=(c,cx,cy,rx,ry,n,amp)=>{c.beginPath();for(let i=0;i<n;i++){const a0=i/n*6.2832,a1=(i+1)/n*6.2832,am=(a0+a1)/2;const x0=cx+Math.cos(a0)*rx,y0=cy+Math.sin(a0)*ry,x1=cx+Math.cos(a1)*rx,y1=cy+Math.sin(a1)*ry,xm=cx+Math.cos(am)*rx*(1+amp),ym=cy+Math.sin(am)*ry*(1+amp);if(!i)c.moveTo(x0,y0);c.quadraticCurveTo(xm,ym,x1,y1)}c.closePath()};
 SPA.el=(c,x,y,rx,ry,col,rot)=>{c.fillStyle=col;c.beginPath();c.ellipse(x,y,rx,ry,rot||0,0,6.2832);c.fill()};
+/* A dog's tongue: broad and flat like a spoon, narrow at the root and widest near a rounded tip, with a groove down the middle.
+   It runs from (mx,my) to (tx,ty) along a gentle curve; hr and hm are the half-widths at the root and at the widest part. */
+SPA.tongue=(c,mx,my,tx,ty,hr,hm,bend,lw)=>{
+ const cx=(mx+tx)/2-(ty-my)*bend,cy=(my+ty)/2+(tx-mx)*bend,N=20,P=u=>{const a=(1-u)*(1-u),b=2*u*(1-u),d=u*u;return[a*mx+b*cx+d*tx,a*my+b*cy+d*ty]},
+ T=u=>{const dx=2*(1-u)*(cx-mx)+2*u*(tx-cx),dy=2*(1-u)*(cy-my)+2*u*(ty-cy),l=Math.hypot(dx,dy)||1;return[dx/l,dy/l]},
+ hw=u=>{let w=hr+(hm-hr)*Math.min(1,u/.7);if(u>.8){const k=(u-.8)/.2;w*=Math.sqrt(Math.max(0,1-k*k*.92))}return w};
+ const shape=k=>{c.beginPath();const R=[];for(let i=0;i<=N;i++){const u=i/N,p=P(u),t=T(u),w=hw(u)*k;i?c.lineTo(p[0]-t[1]*w,p[1]+t[0]*w):c.moveTo(p[0]-t[1]*w,p[1]+t[0]*w);R.push([p[0]+t[1]*w,p[1]-t[0]*w])}for(let i=N;i>=0;i--)c.lineTo(R[i][0],R[i][1]);c.closePath()};
+ c.lineJoin="round";shape(1);c.fillStyle="#e8808f";c.fill();c.strokeStyle="rgba(150,50,72,.75)";c.lineWidth=lw||.5;c.stroke();
+ shape(.6);c.fillStyle="rgba(250,175,188,.8)";c.fill();
+ c.strokeStyle="rgba(160,55,78,.7)";c.lineWidth=(lw||.5)*.9;c.lineCap="round";c.beginPath();for(let i=1;i<=15;i++){const p=P(i/20);i>1?c.lineTo(p[0],p[1]):c.moveTo(p[0],p[1])}c.stroke();
+ const g=P(.78),t=T(.78);c.fillStyle="rgba(255,255,255,.45)";c.beginPath();c.ellipse(g[0]-t[1]*hm*.35,g[1]+t[0]*hm*.35,hm*.28,hm*.17,Math.atan2(t[1],t[0]),0,6.2832);c.fill()};
 /* one big ear. side -1 = left, +1 = right. perk 0 = relaxed and drooping outward, 1 = straight up and listening */
 SPA.ear=(c,side,perk)=>{
   const px=1-perk,tx=side*(18+px*7),ty=-29+px*13;
@@ -8658,7 +8752,7 @@ SPA.head=(c,x,y,s,o)=>{
   const m=o.mouth||"closed";c.strokeStyle="#6d6258";c.lineWidth=.9;c.lineCap="round";
   if(m==="closed"){c.beginPath();c.moveTo(-3.2,10.4);c.quadraticCurveTo(-1.5,12,0,10.6);c.quadraticCurveTo(1.5,12,3.2,10.4);c.stroke();c.beginPath();c.moveTo(0,7.2);c.lineTo(0,10.6);c.stroke()}
   else if(m==="open"){SPA.el(c,0,11.6,3.4,2.8,"#3a1e26");SPA.el(c,0,12.8,2.1,1.6,SPC.pink)}
-  else{const L=m==="lick"?3.8+Math.sin((o.t||0)*14)*1.3:2.5;c.beginPath();c.moveTo(-3.2,10.4);c.quadraticCurveTo(-1.5,12,0,10.6);c.quadraticCurveTo(1.5,12,3.2,10.4);c.stroke();SPA.el(c,0,11.4+L/2,2,L/2+.7,SPC.pink);c.strokeStyle="rgba(120,40,60,.6)";c.lineWidth=.5;c.beginPath();c.moveTo(0,11.6);c.lineTo(0,11.4+L);c.stroke()}
+  else{const sw=m==="lick"?Math.sin((o.t||0)*14):0;c.beginPath();c.moveTo(-3.2,10.4);c.quadraticCurveTo(-1.5,12,0,10.6);c.quadraticCurveTo(1.5,12,3.2,10.4);c.stroke();SPA.el(c,0,11.5,2.6,1.2,"#3a1e26");SPA.tongue(c,0,11.2,sw*1.6,11.2+3.6,1.5,2.3,sw*.35,.4)}
   c.restore();
 };
 /* the long plume of a tail */
@@ -8731,11 +8825,8 @@ SPA.close=(cv,o)=>{
   SPA.head(c,50,63+bob,2.15,{ear:1,eye:o.eye||"open",mouth:lick?"open":"closed",look:0,t});
   let tip=null;
   if(lick){
-    const mx=50,my=87+bob*2.15,tx=50+Math.sin(t*3.1)*25,ty=82+Math.cos(t*1.7)*8-Math.abs(Math.sin(t*3.1))*6;tip={x:tx,y:ty};
-    c.lineCap="round";c.strokeStyle="#e4788b";c.lineWidth=11;c.beginPath();c.moveTo(mx,my);c.quadraticCurveTo((mx+tx)/2,Math.max(my,ty)+4,tx,ty);c.stroke();
-    c.strokeStyle="#f3a3b0";c.lineWidth=7;c.beginPath();c.moveTo(mx,my);c.quadraticCurveTo((mx+tx)/2,Math.max(my,ty)+4,tx,ty);c.stroke();
-    c.strokeStyle="rgba(190,70,95,.55)";c.lineWidth=1;c.beginPath();c.moveTo(mx,my);c.quadraticCurveTo((mx+tx)/2,Math.max(my,ty)+4,tx,ty);c.stroke();
-    SPA.el(c,tx,ty,7.2,6,"#f0909f");SPA.el(c,tx-1.8,ty-1.8,2.6,1.7,"rgba(255,255,255,.55)");
+    const mx=50,my=87+bob*2.15;let tx=50+Math.sin(t*3.1)*25,ty=82+Math.cos(t*1.7)*8-Math.abs(Math.sin(t*3.1))*6;const dx=tx-mx,dy=ty-my,dd=Math.hypot(dx,dy)||1;if(dd<18){tx=mx+(dd<1?0:dx/dd)*18;ty=my+(dd<1?1:dy/dd)*18}tip={x:tx,y:ty};
+    c.lineCap="round";SPA.el(c,mx,my+1,9,4.6,"#3a1e26");SPA.tongue(c,mx,my,tx,ty,5.5,10.5,Math.sin(t*3.1)*.22,.9);
   }
   return tip;
 };
@@ -8743,8 +8834,8 @@ SPA.close=(cv,o)=>{
 SPA.smear=(cv,pts)=>{
   const c=cv.getContext("2d");c.setTransform(1,0,0,1,0,0);c.clearRect(0,0,cv.width,cv.height);const s=cv.width/100;c.setTransform(s,0,0,s,0,0);c.lineCap="round";c.lineJoin="round";
   for(let i=1;i<pts.length;i++){const a=pts[i-1],b=pts[i],al=Math.max(0,1-b.age/2.4);if(al<=0)continue;
-    c.strokeStyle="rgba(255,255,255,"+(.3*al).toFixed(3)+")";c.lineWidth=11;c.beginPath();c.moveTo(a.x,a.y);c.lineTo(b.x,b.y);c.stroke();
-    c.strokeStyle="rgba(255,210,222,"+(.32*al).toFixed(3)+")";c.lineWidth=6;c.beginPath();c.moveTo(a.x,a.y);c.lineTo(b.x,b.y);c.stroke();
+    c.strokeStyle="rgba(255,255,255,"+(.3*al).toFixed(3)+")";c.lineWidth=15;c.beginPath();c.moveTo(a.x,a.y);c.lineTo(b.x,b.y);c.stroke();
+    c.strokeStyle="rgba(255,210,222,"+(.32*al).toFixed(3)+")";c.lineWidth=9;c.beginPath();c.moveTo(a.x,a.y);c.lineTo(b.x,b.y);c.stroke();
     c.strokeStyle="rgba(255,255,255,"+(.3*al).toFixed(3)+")";c.lineWidth=1.4;c.beginPath();c.moveTo(a.x-2,a.y-2.2);c.lineTo(b.x-2,b.y-2.2);c.stroke()}
 };
 /* one frame of Sophia, in the right pose, facing the right way */
@@ -8822,7 +8913,7 @@ SP.build=()=>{
   const L=h("div",{id:"sophia"});SP.L=L;
   SP.cv=h("canvas");SP.cl=h("canvas");SP.sm=h("canvas");SP.cl.style.display=SP.sm.style.display="none";SP.say_el=h("div",{class:"spsay"});
   SP.hit=h("div",{class:"sphit",title:"Sophia. Tap to pet, hold for a cuddle."});
-  L.append(SP.cv,SP.sm,SP.cl,SP.hit,SP.say_el);SP.lk={on:false,k:0,t:0,pts:[],Cs:0};d.append(L);
+  L.append(SP.cv,SP.cl,SP.sm,SP.hit,SP.say_el);SP.lk={on:false,k:0,t:0,pts:[],Cs:0};d.append(L);
   SP.P={x:0,fy:0,plat:SP.floor,face:-1,st:"sleep",t:0,dur:1e9,then:null,ph:0,wag:0,earT:0,blinkT:2,blink:0,hx:0,hy:0,eye:"open",mouth:"closed",ear:.6,hold:null,seq:null,bd:0,lastBark:0,napStart:0};
   SP.size();SP.bindHit();SP.t0=performance.now();SP.lastActive=Date.now();
   const P=SP.P,hm=SP.home();P.x=hm.bag;P.fy=SP.bagY();SP.setSt("sleep",SP.rand(15,40));
@@ -9228,6 +9319,8 @@ const CL={
   tvos_rec_set:["Recorder settings","Format, channels and other Recorder choices.","App preferences"],
   tvos_rec_dest:["Where recordings save","Downloads, a folder, or inside the OS.","App preferences"],
   tvos_themes:["Themes: your Den","Your Den of caught and bred themes (just their short seeds), with names, star ratings and family trees.","Your writing and creations","Deleting it empties your Den. A theme can be caught again from its seed."],
+  tvos_deskicons:["Desktop icons","Which icons are hidden, their order, how they are sorted, and their size.","App preferences","Deleting it puts the desktop icons back to the default."],
+  tvos_welcomed:["Welcome shown","Remembers that the Welcome app has already been shown once.","App preferences"],
   tvos_cartridges:["Cartridges: shelf and game progress","Which games you installed from Cartridges, the links you added, which stores you turned off, and every game's saved progress. The games themselves are kept separately, in their game packs.","Your writing and creations","Deleting it resets your shelf and erases the progress of every cartridge game."],
   tvos_apps:["Installed programs: list","The names, icons and categories of the programs you installed in the Programs app.","Your writing and creations","Deleting it removes every installed program from Start and the desktop."],
   tvos_themes_tab:["Themes: last tab","Which tab you left open in the Themes app (Meadow, Den, Nursery or Dex).","App preferences"],
@@ -9942,7 +10035,7 @@ defApp("programs",{name:"Programs",icon:"pkg",cat:"System",w:840,h:620,single:tr
 IP.cart="M5 3h14v14l-3 4H8l-3-4z M9 3v4h6V3 M9 12h6";
 const CT={
  KEY:"tvos_cartridges",MAXSAVE:600000,
- S:{inst:[],urls:[],saves:{},off:[]},meta:[],packs:[],dups:[],probs:{},syncing:null,ready:null,cur:null,
+ S:{inst:[],urls:[],saves:{},off:[]},meta:[],packs:[],dups:[],probs:{},syncing:null,ready:null,cur:null,runs:[],
  load(){try{const r=JSON.parse(localStorage.getItem(CT.KEY)||"null");if(r&&typeof r==="object")CT.S={inst:Array.isArray(r.inst)?r.inst.filter(x=>typeof x==="string"):[],urls:Array.isArray(r.urls)?r.urls.filter(u=>u&&typeof u.id==="string"&&typeof u.url==="string"):[],saves:r.saves&&typeof r.saves==="object"&&!Array.isArray(r.saves)?r.saves:{},off:Array.isArray(r.off)?r.off.filter(x=>typeof x==="string"):[]}}catch(e){}},
  save(){try{localStorage.setItem(CT.KEY,JSON.stringify(CT.S));return true}catch(e){toast("Could not save: the browser's storage is full.",1);return false}},
  db(){return CT._db||(CT._db=new Promise((res,rej)=>{if(!window.indexedDB)return rej(new Error("no indexedDB"));const q=indexedDB.open("tvos_cartridges",1);q.onupgradeneeded=()=>q.result.createObjectStore("packs",{keyPath:"id"});q.onsuccess=()=>res(q.result);q.onerror=()=>rej(q.error)}))},
@@ -9962,6 +10055,15 @@ const CT={
   const pid=String(mp("cartridges-pack")||fallbackId||"pack").replace(/[^a-z0-9_-]/gi,"").slice(0,40)||"pack";
   const more=[];String(mp("cartridges-more")||"").split(/[\s,]+/).forEach(f=>{if(/^[a-z0-9][a-z0-9._-]{0,60}\.html?$/i.test(f)&&!/^cartridges\.html?$/i.test(f)&&more.indexOf(f)<0&&more.length<40)more.push(f)});
   return{id:pid,name:String(mp("cartridges-pack-name")||(d.title||"").trim()||pid).slice(0,60),games:gs,more}},
+ addRun(g,fr){CT.runs=CT.runs.filter(r=>r.fr!==fr);const r={g,fr};CT.runs.push(r);return r},
+ dropRun(fr){CT.runs=CT.runs.filter(r=>r.fr!==fr)},
+ winFor(id){return OS.wins.find(w=>!w.dead&&w.app==="cartgame"&&w.arg===id)},
+ SANDBOX:"allow-scripts allow-forms allow-modals allow-popups allow-downloads allow-pointer-lock allow-presentation",
+ /* puts a game into a frame, whether the frame is the player in the Cartridges window or a window of its own */
+ async mount(fr,g){fr.removeAttribute("srcdoc");fr.removeAttribute("src");
+  if(g.kind==="own"){const src=await CT.src(g);if(src==null){toast("This game's pack is missing. Load it again in Game packs.",1);return null}fr.setAttribute("sandbox",CT.SANDBOX);fr.srcdoc=CT.inject(src,CT.shim(CT.S.saves[g.id]||{}))}
+  else{fr.setAttribute("sandbox",BR.sandboxFor(g.url));fr.setAttribute("referrerpolicy","no-referrer");fr.src=g.url}return CT.addRun(g,fr)},
+ openWin(g){const ex=CT.winFor(g.id);if(ex){OS.focus(ex);return ex}if(CT.runs.length>=3)toast("Several games are running. If the computer feels slow, close one you are not playing.");return OS.open("cartgame",g.id)},
  hs(t){let h=5381;for(let i=0;i<t.length;i++)h=(h*33^t.charCodeAt(i))|0;return h},
  async addPack(text,from,silent,opt){opt=opt||{};const p=CT.parse(text,CT.slug(opt.file||from));if(!p.games.length){if(!silent)toast("That file has no cartridges in it.",1);return false}
   const old=CT.packs.find(q=>q.id===(opt.id||p.id));
@@ -10031,7 +10133,7 @@ const CT={
   "var L=mk(true),Q=mk(false);Object.defineProperty(window,'localStorage',{configurable:true,get:function(){return L}});Object.defineProperty(window,'sessionStorage',{configurable:true,get:function(){return Q}});"+
   "addEventListener('pagehide',function(){if(t)send()});document.addEventListener('visibilitychange',function(){if(document.hidden&&t)send()});addEventListener('message',function(e){if(e.data&&e.data.tvc==='flush'&&t)send()})}catch(e){}})()<"+"/script>"}
 };
-addEventListener("message",e=>{const d=e.data,c=CT.cur;if(!c||!d||typeof d!=="object"||!d.tvc||!c.fr||e.source!==c.fr.contentWindow)return;const id=c.g.id,s=CT.S.saves[id]||(CT.S.saves[id]={});
+addEventListener("message",e=>{const d=e.data;if(!d||typeof d!=="object"||!d.tvc)return;const c=CT.runs.find(r=>r.fr&&r.fr.contentWindow&&e.source===r.fr.contentWindow);if(!c)return;const id=c.g.id,s=CT.S.saves[id]||(CT.S.saves[id]={});
  if(d.tvc==="save"&&d.data&&typeof d.data==="object"&&!Array.isArray(d.data)){let j;try{j=JSON.stringify(d.data)}catch(x){return}if(j.length>CT.MAXSAVE){toast(c.g.name+" tried to save too much",1);return}CT.S.saves[id]=d.data;CT.save()}
  else if(d.tvc==="set"&&typeof d.k==="string"){const v=String(d.v==null?"":d.v);if(v.length>CT.MAXSAVE){toast(c.g.name+" tried to save too much",1);return}s[d.k]=v;CT.save()}
  else if(d.tvc==="get"&&typeof d.k==="string"){try{e.source.postMessage({tvc:"val",k:d.k,n:d.n,v:Object.prototype.hasOwnProperty.call(s,d.k)?s[d.k]:null},"*")}catch(x){}}});
@@ -10044,15 +10146,15 @@ defApp("cartridges",{name:"Cartridges",icon:"cart",cat:"Games",w:940,h:660,singl
   const box=h("div",{class:"ctp"});b.style.position="relative";b.append(box);
   const nav=h("nav"),main=h("div",{class:"ctm"}),play=h("div",{id:"ctplay"});play.dataset.fsx="dbl";play.setAttribute("data-fsx-bar","");box.append(nav,main,play);
   const fr=h("iframe",{style:"flex:1;border:0;width:100%;background:#fff;min-height:0",allow:"fullscreen; autoplay; clipboard-write; gamepad",allowfullscreen:""});
-  const pt=h("b"),ps=h("span",{class:"dim",style:"font-size:12px"}),pback=h("button",{class:"btn sm"},"← Back"),prel=h("button",{class:"btn sm"},"Restart"),pfull=h("button",{class:"btn sm"},"Full screen");
-  play.append(h("div",{class:"pb"},pback,pt,ps,prel,pfull),fr);
+  const pt=h("b"),ps=h("span",{class:"dim",style:"font-size:12px"}),pback=h("button",{class:"btn sm"},"← Back"),prel=h("button",{class:"btn sm"},"Restart"),pwin=h("button",{class:"btn sm",title:"Keep playing in a window of its own, so you can use other apps beside it"},"New window"),pfull=h("button",{class:"btn sm"},"Full screen");
+  play.append(h("div",{class:"pb"},pback,pt,ps,prel,pwin,pfull),fr);
   let view="shelf",ready=false,confirm=null,msg="",msg2="",q="",tagf="";
   const tile=(g,mode)=>{const inst=CT.isIn(g.id);let s='<div class="ctc"><div class="tp"></div><div class="lb" style="background:linear-gradient(135deg,'+g.color+'33,'+g.color+'88);color:'+g.color+'"><svg viewBox="0 0 24 24"><path d="'+esc(g.glyph)+'"/></svg><b>'+esc(g.tags[0]||"")+'</b></div><div class="bd"><div class="nm">'+esc(g.name)+'</div><div class="dim" style="font-size:12.5px;margin-top:-3px">'+esc(g.sub||"")+'</div><div style="font-size:13px;opacity:.9">'+esc(g.desc||"")+'</div><div class="ft">';
    if(g.status)s+='<span class="cttag ac">'+esc(g.status)+'</span>';if(g.kind==="own")s+='<span class="cttag dim">'+kb(g.size)+'</span>';else s+='<span class="cttag dim">needs internet</span>';
    if(mode==="store"){s+=inst?'<span class="cttag" style="color:var(--ac)">Installed</span><button class="btn sm pri" data-a="play" data-k="'+esc(g.id)+'">Play</button>':'<button class="btn sm pri" data-a="install" data-k="'+esc(g.id)+'">Install</button>'}
    else{const hs=CT.S.saves[g.id]&&Object.keys(CT.S.saves[g.id]).length;
     if(confirm==="r"+g.id&&hs)s+='<div style="width:100%;font-size:13px">Remove this game. What should happen to your progress?</div><button class="btn sm pri" data-a="rmkeep" data-k="'+esc(g.id)+'">Remove, keep progress</button><button class="btn sm" data-a="rmwipe" data-k="'+esc(g.id)+'">Remove and erase progress</button><button class="btn sm" data-a="rmno">Cancel</button>';
-    else s+='<button class="btn sm pri" data-a="play" data-k="'+esc(g.id)+'">Play</button><button class="btn sm" data-a="remove" data-k="'+esc(g.id)+'">'+(confirm==="r"+g.id?"Sure? Tap again":"Remove")+'</button>'+(hs?'<button class="btn sm" data-a="erase" data-k="'+esc(g.id)+'">'+(confirm==="e"+g.id?"Erase it?":"Erase save")+'</button>':"")}
+    else s+='<button class="btn sm pri" data-a="play" data-k="'+esc(g.id)+'">Play</button><button class="btn sm" data-a="win" data-k="'+esc(g.id)+'" title="Play in a window of its own">New window</button><button class="btn sm" data-a="remove" data-k="'+esc(g.id)+'">'+(confirm==="r"+g.id?"Sure? Tap again":"Remove")+'</button>'+(hs?'<button class="btn sm" data-a="erase" data-k="'+esc(g.id)+'">'+(confirm==="e"+g.id?"Erase it?":"Erase save")+'</button>':"")}
    return s+'</div></div></div>'};
   const paintStore=()=>{const res=main.querySelector("#ctres");if(!res)return;const qq=q.trim().toLowerCase();
    const ok=g=>(!tagf||g.tags.indexOf(tagf)>=0)&&(!qq||(g.name+" "+g.sub+" "+g.desc+" "+g.tags.join(" ")).toLowerCase().indexOf(qq)>=0);let out="";
@@ -10085,19 +10187,16 @@ defApp("cartridges",{name:"Cartridges",icon:"cart",cat:"Games",w:940,h:660,singl
     if(CT.S.urls.length)s+='<h4 style="margin-top:12px">Your links</h4>'+CT.S.urls.map(u=>'<div class="ctbox row" style="gap:8px;align-items:center;flex-wrap:wrap"><b class="grow">'+esc(u.name)+'</b><span class="dim" style="font-size:12px">'+esc(CT.hostOf(u.url))+'</span><button class="btn sm" data-a="dellink" data-k="'+esc(u.id)+'">Remove link</button></div>').join("")}
    main.innerHTML=s;if(view==="store")paintStore()};
   /* playing */
-  const stopPlay=()=>{fsOff();try{fr.contentWindow.postMessage({tvc:"flush"},"*")}catch(e){}setTimeout(()=>{fr.removeAttribute("srcdoc");fr.removeAttribute("src");fr.src="about:blank";play.classList.remove("on");CT.cur=null;CT.save();render()},160)};
-  const startPlay=async g=>{fr.removeAttribute("srcdoc");fr.removeAttribute("src");
-   if(g.kind==="own"){const src=await CT.src(g);if(src==null){toast("This game's pack is missing. Load it again in Game packs.",1);return}
-    CT.cur={g,fr};pt.textContent=g.name;ps.textContent="progress saves by itself";fr.setAttribute("sandbox","allow-scripts allow-forms allow-modals allow-popups allow-downloads allow-pointer-lock allow-presentation");fr.srcdoc=CT.inject(src,CT.shim(CT.S.saves[g.id]||{}))}
-   else{CT.cur={g,fr};pt.textContent=g.name;ps.textContent=CT.hostOf(g.url)+" · online";fr.setAttribute("sandbox",BR.sandboxFor(g.url));fr.setAttribute("referrerpolicy","no-referrer");fr.src=g.url}
+  const stopPlay=()=>{fsOff();try{fr.contentWindow.postMessage({tvc:"flush"},"*")}catch(e){}setTimeout(()=>{fr.removeAttribute("srcdoc");fr.removeAttribute("src");fr.src="about:blank";play.classList.remove("on");CT.dropRun(fr);CT.cur=null;CT.save();render()},160)};
+  const startPlay=async g=>{const r=await CT.mount(fr,g);if(!r)return;CT.cur=r;pt.textContent=g.name;ps.textContent=g.kind==="own"?"progress saves by itself":CT.hostOf(g.url)+" · online";
    play.classList.add("on")};
-  pback.onclick=stopPlay;prel.onclick=()=>{if(CT.cur)startPlay(CT.cur.g)};const fsEl=()=>document.fullscreenElement||document.webkitFullscreenElement;
+  pback.onclick=stopPlay;pwin.onclick=()=>{if(!CT.cur)return;const g=CT.cur.g;stopPlay();setTimeout(()=>CT.openWin(g),240)};prel.onclick=()=>{if(CT.cur)startPlay(CT.cur.g)};const fsEl=()=>document.fullscreenElement||document.webkitFullscreenElement;
   const fsLabel=()=>{pfull.textContent=fsEl()===play?"Exit full screen":"Full screen"};
   const fsOff=()=>{try{if(fsEl()===play)(document.exitFullscreen||document.webkitExitFullscreen).call(document)}catch(e){}};
   /* the whole player (with its bar and this button) goes full screen, so there is always a way back */
   pfull.onclick=()=>{try{if(fsEl()===play)fsOff();else(play.requestFullscreen||play.webkitRequestFullscreen).call(play)}catch(e){toast("Full screen is not available here.",1)}};
   document.addEventListener("fullscreenchange",fsLabel);document.addEventListener("webkitfullscreenchange",fsLabel);
-  win.on.close=(prev=>()=>{fsOff();document.removeEventListener("fullscreenchange",fsLabel);document.removeEventListener("webkitfullscreenchange",fsLabel);try{fr.contentWindow.postMessage({tvc:"flush"},"*")}catch(e){}if(CT.cur&&CT.cur.fr===fr)CT.cur=null;prev&&prev()})(win.on.close);
+  win.on.close=(prev=>()=>{fsOff();document.removeEventListener("fullscreenchange",fsLabel);document.removeEventListener("webkitfullscreenchange",fsLabel);try{fr.contentWindow.postMessage({tvc:"flush"},"*")}catch(e){}CT.dropRun(fr);if(CT.cur&&CT.cur.fr===fr)CT.cur=null;prev&&prev()})(win.on.close);
   const arm=(k,ms)=>{confirm=k;setTimeout(()=>{if(confirm===k){confirm=null;if(ready)render()}},ms||3000)};
   const doRm=(k,wipe)=>{CT.S.inst=CT.S.inst.filter(x=>x!==k);if(wipe)delete CT.S.saves[k];confirm=null;CT.save();toast(wipe?"Removed, and its progress erased.":"Removed. Your progress is kept in case you install it again.");render()};
   main.addEventListener("input",e=>{if(e.target&&e.target.id==="ctq"){q=e.target.value;paintStore()}});
@@ -10105,8 +10204,9 @@ defApp("cartridges",{name:"Cartridges",icon:"cart",cat:"Games",w:940,h:660,singl
    if(t.dataset.v){view=t.dataset.v;msg="";confirm=null;render();main.scrollTop=0;return}
    const a=t.dataset.a,k=t.dataset.k;
    if(a==="install"){if(!CT.isIn(k))CT.S.inst.push(k);CT.save();toast("Installed. It is in My cartridges.");render()}
-   else if(a==="play"){const g=CT.find(k);if(g)startPlay(g)}
-   else if(a==="remove"){const hs=CT.S.saves[k]&&Object.keys(CT.S.saves[k]).length;if(!hs&&confirm==="r"+k)doRm(k,false);else{arm("r"+k,hs?9000:3000);render()}}
+   else if(a==="play"){const g=CT.find(k),w=CT.winFor(k);if(w){OS.focus(w);toast("It is already open in its own window.")}else if(g)startPlay(g)}
+   else if(a==="win"){const g=CT.find(k);if(g)CT.openWin(g)}
+   else if(a==="remove"){if(CT.winFor(k)){toast("Close its window first, then remove it.",1);return}const hs=CT.S.saves[k]&&Object.keys(CT.S.saves[k]).length;if(!hs&&confirm==="r"+k)doRm(k,false);else{arm("r"+k,hs?9000:3000);render()}}
    else if(a==="rmkeep")doRm(k,false);else if(a==="rmwipe")doRm(k,true);else if(a==="rmno"){confirm=null;render()}
    else if(a==="tag"){tagf=tagf===k?"":k;render()}
    else if(a==="toggle"){msg2=await CT.toggle(k);if(msg2)toast(msg2,1);render()}
@@ -10123,6 +10223,24 @@ defApp("cartridges",{name:"Cartridges",icon:"cart",cat:"Games",w:940,h:660,singl
   render();(CT.ready||(CT.ready=CT.init())).then(async()=>{const first=!CT.packs.some(p=>p.id===CT.DEF);if(first)main.innerHTML='<div class="dim">Getting the default games\u2026</div>';else{ready=true;if(view==="shelf"&&!CT.S.inst.length)view=CT.meta.length?"store":"packs";render()}
    let landed=false;const land=()=>{if(!landed){landed=true;ready=true;if(first&&view==="shelf"&&!CT.S.inst.length)view=CT.meta.length?"store":"packs"}refresh()};
    await CT.sync(false,land);land()})}});
+
+/* a game in a window of its own (opened with the New window button in Cartridges) */
+defApp("cartgame",{name:"Game",icon:"cart",cat:"Games",w:900,h:640,hidden:true,desc:"a Cartridges game in its own window",
+ init(win,b,arg){
+  b.style.position="relative";const box=h("div",{style:"position:absolute;inset:0;display:flex;flex-direction:column;background:var(--bg,#000)"});box.dataset.fsx="dbl";box.setAttribute("data-fsx-bar","");
+  const fr=h("iframe",{style:"flex:1;border:0;width:100%;background:#fff;min-height:0",allow:"fullscreen; autoplay; clipboard-write; gamepad",allowfullscreen:""});
+  const pt=h("b",{style:"flex:1;min-width:90px"}),prel=h("button",{class:"btn sm"},"Restart"),pfull=h("button",{class:"btn sm"},"Full screen"),bar=h("div",{style:"display:flex;gap:8px;align-items:center;padding:6px 10px;border-bottom:1px solid var(--bd);flex:none;flex-wrap:wrap"},pt,h("span",{class:"dim",style:"font-size:12px"},"progress saves by itself"),prel,pfull);
+  box.append(bar,fr);b.append(box);let g=null;
+  const fsEl=()=>document.fullscreenElement||document.webkitFullscreenElement,fsLabel=()=>{pfull.textContent=fsEl()===box?"Exit full screen":"Full screen"};
+  const fsOff=()=>{try{if(fsEl()===box)(document.exitFullscreen||document.webkitExitFullscreen).call(document)}catch(e){}};
+  pfull.onclick=()=>{try{if(fsEl()===box)fsOff();else(box.requestFullscreen||box.webkitRequestFullscreen).call(box)}catch(e){toast("Full screen is not available here.",1)}};
+  document.addEventListener("fullscreenchange",fsLabel);document.addEventListener("webkitfullscreenchange",fsLabel);
+  const start=async()=>{if(!g)return;await CT.mount(fr,g)};prel.onclick=start;
+  (CT.ready||(CT.ready=CT.init())).then(()=>{g=CT.find(typeof arg==="string"?arg:arg&&arg.id);
+   if(!g){b.innerHTML='<div class="pad dim">This game is not on your shelf any more. Close this window.</div>';return}
+   win.title=g.name;win.tt.textContent=g.name;OS.renderTasks();pt.textContent=g.name;start()});
+  win.onclose=async()=>{fsOff();try{fr.contentWindow.postMessage({tvc:"flush"},"*")}catch(e){}await new Promise(r=>setTimeout(r,220))};
+  win.on.close=()=>{document.removeEventListener("fullscreenchange",fsLabel);document.removeEventListener("webkitfullscreenchange",fsLabel);CT.dropRun(fr);CT.save()}}});
 
 /* ===================== BACKUP HABIT: tray icon, honest change counting, rare reminders ===================== */
 /* Only things you made count: Diary pages, files, tasks, calendar notes, sequencer patterns, Den themes, bookmarks, installed programs, game save.
@@ -10286,7 +10404,7 @@ async function boot(){
  startupChime();
  if(doRestore)sessRestore(sess);
  else if(NEST){const qw=OS.open("quine");qw&&OS.minimize(qw)}
- else if(SET.autostart&&!nog){const w=OS.open("tv");if(w&&SET.autostartMin!==false)OS.minimize(w)}else OS.open("help");
+ else{const returning=localStorage.getItem("tvos_session")!==null||LS.get("tvos_welcomed",false);if(!returning){OS.open("help");LS.set("tvos_welcomed",true)}else if(SET.startApp&&OS.apps[SET.startApp]&&!nog)OS.open(SET.startApp)}
  sessStart()}
 
 /* ===================== MAIN ===================== */
