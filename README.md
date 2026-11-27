@@ -131,8 +131,10 @@ BOOT
   Slow (about 14 s), Normal, Fast and Instant, and a switch for the
   verbose log. Press any key during boot to skip the delays. A dedication
   line, "Welcome Home Ivory!", shows on the boot screen.
-  On the very first boot the game starts minimised in the taskbar so the
-  desktop comes first. Settings > Boot changes that.
+  Nothing opens by itself after boot, except that the very first time the OS
+  is opened the Welcome app shows once. Settings > Boot has "When the OS
+  starts, open:" to choose an app (default: Nothing). If you had windows
+  open they come back, as before.
   When the desktop appears a short lyre chime plays (a few plucked
   strings, made on the spot, no audio files). Settings > Boot has a switch
   to turn it off and a button to hear it. Browsers keep sound locked until
@@ -247,6 +249,39 @@ SESSION RESTORE
 
 Every built-in app has a desktop icon, a Start menu entry and a Spotlight entry,
 and every icon is different.
+
+Desktop icons (how the desktop is laid out, and what you can change)
+  The desktop shows its icons in named groups: Library (the apps built on
+  your archive manifest, then Media Player, Image Viewer, Reader), Games
+  (Cartridges first, then Terminal Velocity and the built-in games),
+  Everyday, Create, Computer and Tools. On a wide screen each group starts
+  at the top of its own column with a small heading (a long group continues
+  in the next column); on a phone the groups are rows under their headings.
+  An app that is not in the list lands in the group that matches its
+  category. Apps you install in Programs and games in Cartridges never get
+  desktop icons, so the desktop does not fill up.
+  What you can change (Settings > Desktop, or right-click):
+  - Hide an icon: right-click it > Hide from desktop. The app is still in
+    Start and Spotlight (a hidden app is marked "not on the desktop" in
+    Start). Right-click it in Start > Show on desktop, or use Settings >
+    Desktop, which lists every hidden icon with a Show button and has "Show
+    all hidden icons". Right-clicking the empty desktop shows how many are
+    hidden.
+  - Move an icon earlier or later inside its group: right-click > Move
+    earlier / Move later, or the up and down buttons in Settings > Desktop.
+  - Arrange: By group (suggested), A to Z, or Most used first. Size: Small,
+    Medium or Large. Names under icons: on or off.
+  - Reset order, or Reset everything (order, hidden icons, size, sort), in
+    Settings > Desktop; "Reset icons to default" is also in the empty-desktop
+    right-click menu.
+  On a phone, the first time the OS is opened, a few rarely used apps are
+  hidden so the desktop fits one screen (Terminal, Task Manager, Cleaner,
+  Benchmark, Quine, Metronome, Minesweeper, App Runner, Toolbox, BookBinder
+  and Manifest Maker). They are one tap away in Start, and Settings >
+  Desktop > Show all hidden icons brings them back. Once you hide or show
+  anything yourself, your own choices are used on every screen size.
+  Your choices are kept under one key, tvos_deskicons, so Backup covers
+  them; Clean-up shows it as "Desktop icons".
 
 --- SYSTEM -----------------------------------------------------------
 
@@ -951,6 +986,12 @@ Cartridges (cartridge icon, Games)
   store that has been taken off the list disappears once none of its games
   is installed. If two stores have a game with the same id, the earlier
   store wins and the Store shows a warning.
+  New window. Play runs a game inside the Cartridges window. The New window
+  button (on a shelf tile, and in the player bar while you play) moves it to
+  a window of its own, so you can use other apps beside it. A game can be
+  open in one place at a time (Play on a game that already has a window
+  brings that window forward), progress saves the same way, and you cannot
+  remove a game while its window is open.
   Full screen. The Full screen button in a game makes the whole player full
   screen, with the bar on top, so the same button (now "Exit full screen"),
   Back, a double click on the bar, or Esc brings you back.
