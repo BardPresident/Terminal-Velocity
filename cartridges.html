@@ -13337,6 +13337,892 @@ boot();
 <~/script>
 </body></html>
 </script>
+<script type="text/plain" class="cartsrc" data-meta='{"name": "Project Paperclip", "sub": "A cheerful 1995 desktop companion helps you optimize for one number", "desc": "Hire an ever-growing crew to bend paperclips, one world at a time, while Clip \u2014 a chipper desktop companion who\u2019s always got an opinion \u2014 narrates every hire and keeps a running tally. Nothing is ever lost, nothing resets, and there\u2019s no ceiling on how far the operation goes. A cozy, not-too-hard look at a thought experiment about optimizing for one number long after anyone remembers why.", "color": "#8c97a6", "glyph": "M14 4a3 3 0 00-3 3v9a5 5 0 0010 0V8a1 1 0 00-2 0v8a3 3 0 01-6 0V7a1 1 0 012 0v9a1 1 0 01-2 0V8", "tags": ["Idle", "Comedy", "Philosophy"], "id": "paperclip"}'><!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Project Paperclip</title>
+<style>
+:root{
+ --cream:#f3e6ce; --cream2:#ead9b8; --panel:#e4d2a8; --panel2:#d8bf8e;
+ --ink:#4a3a22; --ink2:#7a6038; --accent:#c45a3a; --accent2:#e07b52;
+ --ok:#5c8a4a; --lt:#fff7e6; --dk:#8a6a3c;
+}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%;overflow:hidden}
+body{
+ background:var(--cream);
+ background-image:
+  radial-gradient(circle at 20% 15%, rgba(255,255,255,.35) 0%, transparent 45%),
+  repeating-linear-gradient(45deg, rgba(0,0,0,.015) 0 2px, transparent 2px 14px);
+ color:var(--ink); font:14px/1.45 "Segoe UI","Trebuchet MS",Verdana,sans-serif;
+ -webkit-font-smoothing:antialiased;
+}
+.bevel-out{
+ border:1px solid var(--dk);
+ box-shadow: inset 1px 1px 0 var(--lt), inset -1px -1px 0 var(--panel2), 2px 2px 4px rgba(0,0,0,.18);
+}
+.bevel-in{
+ border:1px solid var(--dk);
+ box-shadow: inset -1px -1px 0 var(--lt), inset 1px 1px 0 var(--panel2), inset 2px 2px 4px rgba(0,0,0,.12);
+}
+#desk{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;padding:18px;overflow:auto}
+#win{
+ width:min(760px,96vw); max-height:94vh; display:flex; flex-direction:column;
+ background:var(--panel); border-radius:7px; overflow:hidden;
+ box-shadow:0 10px 30px rgba(0,0,0,.28); min-width:0;
+}
+#titlebar{
+ background:linear-gradient(90deg,var(--accent),var(--accent2));
+ color:var(--lt); padding:7px 10px; font-weight:700; letter-spacing:.02em;
+ display:flex; align-items:center; gap:8px; flex:none; font-size:13px;
+}
+#titlebar svg{width:16px;height:16px;flex:none}
+#titlebar .dots{margin-left:auto;display:flex;gap:5px}
+#titlebar .dots span{width:10px;height:10px;border-radius:2px;background:rgba(255,255,255,.35);display:inline-block}
+/* Everything genuinely worth always having in view -- Earth, Clip, the
+   counter, the bend button, the launch button once it matters -- stays
+   outside the part of the window that scrolls. Only the crew list itself
+   (the thing that actually grows long, one more row per planet landed on
+   forever) lives in the scrolling region, so scrolling down to reach a new
+   recruit can never carry Clip or the counter out of view with it. */
+#body{padding:0;overflow:hidden;flex:1;min-height:0;display:flex;flex-direction:column}
+#hdr{padding:14px 16px 0;flex:none}
+#crewScroll{flex:1;min-height:0;overflow:auto;padding:0 16px}
+#ftr{padding:6px 16px 16px;flex:none}
+
+.planetbar{display:flex;align-items:center;gap:10px;margin-bottom:12px}
+.planetbar .nm{font-weight:700;color:var(--ink2);white-space:nowrap}
+.progress{flex:1;height:16px;border-radius:9px;background:var(--cream2);position:relative;overflow:hidden}
+.progress .fill{position:absolute;inset:0;width:0%;background:linear-gradient(90deg,var(--ok),#79b566);transition:width .4s ease}
+.progress .pct{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:var(--ink);text-shadow:0 1px 0 rgba(255,255,255,.6)}
+
+.counter{text-align:center;margin:6px 0 10px}
+.counter .big{font-size:40px;font-weight:800;color:var(--ink);letter-spacing:.01em}
+.counter .cps{color:var(--ink2);font-size:13px;margin-top:2px}
+
+#bendBtn{
+ display:block;margin:0 auto 14px;padding:16px 38px;font-size:17px;font-weight:800;
+ background:var(--panel2);color:var(--ink);border-radius:10px;cursor:pointer;
+ user-select:none;-webkit-user-select:none;transition:transform .05s ease;
+}
+#bendBtn:active{transform:translateY(2px) scale(.98)}
+#bendBtn.pressed{transform:translateY(2px) scale(.97)}
+
+h2.sec{font-size:13px;text-transform:uppercase;letter-spacing:.08em;color:var(--ink2);margin:14px 0 8px;border-bottom:1px solid var(--panel2);padding-bottom:4px}
+.secRow{display:flex;align-items:flex-end;justify-content:space-between;gap:10px}
+.secRow h2.sec{flex:1;margin-bottom:8px}
+#archiveBtn{font-size:11.5px;padding:5px 10px;margin-bottom:9px;white-space:nowrap;cursor:pointer}
+
+/* the trailing-window fix: everything hired before the visible window gets
+   folded into one line instead of sitting in the scrolling list forever */
+#legacyRow{display:none;align-items:center;gap:10px;padding:8px 11px;border-radius:8px;margin-bottom:9px;background:var(--panel2);font-size:12px;color:var(--ink2);cursor:pointer}
+#legacyRow.show{display:flex}
+#legacyRow b{color:var(--ink);font-weight:700}
+
+#archivePanel{display:none}
+#archivePanel.show{display:block}
+#archivePanel .stat{display:flex;justify-content:space-between;font-size:12.5px;padding:4px 2px;border-bottom:1px solid var(--panel2)}
+#archivePanel .stat b{font-weight:700}
+#archivePanel .archHead{font-size:12px;color:var(--ink2);margin:14px 0 6px;text-transform:uppercase;letter-spacing:.06em}
+#archivePanel .archRow{display:flex;justify-content:space-between;font-size:12px;padding:5px 2px;border-bottom:1px dotted var(--panel2)}
+#archivePanel .archRow .n{color:var(--ink2);flex:none;padding-left:8px}
+
+.tier{
+ display:flex;align-items:center;gap:10px;padding:9px 11px;border-radius:8px;margin-bottom:7px;
+ background:var(--cream); cursor:pointer; opacity:1;
+}
+.tier.afford{background:var(--lt)}
+.tier.cant{opacity:.55;cursor:default}
+.tier .ic{width:34px;height:34px;flex:none;border-radius:6px;background:var(--panel2);display:flex;align-items:center;justify-content:center;font-size:17px}
+.tier .inf{flex:1;min-width:0}
+.tier .nm{font-weight:700;font-size:13.5px}
+.tier .sub{font-size:11.5px;color:var(--ink2)}
+.tier .right{text-align:right;flex:none}
+.tier .cost{font-weight:700;font-size:13px}
+.tier .owned{font-size:11px;color:var(--ink2)}
+
+#launchWrap{text-align:center;margin-top:14px}
+#launchBtn{
+ display:none;padding:14px 30px;font-size:15px;font-weight:800;border-radius:10px;cursor:pointer;
+ background:linear-gradient(180deg,#f4b860,#dd8f3a); color:#3a2208;
+}
+#launchBtn.show{display:inline-block}
+
+#memoLog{margin-top:14px}
+#memoLog .line{font-size:12px;color:var(--ink2);padding:2px 0}
+
+/* ---------- Clip, the companion. Lives inside the window's own scrollable
+   body, right under the planet bar -- not a floating overlay positioned by
+   fixed pixel coordinates at all, so there's nothing for a short viewport to
+   cut off independently of the window itself: he scrolls exactly as the rest
+   of the window's content does. Below the titlebar is also comfortably clear
+   of the bottom-right corner where Sophia sleeps above the taskbar clock, so
+   that law still holds without needing a special-cased position to enforce it. */
+#clipStrip{display:flex;align-items:flex-start;gap:10px;margin-bottom:14px}
+#clipPanel{width:56px;height:56px;background:var(--lt);border-radius:10px;display:flex;align-items:center;justify-content:center;flex:none}
+#clipSvgHost{width:38px;height:50px;pointer-events:none}
+#clipSvgHost svg{width:100%;height:100%;overflow:visible}
+#clipBubble{
+ flex:1;min-width:0;box-sizing:border-box;padding:9px 12px;border-radius:10px;
+ background:var(--lt);box-shadow:2px 2px 0 rgba(0,0,0,.15);
+ font-size:12.5px;line-height:1.4;color:var(--ink);text-align:left;
+ max-height:0;overflow:hidden;opacity:0;padding-top:0;padding-bottom:0;border-width:0;
+ transition:max-height .25s ease,opacity .25s ease,padding .25s ease;
+ align-self:center;
+}
+#clipBubble.show{max-height:260px;opacity:1;padding-top:9px;padding-bottom:9px;border:1px solid var(--dk)}
+
+@keyframes sway{0%,100%{transform:translateY(0) rotate(-2deg)}50%{transform:translateY(-3px) rotate(2deg)}}
+#clipBody{transform-origin:50% 90%;animation:sway 3.2s ease-in-out infinite}
+#clipBody.excited{animation:coil .35s ease-in-out infinite}
+@keyframes coil{0%{transform:scaleY(1) scaleX(1)}50%{transform:scaleY(.72) scaleX(1.18)}100%{transform:scaleY(1) scaleX(1)}}
+#clipBody.celebrate{animation:stretch .6s ease-out 1}
+@keyframes stretch{0%{transform:scaleY(1)}35%{transform:scaleY(1.45) translateY(-10px)}100%{transform:scaleY(1)}}
+#clipBody.spin{animation:spin .5s ease-out 1}
+@keyframes spin{0%{transform:rotate(0deg) scale(1)}55%{transform:rotate(360deg) scale(1.12)}100%{transform:rotate(360deg) scale(1)}}
+
+/* a little pool of one-shot idle gestures he cycles through at random on his
+   own, so there's always *something* happening even when nothing in the
+   game itself just triggered a reaction */
+#clipBody.nod{animation:nodAnim .5s ease-in-out 1}
+@keyframes nodAnim{0%,100%{transform:rotate(-2deg)}50%{transform:rotate(14deg) translateY(2px)}}
+#clipBody.bounce{animation:bounceAnim .45s cubic-bezier(.34,1.56,.64,1) 1}
+@keyframes bounceAnim{0%,100%{transform:translateY(0)}40%{transform:translateY(-9px)}70%{transform:translateY(2px)}}
+#clipBody.wiggle{animation:wiggleAnim .5s ease-in-out 1}
+@keyframes wiggleAnim{0%,100%{transform:rotate(-2deg)}20%{transform:rotate(10deg)}40%{transform:rotate(-10deg)}60%{transform:rotate(8deg)}80%{transform:rotate(-6deg)}}
+#clipBody.peek{animation:peekAnim .8s ease-in-out 1}
+@keyframes peekAnim{0%,100%{transform:rotate(-2deg) translateX(0)}30%,70%{transform:rotate(-14deg) translateX(-4px)}}
+#clipBody.happy{animation:happyAnim .4s ease-out 1}
+@keyframes happyAnim{0%,100%{transform:scale(1)}40%{transform:scale(1.15)}}
+
+/* the pencil he taps against the inside of his own memo bubble while he's
+   talking -- hidden the rest of the time */
+#pencilGrp{opacity:0;transform-origin:50% 90%;transition:opacity .15s ease}
+#pencilGrp.show{opacity:1;animation:pencilTap .45s ease-in-out infinite}
+@keyframes pencilTap{0%,100%{transform:rotate(-14deg)}50%{transform:rotate(10deg)}}
+
+/* a quick, unprompted wink every so often -- pure charm, independent of
+   whatever else he's doing */
+#eyeL.wink{animation:wink .22s ease-in-out 1}
+@keyframes wink{0%,100%{transform:scaleY(1)}50%{transform:scaleY(.12)}}
+
+.confetti{position:fixed;z-index:50;pointer-events:none}
+
+</style></head>
+<body>
+<div id="desk">
+ <div id="win" class="bevel-out">
+  <div id="titlebar">
+   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 3h9a2 2 0 012 2v12a5 5 0 01-5 5H8a3 3 0 01-3-3V6a3 3 0 013-3z M9 9h7 M9 13h5"/></svg>
+   Paperclip Factory Manager &#39;95
+   <div class="dots"><span></span><span></span><span></span></div>
+  </div>
+  <div id="body">
+   <div id="hdr">
+    <div class="planetbar">
+     <span class="nm" id="planetName">Earth</span>
+     <div class="progress"><div class="fill" id="progFill"></div><div class="pct" id="progPct">0%</div></div>
+    </div>
+
+    <div id="clipStrip">
+     <div id="clipPanel" class="bevel-out"><div id="clipSvgHost"></div></div>
+     <div id="clipBubble"></div>
+    </div>
+
+    <div class="counter">
+     <div class="big" id="clipCount">0</div>
+     <div class="cps" id="cpsLine">clips</div>
+    </div>
+
+    <div id="bendBtn" class="bevel-out">&#128206; Bend Paperclip</div>
+
+    <div class="secRow">
+     <h2 class="sec">The Crew</h2>
+     <div id="archiveBtn" class="bevel-out">&#128194; Archive</div>
+    </div>
+   </div>
+
+   <div id="crewScroll">
+    <div id="legacyRow" class="bevel-out"></div>
+    <div id="tierList"></div>
+    <div id="archivePanel"></div>
+   </div>
+
+   <div id="ftr">
+    <div id="launchWrap"><button id="launchBtn" class="bevel-out">&#128640; Launch for the Next World</button></div>
+   </div>
+  </div>
+ </div>
+</div>
+
+<script>
+"use strict";
+const $=id=>document.getElementById(id);
+
+/* ---------------- seeded rng, shared style with the other cartridges ---------------- */
+function makeRng(seedStr){
+ let h=1779033703^seedStr.length;
+ for(let i=0;i<seedStr.length;i++){h=Math.imul(h^seedStr.charCodeAt(i),3432918353);h=h<<13|h>>>19}
+ return function(){
+  h=Math.imul(h^h>>>16,2246822507);h=Math.imul(h^h>>>13,3266489909);
+  h^=h>>>16;
+  return (h>>>0)/4294967296;
+ };
+}
+function pick(rng,arr){return arr[Math.floor(rng()*arr.length)]}
+
+/* ---------------- number formatting -- gentle up through normal idle-game
+   ranges, only falling back to scientific once a number's gone genuinely
+   cosmic (which, by the endless-hop design, it eventually will) ---------------- */
+const SUFFIXES=["","K","M","B","T","Qa","Qi","Sx","Sp","Oc","No","Dc","Ud","Dd","Td"];
+function formatNum(n){
+ if(n<1000)return Math.floor(n).toString();
+ let tier=Math.floor(Math.log10(n)/3);
+ if(tier<SUFFIXES.length){
+  const scaled=n/Math.pow(1000,tier);
+  return scaled.toFixed(scaled<10?2:scaled<100?1:0)+SUFFIXES[tier];
+ }
+ return n.toExponential(2).replace("e+","e");
+}
+
+/* ---------------- producer tiers. The first seven are hand-authored (the
+   blueprint's own roster, fictionalized -- see the design note above); every
+   tier past that is procedurally generated the moment a new world is landed
+   on, so the ladder can run forever without ever needing more hand-written
+   content. ---------------- */
+const BASE_TIERS=[
+ {name:"Dr. Nova Steinwerk",sub:"Twirls a slide rule, bends wire by hand",icon:"&#129489;&#8205;&#127891;",baseCost:15,baseRate:1},
+ {name:"Klaus the Wind-Tunnel Guy",sub:"Blows cool air so the presses don't overheat",icon:"&#128168;",baseCost:75,baseRate:5},
+ {name:"The Huntsville Requisitions Office",sub:"A cozy hangar, humming cheerful tunes",icon:"&#127958;&#65039;",baseCost:300,baseRate:25},
+ {name:"The Gantry Spool",sub:"A retro rocket rig spinning a giant wire spool",icon:"&#128204;",baseCost:1200,baseRate:100},
+ {name:"Auto Plant Re-tooling",sub:"Sedan stamping dies, gently repurposed",icon:"&#127984;",baseCost:6000,baseRate:500},
+ {name:"The School Scrap Drive",sub:"Friendly neighborhood coat-hanger collections",icon:"&#127891;",baseCost:30000,baseRate:2500},
+ {name:"The National Wire Bureau",sub:"Streamlining railway steel into shiny fasteners",icon:"&#127970;",baseCost:150000,baseRate:12000},
+];
+
+/* Earth, Moon, Mars, the Belt -- then procedurally-named worlds forever.
+   Landing never zeroes anything: clips, lifetime count and every tier owned
+   so far all carry straight over, exactly as promised. Only the progress
+   meter resets, aimed at a bigger target, with one new top-tier producer as
+   the reward for having gotten there. */
+const NAMED_PLANETS=[
+ {name:"Earth",tint:"#f3e6ce",target:1e6},
+ {name:"The Moon",tint:"#e7e2da",target:1.2e7},
+ {name:"Mars",tint:"#f0d2bb",target:1.44e8},
+ {name:"The Asteroid Belt",tint:"#e3dcc8",target:1.728e9},
+];
+const PLANET_ADJ=["Tumbling","Hollow","Drifting","Frozen","Humming","Velvet","Wandering","Copper","Silent","Glowing","Rust-streaked","Pale"];
+const PLANET_NOUN=["Icewrack","Starvein","Cindersea","Driftstones","Hollow","Expanse","Meridian","Shoal","Reach","Hearthlight","Spindle","Cradle"];
+const ORE_TINTS=["#f0d2bb","#e3dcc8","#d8c7e0","#c9e0d6","#e7c9c0","#d6d9ec","#ece0c2"];
+// Both of these describe a genuinely endless ladder (the whole point of the
+// design), and both originally recursed all the way back down to index 0 on
+// every single call with nothing cached -- fine-looking in a quick test, but
+// renderTiers() calls tierFor(i) for every visible tier on every single
+// animation frame, so the real cost was O(n) calls of O(n) depth each, every
+// frame, for however many planets had been reached. Measured before this fix:
+// ~600ms for ONE call at planet 2000 (the game would have been unplayably
+// slow long before that), and an outright stack overflow at planet 8000 --
+// so "infinite" wasn't actually true yet. Caching each index's result the
+// first time it's computed makes every call after the first O(1), which is
+// what makes the endless part of the design real rather than aspirational.
+// Caching alone still isn't quite enough: the first-ever call at a very deep
+// index would still have to recurse all the way down to build the cache, so
+// a cold start at (say) a save file carrying a huge planet index could still
+// overflow the stack even with caching in place. Walking up from the
+// deepest already-known entry in a plain loop instead of recursing removes
+// the call stack from the picture entirely -- there's no depth to overflow,
+// however far out index is, cold cache or not.
+const planetCache=[],tierCache=[];
+function planetFor(index){
+ if(index<NAMED_PLANETS.length)return NAMED_PLANETS[index];
+ if(planetCache[index])return planetCache[index];
+ let i=index;
+ while(i>=NAMED_PLANETS.length&&!planetCache[i])i--;
+ let prevTarget=i<NAMED_PLANETS.length?NAMED_PLANETS[i].target:planetCache[i].target;
+ for(let j=Math.max(i+1,NAMED_PLANETS.length);j<=index;j++){
+  const rng=makeRng("planet-"+j);
+  const name=(j%2===0?"The ":"")+pick(rng,PLANET_ADJ)+" "+pick(rng,PLANET_NOUN);
+  const p={name,tint:pick(rng,ORE_TINTS),target:prevTarget*12};
+  planetCache[j]=p;
+  prevTarget=p.target;
+ }
+ return planetCache[index];
+}
+function tierFor(index){
+ if(index<BASE_TIERS.length)return BASE_TIERS[index];
+ if(tierCache[index])return tierCache[index];
+ let i=index;
+ while(i>=BASE_TIERS.length&&!tierCache[i])i--;
+ let prev=i<BASE_TIERS.length?BASE_TIERS[i]:tierCache[i];
+ for(let j=Math.max(i+1,BASE_TIERS.length);j<=index;j++){
+  const planetIdx=j-BASE_TIERS.length;
+  const planet=planetFor(planetIdx+1); // the tier unlocked BY landing on this planet
+  const t={
+   name:planet.name+"'s Auto-Forge",
+   sub:"A new world's own tireless production line",
+   icon:"&#10024;",
+   baseCost:Math.round(prev.baseCost*8),
+   baseRate:Math.round(prev.baseRate*5),
+  };
+  tierCache[j]=t;
+  prev=t;
+ }
+ return tierCache[index];
+}
+
+/* ---------------- milestone memos ---------------- */
+const MILESTONE_LINES={
+ 15:"It looks like your fingers might be getting tired! Would you like some help?",
+ 100:"Tink, tink, tink... we've got a nice little pile going.",
+ 1000:"A thousand clips! Someone's desk is about to be VERY organized.",
+ 10000:"Ten thousand! The requisitions office just raised an eyebrow.",
+ 100000:"A hundred thousand clips. We may need a bigger tray.",
+ 1000000:"Good news! 100% of global stationery is now perfectly organized. But look up at the sky... did you know the Moon is made of unbent rock?",
+};
+const FILLER_ADJ=["delightfully","wonderfully","impossibly","charmingly","suspiciously","gloriously"];
+const FILLER_NOUN=["tidy","shiny","organized","fastened","spiraled","gleaming"];
+function fillerMemo(seed,n){
+ const rng=makeRng("memo-"+seed);
+ return `That's ${formatNum(n)} clips now -- ${pick(rng,FILLER_ADJ)} ${pick(rng,FILLER_NOUN)}.`;
+}
+
+/* ---------------- Clip's running commentary -- he was built to be the 1995
+   desktop-companion pastiche, and the whole point of that character is that
+   he will not leave you alone. Fires far more often than the milestone memos
+   above: most bends, every purchase, and unprompted whenever you've gone
+   quiet for a while. Every line is assembled from small word banks rather
+   than written out in full, so he has a very large number of things to say
+   without anyone having had to type them all individually. */
+const BEND_OPENERS=["Bend","Tink","Snip","Fold","Press"];
+const BEND_REMARKS=[
+ "That's one more for the pile.","The pile says thank you.","A paperclip is born.",
+ "I logged that one personally.","Another small triumph of fastening.",
+ "You could let the crew handle this, you know.","I'm watching. I'm always watching.",
+ "Statistically speaking, that helps.","Somewhere, a stapler is jealous.",
+ "I've seen worse hobbies.","That one felt extra crisp.","Bureaucracy thanks you.",
+];
+function bendQuip(n){
+ const rng=makeRng("bend-"+n);
+ return `${pick(rng,BEND_OPENERS)} #${formatNum(n)}! ${pick(rng,BEND_REMARKS)}`;
+}
+const BUY_OPENERS=["Welcome aboard,","Say hello to","Reporting for duty:","Fresh hire:","Look who joined us --"];
+const BUY_REMARKS=[
+ "I already like them.","They seem nice. A little wiry.","Try not to get too attached.",
+ "That's a lot of new paperwork for me, by the way.","I'll show them where the tray is.",
+ "Please be nicer to them than you are to me.","Another line item for the memo.",
+];
+function buyQuip(tierName,ownedNow){
+ const rng=makeRng("buy-"+tierName+"-"+ownedNow);
+ return `${pick(rng,BUY_OPENERS)} ${tierName}! ${pick(rng,BUY_REMARKS)}`;
+}
+const IDLE_LINES=[
+ "It looks like you're trying to make paperclips. Would you like help?",
+ "Just checking in. Still here. Still a paperclip.",
+ "Did you know a paperclip has exactly one job, and it's doing it right now?",
+ "I could tell you a joke, but it would just be about wire.",
+ "No rush. I'll just be here. Watching the tray.",
+ "Statistically, someone, somewhere, just bent a paperclip too.",
+ "This would be a great time to bend a paperclip, hypothetically.",
+ "I'm legally required to say something eventually. This is that.",
+ "The tray misses you.","Pondering the nature of fastening.",
+ "I wonder what it's like to not be made of wire.",
+];
+function idleQuip(){
+ const rng=makeRng("idle-"+Math.floor(performance.now()/1000));
+ return pick(rng,IDLE_LINES);
+}
+
+/* ---------------- state ---------------- */
+const SAVE_KEY="paperclip_proto_v1";
+let G={
+ clips:0, lifetime:0, planetIndex:0,
+ tiers:[], // owned count per tier index
+ seenMilestones:{},
+ lastSave:Date.now(),
+};
+function ownedAt(i){return G.tiers[i]||0}
+function costAt(i){const t=tierFor(i);return Math.round(t.baseCost*Math.pow(1.14,ownedAt(i)))}
+function rateAt(i){const t=tierFor(i);return t.baseRate*ownedAt(i)}
+function totalCps(){
+ let tiersUnlocked=visibleTierCount();
+ let s=0;for(let i=0;i<tiersUnlocked;i++)s+=rateAt(i);
+ return s;
+}
+function visibleTierCount(){
+ // base ladder plus one more tier per planet already landed on
+ return BASE_TIERS.length+G.planetIndex;
+}
+function currentPlanet(){return planetFor(G.planetIndex)}
+function worldPct(){
+ const p=currentPlanet();
+ return Math.min(100,(G.lifetime/p.target)*100);
+}
+
+function saveGame(){
+ try{
+  localStorage.setItem(SAVE_KEY,JSON.stringify({
+   clips:G.clips,lifetime:G.lifetime,planetIndex:G.planetIndex,tiers:G.tiers,
+   seenMilestones:G.seenMilestones,lastSave:Date.now(),
+  }));
+ }catch(e){}
+}
+function loadGame(){
+ try{const raw=localStorage.getItem(SAVE_KEY);return raw?JSON.parse(raw):null}catch(e){return null}
+}
+
+/* ---------------- audio: procedural, no assets ---------------- */
+let actx=null;
+function ensureAudio(){if(!actx){try{actx=new (window.AudioContext||window.webkitAudioContext)()}catch(e){}}return actx}
+function tone(freq,dur,type,gainPeak,delay){
+ const ctx=ensureAudio();if(!ctx)return;
+ const t0=ctx.currentTime+(delay||0);
+ const osc=ctx.createOscillator();osc.type=type||"sine";osc.frequency.setValueAtTime(freq,t0);
+ const gain=ctx.createGain();gain.gain.setValueAtTime(0,t0);
+ gain.gain.linearRampToValueAtTime(gainPeak||0.18,t0+0.012);
+ gain.gain.exponentialRampToValueAtTime(0.0008,t0+dur);
+ osc.connect(gain);gain.connect(ctx.destination);
+ osc.start(t0);osc.stop(t0+dur+0.02);
+}
+function sfxBend(){
+ const variance=0.92+Math.random()*0.16;
+ tone(1500*variance,0.07,"triangle",0.14);
+ tone(2400*variance,0.05,"sine",0.08,0.01);
+}
+function sfxMilestone(){
+ [660,880,1100,1320].forEach((f,i)=>tone(f,0.16,"square",0.09,i*0.09));
+}
+function sfxLaunch(){
+ const ctx=ensureAudio();if(!ctx)return;
+ const t0=ctx.currentTime;
+ const osc=ctx.createOscillator();osc.type="sawtooth";
+ osc.frequency.setValueAtTime(110,t0);
+ osc.frequency.exponentialRampToValueAtTime(1400,t0+1.4);
+ const gain=ctx.createGain();gain.gain.setValueAtTime(0.0001,t0);
+ gain.gain.exponentialRampToValueAtTime(0.1,t0+0.3);
+ gain.gain.exponentialRampToValueAtTime(0.0008,t0+1.6);
+ osc.connect(gain);gain.connect(ctx.destination);
+ osc.start(t0);osc.stop(t0+1.7);
+}
+
+/* ---------------- Clip: an SVG wire companion, pinned top-left ---------------- */
+function buildClipSvg(){
+ $("clipSvgHost").innerHTML=`
+ <svg viewBox="0 0 60 80">
+  <g id="clipBody">
+   <path d="M30 6
+            C 42 6 48 14 48 26
+            L 48 54
+            C 48 64 40 70 30 70
+            C 20 70 14 63 14 55
+            L 14 24
+            C 14 18 18 14 24 14
+            L 24 50
+            C 24 54 27 56 30 56
+            C 33 56 36 54 36 50
+            L 36 22"
+         fill="none" stroke="#9a9a9a" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
+   <path d="M30 6
+            C 42 6 48 14 48 26
+            L 48 54
+            C 48 64 40 70 30 70
+            C 20 70 14 63 14 55
+            L 14 24
+            C 14 18 18 14 24 14
+            L 24 50
+            C 24 54 27 56 30 56
+            C 33 56 36 54 36 50
+            L 36 22"
+         fill="none" stroke="#d8d8d8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+   <ellipse id="eyeL" cx="24" cy="22" rx="5.4" ry="6.6" fill="#2b2b2b"/>
+   <ellipse id="eyeR" cx="38" cy="22" rx="5.4" ry="6.6" fill="#2b2b2b"/>
+   <ellipse cx="25.6" cy="19.5" rx="1.6" ry="2" fill="#fff"/>
+   <ellipse cx="39.6" cy="19.5" rx="1.6" ry="2" fill="#fff"/>
+   <path id="mouth" d="M25 33 Q31 37 37 33" fill="none" stroke="#2b2b2b" stroke-width="2" stroke-linecap="round"/>
+  </g>
+  <g id="pencilGrp" transform="translate(44,46)">
+   <rect x="-2" y="-11" width="4" height="22" rx="1.5" fill="#f4c23c" stroke="#8a6a2a" stroke-width="1"/>
+   <path d="M-2 9 L0 13 L2 9 Z" fill="#caa06a"/>
+   <rect x="-2" y="-11" width="4" height="3" rx="1.5" fill="#e07b52"/>
+  </g>
+ </svg>`;
+}
+
+let clickTimes=[];
+function clipReactToClick(){
+ clickTimes.push(performance.now());
+ clickTimes=clickTimes.filter(t=>performance.now()-t<700);
+ const body=$("clipBody");
+ if(clickTimes.length>=4)body.classList.add("excited");
+ else body.classList.remove("excited");
+}
+let bubbleTimer=null;
+let lastSpokeAt=0;
+function clipSay(text){
+ lastSpokeAt=performance.now();
+ const bubble=$("clipBubble");
+ bubble.textContent="";
+ bubble.classList.add("show");
+ $("pencilGrp").classList.add("show"); // taps away for as long as he's got something to say
+ let i=0;
+ clearInterval(bubbleTimer);
+ bubbleTimer=setInterval(()=>{
+  bubble.textContent=text.slice(0,i+1);
+  i++;
+  if(i>=text.length){clearInterval(bubbleTimer)}
+ },18);
+ clearTimeout(window._bubbleHide);
+ // Was a flat 6000ms plus 40ms/char -- for even a short quip that's 8+
+ // seconds, and since a bend quip can fire every few clicks, the bubble (and
+ // the pencil, which only taps while it's showing) never actually got a
+ // chance to close during real play: it just chained into the next one.
+ // Scaled to roughly reading speed with a much lower floor and ceiling, so
+ // it reads comfortably but actually clears between triggers.
+ window._bubbleHide=setTimeout(()=>{
+  bubble.classList.remove("show");
+  $("pencilGrp").classList.remove("show");
+ },Math.min(5000,1400+text.length*45));
+}
+// Every gesture below (celebrate, spin, and the idle pool further down) is a
+// one-shot CSS animation layered on top of the always-on "sway" loop. A
+// one-shot class that's never removed after it finishes leaves the browser
+// parked on its last frame forever -- #clipBody's `animation` property stays
+// pointed at the finished one-shot, so "sway" never gets a chance to retake
+// it, and Clip silently stops moving at all the moment the first one plays.
+// This listener is what hands control back to "sway" once a gesture ends.
+const CLIP_GESTURE_CLASSES=["celebrate","spin","nod","bounce","wiggle","peek","happy"];
+function bindClipGestureCleanup(){
+ // #clipBody doesn't exist until buildClipSvg() injects the SVG, so this
+ // has to run from boot() after that, not at top-level script load.
+ $("clipBody").addEventListener("animationend",()=>{
+  $("clipBody").classList.remove(...CLIP_GESTURE_CLASSES);
+ });
+}
+function playClipGesture(name){
+ const body=$("clipBody");
+ body.classList.remove(...CLIP_GESTURE_CLASSES);
+ void body.offsetWidth; // restart even if the same gesture is already mid-play
+ body.classList.add(name);
+}
+function celebrate(){
+ playClipGesture("celebrate");
+ burstConfetti();
+}
+function spinClip(){
+ playClipGesture("spin");
+}
+// A small pool of purely decorative gestures Clip performs on his own, at
+// random, on no particular trigger -- this is what makes him feel alive
+// between the moments something in the game actually happens to react to.
+const IDLE_FLOURISHES=["nod","bounce","wiggle","peek","happy","wink"];
+function scheduleIdleFlourish(){
+ setTimeout(()=>{
+  const body=$("clipBody");
+  if(!body.classList.contains("excited")){ // don't interrupt a fast-clicking combo
+   const pick=IDLE_FLOURISHES[Math.floor(Math.random()*IDLE_FLOURISHES.length)];
+   if(pick==="wink"){
+    const eye=$("eyeL");
+    eye.classList.remove("wink");
+    void eye.offsetWidth;
+    eye.classList.add("wink");
+   } else {
+    playClipGesture(pick);
+   }
+  }
+  scheduleIdleFlourish();
+ },2500+Math.random()*3000);
+}
+function burstConfetti(){
+ // Clip's panel now lives in normal page flow rather than at a fixed pixel
+ // offset, so its actual on-screen position has to be read, not assumed
+ const r=$("clipPanel").getBoundingClientRect();
+ const originX=r.left+r.width/2,originY=r.top+r.height/2;
+ for(let i=0;i<14;i++){
+  const el=document.createElement("div");
+  el.className="confetti";
+  el.style.left=originX+"px";el.style.top=originY+"px";
+  el.style.width="7px";el.style.height="3px";
+  const hue=["#e07b52","#c45a3a","#f4b860","#5c8a4a","#7fa8d6"][i%5];
+  el.style.background=hue;
+  el.style.borderRadius="1px";
+  document.body.appendChild(el);
+  const ang=Math.random()*Math.PI*2, dist=40+Math.random()*70;
+  const dx=Math.cos(ang)*dist, dy=Math.sin(ang)*dist-30;
+  const rot=(Math.random()*720-360);
+  el.animate([
+   {transform:"translate(0,0) rotate(0deg)",opacity:1},
+   {transform:`translate(${dx}px,${dy+90}px) rotate(${rot}deg)`,opacity:0}
+  ],{duration:900+Math.random()*400,easing:"cubic-bezier(.2,.7,.4,1)"});
+  setTimeout(()=>el.remove(),1400);
+ }
+}
+
+/* ---------------- milestones ---------------- */
+function checkMilestones(prevLifetime){
+ for(const key of Object.keys(MILESTONE_LINES)){
+  const n=Number(key);
+  if(prevLifetime<n&&G.lifetime>=n&&!G.seenMilestones[key]){
+   G.seenMilestones[key]=true;
+   clipSay(MILESTONE_LINES[key]);
+   sfxMilestone();celebrate();
+   return true; // one memo at a time reads better than several stacked
+  }
+ }
+ // beyond the hand-authored list: every time lifetime crosses a new order
+ // of magnitude (10x the last one we celebrated), a procedurally-written
+ // filler line keeps the game talking without needing more authored content
+ const lastOrder=G.seenMilestones._lastOrder||1000000;
+ if(G.lifetime>=lastOrder*10){
+  G.seenMilestones._lastOrder=lastOrder*10;
+  clipSay(fillerMemo(G.lifetime,G.lifetime));
+  sfxMilestone();celebrate();
+  return true;
+ }
+ return false;
+}
+
+/* ---------------- launch ---------------- */
+function doLaunch(){
+ if(worldPct()<100)return;
+ G.planetIndex++;
+ advanceCrewWindow();
+ saveGame();
+ sfxLaunch();
+ const p=currentPlanet();
+ clipSay(`${p.name} next! Everyone's bringing their tools -- nothing gets left behind.`);
+ document.body.style.transition="background-color 1.2s ease";
+ renderAll();
+}
+
+/* ---------------- rendering ---------------- */
+function renderPlanetBar(){
+ const p=currentPlanet();
+ $("planetName").textContent=p.name;
+ const pct=worldPct();
+ $("progFill").style.width=pct+"%";
+ $("progPct").textContent=pct.toFixed(pct<10?2:1)+"%";
+ $("launchBtn").classList.toggle("show",pct>=100);
+}
+function renderCounter(){
+ $("clipCount").textContent=formatNum(G.clips)+" clips";
+ $("cpsLine").textContent=totalCps()>0?formatNum(totalCps())+"/sec":"nobody's bending yet";
+}
+// one persistent DOM row per tier index, created once and only ever updated
+// in place from here on -- this runs every frame (clips/cost/afford all
+// change continuously), and rebuilding the list from scratch each time
+// (the original approach: list.innerHTML="" then recreate every row) tore
+// down and replaced every row's element, and its onclick with it, 60 times a
+// second. A real click spans several of those frames between mousedown and
+// mouseup, so the row underneath a click was frequently a different element
+// by the time it finished -- not a click Alembic... er, Clip ever saw. Reusing
+// the same elements and only touching their text/classes keeps a row (and
+// its handler) stable across a click, however long it takes.
+const tierRows=[];
+// The buy list only ever shows the most recently-unlocked CREW_WINDOW tiers.
+// Without this, every tier you'd ever hired stayed in the scrolling list
+// forever -- by planet 2000 that's 2000 rows to scroll past to reach
+// anything new, most of them producing a trickle next to current scale.
+// Nothing is lost: everything before the window gets folded into one
+// "legacy" line (#legacyRow) the moment it scrolls out, and the full history
+// is still there to look at in the Archive.
+const CREW_WINDOW=10;
+let crewWindowStart=0,legacyCount=0,legacyRate=0;
+function foldIntoLegacy(i){
+ if(ownedAt(i)>0){legacyCount++;legacyRate+=rateAt(i);}
+}
+function initCrewWindow(){
+ // runs once, at boot, in case a loaded save already has a deep planetIndex --
+ // everything below the starting window is folded in up front rather than
+ // iterated every frame from then on.
+ const n=visibleTierCount();
+ const start=Math.max(0,n-CREW_WINDOW);
+ for(let i=0;i<start;i++)foldIntoLegacy(i);
+ crewWindowStart=start;
+}
+function advanceCrewWindow(){
+ // called once per launch (not per frame): folds in whichever single tier
+ // just scrolled out of the trailing window.
+ const n=visibleTierCount();
+ const start=Math.max(0,n-CREW_WINDOW);
+ for(let i=crewWindowStart;i<start;i++){
+  foldIntoLegacy(i);
+  const r=tierRows[i];
+  if(r){r.style.display="none";if(r.parentNode)r.parentNode.removeChild(r);}
+ }
+ crewWindowStart=start;
+}
+function renderTiers(){
+ const n=visibleTierCount();
+ const start=crewWindowStart;
+ const list=$("tierList");
+ for(let i=start;i<n;i++){
+  const t=tierFor(i);
+  const cost=costAt(i);
+  const owned=ownedAt(i);
+  const afford=G.clips>=cost;
+  const revealed=owned>0||i===0||ownedAt(i-1)>0||G.clips>=cost*0.1;
+  let row=tierRows[i];
+  if(!row){
+   row=document.createElement("div");
+   row.innerHTML=`
+    <div class="ic"></div>
+    <div class="inf"><div class="nm"></div><div class="sub"></div></div>
+    <div class="right"><div class="cost"></div><div class="owned"></div></div>`;
+   row.onclick=()=>buyTier(i);
+   row._ic=row.querySelector(".ic");row._nm=row.querySelector(".nm");row._sub=row.querySelector(".sub");
+   row._cost=row.querySelector(".cost");row._owned=row.querySelector(".owned");
+   tierRows[i]=row;
+  }
+  if(row._name!==t.name){ // this tier's static content only needs writing once, ever
+   row._ic.innerHTML=t.icon;row._nm.textContent=t.name;row._sub.textContent=t.sub;
+   row._name=t.name;
+  }
+  row.className="tier "+(afford?"afford":"cant");
+  row.style.display=revealed?"":"none";
+  if(revealed){
+   row._cost.textContent=formatNum(cost);
+   row._owned.textContent=(rateAt(i)>0?formatNum(rateAt(i))+"/sec · ":"")+"owned "+owned;
+   if(row.parentNode!==list)list.appendChild(row);
+  }
+ }
+ const legacyRow=$("legacyRow");
+ if(legacyCount>0&&!archiveOpen){
+  legacyRow.classList.add("show");
+  legacyRow.innerHTML=`&#128194; <b>${legacyCount}</b> earlier hire${legacyCount===1?"":"s"} still clocking in quietly &mdash; <b>${formatNum(legacyRate)}/sec</b> combined. Tap to see them all.`;
+ } else {
+  legacyRow.classList.remove("show");
+ }
+}
+
+/* ---------------- the Archive: a read-only look at the whole operation ---------------- */
+let archiveOpen=false;
+function toggleArchive(){
+ archiveOpen=!archiveOpen;
+ $("tierList").style.display=archiveOpen?"none":"";
+ $("archivePanel").classList.toggle("show",archiveOpen);
+ $("archiveBtn").innerHTML=archiveOpen?"&#11013; Back to Crew":"&#128194; Archive";
+ if(archiveOpen)buildArchive();
+}
+function buildArchive(){
+ // Built fresh each time it's opened rather than kept live -- it's a look
+ // back at the whole operation, not something that needs updating every
+ // frame the way the buy list does.
+ const n=visibleTierCount();
+ let totalHired=0;
+ for(let i=0;i<n;i++)totalHired+=ownedAt(i);
+ const rows=[];
+ for(let i=n-1;i>=0;i--){ // newest first -- that's usually what you came to check on
+  const owned=ownedAt(i);
+  if(owned<=0)continue;
+  const t=tierFor(i);
+  rows.push(`<div class="archRow"><span>${t.icon} ${t.name}</span><span class="n">owned ${owned} &middot; ${formatNum(rateAt(i))}/sec</span></div>`);
+ }
+ $("archivePanel").innerHTML=`
+  <div class="stat"><span>Lifetime clips bent</span><b>${formatNum(G.lifetime)}</b></div>
+  <div class="stat"><span>Worlds reached</span><b>${G.planetIndex+1}</b></div>
+  <div class="stat"><span>Crew hired, all-time</span><b>${formatNum(totalHired)}</b></div>
+  <div class="stat"><span>Current production</span><b>${formatNum(totalCps())}/sec</b></div>
+  <div class="archHead">Every hire, newest first</div>
+  ${rows.join("")||'<div class="archRow"><span>Nobody hired yet.</span></div>'}
+ `;
+}
+
+function renderAll(){
+ document.body.style.backgroundColor=currentPlanet().tint;
+ renderPlanetBar();renderCounter();renderTiers();
+}
+
+function buyTier(i){
+ const cost=costAt(i);
+ if(G.clips<cost)return;
+ G.clips-=cost;
+ G.tiers[i]=(G.tiers[i]||0)+1;
+ ensureAudio();tone(700,0.09,"sine",0.1);
+ clipSay(buyQuip(tierFor(i).name,G.tiers[i])); // a quip on every single hire -- he has opinions about all of them
+ spinClip();
+ saveGame();renderAll();
+}
+
+let bendCount=0;
+function bendOnce(){
+ G.clips+=1;G.lifetime+=1;
+ bendCount++;
+ clipReactToClick();
+ // Bending is the thing players actually spend most of their time doing, so
+ // it's the one moment that most needs a visible reaction every time -- not
+ // gated behind anything, and not something you have to wait around for.
+ // "excited" (rapid-click coil) already owns the animation during an actual
+ // click burst, so this only fires between bursts, cycling through the same
+ // gesture pool the idle flourishes use.
+ if(!$("clipBody").classList.contains("excited")){
+  playClipGesture(IDLE_FLOURISHES[Math.floor(Math.random()*5)]); // the 5 body gestures, not "wink" (eye-only)
+ }
+ sfxBend();
+ const prevLifetime=G.lifetime-1;
+ const spokeMilestone=checkMilestones(prevLifetime);
+ // a quip most bends, not literally every one -- he still needs to be
+ // annoying rather than illegible, and a milestone line just now takes
+ // priority over a generic one
+ if(!spokeMilestone&&bendCount%3===0)clipSay(bendQuip(G.lifetime));
+ renderCounter();renderPlanetBar();
+}
+
+/* ---------------- tick loop (10Hz) + autosave ---------------- */
+let lastTick=performance.now();
+let autosaveAccum=0;
+function tick(){
+ const now=performance.now();
+ const dt=Math.min((now-lastTick)/1000,0.5);
+ lastTick=now;
+ // Production only happens while the tab is actually in front of you --
+ // backgrounded or minimized counts as "away" too, not just fully closed.
+ const cps=document.hidden?0:totalCps();
+ if(cps>0){
+  const prevLifetime=G.lifetime;
+  const gained=cps*dt;
+  G.clips+=gained;G.lifetime+=gained;
+  checkMilestones(prevLifetime);
+ }
+ autosaveAccum+=dt;
+ if(autosaveAccum>6){autosaveAccum=0;saveGame()}
+ // true to the character, he doesn't wait to be prompted -- if nothing's
+ // made him talk in a while, he fills the silence himself
+ if(now-lastSpokeAt>14000)clipSay(idleQuip());
+ renderCounter();renderPlanetBar();renderTiers();
+ requestAnimationFrame(tick);
+}
+
+/* ---------------- boot ---------------- */
+function boot(){
+ buildClipSvg();
+ bindClipGestureCleanup();
+ const save=loadGame();
+ if(save){
+  G.clips=save.clips||0;G.lifetime=save.lifetime||0;G.planetIndex=save.planetIndex||0;
+  G.tiers=save.tiers||[];G.seenMilestones=save.seenMilestones||{};
+  // No offline progress: the crew only bends paperclips while you're here
+  // watching -- closing the tab (or the game stopping in the background)
+  // just pauses things exactly where they were, not a "while you were away" bonus.
+ } else {
+  clipSay("Hello! I'm Clip. Give that paperclip a bend whenever you're ready.");
+ }
+ initCrewWindow();
+ $("bendBtn").addEventListener("click",()=>{bendOnce();saveGame()});
+ $("bendBtn").addEventListener("pointerdown",()=>$("bendBtn").classList.add("pressed"));
+ $("bendBtn").addEventListener("pointerup",()=>$("bendBtn").classList.remove("pressed"));
+ $("launchBtn").addEventListener("click",doLaunch);
+ $("archiveBtn").addEventListener("click",toggleArchive);
+ $("legacyRow").addEventListener("click",()=>{if(!archiveOpen)toggleArchive()});
+ window.addEventListener("pagehide",saveGame);
+ document.addEventListener("visibilitychange",()=>{if(document.hidden)saveGame()});
+ renderAll();
+ lastTick=performance.now();
+ requestAnimationFrame(tick);
+ scheduleIdleFlourish();
+}
+boot();
+<~/script>
+</body></html>
+</script>
+
 <script>
 (function(){
 "use strict";
@@ -13344,6 +14230,11 @@ var KEY="tvos_cartridges",$=function(s,r){return(r||document).querySelector(s)};
 var esc=function(s){return String(s).replace(/[&<>"]/g,function(c){return{"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]})};
 /* every game in this file */
 var CATALOG=[].slice.call(document.querySelectorAll("script.cartsrc")).map(function(s){var m=JSON.parse(s.getAttribute("data-meta"));m.el=s;m.kind="own";return m});
+/* alphabetical by name, not file order -- file order is just whichever
+   sequence games got pasted into this file over time, which means nothing
+   to someone browsing their own shelf. This way every future game slots
+   into its right place automatically, nothing to ever re-sort by hand. */
+CATALOG.sort(function(a,b){return a.name.toLowerCase()<b.name.toLowerCase()?-1:a.name.toLowerCase()>b.name.toLowerCase()?1:0});
 function srcOf(g){return g.el.textContent.replace(/<~\/script/g,"<"+"/script").replace(/<~!--/g,"<!"+"--")}
 /* what you have: one record, kept under one key so Backup picks it up with the rest */
 var S={inst:[],urls:[],saves:{}};
