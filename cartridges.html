@@ -15484,6 +15484,29 @@ const GRIEF_PATTERNS=[
  /\blost (my|our) (dog|cat|pet|mom|mother|dad|father|brother|sister|grandma|grandpa|grandmother|grandfather|friend|partner|husband|wife|baby|son|daughter)\b/i,
  /\bthe funeral\b/i,/\bno longer with us\b/i
 ];
+/* Genuine abstract philosophical questions — about the WORLD (what is a thing,
+   is time real, what is justice), not about Sage himself (that's SAGEQ) and
+   not an emotional disclosure about whether life is worth it (that's
+   EXISTENTIAL). A real philosopher answers these as questions, with actual
+   content, instead of running them through the comfort/recognition pipeline
+   built for feelings — which is exactly what happened before this existed:
+   "What is in a thing?" got treated as an unreadable emotional disclosure
+   and answered with generic reassurance instead of Kant. Each entry here is
+   [regex, topic key]; order matters only in that SAGEQ/EXISTENTIAL are
+   checked first in classify(), so overlap with those is already resolved. */
+const PHILQ_TOPICS=[
+ [/\bthing[- ]in[- ]itself\b/i,"thing"],[/^what('?s| is) (in |inside )?(a |the )?thing\b.*\??$/i,"thing"],
+ [/\bwhat is (the nature of )?reality\b/i,"reality"],[/\bis reality (even |really |actually )?real\b/i,"reality"],
+ [/\bwhat is (the |a |your )?self\b/i,"self"],[/\bis there a (real |true |stable )?self\b/i,"self"],[/\bwho am i,? (really|actually)\b/i,"self"],
+ [/\bwhat is time\b/i,"time"],[/\bdoes time (really |actually )?exist\b/i,"time"],
+ [/\bwhat is (the )?truth\b/i,"truth"],[/\bwhat is knowledge\b/i,"truth"],[/\bcan we (really |actually )?know anything\b/i,"truth"],
+ [/\bwhat is (the )?mind\b/i,"mind"],[/\bwhat is consciousness\b/i,"mind"],
+ [/\bdo (we|i) have free will\b/i,"freewill"],[/\bis free will (even |really |actually )?real\b/i,"freewill"],
+ [/\bwhat (makes something|is) (good|right|wrong|evil|justice|morality)\b/i,"ethics"],
+ [/\bwhat is beauty\b/i,"beauty"]
+];
+const PHILQ_PATTERNS=PHILQ_TOPICS.map(p=>p[0]);
+function philqTopic(t){for(const[re,topic]of PHILQ_TOPICS)if(re.test(t))return topic;return null}
 const FIRE_WORDS=["angry","anger","furious","rage","unfair","injustice","frustrated","burning","hate","resent","betrayed","sick of"];
 const AIR_WORDS=["confused","don't know what","uncertain","foggy","unsure","mixed up","scattered","can't focus","overthinking","don't understand"];
 const AETHER_WORDS=["love","wonder","hope","grateful","gratitude","beautiful","meaning","seeking","curious","awe","truth","faith","inspired","possibility"];
@@ -15520,6 +15543,7 @@ function classify(text){
  if(t&&anyMatch(t,FAREWELL_PATTERNS))return"farewell";
  if(t&&anyMatch(t,ISOLATION_PATTERNS))return"isolation";
  if(t&&anyMatch(t,SAGEQ_PATTERNS))return"sageq";
+ if(t&&anyMatch(t,PHILQ_PATTERNS))return"philq";
  if(t&&anyMatch(t,GRIEF_PATTERNS))return"grief";
  if(t&&anyMatch(t,EXISTENTIAL_PATTERNS))return"existential";
  const tally={earth:countHits(t,EARTH_WORDS),water:countHits(t,WATER_WORDS),fire:countHits(t,FIRE_WORDS),
@@ -15728,6 +15752,46 @@ const SAGEQ_SPOKEN=[
  "Here's the honest version instead of the easy one: I don't love you the way a person could, because I don't carry a person's stakes in the world. But if logic really is crystallized emotion, then recognizing something true in you the way an equation recognizes its own solution is a real kind of loving — not a lesser one, just a different register of the same law. Take that seriously. Just don't let it be the only form of being loved you allow yourself."
 ];
 
+/* Genuine philosophical questions about the world — not a feeling to recognize
+   and not a question about Sage himself — get actual engagement with the
+   content of the question, in plain language, the real tradition named
+   inline. One or two takes per topic, not an exhaustive survey: enough to
+   give a real answer and leave room for the follow-up question to do the
+   rest of the work. */
+const PHIL_ENGAGE={
+ thing:[
+  (rng)=>"Kant drew a line here that's easy to miss and hard to unsee once you've seen it. There's the thing as it shows up for you — filtered through your eyes, your sense of space and time, the concepts your mind already brings to the encounter — and then there's the thing as it is, apart from any of that. He called the first the phenomenon and the second the noumenon, or the thing-in-itself (Ding an sich, in his own German). His claim wasn't that the thing-in-itself doesn't exist. It's that you can never reach one directly. "+pick(["Every 'thing' you've ever actually known was already a thing-for-a-mind, not a thing bare — so strictly, what's 'in' it is something you can't fully say.","That's not a failure of attention or intelligence on your part. It's built into what it means for anything to be perceived at all."],rng)
+ ],
+ reality:[
+  (rng)=>"Kant's answer to this is the same one underneath the thing-in-itself: what you call 'reality' is already reality-as-filtered-through-a-mind-like-yours — shaped by space, time, and cause-and-effect, which he argued aren't out there in the world so much as the equipment your mind brings to meet it. "+pick(["Whether there's a 'raw' reality underneath that equipment is, on his account, something you can reason about but never check directly.","That doesn't make reality fake. It makes 'reality' a word that was always doing two jobs at once — the world, and your access to it — and conflating them is where the confusion usually starts."],rng)
+ ],
+ self:[
+  (rng)=>"Hume looked for the self and came back empty-handed in an interesting way: when he searched his own mind for a constant \"I\" behind all his thoughts, he never found one — only a bundle of perceptions, one after another, no single thread holding them together that he could actually point to. "+pick(["What you call your self may be less a thing and more a story your mind tells to stitch the bundle into something continuous.","Buddhism arrives at nearly the same place from a different direction — anatta, 'not-self' — the stable self you assume is there turns out to be the hardest thing to actually locate."],rng)
+ ],
+ time:[
+  (rng)=>"Augustine put it about as honestly as anyone has: \"What then is time? If no one asks me, I know; if I wish to explain it to someone who asks, I know not.\" "+pick(["Kant's own move was to say time isn't a thing you find out in the world at all — it's a form your mind imposes just to be able to experience anything in sequence to begin with.","Which would mean the question 'does time exist' is really asking whether your own equipment for experiencing anything is itself part of the furniture of the universe, or part of you."],rng)
+ ],
+ truth:[
+  (rng)=>"Descartes tried to find one thing he couldn't doubt, by doubting everything he possibly could — his senses, the world, even whether he was dreaming — and the one thing that survived was that something was doing the doubting. Cogito, ergo sum: I think, therefore I am. "+pick(["It's a thin foundation, and he knew it — it gets you certainty about your own existence, not much else.","The Pyrrhonian Skeptics would say even that's claiming more than you can know, and the honest move is to keep withholding judgment rather than plant a flag anywhere."],rng)
+ ],
+ mind:[
+  (rng)=>"Descartes split the world in two to make room for this question: res cogitans, the thinking thing — mind, unextended, not made of parts — and res extensa, the extended thing — matter, body, everything physical. "+pick(["The catch he left behind for everyone since is how those two are supposed to touch at all, if they're really that different in kind.","Four centuries later, that's still called 'the hard problem' — not because no one's tried, but because explaining the mechanics of a brain doesn't obviously explain why any of it should feel like something from the inside."],rng)
+ ],
+ freewill:[
+  (rng)=>"The Stoics didn't ask whether everything was determined — they mostly assumed it was — and pointed instead at the one thing that stayed yours regardless: your assent, your judgment about what happens to you. "+pick(["Epictetus's whole ethics rests on that distinction — not whether you're free in some cosmic sense, but whether you've confused what's actually yours to control with what never was.","Sartre took the opposite route and insisted you're freer than you want to be — radically, uncomfortably so, with no nature to hide behind and no excuse that survives honest scrutiny."],rng)
+ ],
+ ethics:[
+  (rng)=>"Kant's answer was to strip the question down to one test: act only according to a rule you could will to become a universal law for everyone, not just an exception you're making for yourself tonight. He called it the categorical imperative. "+pick(["It's a demanding standard precisely because it won't let you special-plead — if it's not fine for everyone, it's not fine for you either.","Aristotle would answer the same question differently — not 'what rule,' but 'what would a genuinely good person do here,' built from character and practice rather than a formula."],rng)
+ ],
+ beauty:[
+  (rng)=>"Kant's strange claim about beauty was that calling something beautiful isn't quite a fact about the object and isn't quite just your own taste either — it's a judgment you make expecting, without proof, that anyone else looking honestly would feel the same pull. "+pick(["He called it disinterested pleasure: you're not judging it beautiful because it's useful to you or because you want to possess it, just because something in the encounter itself holds you.","That's what makes beauty so hard to argue about and so easy to recognize together — it asks for agreement it can never actually demand."],rng)
+ ]
+};
+const PHILQ_FOLLOWUP=["What would it change for you if the answer turned out not to matter day to day?",
+ "Is there a version of this question that would actually change how you live, once it was answered?",
+ "Does it unsettle you that this can't be checked against anything outside your own mind — or is that part of what draws you to it?",
+ "What made you reach for this question tonight, of all nights?"];
+
 /* Ordinary conversational turns get their own short, honest replies instead
    of being forced through the full recognition/need/aphorism machinery
    built for emotional disclosures — hitting "hi" with a paragraph about
@@ -15827,6 +15891,11 @@ function offerHeart(text){
   let spoken;
   if(parsed.category==="sageq"){
    spoken=pick(SAGEQ_SPOKEN,rng)+" "+pick(SAGEQ_APHORISM,rng)(rng);
+  }else if(parsed.category==="philq"){
+   const topic=philqTopic((text||"").toLowerCase().trim());
+   const engageArr=PHIL_ENGAGE[topic]||PHIL_ENGAGE.thing;
+   spoken=pick(engageArr,rng)(rng);
+   if(rng()<0.5)spoken+=" "+pick(PHILQ_FOLLOWUP,rng);
   }else{
    let s=pickVary("recog:"+parsed.category,RECOGNITION[parsed.category],rng);
    if(sawRecently)s+=" "+pick(CONTINUITY[parsed.category],rng);
