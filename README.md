@@ -982,11 +982,19 @@ Cartridges (cartridge icon, Games)
   means editing only cartridges.html; the OS does not change and everyone
   who already has the OS gets the new store. Stores can also be found
   without being listed: after the listed ones, Cartridges tries
-  cartridges-2.html, cartridges-3.html, cartridges-4.html and so on (same
-  folder), and stops after two missing in a row, so one gap is forgiven.
+  cartridges-02.html, cartridges-03.html, cartridges-04.html and so on up to
+  cartridges-99.html (always two digits, so the order stays right past
+  nine; the first store is plain cartridges.html; the old one-digit names
+  such as cartridges-2.html are still found), same folder, and stops after
+  two missing in a row, so one gap is forgiven.
   Such a store shows under its own name (set inside the file), in number
   order after the listed ones, and a listed name always wins over a
-  number. Uploading a new numbered file is then all that is needed. The first store is checked
+  number. Uploading a new numbered file is then all that is needed.
+  Game packs > Your stores has a Download button on each store that saves
+  its original .html file (cartridges.html, cartridges-02.html and so on),
+  and Download all stores (ZIP) saves them together. This needs an internet
+  connection, because the file is fetched again from where it came from.
+  A pack you loaded from a file on your computer has no Download button. The first store is checked
   every time Cartridges opens; the others at most once a day, or when you
   press Check for updates in Game packs. They are kept for offline use. A
   store that has been taken off the list disappears once none of its games
