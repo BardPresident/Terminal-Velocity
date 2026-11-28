@@ -1265,7 +1265,7 @@ const fmtDate=t=>{const d=new Date(t),hm=" "+pad(d.getHours())+":"+pad(d.getMinu
 const sleep=ms=>new Promise(r=>setTimeout(r,ms));
 const LS={get(k,d){try{const v=localStorage.getItem(k);return v==null?d:JSON.parse(v)}catch(e){return d}},set(k,v){try{localStorage.setItem(k,JSON.stringify(v));return true}catch(e){try{window.tvosStorageFull&&window.tvosStorageFull(e)}catch(_){}return false}}};
 const fmtUp=s=>{s=Math.max(0,Math.round(s));const d=Math.floor(s/86400),hr=Math.floor(s%86400/3600),m=Math.floor(s%3600/60),sc=s%60;if(d)return d+" d "+hr+" h";if(hr)return hr+" h "+m+" min";if(m)return m+" min "+sc+" s";return sc+" s"};
-const OS={apps:{},wins:[],z:10,bus:{},boot:performance.now(),ver:"1.0 build 1128-0027"};
+const OS={apps:{},wins:[],z:10,bus:{},boot:performance.now(),ver:"1.0 build 1128-0051"};
 OS.on=(ev,f)=>{(OS.bus[ev]=OS.bus[ev]||[]).push(f);return f};
 OS.off=(ev,f)=>{OS.bus[ev]=(OS.bus[ev]||[]).filter(x=>x!==f)};
 /* reboot that always fetches the newest copy of this page (like Ctrl+Shift+R), then reloads */
@@ -10088,7 +10088,7 @@ const CT={
   const ping=()=>{if(onChange)try{onChange()}catch(e){}};let ch=false,base=null;CT.probs={};
   /* where the first store comes from: next to the OS if it is on a web server, otherwise (or if it is not there) the home site */
   const tries=[];if(/^https?:$/.test(location.protocol))tries.push(new URL("cartridges.html",location.href).href);if(tries.indexOf(CT.HOME)<0)tries.push(CT.HOME);
-  let txt=null,fail=false;for(const u of tries){try{const t=await CT.getText(u);if(!/class=["']?cartsrc/.test(t))throw new Error("not a pack");txt=t;base=new URL(u);break}catch(e){fail=true}}
+  let txt=null,fail=false;for(const u of tries){try{const t=await CT.getText(u);if(!/class=["']?cartsrc/.test(t))throw new Error("not a pack");txt=t;base=new URL(u);CT.coreHref=u;break}catch(e){fail=true}}
   if(txt!=null){const ex=CT.packs.find(p=>p.id===CT.DEF);
    try{if(ex&&ex.len===txt.length&&ex.h===CT.hs(txt))CT.defState="ok";else{const ok=await CT.addPack(txt,"the default games",true,{id:CT.DEF});CT.defState=ok?"ok":"none";if(ok)ch=true}}catch(e){CT.defState="none"}}
   else CT.defState=CT.packs.some(p=>p.id===CT.DEF)?"offline":(/^https?:$/.test(location.protocol)?"none":"file");
@@ -10102,23 +10102,33 @@ const CT={
     else if(await CT.addPack(txt,f,true,{id,file:f,listed:true,order:i}))ch=true;else CT.probs[f]="empty"}
    catch(e){CT.probs[f]=e&&e.status===404?"missing":"offline"}
    await CT.reindex();ping()}
-  /* automatic finding: after the listed stores, try cartridges-2.html, cartridges-3.html, ... and stop after two missing in a row, so one gap is forgiven */
+  /* automatic finding: after the listed stores, try cartridges-02.html, cartridges-03.html, ... cartridges-99.html (two digits, so the order stays right past nine) and stop after two missing in a row, so one gap is forgiven */
   const seen={},auto=/^cartridges-\d+\.html$/i;let probeOff=false,probed=false;
   if(core){let miss=0;const due=force||!core.probed||Date.now()-core.probed>72e6;
-   for(let n=2;n<=60&&miss<2;n++){const f="cartridges-"+n+".html";
-    if(list.indexOf(f)>=0){miss=0;continue}
-    const id="s-"+CT.slug(f),ex=CT.packs.find(q=>q.id===id),ord=100+n;
-    if(ex&&!force&&Date.now()-ex.checked<72e6){seen[f]=1;miss=0;if(ex.order!==ord||!ex.listed)await CT.touch(id,{order:ord,listed:true,gone:false,file:f});continue}
-    if(!ex&&!due){miss++;continue}
-    try{const txt=await CT.getText(new URL(f,base).href);probed=true;if(!/class=["']?cartsrc/.test(txt))throw Object.assign(new Error("not a pack"),{status:404});
-     seen[f]=1;miss=0;
-     if(ex&&ex.len===txt.length&&ex.h===CT.hs(txt))await CT.touch(id,{checked:Date.now(),order:ord,listed:true,gone:false,file:f});
-     else if(await CT.addPack(txt,f,true,{id,file:f,listed:true,order:ord}))ch=true;
-     await CT.reindex();ping()}
-    catch(e){if(e&&e.status===404){probed=true;miss++}else{probeOff=true;break}}}
+   for(let n=2;n<=99&&miss<2;n++){const cands=["cartridges-"+String(n).padStart(2,"0")+".html"];if(n<10)cands.push("cartridges-"+n+".html");
+    if(cands.some(f=>list.indexOf(f)>=0)){miss=0;continue}
+    const ord=100+n;let hit=false,off=false;
+    for(const f of cands){const id="s-"+CT.slug(f),ex=CT.packs.find(q=>q.id===id);
+     if(ex&&!force&&Date.now()-ex.checked<72e6){seen[f]=1;hit=true;if(ex.order!==ord||!ex.listed)await CT.touch(id,{order:ord,listed:true,gone:false,file:f});break}
+     if(!ex&&!due)continue;
+     try{const txt=await CT.getText(new URL(f,base).href);probed=true;if(!/class=["']?cartsrc/.test(txt))throw Object.assign(new Error("not a pack"),{status:404});
+      seen[f]=1;hit=true;
+      if(ex&&ex.len===txt.length&&ex.h===CT.hs(txt))await CT.touch(id,{checked:Date.now(),order:ord,listed:true,gone:false,file:f});
+      else if(await CT.addPack(txt,f,true,{id,file:f,listed:true,order:ord}))ch=true;
+      await CT.reindex();ping();break}
+     catch(e){if(e&&e.status===404){probed=true}else{off=true;break}}}
+    if(off){probeOff=true;break}
+    if(hit)miss=0;else miss++}
    if(probed)await CT.touch(CT.DEF,{probed:Date.now()})}
   if(core){for(const p of CT.packs.slice()){if((p.listed||p.gone)&&list.indexOf(p.file)<0&&!seen[p.file]&&!(probeOff&&auto.test(p.file))){if(p.ids.some(x=>CT.isIn(x)))await CT.touch(p.id,{listed:false,gone:true});else{try{await CT.tx("readwrite",s=>s.delete(p.id))}catch(e){}CT.S.off=CT.S.off.filter(x=>x!==p.id);CT.save()}ch=true}}}
   await CT.reindex();ping();return ch},
+ /* get a store's original .html file again, to save it: the first store and listed or found stores from next to cartridges.html (or the home site), a manual pack from its web address */
+ async getRaw(p){const tries=[];
+  if(p.id===CT.DEF||p.file){const nm=p.id===CT.DEF?"cartridges.html":p.file,bs=[];if(CT.coreHref)bs.push(CT.coreHref);if(/^https?:$/.test(location.protocol))bs.push(new URL("cartridges.html",location.href).href);bs.push(CT.HOME);for(const b of bs){const u=nm==="cartridges.html"&&b.slice(-15)==="cartridges.html"?b:new URL(nm,b).href;if(tries.indexOf(u)<0)tries.push(u)}}
+  else if(/^https?:\/\//i.test(p.from||""))tries.push(p.from);
+  for(const u of tries){try{const t=await CT.getText(u);if(/class=["']?cartsrc/.test(t))return t}catch(e){}}return null},
+ canGet(p){return p.id===CT.DEF||!!p.file||/^https?:\/\//i.test(p.from||"")},
+ fileOf(p){return p.id===CT.DEF?"cartridges.html":p.file||(CT.slug(p.name)||"pack")+".html"},
  /* turn a store off or on; it will not turn off while a game from it is installed */
  async toggle(id){const p=CT.packs.find(q=>q.id===id);if(!p||id===CT.DEF)return"";
   if(!p.off){const used=p.ids.filter(x=>CT.isIn(x)).map(x=>{const g=CT.meta.find(m=>m.id===x);return g?g.name:x});
@@ -10186,9 +10196,9 @@ defApp("cartridges",{name:"Cartridges",icon:"cart",cat:"Games",w:940,h:660,singl
     (CT.defState==="ok"||CT.packs.some(p=>p.id===CT.DEF)?'':'<div class="ctbox"><b>The default games</b><div class="dim" style="font-size:13px;margin:4px 0">'+'The default games could not be reached. Check your internet connection and try again, or load cartridges.html from a file below.'+'</div><button class="btn sm" data-a="defcheck">Check again</button></div>')+'<div class="ctbox"><b>Load a pack</b><div class="row" style="gap:8px;flex-wrap:wrap;margin:8px 0"><button class="btn pri" data-a="packfile">From a file…</button></div><div class="row" style="gap:6px;flex-wrap:wrap"><input class="t grow" id="ctpu" placeholder="Or a web address, like https://example.com/cartridges.html" style="min-width:180px"><button class="btn" data-a="packurl">Load</button></div>'+(msg?'<div class="dim" style="margin-top:6px">'+esc(msg)+'</div>':"")+'<div class="dim" style="font-size:12px;margin-top:6px">A pack from a web address only loads if that website allows other pages to read it. If it does not, save the file and load it from a file.</div></div>';
     if(CT.packs.length){s+='<h4 style="margin-top:14px">Your stores</h4>'+(msg2?'<div class="ctwarn">'+esc(msg2)+'</div>':"")+CT.packs.map(p=>{const pr=p.file&&CT.probs[p.file];
       return'<div class="ctbox row" style="gap:10px;flex-wrap:wrap;align-items:center"><div class="grow" style="min-width:150px"><b>'+esc(p.name)+'</b>'+(p.off?' <span class="cttag">Off</span>':'')+'<div class="dim" style="font-size:12px">'+p.n+' cartridge'+(p.n===1?"":"s")+' · '+kb(p.size)+(p.from&&!p.listed&&p.id!==CT.DEF?' · from '+esc(p.from):"")+(p.listed?' · '+esc(p.file):"")+'</div>'+(pr?'<div class="dim" style="font-size:12px">'+(pr==="missing"?esc(p.file)+" was not found next to cartridges.html.":"Could not reach it just now. Showing the saved copy.")+'</div>':"")+'</div>'+
-       (p.id===CT.DEF?'<span class="cttag ac">Default</span>':'<button class="btn sm" data-a="toggle" data-k="'+esc(p.id)+'">'+(p.off?"Turn on":"Turn off")+'</button>'+(p.listed?"":'<button class="btn sm" data-a="rmpack" data-k="'+esc(p.id)+'">'+(confirm==="p"+p.id?"Sure? Tap again":"Remove pack")+'</button>'))+'</div>'}).join("")+
+       (CT.canGet(p)?'<button class="btn sm" data-a="dlpack" data-k="'+esc(p.id)+'" title="Save this store\'s .html file">Download</button>':'')+(p.id===CT.DEF?'<span class="cttag ac">Default</span>':'<button class="btn sm" data-a="toggle" data-k="'+esc(p.id)+'">'+(p.off?"Turn on":"Turn off")+'</button>'+(p.listed?"":'<button class="btn sm" data-a="rmpack" data-k="'+esc(p.id)+'">'+(confirm==="p"+p.id?"Sure? Tap again":"Remove pack")+'</button>'))+'</div>'}).join("")+
        Object.keys(CT.probs).filter(f=>!CT.packs.some(p=>p.file===f)).map(f=>'<div class="ctbox dim" style="font-size:13px">'+esc(f)+(CT.probs[f]==="missing"?" is listed by cartridges.html but was not found.":" could not be loaded.")+'</div>').join("")+
-       '<div class="row" style="gap:8px;flex-wrap:wrap;align-items:center;margin-top:8px"><button class="btn sm" data-a="defcheck">'+(CT.syncing?"Checking…":"Check for updates")+'</button></div><div class="dim" style="font-size:12px;margin-top:6px">Turning a store off hides its games. It will not turn off while one of its games is installed. Removing a manual pack removes its games from your shelf, and your progress is kept so loading it again brings the games back as you left them.</div>';
+       '<div class="row" style="gap:8px;flex-wrap:wrap;align-items:center;margin-top:8px"><button class="btn sm" data-a="defcheck">'+(CT.syncing?"Checking…":"Check for updates")+'</button>'+(CT.packs.filter(CT.canGet).length>1?'<button class="btn sm" data-a="dlall">Download all stores (ZIP)</button>':'')+'</div><div class="dim" style="font-size:12px;margin-top:6px">Download saves the store\'s original file so you can keep it or put it on a USB stick. It needs an internet connection. Turning a store off hides its games. It will not turn off while one of its games is installed. Removing a manual pack removes its games from your shelf, and your progress is kept so loading it again brings the games back as you left them.</div>';
      const used=(localStorage.getItem(CT.KEY)||"").length;s+='<div class="ctbox" style="margin-top:10px"><b>Saved progress</b><div class="dim" style="font-size:13px">Using '+kb(used)+' of your browser\'s saving space (about 5 MB is shared by the whole OS).</div>'+(used>3000000?'<div class="ctwarn">This is getting full. Use "Erase save" on games you no longer play.</div>':"")+'</div>'}}
    else{s+='<h4>Add by link</h4><div class="dim" style="margin-bottom:8px">Add a game from the web. It must be a page that allows itself to be shown inside other pages, and it needs an internet connection.</div><div class="ctbox"><div class="dim" style="font-size:12px">Name</div><input class="t" id="ctn" placeholder="My game" style="width:100%"><div class="dim" style="font-size:12px;margin-top:6px">Address</div><input class="t" id="ctu" placeholder="https://example.com/game.html" style="width:100%"><p><button class="btn pri" data-a="addurl">Add it to My cartridges</button></p></div>'+
     '<details><summary class="ac" style="cursor:pointer">Making a game for Cartridges</summary><div class="ctbox" style="font-size:13px"><p><b>The easy way:</b> make the game a single .html file that uses <code>localStorage</code> as normal, and put it in a game pack. Its <code>localStorage</code> is kept for you automatically and goes into Backup.</p><p><b>A game on its own website:</b> a site cannot use another site\'s storage, so ask Cartridges to keep your save with messages:</p><pre>parent.postMessage({tvc:"set",k:"save",v:JSON.stringify(state)},"*");\nparent.postMessage({tvc:"get",k:"save",n:1},"*");\naddEventListener("message",e=>{ if(e.data&&e.data.tvc==="val"&&e.data.k==="save") load(e.data.v) });</pre><p>The page must allow framing (no <code>X-Frame-Options: DENY</code>).</p></div></details>';
@@ -10221,6 +10231,9 @@ defApp("cartridges",{name:"Cartridges",icon:"cart",cat:"Games",w:940,h:660,singl
    else if(a==="erase"){if(confirm==="e"+k){delete CT.S.saves[k];confirm=null;CT.save();toast("Progress erased.");render()}else{arm("e"+k);render()}}
    else if(a==="packfile"){const [f]=await pickDisk(".html,.htm,text/html");if(!f)return;try{const ok=await CT.addPack(await f.text(),f.name);msg=ok?"":"That file has no cartridges in it."}catch(x){msg="Could not read that file."}render()}
    else if(a==="packurl"){let u=(main.querySelector("#ctpu").value||"").trim();if(!u)return;if(!/^[a-z][a-z0-9+.-]*:\/\//i.test(u))u="https://"+u;msg="Loading…";render();try{const r=await fetch(u,{credentials:"omit",referrerPolicy:"no-referrer"});if(!r.ok)throw new Error("HTTP "+r.status);const ok=await CT.addPack(await r.text(),CT.hostOf(u));msg=ok?"":"That page has no cartridges in it."}catch(x){msg="Could not load it. The website may not allow other pages to read it. Save the file and load it from a file instead."}render()}
+   else if(a==="dlpack"){const p=CT.packs.find(q=>q.id===k);if(!p)return;toast("Getting "+CT.fileOf(p)+"…",0);const t=await CT.getRaw(p);if(t==null)toast("Could not get "+CT.fileOf(p)+". Check your internet connection and try again.",1);else{download(CT.fileOf(p),t,"text/html");toast("Saved "+CT.fileOf(p)+".",0)}}
+   else if(a==="dlall"){const ps=CT.packs.filter(CT.canGet);toast("Getting "+ps.length+" stores…",0);const files=[],enc=new TextEncoder(),miss=[];for(const p of ps){const t=await CT.getRaw(p);if(t==null)miss.push(CT.fileOf(p));else files.push({name:CT.fileOf(p),data:enc.encode(t),mt:Date.now()})}
+    if(!files.length)toast("Could not get any stores. Check your internet connection and try again.",1);else{download("cartridges-stores.zip",makeZip(files));toast("Saved "+files.length+" store"+(files.length===1?"":"s")+" in cartridges-stores.zip"+(miss.length?" ("+miss.join(", ")+" could not be reached)":"")+".",0)}}
    else if(a==="defcheck"){msg="";msg2="";const pr=CT.sync(true,refresh);render();await pr;render()}
    else if(a==="rmpack"){if(confirm==="p"+k){confirm=null;await CT.rmPack(k);toast("Pack removed.");render()}else{arm("p"+k);render()}}
    else if(a==="addurl"){const n=main.querySelector("#ctn").value.trim();let u=main.querySelector("#ctu").value.trim();if(u&&!/^[a-z][a-z0-9+.-]*:\/\//i.test(u))u="https://"+u;let ok=false;try{const x=new URL(u);ok=x.protocol==="https:"||x.protocol==="http:"}catch(er){}
