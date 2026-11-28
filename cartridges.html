@@ -14357,6 +14357,15 @@ h1,h2,h3{font-family:"Iowan Old Style",Georgia,serif;font-weight:600;margin:0}
 #modal{position:absolute;inset:0;background:rgba(10,8,4,.72);z-index:10;display:none;align-items:center;justify-content:center;padding:18px}
 #modal.show{display:flex}
 #modal .box{max-width:620px;max-height:88%;overflow:auto}
+.codexcard{background:linear-gradient(180deg,var(--parch) 0%,var(--parch2) 100%);color:var(--ink);border-radius:6px;padding:14px 16px;margin-bottom:12px;box-shadow:0 6px 16px rgba(0,0,0,.3);border-left:5px solid var(--sepia)}
+.codexcard h3{font-size:16px}
+.codexcard .gloss{font-style:italic;color:var(--sepia);font-size:13px;margin:3px 0 8px}
+.codexcard p{margin:0;font-size:14px;line-height:1.55;color:#2a2013}
+.concordcard{background:rgba(201,162,39,.08);border:1px solid rgba(201,162,39,.3);border-radius:6px;padding:12px 14px;margin-bottom:10px}
+.concordcard h4{margin:0 0 4px;font-size:14px;color:var(--gold2)}
+.concordcard p{margin:0;font-size:13px;line-height:1.5;color:var(--parch2)}
+.learnlink{background:none;border:none;color:var(--sepia);font-size:11.5px;font-style:italic;cursor:pointer;padding:0;text-decoration:underline;text-underline-offset:2px}
+.learnlink:hover{color:#3a2a12}
 @media (max-width:480px){.faxiom{font-size:14px}.folio canvas{width:160px;height:160px}}
 </style></head><body><div id="tlhost" tabindex="0">
 
@@ -14365,6 +14374,7 @@ h1,h2,h3{font-family:"Iowan Old Style",Georgia,serif;font-weight:600;margin:0}
  <button class="btn" data-v="desk">Reading Desk</button>
  <button class="btn" data-v="scriptorium">Scriptorium</button>
  <button class="btn" data-v="archive">Archive</button>
+ <button class="btn" data-v="codex">The Codex</button>
  <span style="margin-left:auto;color:var(--mu);font-size:12.5px;align-self:center" id="statline"></span>
 </div>
 
@@ -14410,6 +14420,13 @@ h1,h2,h3{font-family:"Iowan Old Style",Georgia,serif;font-weight:600;margin:0}
  <div id="galleryBody"></div>
  <div id="archivePager" class="pager"></div>
 </div></section>
+
+<section id="codex" class="scr"><div class="wrap">
+ <h2>The Codex</h2>
+ <p class="lsub">What each tradition actually claims, in plain words — and where they agree.</p>
+ <div class="flourish">❦</div>
+ <div id="codexBody"></div>
+</div></section>
 </div>
 
 <div id="modal"><div class="box card" id="modalbox"></div></div>
@@ -14448,6 +14465,13 @@ const TRAD={
   subj:["the above","the below","the mirror","the macrocosm","the microcosm","the emerald seal","the sun within","the hidden sun",
    "the lower waters","the upper waters","the inner temple","the outer temple","the breath that moves between","the seal and its wax","the word and its echo","the flame and its shadow",
    "the lamp and its flame","the key and its lock"],
+  /* True complementary couples, not arbitrary nouns -- "as above, so below"
+     only teaches anything if the two halves of the sentence actually
+     correspond to each other. */
+  pairs:[["the above","the below"],["the macrocosm","the microcosm"],["the sun within","the hidden sun"],
+   ["the inner temple","the outer temple"],["the lower waters","the upper waters"],
+   ["the seal and its wax","the word and its echo"],["the lamp and its flame","the key and its lock"],
+   ["the breath that moves between","the mirror"]],
   qual:["correspondent","threefold","mirrored","concordant","self-same","twinned","woven","answering","doubled","harmonized","inverted yet equal","bound together","paired","echoing"],
   act:["reflects","corresponds to","conceals and reveals","answers to","is written into","mirrors","breathes with","is sealed to","rises and falls with","keeps time with","answers in kind to"],
   img:["the sun","the serpent coiled on itself","the sealed tablet","the twinned pillar",
@@ -14457,7 +14481,11 @@ const TRAD={
   subj:["the base metal","the soul","the vessel","the prima materia","the stone","the work",
    "the sulphur","the salt","the mercury","the dross","the tincture","the seed of gold","the alloy","the residue"],
   qual:["crude","blackened","purified","fixed","volatile","golden","dissolved","congealed","multiplied","tempered","ripened","refined","exalted","reduced"],
-  stage:["calcination","dissolution","separation","conjunction","fermentation","distillation","coagulation","putrefaction","sublimation","multiplication","projection","cohobation"],
+  /* One traditional ordering of the Great Work's twelve operations (schools
+     vary the exact sequence, but all insist the stages run in a real order
+     -- you cannot skip ahead to gold). Templates that reference two stages
+     always pick them in forward order, never backward or random. */
+  stage:["calcination","dissolution","separation","conjunction","putrefaction","coagulation","sublimation","fermentation","distillation","cohobation","multiplication","projection"],
   img:["ash","quicksilver","the white dove","the red king","the sealed furnace",
    "the green lion","the peacock's tail","the phoenix rising from its own ash","the philosopher's egg",
    "the black crow","the unicorn that cannot be caught, only approached"]},
@@ -14476,7 +14504,11 @@ const TRAD={
   subj:["the soul","the many","every form","all things","the fractured world",
    "the intellect","the world-soul","the individual soul","the image in the pool","the shadow on the wall",
    "the falling note","the outer rim"],
-  qual:["dimmer","more divided","further scattered","less whole","fainter","thinner","more divided still","further from the source","nearer the surface","weaker in its turning","quieter","more remote"],
+  /* Ordered mild -> severe: the further a folio's lineage sits from a pure
+     source tradition (tracked by its generation number), the more degraded
+     a qualifier it draws, mirroring Neoplatonism's own claim that things
+     grow fainter the further they emanate from the One. */
+  qual:["fainter","dimmer","thinner","quieter","less whole","more divided","weaker in its turning","nearer the surface","further scattered","more divided still","more remote","further from the source"],
   src:["the One","the source without parts","the first unity","the light before light","the Good beyond being","the first cause","the silence before number","the unmoved origin"],
   img:["a river running from a single spring","light dividing through many lamps","a reflection thinning in still water",
    "a flame passed from candle to candle, dimming each time","rings spreading outward from a stone dropped in water","an echo answering an echo",
@@ -14485,10 +14517,13 @@ const TRAD={
   subj:["the outcome","another's judgment","your reputation","fortune","the verdict of others","what is taken from you","the hour of your death",
    "the opinions of strangers","the weather","the body's decline","another's anger","the length of your life","praise and blame alike",
    "the insult not yet given","the delay","the inconvenience"],
-  qual:["sufficient","enough","yours to govern","no concern of yours","beneath your notice",
+  qual:["sufficient as it is","enough","not yours to govern","no concern of yours","beneath your notice",
    "indifferent","neither good nor bad","a matter of discipline, not control","to be met, not managed","not worth a disturbed hour",
    "a test, not a punishment","over before it began"],
-  virt:["courage","justice","temperance","clear judgment","an undisturbed mind","patience","a steady hand","indifference to applause","the discipline to say enough","equanimity"]},
+  /* "Clear judgment" was already a paraphrase of the fourth cardinal virtue;
+     naming it outright (courage, justice, temperance, practical wisdom)
+     keeps the canonical set recognizable alongside the looser poetic ones. */
+  virt:["courage","justice","temperance","practical wisdom","clear judgment","an undisturbed mind","patience","a steady hand","indifference to applause","the discipline to say enough","equanimity"]},
  geometric:{name:"Sacred Geometry",
   subj:["the circle","the seal","the temple","the body","the orbit of the world","the proportion of the self",
    "the spiral shell","the honeycomb cell","the branching vein of a leaf","the human hand","the orbit of a falling stone","the interval between two notes",
@@ -14498,47 +14533,100 @@ const TRAD={
    "a shell that grows without changing its shape","the spacing of branches on a single stem","the interval a string divides in half",
    "a tide that keeps its schedule without a clock"]},
  taoist:{name:"Taoist",
+  /* subj[i] and opp[i] are a TRUE matched opposition (soft/hard, valley/
+     mountain, yielding reed/rigid oak...) -- the generator picks them by
+     the same index, never independently, so "the soft overcomes the hard"
+     is always a real Taoist opposition, not two unrelated nouns. */
   subj:["the soft","the low place","the uncarved block","the valley","the empty vessel","the yielding reed",
    "the still pond","the unforced thing","the uncut log","the bent reed","the quiet room","the narrow gate",
    "the breath before speaking","the unlit lamp"],
   opp:["the hard","the high place","the sharpened blade","the mountain","the loaded cart","the rigid oak",
-   "the straining ox","the shout","the forced march","the clenched fist","the argument won by volume",
-   "the loud argument","the forced smile"],
+   "the churned flood","the forced march","the felled trunk","the clenched fist","the shouting hall",
+   "the battering ram","the interrupting voice","the torch burned needlessly all night"],
   img:["water","an empty bowl","a door that is only useful for its emptiness",
    "a river that wears down stone by doing nothing but flow","a sapling that bends in the storm and stands after","the hinge that is still while the door does all the moving",
    "the unlit lamp that still knows how to burn when it is time"]}
 };
 const TKEYS=Object.keys(TRAD);
 const TRAD_INK={hermetic:"#7a5a16",alchemical:"#8a2d17",gnostic:"#4a3d6b",neoplatonist:"#2e5a73",stoic:"#44433d",geometric:"#6b4a1a",taoist:"#2f5c3d"};
+const NEO_QUAL_LEN=TRAD.neoplatonist.qual.length;
+
+/* ============================== THE CODEX ============================== */
+/* Short, plain-language, hand-written primers -- the one place in this game
+   that is NOT procedurally generated on purpose. The wisdom engine can only
+   teach something if a player has somewhere to learn what it's referencing. */
+const CODEX_TEXT={
+ hermetic:{gloss:"“As above, so below.”",
+  body:"Hermeticism holds that the universe is one coherent pattern repeating at every scale — what happens among the stars rhymes with what happens in a single heartbeat, and a single mind echoes the structure of the whole cosmos. Nothing in it is isolated: everything corresponds to something else, and understanding one thing well enough means recognizing the same shape wherever else it appears."},
+ alchemical:{gloss:"Transformation through ordered stages.",
+  body:"Alchemy is a theory of change: that anything — metal, soul, or circumstance — can be remade into something higher, but only by passing through a real sequence of breakdown, purification, and recombination, never by skipping straight to the gold. The crude material isn't discarded on the way to the refined one; it is the only raw material the refined one could ever have been made from."},
+ gnostic:{gloss:"The world as a forgetting; waking as the whole of the work.",
+  body:"Gnosticism treats the ordinary world as a kind of amnesia — a convincing, well-built cell that most people mistake for the whole of reality, having forgotten there was ever anything else. The way out isn't force or escape, but a specific private recognition: remembering a spark of something you already were, before you forgot."},
+ neoplatonist:{gloss:"Everything flows from, and longs to return to, a single source.",
+  body:"Neoplatonism pictures all of existence flowing outward from one perfectly simple source (“the One”), the way light fades the farther it travels from a candle. Everything that exists is a dimmer, more divided version of that source — and the whole of ethics and contemplation, in this view, is the long, patient work of turning back toward it."},
+ stoic:{gloss:"The dichotomy of control.",
+  body:"Stoicism starts from one blunt distinction: some things are up to you — your judgments, your choices, your effort — and everything else genuinely is not: other people's opinions, your reputation, the outcome, the weather, your own mortality. Peace of mind comes from putting your attention only on the first category, and training yourself out of the habit of fighting the second."},
+ geometric:{gloss:"The same proportions recur at every scale of nature.",
+  body:"Sacred geometry is the observation that a small set of ratios and shapes — the golden ratio (about 1.618), simple whole-number proportions, spirals that grow without changing shape — show up again and again across wildly different things: shells, galaxies, flowers, the human body. The claim isn't mystical bookkeeping so much as a conviction that beauty and structure are the same fact seen from different distances."},
+ taoist:{gloss:"Wu wei — accomplishing by not forcing.",
+  body:"Taoism's central move is to notice that soft, yielding things regularly outlast hard, rigid ones — water wears down stone, a bending reed survives the storm that snaps the oak. Wu wei, usually translated “non-action,” doesn't mean doing nothing; it means acting with the grain of a situation instead of against it, the way a river finds the path around rock rather than forcing its way through."}
+};
+const CONCORD=[
+ {theme:"An undivided source that everything else is a version of",
+  notes:"Hermeticism's “sun within,” Neoplatonism's “the One,” Gnosticism's “spark,” Taoism's “uncarved block,” and Alchemy's “prima materia” are, at bottom, the same move made by five different traditions: naming one simple origin that everything more complicated is secretly still made of."},
+ {theme:"Right action comes from alignment, not force",
+  notes:"Taoist wu wei, the Stoic habit of only acting on what is actually yours to control, and the Hermetic idea of living in correspondence with the larger pattern are three names for the same discipline: stop straining against what a situation already is, and work with its real shape instead."},
+ {theme:"Transformation requires passing through every stage, not skipping to the end",
+  notes:"Alchemy's ordered Work and Neoplatonism's long road back to the One both reject shortcuts — the crude, early, or distant state isn't a mistake to erase, it's the only path the finished state was ever going to be reached through."}
+];
+
 function pick(a,rng){return a[Math.floor(rng()*a.length)]}
 function pickTwo(a,rng){const x=pick(a,rng);if(a.length<2)return[x,x];let y=pick(a,rng);while(y===x)y=pick(a,rng);return[x,y]}
+/* Picks a TRUE matched pair from an array of [a,b] couples (e.g. Hermetic
+   correspondences, randomizing which side comes first so phrasing varies). */
+function pickPair(pairs,rng){const p=pick(pairs,rng);return rng()<0.5?[p[0],p[1]]:[p[1],p[0]]}
+/* Picks subj[i]/opp[i] at the SAME index, so an opposition is always real
+   (soft vs hard), never two unrelated nouns. */
+function matchedOpp(subjArr,oppArr,rng){const i=Math.floor(rng()*Math.min(subjArr.length,oppArr.length));return[subjArr[i],oppArr[i]]}
+/* As a lineage's generation number rises, the usable index range shifts
+   forward and narrows -- used to make degradation (Neoplatonism) and
+   procedural advancement (Alchemy) compound with each bred generation
+   instead of resetting to a fully random pick every time. */
+function biasedIndex(len,gen,rng){const minIdx=Math.min(gen,Math.max(len-1,0));const span=Math.max(len-minIdx,1);return minIdx+Math.floor(rng()*span)}
+function stagePair(arr,gen,rng){const i=biasedIndex(Math.max(arr.length-1,1),gen,rng);const span=Math.max(arr.length-i-1,1);const j=i+1+Math.floor(rng()*span);return[arr[i],arr[Math.min(j,arr.length-1)]]}
+function degradedQual(rng,gen){return TRAD.neoplatonist.qual[biasedIndex(NEO_QUAL_LEN,gen,rng)]}
 function mulberry32(seed){return function(){seed|=0;seed=seed+0x6D2B79F5|0;let t=Math.imul(seed^seed>>>15,1|seed);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296}}
 function cap(s){return s.charAt(0).toUpperCase()+s.slice(1)}
 function art(s){return /^[aeiou]/i.test(s)?"an":"a"}
+/* Every subj vocab entry already carries its own "the" (e.g. "the vessel"),
+   so a template that puts an adjective or article directly in front of a
+   subj pick must strip that leading article first, or it doubles up
+   ("a ripened the vessel"). */
+function noArt(s){return s.replace(/^the\s+/i,"")}
 
 /* Each tradition gets 4 distinct sentence-shapes; an axiom shuffles them and
    keeps only the first 2, so output length stays consistent while the actual
    shapes in circulation keep growing as the vocab/grammar set deepens. */
 const TEMPLATES={
  hermetic:[
-  (V,rng)=>{const[s1,s2]=pickTwo(V.subj,rng),[q1,q2]=pickTwo(V.qual,rng);return cap(s1)+" "+pick(V.act,rng)+" "+s2+"; what is "+q1+" in one is "+q2+" in the other."},
+  (V,rng)=>{const[s1,s2]=pickPair(V.pairs,rng),[q1,q2]=pickTwo(V.qual,rng);return cap(s1)+" "+pick(V.act,rng)+" "+s2+"; what is "+q1+" in one is "+q2+" in the other."},
   (V,rng)=>{const[i1,i2]=pickTwo(V.img,rng);return"Nothing stands alone: "+i1+" "+pick(V.act,rng)+" "+i2+", and the "+pick(V.qual,rng)+" pattern repeats at every scale."},
-  (V,rng)=>"As "+pick(V.subj,rng)+" moves, so "+pick(V.subj,rng)+" answers — the "+pick(V.qual,rng)+" law admits no exception.",
+  (V,rng)=>{const[s1,s2]=pickPair(V.pairs,rng);return"As "+s1+" moves, so "+s2+" answers — the "+pick(V.qual,rng)+" law admits no exception."},
   (V,rng)=>{const[i1,i2]=pickTwo(V.img,rng);return cap(i1)+" "+pick(V.act,rng)+" "+i2+" without needing to be told to."}],
  alchemical:[
-  (V,rng)=>{const[s1,s2]=pickTwo(V.stage,rng);return"Through "+s1+" "+pick(V.subj,rng)+" is made "+pick(V.qual,rng)+", and through "+s2+" it is raised toward "+pick(V.img,rng)+"."},
-  (V,rng)=>"Nothing is purified without first being broken down — "+pick(V.subj,rng)+" must pass through "+pick(V.stage,rng)+" before it can become "+pick(V.qual,rng)+".",
-  (V,rng)=>"The "+pick(V.qual,rng)+" "+pick(V.subj,rng)+" was never the end of the work, only "+pick(V.stage,rng)+" wearing a different name.",
-  (V,rng)=>{const q=pick(V.qual,rng);return"Call it "+art(q)+" "+q+" "+pick(V.subj,rng)+" if you like — the furnace does not care what you name the work."}],
+  (V,rng,gen)=>{const[s1,s2]=stagePair(V.stage,gen,rng);return"Through "+s1+" "+pick(V.subj,rng)+" is made "+pick(V.qual,rng)+", and through "+s2+" it is raised toward "+pick(V.img,rng)+"."},
+  (V,rng,gen)=>{const[s1,s2]=stagePair(V.stage,gen,rng);return"Nothing is purified without first being broken down — "+pick(V.subj,rng)+" must pass through "+s1+" before it can advance to "+s2+"."},
+  (V,rng,gen)=>{const s=V.stage[biasedIndex(V.stage.length,gen,rng)];return"The "+pick(V.qual,rng)+" "+noArt(pick(V.subj,rng))+" was never the end of the work, only "+s+" wearing a different name."},
+  (V,rng)=>{const q=pick(V.qual,rng);return"Call "+pick(V.subj,rng)+" "+q+" if you like — the furnace does not care what you name the work."}],
  gnostic:[
   (V,rng)=>{const q=pick(V.qual,rng);return cap(pick(V.subj,rng))+" is "+art(q)+" "+q+" copy, fashioned by "+pick(V.img,rng)+"."},
   (V,rng)=>"Only "+pick(V.gnosis,rng)+" sees past the veil; the rest mistake "+pick(V.subj,rng)+" for the whole of what is real.",
   (V,rng)=>"To mistake "+pick(V.subj,rng)+" for home is the oldest error; "+pick(V.gnosis,rng)+" is the only way out that was ever offered.",
   (V,rng)=>"Even "+pick(V.subj,rng)+" was not built to last forever; "+pick(V.gnosis,rng)+" outlives every cage."],
  neoplatonist:[
-  (V,rng)=>"From "+pick(V.src,rng)+" all things emanate, growing "+pick(V.qual,rng)+" the further they fall, like "+pick(V.img,rng)+".",
-  (V,rng)=>cap(pick(V.subj,rng))+" is the long road back toward "+pick(V.src,rng)+" — "+pick(V.qual,rng)+", but never severed from it.",
-  (V,rng)=>"Even "+pick(V.subj,rng)+", "+pick(V.qual,rng)+" as it has become, still points back toward "+pick(V.src,rng)+".",
+  (V,rng,gen)=>"From "+pick(V.src,rng)+" all things emanate, growing "+degradedQual(rng,gen)+" the further they fall, like "+pick(V.img,rng)+".",
+  (V,rng,gen)=>cap(pick(V.subj,rng))+" is the long road back toward "+pick(V.src,rng)+" — "+degradedQual(rng,gen)+", but never severed from it.",
+  (V,rng,gen)=>"Even "+pick(V.subj,rng)+", "+degradedQual(rng,gen)+" as it has become, still points back toward "+pick(V.src,rng)+".",
   (V,rng)=>{const[s1,s2]=pickTwo(V.subj,rng);return"Distance from "+pick(V.src,rng)+" is measured in degree, not in kind — "+s1+" never stopped belonging to it, any more than "+s2+" did."}],
  stoic:[
   (V,rng)=>"You do not govern "+pick(V.subj,rng)+" — only your judgment of it.",
@@ -14551,16 +14639,16 @@ const TEMPLATES={
   (V,rng)=>"Measure "+pick(V.subj,rng)+" closely enough and the "+pick(V.ratio,rng)+" proportion appears again, as it always does.",
   (V,rng)=>"Nothing about "+pick(V.subj,rng)+" is arbitrary — pull any thread and the "+pick(V.ratio,rng)+" proportion is still there, waiting to be found."],
  taoist:[
-  (V,rng)=>cap(pick(V.subj,rng))+" overcomes "+pick(V.opp,rng)+" in the end, though it never looks that way at the start.",
+  (V,rng)=>{const[s,o]=matchedOpp(V.subj,V.opp,rng);return cap(s)+" overcomes "+o+" in the end, though it never looks that way at the start."},
   (V,rng)=>"Be like "+pick(V.img,rng)+": useful precisely for what it does not hold, asking nothing of "+pick(V.opp,rng)+".",
-  (V,rng)=>cap(pick(V.opp,rng))+" believes itself stronger than "+pick(V.subj,rng)+", right up until it isn't.",
+  (V,rng)=>{const[s,o]=matchedOpp(V.subj,V.opp,rng);return cap(o)+" believes itself stronger than "+s+", right up until it isn't."},
   (V,rng)=>cap(pick(V.img,rng))+" never argues its case; it simply keeps being what it is, and "+pick(V.opp,rng)+" eventually tires."]
 };
 function shuffled(arr,rng){const a=arr.slice();for(let i=a.length-1;i>0;i--){const j=Math.floor(rng()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a}
-function axiomLine(tr,rng,vocabPool){
+function axiomLine(tr,rng,vocabPool,gen){
  const V=vocabPool;
  const tpls=shuffled(TEMPLATES[tr]||TEMPLATES.hermetic,rng).slice(0,2);
- return tpls.map(f=>f(V,rng)).join(" ");
+ return tpls.map(f=>f(V,rng,gen||0)).join(" ");
 }
 function originLine(tr,rng){
  const O={
@@ -14606,10 +14694,10 @@ function poolFor(tr,extra){
  if(extra){for(const k in extra){if(V[k])V[k]=V[k].concat(extra[k]);else V[k]=extra[k].slice()}}
  return V;
 }
-function makeWisdom(tr,rng,extraVocab){
+function makeWisdom(tr,rng,extraVocab,gen){
  const V=poolFor(tr,extraVocab);
  return{trad:tr,tradName:TRAD[tr].name,title:titleLine(tr,rng),origin:originLine(tr,rng),
-  axiom:axiomLine(tr,rng,V)}
+  axiom:axiomLine(tr,rng,V,gen)}
 }
 /* Lineage is a {tradKey: weight} map summing to ~1 -- an original folio is
    100% one tradition, a bred one is a weighted blend of its two parents'
@@ -14631,7 +14719,7 @@ function breedLineage(a,b,rng){
  for(const k in out)out[k]=out[k]/total;
  return out;
 }
-function makeWisdomFromLineage(lineage,rng){
+function makeWisdomFromLineage(lineage,rng,gen){
  const dominant=weightedPick(lineage,rng);
  const extra={};
  for(const k in lineage){
@@ -14639,7 +14727,7 @@ function makeWisdomFromLineage(lineage,rng){
   const ob=TRAD[k];
   for(const key in ob)if(TRAD[dominant][key])extra[key]=(extra[key]||[]).concat(ob[key]);
  }
- return makeWisdom(dominant,rng,Object.keys(extra).length?extra:null);
+ return makeWisdom(dominant,rng,Object.keys(extra).length?extra:null,gen);
 }
 function formatLineage(lineage){
  if(!lineage)return null;
@@ -14793,15 +14881,15 @@ function newFolio(seed,parents){
  if(parents){
   genome=breedGenome(parents[0].genome,parents[1].genome,rng);
   lineage=breedLineage(parents[0].lineage||{[parents[0].wisdom.trad]:1},parents[1].lineage||{[parents[1].wisdom.trad]:1},rng);
-  wisdom=makeWisdomFromLineage(lineage,rng);
   gen=Math.max(parents[0].gen||0,parents[1].gen||0)+1;
+  wisdom=makeWisdomFromLineage(lineage,rng,gen);
   parentTitles=[{t:parents[0].wisdom.title,tn:parents[0].wisdom.tradName},{t:parents[1].wisdom.title,tn:parents[1].wisdom.tradName}];
  }else{
   const tr=pick(TKEYS,rng);
   genome=randGenome(rng);
   lineage={[tr]:1};
-  wisdom=makeWisdomFromLineage(lineage,rng);
   gen=0;
+  wisdom=makeWisdomFromLineage(lineage,rng,gen);
  }
  return{id:nextId(),genome,wisdom,lineage,gen,liberated:!!parents,fav:false,bornAt:Date.now(),
   parents:parents?[parents[0].id,parents[1].id]:null,parentTitles};
@@ -14892,6 +14980,12 @@ function folioNode(folio,faded){
  const tag=document.createElement("div");
  if(!faded){tag.className="tag cc0";tag.textContent="Public Domain · CC0";wrap.appendChild(tag)}
  else{tag.className="tag";tag.textContent=folio.wisdom.tradName+" · not yet archived";wrap.appendChild(tag)}
+ if(!faded){
+  const learn=document.createElement("button");learn.className="learnlink";learn.style.display="block";learn.style.margin="6px auto 0";
+  learn.dataset.a="codexjump";learn.dataset.tr=folio.wisdom.trad;
+  learn.textContent="What does "+folio.wisdom.tradName+" actually claim? →";
+  wrap.appendChild(learn);
+ }
  if(!faded&&folio.gen){
   const genTag=document.createElement("div");genTag.className="tag";genTag.style.marginTop="4px";genTag.textContent="Generation "+folio.gen;wrap.appendChild(genTag);
   const lin=formatLineage(folio.lineage);
@@ -15105,6 +15199,31 @@ function renderAll(){
  else if(VIEW==="desk")renderDesk();
  else if(VIEW==="scriptorium")renderScriptorium();
  else if(VIEW==="archive")renderGallery();
+ else if(VIEW==="codex")renderCodex();
+}
+let CODEX_BUILT=false;
+function renderCodex(){
+ if(CODEX_BUILT)return;
+ CODEX_BUILT=true;
+ const body=$("codexBody");body.innerHTML="";
+ for(const tr of TKEYS){
+  const c=CODEX_TEXT[tr];
+  const card=document.createElement("div");card.className="codexcard";card.id="cdx_"+tr;
+  card.style.borderLeftColor=TRAD_INK[tr]||"var(--sepia)";
+  const h=document.createElement("h3");h.textContent=TRAD[tr].name;card.appendChild(h);
+  const g=document.createElement("div");g.className="gloss";g.textContent=c.gloss;card.appendChild(g);
+  const p=document.createElement("p");p.textContent=c.body;card.appendChild(p);
+  body.appendChild(card);
+ }
+ const concHead=document.createElement("h3");concHead.style.marginTop="18px";concHead.style.color="var(--gold2)";
+ concHead.textContent="Where the Traditions Agree";
+ body.appendChild(concHead);
+ for(const c of CONCORD){
+  const card=document.createElement("div");card.className="concordcard";
+  const h=document.createElement("h4");h.textContent=c.theme;card.appendChild(h);
+  const p=document.createElement("p");p.textContent=c.notes;card.appendChild(p);
+  body.appendChild(card);
+ }
 }
 
 document.body.addEventListener("click",e=>{
@@ -15113,6 +15232,10 @@ document.body.addEventListener("click",e=>{
  const b=e.target.closest("[data-a]");
  if(!b)return;
  const a=b.dataset.a,k=b.dataset.k;
+ if(a==="codexjump"){
+  const tr=b.dataset.tr;setView("codex");
+  requestAnimationFrame(()=>{const el=$("cdx_"+tr);if(el)el.scrollIntoView({behavior:"smooth",block:"start"})});
+  return}
  if(a==="reshelf"){sfxPaper();G.shelf=[];ensureShelf();gsave();renderStacks();return}
  if(a==="pickslot"){openPicker(k);return}
  if(a==="exportshown"){
