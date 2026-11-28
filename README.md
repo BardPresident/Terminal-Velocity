@@ -660,6 +660,9 @@ Camera
 Music, Books, Comics, Audiobooks, School, Archive
   These read an archive (section 6) and appear only when their folders
   exist.
+  In Media Player, Music, Audiobooks and School, the Space bar plays and
+  pauses, wherever the keyboard focus is (after clicking a button or a
+  slider, or the title bar). Typing in a text box still types a space.
   - Music: opens /archive/Atheden. Pick an album and play it as a
     playlist (full track names, shuffle, repeat, visualiser). Remembers
     the album, the track, the exact second and the volume, and reopens
