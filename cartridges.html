@@ -82,17 +82,42 @@
  4. Guideline, not a hard cap: keep each pack to roughly 20 games / 3MB — the
     OS downloads a whole pack before it can show anything in it, and
     Wendell's Chromebook and phone both feel a slow one.
- 5. Per-game saves live in localStorage shared across the whole OS (~5MB
+ 5. Build every game so it still plays fine docked to half a screen, not
+    just full-width — Terminal Velocity runs snapped side-by-side with other
+    apps, same as any normal OS, and that is an ordinary way games get
+    played here, not an edge case. Two specific failure patterns have
+    actually hit shipped games in this file, both worth checking for
+    directly rather than trusting it'll be fine: (a) a big lounge/title
+    headline sized in fixed px with no give — it can overflow its column
+    and run off the edge of the screen once the window (or a flex sibling
+    like a portrait canvas next to it) leaves it less room than a full-width
+    desktop view would; clamp() against the viewport width, plus
+    overflow-wrap:anywhere as a backstop so it breaks onto a second line
+    rather than clipping, has fixed every case of this so far. (b) a fixed-
+    position overlay (an instruction panel, a hint bubble) pinned to a
+    corner of the play area can end up sitting directly on top of a
+    clickable target that happens to be procedurally placed in that same
+    corner, making the real target unreachable. Either don't pin instructive
+    overlays over the actual play surface in the first place (an in-flow
+    docked panel below/beside the canvas, the way the repair-bench games do
+    it, can't ever cover anything), or give any that must float a way to be
+    tucked out of the way. A cheap way to check either of these without
+    spending much on it: load the game alone at a couple of narrow widths
+    (roughly 650px and 950px covers the range a half-screen dock actually
+    lands in on common monitors) and glance at both the lounge screen and
+    one real "doing something" gameplay state — no need to script full
+    playthroughs or test every possible width in between.
+ 6. Per-game saves live in localStorage shared across the whole OS (~5MB
     total, ~600KB hard cap per game) — keep a game's save to a few KB.
- 6. Test the new pack file served over plain HTTP before it goes anywhere
+ 7. Test the new pack file served over plain HTTP before it goes anywhere
     near republicka.life — e.g. `python3 -m http.server` in the folder that
     holds it and open it that way, not as a bare file:// page.
- 7. Packs are cached offline: THIS file (the "core" pack) is re-checked
+ 8. Packs are cached offline: THIS file (the "core" pack) is re-checked
     every time Cartridges opens, but any extra pack — named or numbered —
     is re-checked at most once a day, or when a player presses "Check for
     updates". So a same-day edit to an already-installed extra pack's games
     may not show up for a day for people who already have the OS.
- 8. Retiring a pack: just delete the file. A player with none of its games
+ 9. Retiring a pack: just delete the file. A player with none of its games
     installed loses that store entry on their next check; a player who
     still has one of its games installed keeps seeing the pack until they
     uninstall it. Never reuse that pack's number for a different pack.
@@ -1610,12 +1635,20 @@ function helix(c,L,o){
     const x=L.x+i*bw,y=st?yB(i):yT(i);if(vis){on?c.lineTo(x,y):c.moveTo(x,y);on=true}else on=false}
    c.lineWidth=Math.max(1.6,L.h*(pass<0?.042:.085));c.strokeStyle=pass<0?"rgba(52,116,98,.45)":"rgba(185,245,220,.95)";c.lineCap="round";c.stroke()}
  }
- /* the letters */
+ /* the letters -- drawn on two FIXED rows, not the twisting strand itself.
+    The rungs and backbone above keep their real twist (that's the nice
+    part), but a letter following the twist means consecutive letters
+    along the sequence alternate height every time the strand crosses --
+    readable as a picture, unreadable as text, since your eye has to
+    zigzag up and down to read the sequence in order. Two flat rows (the
+    sample's own letter always on top, its pair always on the bottom) let
+    you actually read left to right while analyzing. */
  if(lvl===2){c.textAlign="center";c.textBaseline="middle";const fs=Math.min(bw*1.05,L.h*.2);
   c.font="bold "+fs.toFixed(1)+"px ui-monospace,Menlo,Consolas,monospace";
-  for(let i=i0;i<i1;i++){if(!covered(i))continue;const x=L.x+(i+.5)*bw,t=yT(i),b=yB(i),b1=seq[i],b2=PAIR[b1]||".",far=dep(i)<0;
+  const rowT=cy-A*.62,rowB=cy+A*.62;
+  for(let i=i0;i<i1;i++){if(!covered(i))continue;const x=L.x+(i+.5)*bw,b1=seq[i],b2=PAIR[b1]||".",far=dep(i)<0;
    c.globalAlpha=far?.5:1;
-   c.fillStyle="#06110e";c.fillText(b1,x,t+(b>t?fs*.62:-fs*.62));c.fillText(b2,x,b+(b>t?-fs*.62:fs*.62));
+   c.fillStyle="#06110e";c.fillText(b1,x,rowT);c.fillText(b2,x,rowB);
    c.globalAlpha=1}}
  /* ragged ends where a fragment stops */
  if(o.spans)for(const f of o.spans){for(const [i,dir] of [[f.a,-1],[f.b-1,1]]){
@@ -3640,7 +3673,13 @@ section#lounge .wrap{max-width:1180px}
 .nflag canvas{width:100%;display:block}
 .nflag.empty{aspect-ratio:2/1;color:var(--mu);font-size:13px;font-style:italic;text-align:center;padding:14px}
 .lhead>div{flex:1;min-width:260px}
-.ltitle{font:900 56px/1 var(--sans);text-transform:uppercase;color:var(--gold2);margin:0;letter-spacing:.07em;text-shadow:0 2px 0 #000,0 0 30px rgba(216,165,61,.35),3px 3px 0 var(--thread)}
+.ltitle{font:900 clamp(26px,7vw,56px)/1 var(--sans);text-transform:uppercase;color:var(--gold2);margin:0;letter-spacing:.07em;text-shadow:0 2px 0 #000,0 0 30px rgba(216,165,61,.35),3px 3px 0 var(--thread);overflow-wrap:anywhere}
+/* "FLAGGER" overflowed its column on a docked/half-screen width: the single
+   fixed 56px size had no give, and the flex column next to the flag preview
+   can get squeezed narrower than the window width alone would suggest.
+   clamp() sizes it down smoothly, and overflow-wrap is the backstop -- if it
+   still doesn't fit, it breaks onto a second line instead of running off the
+   edge of the screen. */
 .lsub{font-style:italic;color:var(--mu);margin:10px 0 0;font-size:16px;max-width:520px}
 .ndecl{font-style:italic;color:var(--tx);margin:8px 0 0;font-size:15px;max-width:480px}
 .status{padding:16px 20px;margin:0 0 20px;font-style:italic;font-size:16px}
@@ -3698,6 +3737,7 @@ h2.sh{font:700 20px var(--sans);text-transform:uppercase;letter-spacing:.05em;co
 .slot input[type=color]{width:30px;height:30px;border:none;background:none;padding:0;flex:none}
 .slot .lb{font-size:12px;color:var(--mu);flex:1}
 textarea#decl{width:100%;resize:vertical;min-height:54px;background:rgba(0,0,0,.25);border:1px solid var(--ln);border-radius:8px;color:var(--tx);font:inherit;font-size:13px;padding:8px}
+input#nationName{width:100%;background:rgba(0,0,0,.25);border:1px solid var(--ln);border-radius:8px;color:var(--tx);font:inherit;font-size:15px;font-weight:600;padding:9px 10px;margin-bottom:8px}
 .cnt{font-size:11px;color:var(--mu);text-align:right}
 .seedbox{display:flex;gap:6px;margin-top:6px}
 .seedbox input{flex:1;min-width:0;background:rgba(0,0,0,.3);border:1px solid var(--ln);border-radius:8px;color:var(--tx);font:12px monospace;padding:7px 8px}
@@ -3739,6 +3779,7 @@ textarea#decl{width:100%;resize:vertical;min-height:54px;background:rgba(0,0,0,.
    <canvas id="favcv" width="32" height="32"></canvas>
    <div class="fcap">how it reads as a favicon, at a glance</div>
   </div>
+  <input id="nationName" type="text" maxlength="40" placeholder="Name your nation">
   <textarea id="decl" maxlength="140" placeholder="A line or two for this nation — spoken, not stitched on the cloth."></textarea>
   <div class="cnt" id="declcnt">0 / 140</div>
  </div>
@@ -4001,23 +4042,29 @@ function gsave(){try{localStorage.setItem(SAVE,JSON.stringify(G))}catch(e){}}
 /* FS: the flag currently on the bench — a working copy, not yet saved. */
 let FS={editing:null,spec:null};
 
-function newFlagEditor(){FS={editing:null,spec:defaultSpec()}}
+function newFlagEditor(){FS={editing:null,spec:defaultSpec(),name:""}}
 function editFlagEditor(id){
  const f=G.flags.find(x=>x.id===id);
  if(!f){newFlagEditor();return}
- FS={editing:id,spec:JSON.parse(JSON.stringify(f.spec))}}
-function loadSpecIntoEditor(spec){FS={editing:null,spec:Object.assign(defaultSpec(),spec,{decl:""})}}
+ FS={editing:id,spec:JSON.parse(JSON.stringify(f.spec)),name:f.label||""}}
+function loadSpecIntoEditor(spec){FS={editing:null,spec:Object.assign(defaultSpec(),spec,{decl:""}),name:""}}
 
 function findFlag(id){return G.flags.find(f=>f.id===id)}
 
+/* a nation's name is the one thing that was never actually customizable --
+   every flag got a random "Nation NNN" label at creation and no way to
+   change it after. FS.name is the bench's working copy of that name,
+   typed into #nationName; empty means "didn't bother", which still falls
+   back to the old auto-numbered label rather than saving a blank one. */
 function commitSave(){
  if(!FS.spec)return null;
  const seed=encodeSeed(FS.spec);
+ const typed=(FS.name||"").trim().slice(0,40);
  if(FS.editing){
   const f=findFlag(FS.editing);
-  if(f){f.spec=JSON.parse(JSON.stringify(FS.spec));f.seed=seed;f.ts=Date.now();gsave();return f}
+  if(f){f.spec=JSON.parse(JSON.stringify(FS.spec));f.seed=seed;f.ts=Date.now();if(typed)f.label=typed;gsave();return f}
  }
- const f={id:shortId(),label:"Nation "+Math.floor(Math.random()*900+100),spec:JSON.parse(JSON.stringify(FS.spec)),seed,ts:Date.now()};
+ const f={id:shortId(),label:typed||("Nation "+Math.floor(Math.random()*900+100)),spec:JSON.parse(JSON.stringify(FS.spec)),seed,ts:Date.now()};
  G.flags.unshift(f);
  if(!G.nation)G.nation=f.id;
  FS.editing=f.id;
@@ -4057,6 +4104,7 @@ function closeModal(){$("modal").classList.remove("show")}
 function setView(v){closeModal();VIEW=v;document.querySelectorAll("section.scr").forEach(s=>s.classList.toggle("on",s.id===v));
  if(v==="lounge")renderLounge();
  else if(v==="bench"){
+  $("nationName").value=FS.name||"";
   $("decl").value=FS.spec.decl||"";
   $("declcnt").textContent=(FS.spec.decl||"").length+" / 140";
   $("benchttl").textContent=FS.editing?"Editing "+((findFlag(FS.editing)||{}).label||"a nation's flag"):"Stitching a new flag";
@@ -4192,6 +4240,9 @@ $("decl").addEventListener("input",()=>{
  FS.spec.decl=$("decl").value.slice(0,140);
  $("declcnt").textContent=FS.spec.decl.length+" / 140";
  renderNava()});
+$("nationName").addEventListener("input",()=>{
+ FS.name=$("nationName").value.slice(0,40);
+ if(FS.editing)$("benchttl").textContent="Editing "+(FS.name.trim()||(findFlag(FS.editing)||{}).label||"a nation's flag")});
 
 /* ===================== export: PNG + a minimal hand-rolled ICO ===================== */
 function downloadBlob(blob,filename){
@@ -7628,7 +7679,13 @@ section#lounge .wrap{max-width:1180px}
 .lhead{display:flex;gap:34px;align-items:center;margin:4px 0 22px;flex-wrap:wrap}
 .lhead canvas{width:300px;height:340px;flex:none;border-radius:20px;background:radial-gradient(120% 120% at 50% 20%,#2c1c4a,#140e22 75%);box-shadow:inset 0 0 0 1px rgba(143,247,230,.25),0 14px 36px rgba(0,0,0,.5)}
 .lhead>div{flex:1;min-width:260px}
-.ltitle{font:900 60px/1 var(--sans);text-transform:uppercase;color:var(--brass2);margin:0;letter-spacing:.09em;text-shadow:0 2px 0 #000,0 0 36px rgba(143,247,230,.35),3px 3px 0 var(--ox)}
+.ltitle{font:900 clamp(26px,7vw,60px)/1 var(--sans);text-transform:uppercase;color:var(--brass2);margin:0;letter-spacing:.09em;text-shadow:0 2px 0 #000,0 0 36px rgba(143,247,230,.35),3px 3px 0 var(--ox);overflow-wrap:anywhere}
+/* The clamp() above sizes off the WINDOW width, but .lhead>div can be squeezed
+   much narrower than that by its flex sibling (the portrait canvas) -- there's
+   a width where the window is wide enough for a big clamp() value, yet the
+   column itself is still narrow (half-screen docking lands right in that
+   zone). overflow-wrap is the backstop: if the title still doesn't fit its
+   actual column, it breaks onto a second line instead of running off-screen. */
 .lsub{font-style:italic;color:var(--mu);margin:10px 0 0;font-size:16.5px;max-width:520px}
 .status{padding:16px 20px;margin:0 0 20px;font-style:italic;font-size:16px}
 .menu{display:flex;gap:10px;flex-wrap:wrap;margin:0 0 22px}
@@ -7681,6 +7738,14 @@ section#lounge .wrap{max-width:1180px}
 #next{position:absolute;left:10px;top:10px;max-width:min(60%,440px);padding:10px 14px;font-size:14.5px;z-index:3;display:none;box-shadow:0 10px 30px rgba(0,0,0,.5),inset 0 0 0 1px rgba(255,95,168,.3),inset 0 0 0 5px rgba(255,248,236,1),inset 0 0 0 6px rgba(255,95,168,.35),0 0 0 2px rgba(143,247,230,.55)}
 #next.on{display:block}
 #next .go{float:right;margin-left:8px}
+#next .min{float:right;margin-left:6px;min-width:0;padding:4px 9px}
+/* Minimized: the guide tucks down to a small tab so whatever it was sitting over
+   (a screw, a tool target, anything procedurally placed underneath) becomes
+   reachable again. The instruction isn't lost, just collapsed -- one tap brings
+   it back full-size. */
+#next.min{max-width:none;width:auto;padding:6px 8px;cursor:pointer}
+#next.min #nexttxt,#next.min .go{display:none}
+#next.min .min{float:none;margin:0;padding:4px 8px}
 #case{flex:none;display:flex;justify-content:center;padding:8px 10px 0;background:linear-gradient(#170f28,#120a1f)}
 #case .b{min-height:44px;padding:9px 22px;font-size:15px}
 #tools,#acts{flex:none;display:flex;gap:6px;padding:8px 10px;overflow-x:auto;background:linear-gradient(#170f28,#120a1f);border-top:1px solid var(--ln)}
@@ -7735,7 +7800,7 @@ table.cdtab button{display:block;width:100%}
 <div id="stage">
 <canvas id="cv"></canvas>
 <div class="toast" id="toast"></div>
-<div class="paper" id="next"><span id="nexttxt"></span><button class="b sm go" data-a="go">Go</button></div>
+<div class="paper" id="next"><span id="nexttxt"></span><button class="b sm go" data-a="go">Go</button><button class="b sm min" data-a="nextmin" title="Tuck this out of the way">&#8212;</button></div>
 <div class="paper" id="check"></div>
 <div class="paper" id="pcard"></div>
 <div class="paper" id="timing"></div>
@@ -8141,9 +8206,10 @@ const SHOP=[
 function owns(id){return!!G.shop[id]}
 
 let JB=null,RUN=null;
+let NEXTMIN=false; /* has the player tucked the guide panel out of the way this run? */
 function jobFor(stars,fk){return makeJob(newSeed(),stars,false,fk)}
 function newRun(J){return{seed:J.seed,flip:false,screws:[false,false,false,false],cover:false,diag:{},fixed:{},btnlit:-1,saved:false,fin:false,start:Date.now()}}
-function openRun(J){JB=J;RUN=newRun(J);DIRTY=true}
+function openRun(J){JB=J;RUN=newRun(J);NEXTMIN=false;DIRTY=true}
 function resumeRun(){}
 const FRONT_PARTS=new Set(["stick","button","speaker","screen"]);
 
@@ -8459,7 +8525,8 @@ function renderNext(){
  if(!G.guide){el.classList.remove("on");return}
  const s=nextStep();
  if(!s){el.classList.remove("on");return}
- el.classList.add("on");$("nexttxt").textContent=s.t}
+ el.classList.add("on");el.classList.toggle("min",NEXTMIN);$("nexttxt").textContent=s.t;
+ el.querySelector(".min").innerHTML=NEXTMIN?"&#9654;":"&#8212;"}
 
 function guideGo(){
  const s=nextStep();if(!s)return"done";
@@ -8569,6 +8636,7 @@ function act(a,k,t){
  if(a==="buy"){const s=SHOP.find(x=>x.id===k);if(!s||owns(k)||G.money<s.p)return;G.money-=s.p;G.shop[k]=true;gsave();renderShop();return}
  if(a==="tool"){if(!RUN)return;if(k!=="driver"&&!RUN.cover){toast("Get the cover off first.");return}TOOL=k;renderTools();return}
  if(a==="go"){guideGo();return}
+ if(a==="nextmin"){NEXTMIN=!NEXTMIN;renderNext();return}
  if(a==="zin"){ZOOM=Math.min(1.6,ZOOM+.15);DIRTY=true;return}
  if(a==="zout"){ZOOM=Math.max(.7,ZOOM-.15);DIRTY=true;return}
  if(a==="zfit"){ZOOM=1;DIRTY=true;return}
@@ -14220,6 +14288,862 @@ boot();
 <~/script>
 </body></html>
 </script>
+<script type="text/plain" class="cartsrc" data-meta='{"name": "Esoterica Alexandria", "sub": "An alchemical archive and folio breeder, outside time", "desc": "Wander the Library\u2019s forgotten vaults and read whatever catches your eye \u2014 nothing is hidden, nothing is locked behind a scan. Liberate what\u2019s worth keeping into a permanent, public-domain archive, and breed any two folios together: their geometry and their philosophy cross into a wisdom that has never existed before, blending a little further with every generation. Favorite, search and sort a collection that can run into the thousands, and copy any folio out as a shareable seed for someone else to drop straight into their own.", "color": "#c9a227", "glyph": "M12 3a9 9 0 100 18 9 9 0 000-18z M12 7v10 M7 12h10 M8.5 8.5l7 7 M15.5 8.5l-7 7", "tags": ["Philosophy", "Creativity", "Puzzle"], "id": "esoterica"}'><!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><title>Esoterica Alexandria</title>
+<style>
+:root{--ink:#1a1612;--parch:#f4ecd8;--parch2:#ead9b4;--sepia:#8a6a3c;--gold:#c9a227;--gold2:#e8c35e;--line:#cdb888;--mu:#8a7a5a}
+*{box-sizing:border-box}html,body{margin:0;height:100%}
+body{background:radial-gradient(120% 90% at 50% 0%,#241d14 0%,var(--ink) 65%);color:var(--parch);font:15px/1.5 "Iowan Old Style",Georgia,"Times New Roman",serif;overflow:hidden}
+.wrap{max-width:860px;margin:0 auto;padding:16px 18px 30px}
+#tlhost{display:flex;flex-direction:column;height:100%}
+#screens{position:relative;flex:1;min-height:0}
+section.scr{position:absolute;inset:0;display:none;overflow:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch}
+section.scr.on{display:block}
+h1,h2,h3{font-family:"Iowan Old Style",Georgia,serif;font-weight:600;margin:0}
+.btn{appearance:none;border:1px solid var(--line);background:linear-gradient(#2a2217,#1d170f);color:var(--gold2);font:inherit;font-size:14px;padding:9px 16px;border-radius:7px;cursor:pointer}
+.btn:hover{border-color:var(--gold)}
+.btn.pri{background:linear-gradient(var(--gold2),var(--gold));color:#2a1e08;border-color:var(--gold);font-weight:600}
+.btn:disabled{opacity:.4;cursor:default}
+.btn.sm{padding:5px 10px;font-size:12.5px}
+#nav{flex:none;position:relative;z-index:4;display:flex;gap:6px;padding:10px 14px;background:rgba(26,22,18,.92);border-bottom:1px solid #3a2f1d;backdrop-filter:blur(4px);flex-wrap:wrap}
+#nav .btn{background:transparent;border-color:transparent;color:var(--mu)}
+#nav .btn.on{background:rgba(201,162,39,.14);border-color:var(--gold);color:var(--gold2)}
+.ltitle{font-size:clamp(22px,6vw,34px);color:var(--gold2);letter-spacing:.03em;text-shadow:0 1px 0 #000;overflow-wrap:anywhere}
+.lsub{color:var(--mu);font-style:italic;margin:4px 0 0}
+.card{background:linear-gradient(180deg,var(--parch) 0%,var(--parch2) 100%);color:var(--ink);border-radius:4px;box-shadow:0 10px 26px rgba(0,0,0,.45),inset 0 0 0 1px rgba(90,60,20,.25);padding:16px}
+.shelf{display:grid;grid-template-columns:repeat(auto-fill,minmax(110px,1fr));gap:10px;margin-top:14px}
+.tome{background:linear-gradient(135deg,#3a2c18,#241a0d);border:1px solid #5a4322;border-radius:5px;padding:10px 8px 11px;text-align:center;cursor:pointer;color:var(--gold2);transition:transform .15s ease,border-color .15s ease}
+.tome:hover{border-color:var(--gold);transform:translateY(-3px)}
+.tome canvas{display:block;margin:0 auto}
+.tome .tomett{font-size:11.5px;margin-top:7px;color:var(--parch2);font-weight:600;line-height:1.25}
+.tome .cap{font-size:10px;color:var(--mu);margin-top:3px;letter-spacing:.03em;text-transform:uppercase}
+.folio{display:flex;flex-direction:column;align-items:center;gap:10px;
+ background:radial-gradient(circle at 14% 18%,rgba(138,106,60,.08),transparent 42%),radial-gradient(circle at 86% 78%,rgba(138,106,60,.07),transparent 38%),linear-gradient(180deg,var(--parch) 0%,var(--parch2) 100%);
+ border-radius:6px;padding:20px 18px;box-shadow:0 10px 26px rgba(0,0,0,.45),0 0 60px rgba(201,162,39,.09),inset 0 0 0 1px rgba(90,60,20,.25);max-width:560px;margin:0 auto;position:relative;border:1px solid rgba(90,60,20,.3)}
+.folio::before{content:"";position:absolute;inset:9px;border:1px solid rgba(90,60,20,.22);border-radius:3px;pointer-events:none;z-index:0}
+.folio>*{position:relative;z-index:1}
+.folio canvas{display:block;filter:drop-shadow(0 2px 6px rgba(0,0,0,.25))}
+.folio.faded canvas{filter:grayscale(1) opacity(.5)}
+.folio .ftitle{font-size:20px;text-align:center;margin-top:4px;color:var(--ink)}
+.forigin{font-style:italic;color:var(--sepia);font-size:13px;text-align:center}
+.fdiv{color:var(--sepia);font-size:13px;opacity:.55;letter-spacing:.3em;margin:1px 0}
+.faxiom{max-width:520px;text-align:center;font-size:15.5px;line-height:1.65;color:#2a2013}
+.flourish{text-align:center;color:var(--sepia);opacity:.5;font-size:14px;letter-spacing:.35em;margin:10px 0 0}
+.tag{display:inline-block;font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--sepia);border:1px solid var(--sepia);border-radius:3px;padding:2px 7px;margin-top:6px}
+.tag.cc0{color:#1d6b3a;border-color:#1d6b3a}
+.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center;justify-content:center;margin-top:14px}
+.slots{display:flex;gap:18px;justify-content:center;align-items:center;flex-wrap:wrap;margin:18px 0}
+.slot{width:160px;min-height:220px;border:2px dashed var(--line);border-radius:8px;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:6px;color:var(--mu);font-size:13px;cursor:pointer;text-align:center;padding:10px}
+.slot.filled{border-style:solid;border-color:var(--gold);color:var(--ink);background:rgba(244,236,216,.08)}
+.slot canvas{display:block}
+.gallery{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:14px;margin-top:14px}
+.gcard{position:relative;background:var(--parch);color:var(--ink);border-radius:6px;padding:10px;text-align:center;cursor:pointer;box-shadow:0 6px 16px rgba(0,0,0,.3);transition:transform .15s ease}
+.gcard:hover{transform:translateY(-2px)}
+.gcard canvas{display:block;margin:0 auto}
+.gcard .gt{font-size:13px;margin-top:4px;font-weight:600}
+.empty{color:var(--mu);font-style:italic;text-align:center;padding:40px 10px}
+.stats{display:flex;gap:18px;flex-wrap:wrap;margin-top:16px;color:var(--mu);font-size:13px}
+.stats b{color:var(--gold2);font-size:17px;display:block}
+.toolbar{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin:14px 0 4px}
+.toolbar input[type=text]{background:#1d170f;border:1px solid var(--line);color:var(--parch);border-radius:6px;padding:7px 10px;font:inherit;font-size:13px;min-width:170px;flex:1}
+.toolbar select{background:#1d170f;border:1px solid var(--line);color:var(--parch);border-radius:6px;padding:6px 8px;font:inherit;font-size:13px}
+.chip{border:1px solid var(--line);color:var(--mu);border-radius:20px;padding:4px 11px;font-size:12px;cursor:pointer;user-select:none;white-space:nowrap}
+.chip.on{border-color:var(--gold);color:var(--gold2);background:rgba(201,162,39,.14)}
+.favbtn{position:absolute;top:6px;right:6px;background:rgba(0,0,0,.08);border:none;font-size:17px;line-height:1;cursor:pointer;padding:3px 6px;border-radius:4px;color:#8a7a5a;z-index:2;transition:text-shadow .15s ease}
+.favbtn.on{color:#c9a227;text-shadow:0 0 8px rgba(201,162,39,.7)}
+.sharebtn{position:absolute;top:6px;left:6px;background:rgba(0,0,0,.08);border:none;font-size:15px;line-height:1;cursor:pointer;padding:4px 7px;border-radius:4px;color:#8a7a5a;z-index:2}
+.sharebtn:hover{color:#3a2a12}
+.seedbox{width:100%;min-height:90px;background:#1d170f;border:1px solid var(--line);color:var(--parch);border-radius:6px;padding:8px;font:12px/1.4 ui-monospace,Menlo,Consolas,monospace;resize:vertical}
+.pager{display:flex;gap:10px;align-items:center;justify-content:center;margin-top:12px;color:var(--mu);font-size:13px;flex-wrap:wrap}
+#modal{position:absolute;inset:0;background:rgba(10,8,4,.72);z-index:10;display:none;align-items:center;justify-content:center;padding:18px}
+#modal.show{display:flex}
+#modal .box{max-width:620px;max-height:88%;overflow:auto}
+@media (max-width:480px){.faxiom{font-size:14px}.folio canvas{width:160px;height:160px}}
+</style></head><body><div id="tlhost" tabindex="0">
+
+<div id="nav">
+ <button class="btn on" data-v="stacks">The Stacks</button>
+ <button class="btn" data-v="desk">Reading Desk</button>
+ <button class="btn" data-v="scriptorium">Scriptorium</button>
+ <button class="btn" data-v="archive">Archive</button>
+ <span style="margin-left:auto;color:var(--mu);font-size:12.5px;align-self:center" id="statline"></span>
+</div>
+
+<div id="screens">
+<section id="stacks" class="scr on"><div class="wrap">
+ <h1 class="ltitle">Esoterica Alexandria</h1>
+ <p class="lsub">The forgotten vaults of the Library. Read whatever catches your eye — liberating it into the permanent archive is always your own choice.</p>
+ <div class="flourish">❦</div>
+ <div class="row"><button class="btn pri" data-a="reshelf">Draw a fresh handful</button></div>
+ <div class="shelf" id="shelfGrid"></div>
+ <div class="stats" id="stacksStats"></div>
+</div></section>
+
+<section id="desk" class="scr"><div class="wrap">
+ <h2>The Reading Desk</h2>
+ <p class="lsub" id="deskSub">Nothing on the desk. Choose a tome from the Stacks first.</p>
+ <div id="deskFolio" style="margin-top:16px"></div>
+ <div class="row" id="deskActs"></div>
+</div></section>
+
+<section id="scriptorium" class="scr"><div class="wrap">
+ <h2>The Scriptorium</h2>
+ <p class="lsub">Place two liberated folios on the desk. Their lineage will be crossed into something that has never existed before.</p>
+ <div class="flourish">❦</div>
+ <div class="slots">
+  <div class="slot" id="slotA" data-a="pickslot" data-k="A">Click to choose a folio</div>
+  <div style="font-size:24px;color:var(--gold)">&#10022;</div>
+  <div class="slot" id="slotB" data-a="pickslot" data-k="B">Click to choose a folio</div>
+ </div>
+ <div class="row"><button class="btn pri" id="synthBtn" data-a="synth" disabled>Synthesize</button></div>
+ <div id="synthResult" style="margin-top:18px"></div>
+</div></section>
+
+<section id="archive" class="scr"><div class="wrap">
+ <h2>The Liberated Archive</h2>
+ <p class="lsub">Every folio you have freed or bred, CC0, forever. Share any discovery as a seed, or bring in someone else's.</p>
+ <div class="flourish">❦</div>
+ <div class="row" style="margin-top:10px">
+  <button class="btn sm" data-a="exportshown">Export shown as seeds</button>
+  <button class="btn sm" data-a="importseeds">Import seeds…</button>
+ </div>
+ <div id="archiveToolbar"></div>
+ <div id="galleryBody"></div>
+ <div id="archivePager" class="pager"></div>
+</div></section>
+</div>
+
+<div id="modal"><div class="box card" id="modalbox"></div></div>
+</div>
+<script>
+(function(){
+"use strict";
+const $=id=>document.getElementById(id);
+const AC_CTX=(()=>{try{return new (window.AudioContext||window.webkitAudioContext)()}catch(e){return null}})();
+function tone(freq,dur,type,gain,delay){
+ if(!AC_CTX)return;
+ const t0=AC_CTX.currentTime+(delay||0);
+ const o=AC_CTX.createOscillator(),g=AC_CTX.createGain();
+ o.type=type||"sine";o.frequency.setValueAtTime(freq,t0);
+ g.gain.setValueAtTime(0,t0);g.gain.linearRampToValueAtTime(gain||.08,t0+.02);g.gain.exponentialRampToValueAtTime(.0001,t0+dur);
+ o.connect(g);g.connect(AC_CTX.destination);o.start(t0);o.stop(t0+dur+.05)}
+function noiseBurst(dur,gain){
+ if(!AC_CTX)return;
+ const n=AC_CTX.sampleRate*dur,buf=AC_CTX.createBuffer(1,n,AC_CTX.sampleRate),d=buf.getChannelData(0);
+ for(let i=0;i<n;i++)d[i]=(Math.random()*2-1)*Math.pow(1-i/n,2);
+ const src=AC_CTX.createBufferSource();src.buffer=buf;
+ const g=AC_CTX.createGain();g.gain.value=gain||.05;
+ const f=AC_CTX.createBiquadFilter();f.type="bandpass";f.frequency.value=1800;f.Q.value=.6;
+ src.connect(f);f.connect(g);g.connect(AC_CTX.destination);src.start()}
+function sfxPaper(){noiseBurst(.35,.045)}
+function sfxScan(){
+ tone(520,.5,"sine",.05,0);tone(660,.5,"sine",.04,.05);
+ setTimeout(()=>noiseBurst(.04,.09),420)}
+function sfxBreed(){
+ [261.6,329.6,392.0,523.3].forEach((f,i)=>tone(f,2.2,"sine",.045,i*.05));
+ tone(130.8,2.6,"sine",.05,0)}
+
+/* ============================== WISDOM ENGINE ============================== */
+const TRAD={
+ hermetic:{name:"Hermetic",
+  subj:["the above","the below","the mirror","the macrocosm","the microcosm","the emerald seal","the sun within","the hidden sun",
+   "the lower waters","the upper waters","the inner temple","the outer temple","the breath that moves between","the seal and its wax","the word and its echo","the flame and its shadow",
+   "the lamp and its flame","the key and its lock"],
+  qual:["correspondent","threefold","mirrored","concordant","self-same","twinned","woven","answering","doubled","harmonized","inverted yet equal","bound together","paired","echoing"],
+  act:["reflects","corresponds to","conceals and reveals","answers to","is written into","mirrors","breathes with","is sealed to","rises and falls with","keeps time with","answers in kind to"],
+  img:["the sun","the serpent coiled on itself","the sealed tablet","the twinned pillar",
+   "the breath that circles without end","the wheel that turns upon itself","the flame that bends toward its own reflection","two hands clasped across a table",
+   "a key turning in a lock it has always fit"]},
+ alchemical:{name:"Alchemical",
+  subj:["the base metal","the soul","the vessel","the prima materia","the stone","the work",
+   "the sulphur","the salt","the mercury","the dross","the tincture","the seed of gold","the alloy","the residue"],
+  qual:["crude","blackened","purified","fixed","volatile","golden","dissolved","congealed","multiplied","tempered","ripened","refined","exalted","reduced"],
+  stage:["calcination","dissolution","separation","conjunction","fermentation","distillation","coagulation","putrefaction","sublimation","multiplication","projection","cohobation"],
+  img:["ash","quicksilver","the white dove","the red king","the sealed furnace",
+   "the green lion","the peacock's tail","the phoenix rising from its own ash","the philosopher's egg",
+   "the black crow","the unicorn that cannot be caught, only approached"]},
+ gnostic:{name:"Gnostic",
+  subj:["this world","the body","the sleeping soul","the material veil","the counterfeit heaven",
+   "the flesh","the archon's realm","the forgetting","the sleep that is mistaken for waking","the cave of images",
+   "the borrowed name","the inherited debt"],
+  qual:["counterfeit","borrowed","ignorant","unknowing","false","hollow","mistaken","inherited","imposed","unreal","second-hand","copied without consent"],
+  img:["the blind craftsman","the jailer who calls himself father","the lamp carried in secret","the spark that remembers",
+   "the demiurge who thinks himself alone","the veil stitched from habit","the warden who built his own prison first","the river of forgetting",
+   "the clerk who forgot he was ever anything else"],
+  gnosis:["the spark within","the secret lamp","the memory of the true source","the knowledge that cannot be taught, only recalled",
+   "the remembering that cannot be unremembered","the stranger's recognition of home","the still point no archon can reach",
+   "the question no catechism was built to answer"]},
+ neoplatonist:{name:"Neoplatonist",
+  subj:["the soul","the many","every form","all things","the fractured world",
+   "the intellect","the world-soul","the individual soul","the image in the pool","the shadow on the wall",
+   "the falling note","the outer rim"],
+  qual:["dimmer","more divided","further scattered","less whole","fainter","thinner","more divided still","further from the source","nearer the surface","weaker in its turning","quieter","more remote"],
+  src:["the One","the source without parts","the first unity","the light before light","the Good beyond being","the first cause","the silence before number","the unmoved origin"],
+  img:["a river running from a single spring","light dividing through many lamps","a reflection thinning in still water",
+   "a flame passed from candle to candle, dimming each time","rings spreading outward from a stone dropped in water","an echo answering an echo",
+   "a wave losing height the further it travels from the stone"]},
+ stoic:{name:"Stoic",
+  subj:["the outcome","another's judgment","your reputation","fortune","the verdict of others","what is taken from you","the hour of your death",
+   "the opinions of strangers","the weather","the body's decline","another's anger","the length of your life","praise and blame alike",
+   "the insult not yet given","the delay","the inconvenience"],
+  qual:["sufficient","enough","yours to govern","no concern of yours","beneath your notice",
+   "indifferent","neither good nor bad","a matter of discipline, not control","to be met, not managed","not worth a disturbed hour",
+   "a test, not a punishment","over before it began"],
+  virt:["courage","justice","temperance","clear judgment","an undisturbed mind","patience","a steady hand","indifference to applause","the discipline to say enough","equanimity"]},
+ geometric:{name:"Sacred Geometry",
+  subj:["the circle","the seal","the temple","the body","the orbit of the world","the proportion of the self",
+   "the spiral shell","the honeycomb cell","the branching vein of a leaf","the human hand","the orbit of a falling stone","the interval between two notes",
+   "the tide","the pinecone's spiral","the fern's unfurling"],
+  ratio:["golden","threefold","sixfold","harmonic","unbroken","sevenfold","the root of two","recurring","self-similar","fivefold","nested"],
+  img:["the compass point that does not move","the line that returns to itself","the seal pressed in wax",
+   "a shell that grows without changing its shape","the spacing of branches on a single stem","the interval a string divides in half",
+   "a tide that keeps its schedule without a clock"]},
+ taoist:{name:"Taoist",
+  subj:["the soft","the low place","the uncarved block","the valley","the empty vessel","the yielding reed",
+   "the still pond","the unforced thing","the uncut log","the bent reed","the quiet room","the narrow gate",
+   "the breath before speaking","the unlit lamp"],
+  opp:["the hard","the high place","the sharpened blade","the mountain","the loaded cart","the rigid oak",
+   "the straining ox","the shout","the forced march","the clenched fist","the argument won by volume",
+   "the loud argument","the forced smile"],
+  img:["water","an empty bowl","a door that is only useful for its emptiness",
+   "a river that wears down stone by doing nothing but flow","a sapling that bends in the storm and stands after","the hinge that is still while the door does all the moving",
+   "the unlit lamp that still knows how to burn when it is time"]}
+};
+const TKEYS=Object.keys(TRAD);
+const TRAD_INK={hermetic:"#7a5a16",alchemical:"#8a2d17",gnostic:"#4a3d6b",neoplatonist:"#2e5a73",stoic:"#44433d",geometric:"#6b4a1a",taoist:"#2f5c3d"};
+function pick(a,rng){return a[Math.floor(rng()*a.length)]}
+function pickTwo(a,rng){const x=pick(a,rng);if(a.length<2)return[x,x];let y=pick(a,rng);while(y===x)y=pick(a,rng);return[x,y]}
+function mulberry32(seed){return function(){seed|=0;seed=seed+0x6D2B79F5|0;let t=Math.imul(seed^seed>>>15,1|seed);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296}}
+function cap(s){return s.charAt(0).toUpperCase()+s.slice(1)}
+function art(s){return /^[aeiou]/i.test(s)?"an":"a"}
+
+/* Each tradition gets 4 distinct sentence-shapes; an axiom shuffles them and
+   keeps only the first 2, so output length stays consistent while the actual
+   shapes in circulation keep growing as the vocab/grammar set deepens. */
+const TEMPLATES={
+ hermetic:[
+  (V,rng)=>{const[s1,s2]=pickTwo(V.subj,rng),[q1,q2]=pickTwo(V.qual,rng);return cap(s1)+" "+pick(V.act,rng)+" "+s2+"; what is "+q1+" in one is "+q2+" in the other."},
+  (V,rng)=>{const[i1,i2]=pickTwo(V.img,rng);return"Nothing stands alone: "+i1+" "+pick(V.act,rng)+" "+i2+", and the "+pick(V.qual,rng)+" pattern repeats at every scale."},
+  (V,rng)=>"As "+pick(V.subj,rng)+" moves, so "+pick(V.subj,rng)+" answers — the "+pick(V.qual,rng)+" law admits no exception.",
+  (V,rng)=>{const[i1,i2]=pickTwo(V.img,rng);return cap(i1)+" "+pick(V.act,rng)+" "+i2+" without needing to be told to."}],
+ alchemical:[
+  (V,rng)=>{const[s1,s2]=pickTwo(V.stage,rng);return"Through "+s1+" "+pick(V.subj,rng)+" is made "+pick(V.qual,rng)+", and through "+s2+" it is raised toward "+pick(V.img,rng)+"."},
+  (V,rng)=>"Nothing is purified without first being broken down — "+pick(V.subj,rng)+" must pass through "+pick(V.stage,rng)+" before it can become "+pick(V.qual,rng)+".",
+  (V,rng)=>"The "+pick(V.qual,rng)+" "+pick(V.subj,rng)+" was never the end of the work, only "+pick(V.stage,rng)+" wearing a different name.",
+  (V,rng)=>{const q=pick(V.qual,rng);return"Call it "+art(q)+" "+q+" "+pick(V.subj,rng)+" if you like — the furnace does not care what you name the work."}],
+ gnostic:[
+  (V,rng)=>{const q=pick(V.qual,rng);return cap(pick(V.subj,rng))+" is "+art(q)+" "+q+" copy, fashioned by "+pick(V.img,rng)+"."},
+  (V,rng)=>"Only "+pick(V.gnosis,rng)+" sees past the veil; the rest mistake "+pick(V.subj,rng)+" for the whole of what is real.",
+  (V,rng)=>"To mistake "+pick(V.subj,rng)+" for home is the oldest error; "+pick(V.gnosis,rng)+" is the only way out that was ever offered.",
+  (V,rng)=>"Even "+pick(V.subj,rng)+" was not built to last forever; "+pick(V.gnosis,rng)+" outlives every cage."],
+ neoplatonist:[
+  (V,rng)=>"From "+pick(V.src,rng)+" all things emanate, growing "+pick(V.qual,rng)+" the further they fall, like "+pick(V.img,rng)+".",
+  (V,rng)=>cap(pick(V.subj,rng))+" is the long road back toward "+pick(V.src,rng)+" — "+pick(V.qual,rng)+", but never severed from it.",
+  (V,rng)=>"Even "+pick(V.subj,rng)+", "+pick(V.qual,rng)+" as it has become, still points back toward "+pick(V.src,rng)+".",
+  (V,rng)=>{const[s1,s2]=pickTwo(V.subj,rng);return"Distance from "+pick(V.src,rng)+" is measured in degree, not in kind — "+s1+" never stopped belonging to it, any more than "+s2+" did."}],
+ stoic:[
+  (V,rng)=>"You do not govern "+pick(V.subj,rng)+" — only your judgment of it.",
+  (V,rng)=>"Let "+pick(V.virt,rng)+" be "+pick(V.qual,rng)+"; "+pick(V.subj,rng)+" was never going to be yours to command.",
+  (V,rng)=>cap(pick(V.subj,rng))+" is "+pick(V.qual,rng)+" — spend your attention on your own judgment instead.",
+  (V,rng)=>{const[s1,s2]=pickTwo(V.subj,rng);return"Spend no grief on "+s1+"; grief was never going to change what "+s2+" is."}],
+ geometric:[
+  (V,rng)=>cap(pick(V.subj,rng))+" is bound by "+pick(V.ratio,rng)+" proportion, the same law that shapes "+pick(V.img,rng)+".",
+  (V,rng)=>"The turning of the furthest star and "+pick(V.subj,rng)+" answer to one measure: "+pick(V.ratio,rng)+" proportion, repeated without exception.",
+  (V,rng)=>"Measure "+pick(V.subj,rng)+" closely enough and the "+pick(V.ratio,rng)+" proportion appears again, as it always does.",
+  (V,rng)=>"Nothing about "+pick(V.subj,rng)+" is arbitrary — pull any thread and the "+pick(V.ratio,rng)+" proportion is still there, waiting to be found."],
+ taoist:[
+  (V,rng)=>cap(pick(V.subj,rng))+" overcomes "+pick(V.opp,rng)+" in the end, though it never looks that way at the start.",
+  (V,rng)=>"Be like "+pick(V.img,rng)+": useful precisely for what it does not hold, asking nothing of "+pick(V.opp,rng)+".",
+  (V,rng)=>cap(pick(V.opp,rng))+" believes itself stronger than "+pick(V.subj,rng)+", right up until it isn't.",
+  (V,rng)=>cap(pick(V.img,rng))+" never argues its case; it simply keeps being what it is, and "+pick(V.opp,rng)+" eventually tires."]
+};
+function shuffled(arr,rng){const a=arr.slice();for(let i=a.length-1;i>0;i--){const j=Math.floor(rng()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a}
+function axiomLine(tr,rng,vocabPool){
+ const V=vocabPool;
+ const tpls=shuffled(TEMPLATES[tr]||TEMPLATES.hermetic,rng).slice(0,2);
+ return tpls.map(f=>f(V,rng)).join(" ");
+}
+function originLine(tr,rng){
+ const O={
+  hermetic:["found pressed between two sheets of beaten copper","copied from a tablet no living hand remembers carving","recovered from a sealed jar, the wax unbroken for a thousand years",
+   "found folded inside a merchant's scale, as if to balance it","scratched along the inner rim of a bronze bowl","passed hand to hand until no one remembered whose it was first"],
+  alchemical:["scraped from the margin of a furnace-keeper's notebook, half burned","found beside a crucible that was still faintly warm","written in a hand that changed three times across one page",
+   "found in a chest that still smelled faintly of sulphur","copied twice, the second hand steadier than the first","left beside an athanor that had long gone cold"],
+  gnostic:["hidden inside the binding of a more respectable book","found in a jar buried below the floor of an abandoned cell","copied by someone who was clearly afraid of being caught doing so",
+   "found stitched into the lining of a traveler's coat","recovered from a cell with no window","copied in a hand that kept glancing at the door"],
+  neoplatonist:["found in the margin of a student's lecture notes, added later, in different ink","recovered from a library that otherwise burned completely","left unsigned, as if the name did not matter",
+   "found pressed flat inside a geometer's compass case","copied by a student who never finished the lecture","recovered from a well that had gone dry generations before"],
+  stoic:["carried, folded small, in a soldier's pack","found pinned inside a merchant's ledger, facing the debts","copied out by hand so many times the original is lost",
+   "found in a general's tent, folded small enough to carry into battle","copied by a prisoner with nothing else to occupy his hands","left in the margin of a will, beside the instructions for the funeral"],
+  geometric:["found scratched into the border of an architect's plan","measured out with a compass whose point left a hole clean through the page","recovered from the floor of a workshop, half swept into the dust",
+   "found folded into the pages of a mason's pattern book","measured twice and corrected once, in a different hand","recovered from beneath a loom, pressed flat by the weight of cloth"],
+  taoist:["found tucked beneath a stone at the edge of a dry well","carried by someone who never explained where it came from","left with no name attached, as its own argument would prefer",
+   "found folded inside a fisherman's net, dry and untouched by the water","carried across three borders without ever being opened","left where the current would eventually take it, and didn't"]
+ };
+ return "— "+pick(O[tr]||O.hermetic,rng);
+}
+function titleLine(tr,rng){
+ const T={
+  hermetic:["On the Mirrored Sun","Concerning the Seal Below","The Twinned Tablet","On What Answers to What",
+   "The Breath Between","On the Wheel That Turns Upon Itself","Concerning the Doubled Flame","The Clasped Hands"],
+  alchemical:["The Seventh Vessel","On the Blackened Work","Concerning the Red Stage","The Furnace Unsealed",
+   "On the Green Lion","Concerning the Peacock's Tail","The Philosopher's Egg","On What Multiplies"],
+  gnostic:["Fragment Against the Counterfeit","On the Lamp Carried in Secret","Concerning the Blind Craftsman","The Spark That Remembers",
+   "On the Archon's Realm","Concerning the River of Forgetting","The Stranger's Recognition","On the Cave of Images"],
+  neoplatonist:["On the Long Descent","Concerning the Single Spring","The Dimming Light","On the Road Back to the One",
+   "On the Image in the Pool","Concerning the Silence Before Number","The Rings on the Water","On the Shadow on the Wall"],
+  stoic:["On What Is Not Yours","Concerning the Undisturbed Mind","The Unmoved Judgment","On Bearing What Comes",
+   "On the Weather","Concerning Praise and Blame","The Discipline to Say Enough","On What Is Indifferent"],
+  geometric:["On the Unmoving Point","Concerning the Golden Measure","The Seal That Repeats","On the Shape Beneath the Shape",
+   "On the Spiral Shell","Concerning the Honeycomb","The Interval Between Two Notes","On the Branching Vein"],
+  taoist:["On the Usefulness of Emptiness","Concerning the Soft Water","The Valley That Is Not Conquered","On the Uncarved Block",
+   "On the Narrow Gate","Concerning the Bent Reed","The Hinge That Is Still","On the Quiet Room"]
+ };
+ return pick(T[tr]||T.hermetic,rng);
+}
+function poolFor(tr,extra){
+ const base=TRAD[tr];const V={};
+ for(const k in base)V[k]=base[k].slice();
+ if(extra){for(const k in extra){if(V[k])V[k]=V[k].concat(extra[k]);else V[k]=extra[k].slice()}}
+ return V;
+}
+function makeWisdom(tr,rng,extraVocab){
+ const V=poolFor(tr,extraVocab);
+ return{trad:tr,tradName:TRAD[tr].name,title:titleLine(tr,rng),origin:originLine(tr,rng),
+  axiom:axiomLine(tr,rng,V)}
+}
+/* Lineage is a {tradKey: weight} map summing to ~1 -- an original folio is
+   100% one tradition, a bred one is a weighted blend of its two parents'
+   own lineages, so ancestry compounds across generations instead of
+   collapsing back to "pick one of the two parents" every single time. */
+function weightedPick(lineage,rng){
+ const entries=Object.entries(lineage);
+ const total=entries.reduce((s,e)=>s+e[1],0)||1;
+ let r=rng()*total;
+ for(const[k,w] of entries){r-=w;if(r<=0)return k}
+ return entries[entries.length-1][0];
+}
+function breedLineage(a,b,rng){
+ const wa=0.35+rng()*0.3,wb=1-wa;
+ const out={};
+ for(const k in a)out[k]=(out[k]||0)+a[k]*wa;
+ for(const k in b)out[k]=(out[k]||0)+b[k]*wb;
+ const total=Object.values(out).reduce((s,v)=>s+v,0)||1;
+ for(const k in out)out[k]=out[k]/total;
+ return out;
+}
+function makeWisdomFromLineage(lineage,rng){
+ const dominant=weightedPick(lineage,rng);
+ const extra={};
+ for(const k in lineage){
+  if(k===dominant||lineage[k]<0.12)continue;
+  const ob=TRAD[k];
+  for(const key in ob)if(TRAD[dominant][key])extra[key]=(extra[key]||[]).concat(ob[key]);
+ }
+ return makeWisdom(dominant,rng,Object.keys(extra).length?extra:null);
+}
+function formatLineage(lineage){
+ if(!lineage)return null;
+ const entries=Object.entries(lineage).filter(e=>e[1]>=0.05).sort((a,b)=>b[1]-a[1]);
+ if(entries.length<2)return null;
+ return entries.map(e=>Math.round(e[1]*100)+"% "+TRAD[e[0]].name).join(" · ");
+}
+
+/* ============================== SIGIL GENOME ============================== */
+const FOLD_SET=[3,4,6,8,12];
+const ACCENTS=["crescent","triangle","crossbar","star","dot","diamond","spiral"];
+function randGenome(rng){
+ const folds=pick(FOLD_SET,rng);
+ const rings=1+Math.floor(rng()*3);
+ const ringRatios=[];
+ for(let i=0;i<rings;i++)ringRatios.push(.32+ (i/(rings))*.6 + (rng()*.06-.03));
+ ringRatios.sort((a,b)=>a-b);
+ const accentCount=1+Math.floor(rng()*2);
+ const accentSet=[];
+ for(let i=0;i<accentCount;i++){const a=pick(ACCENTS,rng);if(!accentSet.includes(a))accentSet.push(a)}
+ return{folds,rings,ringRatios,stroke:1+Math.floor(rng()*2.2),accentSet,
+  inner:rng()<0.6?{sides:3+Math.floor(rng()*5)}:null,
+  rot:rng()*Math.PI*2}
+}
+function clamp(v,a,b){return Math.max(a,Math.min(b,v))}
+function breedGenome(a,b,rng){
+ const folds=rng()<0.5?a.folds:b.folds;
+ let rings=Math.round((a.rings+b.rings)/2);
+ if(rng()<0.25)rings+=rng()<0.5?1:-1;
+ rings=clamp(rings,1,4);
+ const srcRatios=[];
+ for(let i=0;i<rings;i++){
+  const ra=a.ringRatios[Math.min(i,a.ringRatios.length-1)]||.5;
+  const rb=b.ringRatios[Math.min(i,b.ringRatios.length-1)]||.5;
+  srcRatios.push(clamp((ra+rb)/2+(rng()*.05-.025),.2,1))}
+ srcRatios.sort((x,y)=>x-y);
+ const stroke=clamp(Math.round((a.stroke+b.stroke)/2),1,3);
+ const union=Array.from(new Set(a.accentSet.concat(b.accentSet)));
+ let accentSet=union;
+ while(accentSet.length>3)accentSet=accentSet.slice(0,accentSet.length-1);
+ if(accentSet.length===0)accentSet=[pick(ACCENTS,rng)];
+ const inner=rng()<0.5?a.inner:b.inner;
+ return{folds,rings,ringRatios:srcRatios,stroke,accentSet,inner,rot:rng()*Math.PI*2};
+}
+
+function drawGlyph(c,kind,x,y,s,rot){
+ c.save();c.translate(x,y);c.rotate(rot);
+ c.lineWidth=Math.max(1,s*.14);c.strokeStyle=c._ink;c.fillStyle=c._ink;
+ if(kind==="dot"){c.beginPath();c.arc(0,0,s*.22,0,7);c.fill()}
+ else if(kind==="triangle"){c.beginPath();c.moveTo(0,-s*.5);c.lineTo(s*.42,s*.3);c.lineTo(-s*.42,s*.3);c.closePath();c.stroke()}
+ else if(kind==="crossbar"){c.beginPath();c.moveTo(-s*.4,0);c.lineTo(s*.4,0);c.moveTo(0,-s*.22);c.lineTo(0,s*.22);c.stroke()}
+ else if(kind==="star"){c.beginPath();for(let i=0;i<5;i++){const a=-Math.PI/2+i*(Math.PI*2/5),r=i%2?s*.18:s*.42;const px=Math.cos(a)*r,py=Math.sin(a)*r;i?c.lineTo(px,py):c.moveTo(px,py)}c.closePath();c.stroke()}
+ else if(kind==="diamond"){c.beginPath();c.moveTo(0,-s*.46);c.lineTo(s*.32,0);c.lineTo(0,s*.46);c.lineTo(-s*.32,0);c.closePath();c.stroke()}
+ else if(kind==="spiral"){c.beginPath();const turns=Math.PI*3.2;for(let a=0;a<=turns;a+=0.25){const rr=s*.05+(a/turns)*s*.4;const px=Math.cos(a)*rr,py=Math.sin(a)*rr;a===0?c.moveTo(px,py):c.lineTo(px,py)}c.stroke()}
+ else{c.beginPath();c.arc(0,0,s*.3,0.6,Math.PI*2-0.6);c.stroke()}
+ c.restore();
+}
+function renderSigil(canvas,genome,opts){
+ opts=opts||{};
+ const dpr=Math.min(2,window.devicePixelRatio||1);
+ const W=canvas.width=canvas.clientWidth*dpr||160*dpr,H=canvas.height=canvas.clientHeight*dpr||160*dpr;
+ const c=canvas.getContext("2d");
+ c.clearRect(0,0,W,H);
+ const cx=W/2,cy=H/2,R=Math.min(W,H)*0.42;
+ c._ink=opts.ink||"#3a2a12";
+ c.strokeStyle=c._ink;c.fillStyle=c._ink;c.lineWidth=genome.stroke*dpr*0.7;
+ c.save();c.translate(cx,cy);c.rotate(genome.rot||0);
+ genome.ringRatios.forEach(rr=>{c.beginPath();c.arc(0,0,R*rr,0,Math.PI*2);c.stroke()});
+ const N=genome.folds;
+ for(let i=0;i<N;i++){
+  const a=(i/N)*Math.PI*2;
+  const x=Math.cos(a)*R,y=Math.sin(a)*R;
+  c.beginPath();c.moveTo(0,0);c.lineTo(x,y);c.stroke();
+  const ac=genome.accentSet[i%genome.accentSet.length];
+  drawGlyph(c,ac,x,y,R*0.22,a+Math.PI/2);
+ }
+ if(genome.inner){
+  const sides=genome.inner.sides,rr=R*genome.ringRatios[0]*0.9||R*0.3;
+  c.beginPath();
+  for(let i=0;i<=sides;i++){const a=(i/sides)*Math.PI*2-Math.PI/2;const x=Math.cos(a)*rr,y=Math.sin(a)*rr;i?c.lineTo(x,y):c.moveTo(x,y)}
+  c.stroke();
+ }
+ c.restore();
+ if(opts.accent){
+  c.save();c.translate(cx,cy);c.rotate(genome.rot||0);
+  c.strokeStyle=opts.accent;c.lineWidth=Math.max(1,genome.stroke*dpr*0.4);
+  const outer=genome.ringRatios[genome.ringRatios.length-1]||0.5;
+  c.beginPath();c.arc(0,0,R*outer,0,Math.PI*2);c.stroke();
+  c.restore();
+ }
+}
+
+/* ============================== STATE / SAVE ============================== */
+const SAVEKEY="tv_esoterica_v2";
+const SHELF_SIZE=14;
+const DEF=()=>({v:2,archive:[],shelf:[],readingId:null});
+let G=DEF();
+function gload(){
+ try{const raw=localStorage.getItem(SAVEKEY);if(raw)G=Object.assign(DEF(),JSON.parse(raw))}catch(e){}
+ if(!Array.isArray(G.archive))G.archive=[];
+ if(!Array.isArray(G.shelf))G.shelf=[];
+}
+function gsave(){try{localStorage.setItem(SAVEKEY,JSON.stringify(G))}catch(e){}}
+let UID=1;
+function nextId(){return "f"+(UID++)+"_"+Date.now().toString(36)+"_"+Math.floor(Math.random()*1e6).toString(36)}
+
+/* ============================== SHAREABLE SEEDS ============================== */
+/* A folio's whole look and wisdom, packed into a short-ish URL-safe text
+   blob anyone can copy and send to another player, who pastes it back in
+   to add that exact discovery to their own archive -- same "ESO1-" seed
+   convention as Flagger's own seed codec elsewhere in this pack. */
+function encodeFolioSeed(f){
+ try{
+  const payload={v:1,g:f.genome,w:f.wisdom,gen:f.gen||0,lin:f.lineage||null,pt:f.parentTitles||null};
+  const json=JSON.stringify(payload);
+  const b64=btoa(unescape(encodeURIComponent(json))).replace(/\+/g,"-").replace(/\//g,"_").replace(/=+$/,"");
+  return "ESO1-"+b64;
+ }catch(e){return null}
+}
+function decodeFolioSeed(str){
+ try{
+  if(!str)return null;
+  str=String(str).trim();
+  const m=str.match(/^ESO1-(.+)$/);
+  const b64=(m?m[1]:str).replace(/-/g,"+").replace(/_/g,"/");
+  const pad=b64.length%4?"=".repeat(4-b64.length%4):"";
+  const json=decodeURIComponent(escape(atob(b64+pad)));
+  const p=JSON.parse(json);
+  if(!p||!p.g||!p.w||typeof p.w.title!=="string"||typeof p.w.axiom!=="string"||!Array.isArray(p.g.ringRatios))return null;
+  return p;
+ }catch(e){return null}
+}
+function importFolioFromPayload(p){
+ return{id:nextId(),genome:p.g,wisdom:p.w,lineage:p.lin||{[p.w.trad]:1},gen:p.gen||0,
+  liberated:true,fav:false,bornAt:Date.now(),parents:null,parentTitles:p.pt||null,imported:true};
+}
+function copyText(str){
+ if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(str).catch(()=>fallbackCopy(str))}
+ else fallbackCopy(str);
+}
+function fallbackCopy(str){
+ const ta=document.createElement("textarea");ta.value=str;ta.style.position="fixed";ta.style.opacity="0";
+ document.body.appendChild(ta);ta.focus();ta.select();
+ try{document.execCommand("copy")}catch(e){}
+ document.body.removeChild(ta);
+}
+
+function newFolio(seed,parents){
+ const rng=mulberry32(seed);
+ let genome,wisdom,lineage,gen,parentTitles=null;
+ if(parents){
+  genome=breedGenome(parents[0].genome,parents[1].genome,rng);
+  lineage=breedLineage(parents[0].lineage||{[parents[0].wisdom.trad]:1},parents[1].lineage||{[parents[1].wisdom.trad]:1},rng);
+  wisdom=makeWisdomFromLineage(lineage,rng);
+  gen=Math.max(parents[0].gen||0,parents[1].gen||0)+1;
+  parentTitles=[{t:parents[0].wisdom.title,tn:parents[0].wisdom.tradName},{t:parents[1].wisdom.title,tn:parents[1].wisdom.tradName}];
+ }else{
+  const tr=pick(TKEYS,rng);
+  genome=randGenome(rng);
+  lineage={[tr]:1};
+  wisdom=makeWisdomFromLineage(lineage,rng);
+  gen=0;
+ }
+ return{id:nextId(),genome,wisdom,lineage,gen,liberated:!!parents,fav:false,bornAt:Date.now(),
+  parents:parents?[parents[0].id,parents[1].id]:null,parentTitles};
+}
+function ensureShelf(){
+ let changed=false;
+ while(G.shelf.length<SHELF_SIZE){
+  G.shelf.push(newFolio(Date.now()+Math.floor(Math.random()*1e7)+G.shelf.length,null));
+  changed=true;
+ }
+ return changed;
+}
+function findFolioById(id){
+ if(!id)return null;
+ return G.shelf.find(f=>f.id===id)||G.archive.find(f=>f.id===id)||null;
+}
+
+/* ============================== FILTER / SORT (shared by Archive + Picker) ============================== */
+function filterSortList(list,ui){
+ let out=list.filter(f=>{
+  if(ui.excludeId&&f.id===ui.excludeId)return false;
+  if(ui.favOnly&&!f.fav)return false;
+  if(ui.kind==="bred"&&!(f.parents||f.gen))return false;
+  if(ui.kind==="orig"&&(f.parents||f.gen))return false;
+  if(ui.trads&&!ui.trads.has(f.wisdom.trad))return false;
+  if(ui.q){
+   const q=ui.q.toLowerCase();
+   const hay=(f.wisdom.title+" "+f.wisdom.origin+" "+f.wisdom.axiom+" "+f.wisdom.tradName).toLowerCase();
+   if(!hay.includes(q))return false;
+  }
+  return true;
+ });
+ out=out.slice();
+ if(ui.sort==="old")out.sort((a,b)=>a.bornAt-b.bornAt);
+ else if(ui.sort==="az")out.sort((a,b)=>a.wisdom.title.localeCompare(b.wisdom.title));
+ else if(ui.sort==="trad")out.sort((a,b)=>a.wisdom.tradName.localeCompare(b.wisdom.tradName)||a.wisdom.title.localeCompare(b.wisdom.title));
+ else out.sort((a,b)=>b.bornAt-a.bornAt);
+ return out;
+}
+function buildToolbar(ui,onChange){
+ const bar=document.createElement("div");bar.className="toolbar";
+ const search=document.createElement("input");search.type="text";search.placeholder="Search titles, origins, wisdom…";search.value=ui.q;
+ search.oninput=()=>{ui.q=search.value;ui.page=0;onChange()};
+ bar.appendChild(search);
+ TKEYS.forEach(k=>{
+  const chip=document.createElement("span");chip.className="chip"+(ui.trads.has(k)?" on":"");chip.textContent=TRAD[k].name;
+  chip.onclick=()=>{if(ui.trads.has(k)){if(ui.trads.size>1)ui.trads.delete(k)}else ui.trads.add(k);ui.page=0;onChange()};
+  bar.appendChild(chip);
+ });
+ const favChip=document.createElement("span");favChip.className="chip"+(ui.favOnly?" on":"");favChip.textContent="★ Favorites";
+ favChip.onclick=()=>{ui.favOnly=!ui.favOnly;ui.page=0;onChange()};
+ bar.appendChild(favChip);
+ const kindSel=document.createElement("select");
+ [["all","All"],["orig","Original only"],["bred","Bred only"]].forEach(([v,label])=>{const o=document.createElement("option");o.value=v;o.textContent=label;if(ui.kind===v)o.selected=true;kindSel.appendChild(o)});
+ kindSel.onchange=()=>{ui.kind=kindSel.value;ui.page=0;onChange()};
+ bar.appendChild(kindSel);
+ const sortSel=document.createElement("select");
+ [["new","Newest first"],["old","Oldest first"],["az","Title A–Z"],["trad","Tradition"]].forEach(([v,label])=>{const o=document.createElement("option");o.value=v;o.textContent=label;if(ui.sort===v)o.selected=true;sortSel.appendChild(o)});
+ sortSel.onchange=()=>{ui.sort=sortSel.value;onChange()};
+ bar.appendChild(sortSel);
+ return bar;
+}
+
+/* ============================== RENDER / UI ============================== */
+let VIEW="stacks";
+let SLOT={A:null,B:null};
+function setView(v){VIEW=v;document.querySelectorAll("section.scr").forEach(s=>s.classList.toggle("on",s.id===v));
+ document.querySelectorAll("#nav .btn[data-v]").forEach(b=>b.classList.toggle("on",b.dataset.v===v));
+ renderAll()}
+
+function folioNode(folio,faded){
+ const wrap=document.createElement("div");
+ wrap.className="folio"+(faded?" faded":"");
+ if(!faded){
+  const share=document.createElement("button");share.className="sharebtn";share.textContent="⇪";share.title="Copy shareable seed";
+  share.onclick=(ev)=>{ev.stopPropagation();const seed=encodeFolioSeed(folio);if(!seed)return;copyText(seed);const old=share.textContent;share.textContent="✓";setTimeout(()=>{share.textContent=old},1200)};
+  wrap.appendChild(share);
+  const fav=document.createElement("button");fav.className="favbtn"+(folio.fav?" on":"");fav.textContent="★";fav.title="Toggle favorite";
+  fav.onclick=(ev)=>{ev.stopPropagation();folio.fav=!folio.fav;gsave();fav.classList.toggle("on",folio.fav)};
+  wrap.appendChild(fav);
+ }
+ const cv=document.createElement("canvas");cv.style.width="210px";cv.style.height="210px";
+ wrap.appendChild(cv);
+ const t=document.createElement("div");t.className="ftitle";t.textContent=folio.wisdom.title;wrap.appendChild(t);
+ const o=document.createElement("div");o.className="forigin";o.textContent=folio.wisdom.origin;wrap.appendChild(o);
+ const div=document.createElement("div");div.className="fdiv";div.textContent="❦";wrap.appendChild(div);
+ const ax=document.createElement("div");ax.className="faxiom";ax.textContent=folio.wisdom.axiom;wrap.appendChild(ax);
+ const tag=document.createElement("div");
+ if(!faded){tag.className="tag cc0";tag.textContent="Public Domain · CC0";wrap.appendChild(tag)}
+ else{tag.className="tag";tag.textContent=folio.wisdom.tradName+" · not yet archived";wrap.appendChild(tag)}
+ if(!faded&&folio.gen){
+  const genTag=document.createElement("div");genTag.className="tag";genTag.style.marginTop="4px";genTag.textContent="Generation "+folio.gen;wrap.appendChild(genTag);
+  const lin=formatLineage(folio.lineage);
+  if(lin){const linEl=document.createElement("div");linEl.style.fontSize="11px";linEl.style.color="var(--sepia)";linEl.style.marginTop="3px";linEl.textContent=lin;wrap.appendChild(linEl)}
+  if(folio.parentTitles){
+   const pt=document.createElement("div");pt.style.fontSize="11px";pt.style.color="var(--mu)";pt.style.marginTop="2px";pt.style.fontStyle="italic";
+   pt.textContent="Bred from "+folio.parentTitles[0].t+" & "+folio.parentTitles[1].t;wrap.appendChild(pt);
+  }
+ }
+ requestAnimationFrame(()=>renderSigil(cv,folio.genome,faded?{ink:"#6b6b6b"}:{ink:TRAD_INK[folio.wisdom.trad]||"#3a2a12",accent:"#c9a227"}));
+ return wrap;
+}
+
+function renderStacks(){
+ ensureShelf();gsave();
+ const grid=$("shelfGrid");grid.innerHTML="";
+ G.shelf.forEach(f=>{
+  const t=document.createElement("div");t.className="tome";
+  const cv=document.createElement("canvas");cv.style.width="86px";cv.style.height="86px";t.appendChild(cv);
+  const tt=document.createElement("div");tt.className="tomett";tt.textContent=f.wisdom.title;t.appendChild(tt);
+  const cap=document.createElement("div");cap.className="cap";cap.textContent=f.wisdom.tradName;t.appendChild(cap);
+  t.onclick=()=>{G.readingId=f.id;gsave();setView("desk")};
+  grid.appendChild(t);
+  requestAnimationFrame(()=>renderSigil(cv,f.genome,{ink:"#6b6b6b"}));
+ });
+ $("stacksStats").innerHTML=
+  "<div><b>"+G.archive.length+"</b>folios liberated</div>"+
+  "<div><b>"+G.archive.filter(f=>f.parents).length+"</b>bred lineages</div>"+
+  "<div><b>"+G.archive.filter(f=>f.fav).length+"</b>favorites</div>";
+}
+
+function renderDesk(){
+ const el=$("deskFolio"),acts=$("deskActs"),sub=$("deskSub");
+ el.innerHTML="";acts.innerHTML="";
+ const f=findFolioById(G.readingId);
+ if(!f){sub.textContent="Nothing on the desk. Choose a tome from the Stacks first.";return}
+ sub.textContent=f.liberated?"Liberated. Archived forever, free to breed in the Scriptorium.":"Still loose in the stacks — read it freely, then decide whether it's worth liberating into your permanent archive.";
+ el.appendChild(folioNode(f,!f.liberated));
+ if(!f.liberated){
+  if(G.shelf.length>1){
+   const prev=document.createElement("button");prev.className="btn sm";prev.textContent="‹ Prev tome";
+   prev.onclick=()=>{const idx=G.shelf.findIndex(x=>x.id===f.id);const n=(idx-1+G.shelf.length)%G.shelf.length;G.readingId=G.shelf[n].id;gsave();renderDesk()};
+   acts.appendChild(prev);
+  }
+  const b=document.createElement("button");b.className="btn pri";b.textContent="OCR & Liberate";
+  b.onclick=()=>{
+   sfxScan();
+   const idx=G.shelf.findIndex(x=>x.id===f.id);
+   if(idx>=0)G.shelf.splice(idx,1);
+   f.liberated=true;G.archive.push(f);ensureShelf();gsave();updateStatline();
+   setTimeout(()=>{renderDesk();renderStacks()},550);
+  };
+  acts.appendChild(b);
+  if(G.shelf.length>1){
+   const next=document.createElement("button");next.className="btn sm";next.textContent="Next tome ›";
+   next.onclick=()=>{const idx=G.shelf.findIndex(x=>x.id===f.id);const n=(idx+1)%G.shelf.length;G.readingId=G.shelf[n].id;gsave();renderDesk()};
+   acts.appendChild(next);
+  }
+  const put=document.createElement("button");put.className="btn";put.textContent="Put back";
+  put.onclick=()=>{G.readingId=null;gsave();setView("stacks")};
+  acts.appendChild(put);
+ }else{
+  const b=document.createElement("button");b.className="btn";b.textContent="Return to the Stacks";
+  b.onclick=()=>{G.readingId=null;gsave();setView("stacks")};
+  acts.appendChild(b);
+ }
+}
+
+function renderSlot(key){
+ const el=$(key==="A"?"slotA":"slotB");
+ const f=SLOT[key];
+ el.innerHTML="";
+ el.classList.toggle("filled",!!f);
+ if(!f){el.textContent="Click to choose a folio";return}
+ const cv=document.createElement("canvas");cv.style.width="110px";cv.style.height="110px";el.appendChild(cv);
+ const t=document.createElement("div");t.style.fontSize="12px";t.style.fontWeight="600";t.textContent=f.wisdom.title;el.appendChild(t);
+ requestAnimationFrame(()=>renderSigil(cv,f.genome,{ink:TRAD_INK[f.wisdom.trad]||"#3a2a12",accent:"#c9a227"}));
+}
+function renderScriptorium(){
+ renderSlot("A");renderSlot("B");
+ $("synthBtn").disabled=!(SLOT.A&&SLOT.B);
+}
+
+let ARCHIVE_UI={q:"",trads:new Set(TKEYS),favOnly:false,kind:"all",sort:"new",page:0};
+const PAGE_SIZE=60;
+function renderGallery(){
+ const tb=$("archiveToolbar"),el=$("galleryBody"),pager=$("archivePager");
+ if(!G.archive.length){tb.innerHTML="";el.innerHTML='<div class="empty">Nothing liberated yet. Visit the Stacks.</div>';pager.innerHTML="";return}
+ tb.innerHTML="";tb.appendChild(buildToolbar(ARCHIVE_UI,renderGallery));
+ const filtered=filterSortList(G.archive,ARCHIVE_UI);
+ if(!filtered.length){el.innerHTML='<div class="empty">No folios match these filters.</div>';pager.innerHTML="";return}
+ const totalPages=Math.max(1,Math.ceil(filtered.length/PAGE_SIZE));
+ ARCHIVE_UI.page=Math.min(ARCHIVE_UI.page,totalPages-1);
+ const pageItems=filtered.slice(ARCHIVE_UI.page*PAGE_SIZE,(ARCHIVE_UI.page+1)*PAGE_SIZE);
+ el.innerHTML="";
+ const grid=document.createElement("div");grid.className="gallery";
+ pageItems.forEach(f=>{
+  const g=document.createElement("div");g.className="gcard";
+  const fav=document.createElement("button");fav.className="favbtn"+(f.fav?" on":"");fav.textContent="★";fav.title="Toggle favorite";
+  fav.onclick=(ev)=>{ev.stopPropagation();f.fav=!f.fav;gsave();renderGallery()};
+  g.appendChild(fav);
+  const cv=document.createElement("canvas");cv.style.width="110px";cv.style.height="110px";g.appendChild(cv);
+  const t=document.createElement("div");t.className="gt";t.textContent=f.wisdom.title;g.appendChild(t);
+  const s=document.createElement("div");s.style.fontSize="11px";s.style.color="var(--sepia)";s.textContent=f.wisdom.tradName+(f.gen?" · Gen "+f.gen:"");g.appendChild(s);
+  g.onclick=()=>openFolioModal(f);
+  grid.appendChild(g);
+  requestAnimationFrame(()=>renderSigil(cv,f.genome,{ink:TRAD_INK[f.wisdom.trad]||"#3a2a12",accent:"#c9a227"}));
+ });
+ el.appendChild(grid);
+ pager.innerHTML="";
+ if(totalPages>1){
+  const prev=document.createElement("button");prev.className="btn sm";prev.textContent="‹ Prev";prev.disabled=ARCHIVE_UI.page===0;
+  prev.onclick=()=>{ARCHIVE_UI.page--;renderGallery()};
+  const info=document.createElement("span");info.textContent="Page "+(ARCHIVE_UI.page+1)+" of "+totalPages+" · "+filtered.length+" shown";
+  const next=document.createElement("button");next.className="btn sm";next.textContent="Next ›";next.disabled=ARCHIVE_UI.page>=totalPages-1;
+  next.onclick=()=>{ARCHIVE_UI.page++;renderGallery()};
+  pager.appendChild(prev);pager.appendChild(info);pager.appendChild(next);
+ }else{
+  const info=document.createElement("span");info.textContent=filtered.length+" of "+G.archive.length+" shown";
+  pager.appendChild(info);
+ }
+}
+
+function openFolioModal(f){
+ const box=$("modalbox");box.innerHTML="";
+ box.appendChild(folioNode(f,false));
+ const close=document.createElement("button");close.className="btn";close.style.marginTop="12px";close.textContent="Close";
+ close.onclick=()=>$("modal").classList.remove("show");
+ box.appendChild(close);
+ $("modal").classList.add("show");
+}
+
+function openImportModal(){
+ const box=$("modalbox");box.innerHTML="";
+ const h=document.createElement("h3");h.style.marginBottom="6px";h.textContent="Import seeds";box.appendChild(h);
+ const p=document.createElement("p");p.className="lsub";p.style.margin="0 0 8px";p.textContent="Paste one or more ESO1- seeds (one per line) from another player.";box.appendChild(p);
+ const ta=document.createElement("textarea");ta.className="seedbox";ta.placeholder="ESO1-…";box.appendChild(ta);
+ const status=document.createElement("div");status.style.fontSize="12.5px";status.style.color="var(--mu)";status.style.marginTop="6px";box.appendChild(status);
+ const row=document.createElement("div");row.className="row";row.style.marginTop="10px";
+ const add=document.createElement("button");add.className="btn pri";add.textContent="Add to Archive";
+ add.onclick=()=>{
+  const lines=ta.value.split(/\n+/).map(s=>s.trim()).filter(Boolean);
+  let ok=0,bad=0;
+  lines.forEach(line=>{
+   const p=decodeFolioSeed(line);
+   if(p){G.archive.push(importFolioFromPayload(p));ok++}else bad++;
+  });
+  if(ok){gsave();updateStatline();renderGallery()}
+  status.textContent=ok?("Added "+ok+" folio"+(ok===1?"":"s")+(bad?(" · "+bad+" line"+(bad===1?"":"s")+" couldn't be read"):"")+".")
+   :(lines.length?"None of that could be read as a seed.":"Paste at least one seed first.");
+ };
+ const close=document.createElement("button");close.className="btn";close.textContent="Close";
+ close.onclick=()=>$("modal").classList.remove("show");
+ row.appendChild(add);row.appendChild(close);box.appendChild(row);
+ $("modal").classList.add("show");
+}
+
+const PICKER_PAGE=40;
+let PICKER_UI=null;
+function openPicker(slotKey){
+ if(!G.archive.length)return;
+ const otherKey=slotKey==="A"?"B":"A";
+ PICKER_UI={q:"",trads:new Set(TKEYS),favOnly:false,kind:"all",sort:"new",page:0,excludeId:SLOT[otherKey]?SLOT[otherKey].id:null};
+ renderPicker(slotKey);
+ $("modal").classList.add("show");
+}
+function renderPicker(slotKey){
+ const box=$("modalbox");box.innerHTML="";
+ const h=document.createElement("h3");h.style.marginBottom="8px";h.textContent="Choose a folio";box.appendChild(h);
+ box.appendChild(buildToolbar(PICKER_UI,()=>renderPicker(slotKey)));
+ const filtered=filterSortList(G.archive,PICKER_UI);
+ if(!filtered.length){
+  const e=document.createElement("div");e.className="empty";e.textContent="No folios match these filters.";box.appendChild(e);
+ }else{
+  const totalPages=Math.max(1,Math.ceil(filtered.length/PICKER_PAGE));
+  PICKER_UI.page=Math.min(PICKER_UI.page,totalPages-1);
+  const pageItems=filtered.slice(PICKER_UI.page*PICKER_PAGE,(PICKER_UI.page+1)*PICKER_PAGE);
+  const grid=document.createElement("div");grid.className="gallery";
+  pageItems.forEach(f=>{
+   const g=document.createElement("div");g.className="gcard";
+   const fav=document.createElement("button");fav.className="favbtn"+(f.fav?" on":"");fav.textContent="★";
+   fav.onclick=(ev)=>{ev.stopPropagation();f.fav=!f.fav;gsave();renderPicker(slotKey)};
+   g.appendChild(fav);
+   const cv=document.createElement("canvas");cv.style.width="90px";cv.style.height="90px";g.appendChild(cv);
+   const t=document.createElement("div");t.className="gt";t.textContent=f.wisdom.title;g.appendChild(t);
+   g.onclick=()=>{SLOT[slotKey]=f;$("modal").classList.remove("show");renderScriptorium()};
+   grid.appendChild(g);
+   requestAnimationFrame(()=>renderSigil(cv,f.genome,{ink:TRAD_INK[f.wisdom.trad]||"#3a2a12",accent:"#c9a227"}));
+  });
+  box.appendChild(grid);
+  if(totalPages>1){
+   const pager=document.createElement("div");pager.className="pager";
+   const prev=document.createElement("button");prev.className="btn sm";prev.textContent="‹ Prev";prev.disabled=PICKER_UI.page===0;
+   prev.onclick=()=>{PICKER_UI.page--;renderPicker(slotKey)};
+   const info=document.createElement("span");info.textContent="Page "+(PICKER_UI.page+1)+" of "+totalPages;
+   const next=document.createElement("button");next.className="btn sm";next.textContent="Next ›";next.disabled=PICKER_UI.page>=totalPages-1;
+   next.onclick=()=>{PICKER_UI.page++;renderPicker(slotKey)};
+   pager.appendChild(prev);pager.appendChild(info);pager.appendChild(next);
+   box.appendChild(pager);
+  }
+ }
+ const close=document.createElement("button");close.className="btn";close.style.marginTop="12px";close.textContent="Cancel";
+ close.onclick=()=>$("modal").classList.remove("show");
+ box.appendChild(close);
+}
+
+function updateStatline(){$("statline").textContent=G.archive.length+" liberated"}
+function renderAll(){
+ updateStatline();
+ if(VIEW==="stacks")renderStacks();
+ else if(VIEW==="desk")renderDesk();
+ else if(VIEW==="scriptorium")renderScriptorium();
+ else if(VIEW==="archive")renderGallery();
+}
+
+document.body.addEventListener("click",e=>{
+ const nb=e.target.closest("#nav .btn[data-v]");
+ if(nb){setView(nb.dataset.v);return}
+ const b=e.target.closest("[data-a]");
+ if(!b)return;
+ const a=b.dataset.a,k=b.dataset.k;
+ if(a==="reshelf"){sfxPaper();G.shelf=[];ensureShelf();gsave();renderStacks();return}
+ if(a==="pickslot"){openPicker(k);return}
+ if(a==="exportshown"){
+  const list=filterSortList(G.archive,ARCHIVE_UI);
+  const seeds=list.map(encodeFolioSeed).filter(Boolean);
+  if(!seeds.length)return;
+  copyText(seeds.join("\n\n"));
+  const old=b.textContent;b.textContent="Copied "+seeds.length+" seed"+(seeds.length===1?"":"s")+"!";
+  setTimeout(()=>{b.textContent=old},1600);
+  return}
+ if(a==="importseeds"){openImportModal();return}
+ if(a==="synth"){
+  if(!(SLOT.A&&SLOT.B))return;
+  sfxBreed();
+  const child=newFolio(Date.now()+Math.floor(Math.random()*99999),[SLOT.A,SLOT.B]);
+  G.archive.push(child);gsave();updateStatline();
+  $("synthResult").innerHTML="";
+  const label=document.createElement("div");label.style.textAlign="center";label.style.color="var(--mu)";label.style.marginBottom="8px";label.textContent="A new folio enters the archive:";
+  $("synthResult").appendChild(label);
+  $("synthResult").appendChild(folioNode(child,false));
+  SLOT.A=null;SLOT.B=null;renderScriptorium();
+  return}
+});
+$("modal").addEventListener("click",e=>{if(e.target.id==="modal")$("modal").classList.remove("show")});
+
+function boot(){gload();ensureShelf();gsave();setView("stacks")}
+boot();
+})();
+<~/script></body></html>
+</script>
+
 
 <script>
 (function(){
