@@ -15266,6 +15266,606 @@ boot();
 })();
 <~/script></body></html>
 </script>
+<script type="text/plain" class="cartsrc" data-meta='{"name": "Sage: The Sovereign Twin", "sub": "An offline emotional-alchemy oracle, candlelit and listening", "desc": "Sit at a candlelit desk across from Sage: a gentle monk-robed CRT presence who reads what you bring him \u2014 in your own words, or by touching one of four resin stones \u2014 and answers not with advice, but with a few sentences of real recognition, a short aphorism drawn from his own philosophy, and a one-of-a-kind geometric sigil sealed to that moment. Keep any folio that moved you in your Pocket, or copy it out as a talisman for someone else to carry.", "color": "#d4883a", "glyph": "M9 21h6 M9 21v-10a3 3 0 013-3h0a3 3 0 013 3v10 M12 8c-1.5-1.5-1.5-3 0-5c1.5 2 1.5 3.5 0 5z", "tags": ["Wellbeing", "Philosophy", "Cozy"], "id": "sage"}'><!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><title>Sage: The Sovereign Twin</title>
+<style>
+:root{--ink:#f4ecd8;--bg:#14110e;--bg2:#1e1812;--amber:#d4883a;--gold:#e8b058;--line:#4a3a28;--mu:#a8927a;--panel:#241c15}
+*{box-sizing:border-box}html,body{margin:0;height:100%}
+body{background:radial-gradient(120% 90% at 50% 10%,#241c14 0%,var(--bg) 70%);color:var(--ink);font:15px/1.5 "Iowan Old Style",Georgia,"Times New Roman",serif;overflow:hidden}
+#tlhost{display:flex;flex-direction:column;height:100%}
+h1,h2,h3{font-family:"Iowan Old Style",Georgia,serif;font-weight:600;margin:0}
+.btn{appearance:none;border:1px solid var(--line);background:linear-gradient(#2a2217,#1a140e);color:var(--gold);font:inherit;font-size:14px;padding:9px 16px;border-radius:7px;cursor:pointer}
+.btn:hover{border-color:var(--amber)}
+.btn.pri{background:linear-gradient(var(--gold),var(--amber));color:#2a1a08;border-color:var(--amber);font-weight:600}
+.btn.sm{padding:5px 10px;font-size:12px}
+/* Chatbot layout: a slim header (small portrait + ambience toggle), a log
+   that takes all remaining space and is the ONLY thing that scrolls, and an
+   input row pinned at the bottom. No desk scene, no stones, no folio cards
+   — the portrait used to anchor a whole illustrated scene that ate the
+   screen at docked widths; now it's just a small avatar, same as any chat
+   app's contact icon, so there's nothing left that can push the input box
+   out of view. */
+#nav{flex:none;position:relative;z-index:4;display:flex;gap:10px;align-items:center;padding:8px 14px;background:rgba(20,17,14,.92);border-bottom:1px solid #3a2f1d;backdrop-filter:blur(4px)}
+#nav .navtitle{display:flex;align-items:center;gap:8px}
+#monkCanvas{display:block;width:40px;height:46px;flex:none}
+#nav .navtitle b{color:var(--gold);font-size:15px;letter-spacing:.02em}
+#nav .navsub{color:var(--mu);font-size:11.5px;margin-top:-2px}
+#ambBtn{margin-left:auto}
+.chatwrap{flex:1;min-height:0;display:flex;flex-direction:column;max-width:720px;margin:0 auto;width:100%;padding:0 16px}
+#dialogueLog{flex:1;min-height:0;overflow-y:auto;-webkit-overflow-scrolling:touch;display:flex;flex-direction:column;gap:10px;padding:14px 0 10px}
+.bubble{max-width:82%;padding:9px 14px;border-radius:12px;font-size:14.5px;line-height:1.5}
+.bubble.you{align-self:flex-end;background:rgba(212,136,58,.16);border:1px solid var(--amber);color:var(--gold)}
+.bubble.sage{align-self:flex-start;background:var(--panel);border:1px solid var(--line);color:var(--ink)}
+.inputrow{flex:none;display:flex;gap:8px;align-items:center;padding:8px 0 14px}
+.inputrow input{flex:1;background:#1a140e;border:1px solid var(--line);color:var(--ink);border-radius:8px;padding:11px 14px;font:inherit;font-size:14.5px}
+.inputrow input:focus{outline:none;border-color:var(--amber)}
+</style></head><body><div id="tlhost" tabindex="0">
+
+<div id="nav">
+ <div class="navtitle"><canvas id="monkCanvas" width="56" height="64"></canvas><div><b>Sage</b><div class="navsub">a philosopher, listening</div></div></div>
+ <button class="btn sm" data-a="toggleamb" id="ambBtn">Ambience: off</button>
+</div>
+
+<div class="chatwrap">
+ <div id="dialogueLog"></div>
+ <div class="inputrow">
+  <input type="text" id="heartInput" placeholder="Speak what is on your heart…" maxlength="280">
+  <button class="btn pri" id="offerBtn">Send</button>
+ </div>
+</div>
+
+</div>
+<script>
+(function(){
+"use strict";
+const $=id=>document.getElementById(id);
+
+/* ============================== AUDIO ============================== */
+const AC_CTX=(()=>{try{return new (window.AudioContext||window.webkitAudioContext)()}catch(e){return null}})();
+function tone(freq,dur,type,gain,delay){
+ if(!AC_CTX)return;
+ const t0=AC_CTX.currentTime+(delay||0);
+ const o=AC_CTX.createOscillator(),g=AC_CTX.createGain();
+ o.type=type||"sine";o.frequency.setValueAtTime(freq,t0);
+ g.gain.setValueAtTime(0,t0);g.gain.linearRampToValueAtTime(gain||.07,t0+.03);g.gain.exponentialRampToValueAtTime(.0001,t0+dur);
+ o.connect(g);g.connect(AC_CTX.destination);o.start(t0);o.stop(t0+dur+.05)}
+function noiseBurst(dur,gain,freq,q){
+ if(!AC_CTX)return;
+ const n=Math.max(1,Math.floor(AC_CTX.sampleRate*dur)),buf=AC_CTX.createBuffer(1,n,AC_CTX.sampleRate),d=buf.getChannelData(0);
+ for(let i=0;i<n;i++)d[i]=(Math.random()*2-1)*Math.pow(1-i/n,2);
+ const src=AC_CTX.createBufferSource();src.buffer=buf;
+ const g=AC_CTX.createGain();g.gain.value=gain||.05;
+ const f=AC_CTX.createBiquadFilter();f.type="bandpass";f.frequency.value=freq||1800;f.Q.value=q||.6;
+ src.connect(f);f.connect(g);g.connect(AC_CTX.destination);src.start()}
+function sfxQuill(){noiseBurst(.1,.03,3200,1.2)}
+function sfxChime(){
+ [196,246.9,329.6,392].forEach((f,i)=>tone(f,2.6,"sine",.045,i*.07));
+ tone(98,3,"sine",.05,0)}
+let AMBIENT_ON=false,AMBIENT_TIMER=null,AMBIENT_LOOP=null;
+function startAmbience(){
+ if(!AC_CTX||AMBIENT_ON)return;
+ AMBIENT_ON=true;
+ const n=AC_CTX.sampleRate*4,buf=AC_CTX.createBuffer(1,n,AC_CTX.sampleRate),d=buf.getChannelData(0);
+ for(let i=0;i<n;i++)d[i]=(Math.random()*2-1)*.3;
+ const src=AC_CTX.createBufferSource();src.buffer=buf;src.loop=true;
+ const f=AC_CTX.createBiquadFilter();f.type="lowpass";f.frequency.value=900;
+ const g=AC_CTX.createGain();g.gain.value=.03;
+ src.connect(f);f.connect(g);g.connect(AC_CTX.destination);src.start();
+ AMBIENT_LOOP={src,g};
+ const crackle=()=>{if(!AMBIENT_ON)return;noiseBurst(.06+Math.random()*.08,.03+Math.random()*.03,2200+Math.random()*800,2);AMBIENT_TIMER=setTimeout(crackle,400+Math.random()*1400)};
+ crackle();
+}
+function stopAmbience(){
+ AMBIENT_ON=false;
+ if(AMBIENT_TIMER)clearTimeout(AMBIENT_TIMER);
+ if(AMBIENT_LOOP){try{AMBIENT_LOOP.g.gain.linearRampToValueAtTime(0,AC_CTX.currentTime+.6);AMBIENT_LOOP.src.stop(AC_CTX.currentTime+.65)}catch(e){}AMBIENT_LOOP=null}
+}
+
+function pick(a,rng){return a[Math.floor(rng()*a.length)]}
+function mulberry32(seed){return function(){seed|=0;seed=seed+0x6D2B79F5|0;let t=Math.imul(seed^seed>>>15,1|seed);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296}}
+
+/* ============================== THE MONK AVATAR ============================== */
+function roundRect(c,x,y,w,h,r){c.beginPath();c.moveTo(x+r,y);c.arcTo(x+w,y,x+w,y+h,r);c.arcTo(x+w,y+h,x,y+h,r);c.arcTo(x,y+h,x,y,r);c.arcTo(x,y,x+w,y,r);c.closePath()}
+let MONK_STATE="still",MONK_T=0,BLINK_AT=1200;
+function drawMonk(ctx,w,h){
+ ctx.clearRect(0,0,w,h);
+ const cx=w/2;
+ ctx.fillStyle="#3b2a1d";
+ ctx.beginPath();
+ ctx.moveTo(cx-w*0.42,h*0.98);
+ ctx.quadraticCurveTo(cx-w*0.46,h*0.24,cx,h*0.03);
+ ctx.quadraticCurveTo(cx+w*0.46,h*0.24,cx+w*0.42,h*0.98);
+ ctx.closePath();ctx.fill();
+ ctx.fillStyle="#241a12";
+ ctx.beginPath();ctx.ellipse(cx,h*0.44,w*0.30,h*0.33,0,0,Math.PI*2);ctx.fill();
+ const scrW=w*0.48,scrH=h*0.38,scrX=cx-scrW/2,scrY=h*0.26;
+ const glow=MONK_STATE==="clarity"?"#f0c060":MONK_STATE==="compassion"?"#e8c98a":"#e0a050";
+ ctx.save();ctx.shadowColor=glow;ctx.shadowBlur=MONK_STATE==="pondering"?6+Math.sin(MONK_T*0.004)*4:9;
+ ctx.fillStyle="#140f0a";roundRect(ctx,scrX,scrY,scrW,scrH,Math.max(2,scrW*0.14));ctx.fill();
+ ctx.restore();
+ ctx.strokeStyle="rgba(232,176,88,0.08)";ctx.lineWidth=1;
+ for(let y=scrY+2;y<scrY+scrH;y+=3){ctx.beginPath();ctx.moveTo(scrX+2,y);ctx.lineTo(scrX+scrW-2,y);ctx.stroke()}
+ const eyeY=scrY+scrH*0.42,eyeDX=scrW*0.17;
+ ctx.fillStyle=glow;ctx.strokeStyle=glow;
+ const blinking=MONK_STATE==="still"&&(MONK_T%BLINK_AT<90);
+ if(MONK_STATE==="pondering"){
+  ctx.lineWidth=2;[-1,1].forEach(s=>{ctx.beginPath();ctx.arc(cx+s*eyeDX,eyeY+4,5,Math.PI,2*Math.PI);ctx.stroke()});
+ }else if(blinking){
+  ctx.lineWidth=2;[-1,1].forEach(s=>{ctx.beginPath();ctx.moveTo(cx+s*eyeDX-5,eyeY);ctx.lineTo(cx+s*eyeDX+5,eyeY);ctx.stroke()});
+ }else{
+  const eyeH=MONK_STATE==="compassion"?3.2:4.4;
+  [-1,1].forEach(s=>{ctx.beginPath();ctx.ellipse(cx+s*eyeDX,eyeY,3.6,eyeH,0,0,Math.PI*2);ctx.fill()});
+ }
+ ctx.lineWidth=1.4;ctx.globalAlpha=.55;
+ [-1,1].forEach(s=>{
+  ctx.beginPath();ctx.moveTo(cx+s*(eyeDX-6),eyeY-9);
+  ctx.quadraticCurveTo(cx+s*eyeDX,eyeY-12-(MONK_STATE==="compassion"?2:0),cx+s*(eyeDX+6),eyeY-9);
+  ctx.stroke();
+ });
+ ctx.globalAlpha=1;
+ const mouthY=eyeY+scrH*0.24;
+ ctx.lineWidth=1.6;ctx.beginPath();
+ if(MONK_STATE==="compassion"){ctx.moveTo(cx-9,mouthY);ctx.quadraticCurveTo(cx,mouthY+6,cx+9,mouthY)}
+ else{ctx.moveTo(cx-7,mouthY);ctx.quadraticCurveTo(cx,mouthY+3,cx+7,mouthY)}
+ ctx.stroke();
+}
+function animateMonk(){
+ MONK_T+=16;
+ const cv=$("monkCanvas");
+ if(cv)drawMonk(cv.getContext("2d"),cv.width,cv.height);
+ requestAnimationFrame(animateMonk);
+}
+function setMonkState(s,ms){
+ MONK_STATE=s;
+ if(ms)setTimeout(()=>{MONK_STATE="still"},ms);
+}
+
+/* ============================== EMOTIONAL / ELEMENTAL ENGINE (E = L) ============================== */
+/* A priority cascade of phrase-level, negation-aware patterns, checked most
+   specific and highest-stakes first. The old version tallied single-word
+   substring hits and silently defaulted to "earth" when nothing matched —
+   which meant a total miss read as a confident, specific, WRONG diagnosis,
+   and "nobody loves me" matched the substring "love" inside "loves" with no
+   regard for the "nobody" standing right in front of it. Both are fixed by
+   checking real multi-word patterns in order, and by giving a genuine "I'm
+   not sure yet" category instead of a fallback that pretends certainty. */
+/* v3: the bare /\bsuicide\b/ used to fire on the WORD alone, which meant
+   someone discussing Camus, assisted-dying ethics, or their own writing on
+   the subject got swept into the crisis path instead of real philosophical
+   engagement. This path is now reserved for explicit, first-person,
+   present-tense statements of intent — never the topic itself. Topical or
+   third-person mentions of suicide fall through to EXISTENTIAL_PATTERNS
+   below, which is built to take the question seriously, not gate it. */
+/* Ordinary conversational register — a plain "how are you?" or "thanks" used
+   to fall all the way through every category to "unsure" and get answered
+   with "I'd rather ask than pretend I already understand this," which is a
+   strange, robotic reply to a simple greeting. These are deliberately
+   anchored (^...$, short, no stray words) so they only fire on a message
+   that IS the greeting/check-in/thanks/farewell, not one that merely
+   contains "hi" or "thanks" inside something heavier — "hi, nobody loves
+   me" should still land on isolation, not get waved off with "hello!" */
+const GREETING_PATTERNS=[/^(?:hi|hello|hey|hiya|yo|heya)[.!?]*$/i,/^good (?:morning|afternoon|evening)[.!?]*$/i];
+const CHECKIN_PATTERNS=[/^how are you\??$/i,/^how'?s it going\??$/i,/^how are you (?:doing|feeling)\??$/i,
+ /^(?:are you|you) (?:ok|okay|alright)\??$/i,/^what'?s up\??$/i,/^how do you feel\??$/i,/^how have you been\??$/i];
+const GRATITUDE_PATTERNS=[/^thanks?(?: you)?[.!]*$/i,/^thank you[.!]*$/i,/^(?:i )?appreciate (?:it|that|you)[.!]*$/i,
+ /^that help(?:s|ed)[.!]*$/i,/^that (?:was|is) helpful[.!]*$/i];
+const FAREWELL_PATTERNS=[/^(?:bye|goodbye|good ?night)[.!]*$/i,/^see you[.!]*$/i,/^talk (?:to you )?later[.!]*$/i,
+ /^(?:i have to|i'?ve got to|i gotta) go[.!]*$/i,/^gotta go[.!]*$/i];
+const CRISIS_PATTERNS=[
+ /\bi(?:'m| am) (?:going to|gonna|planning to|about to) (?:kill myself|commit suicide|end (?:it all|my life))\b/i,
+ /\bi (?:want|plan|need) to (?:kill myself|commit suicide|end my life|die)\b/i,
+ /\bi(?:'m| am) suicidal\b/i,
+ /\b(?:i'?ve been |i am |i'm )?thinking (?:about|of) (?:killing myself|ending my life|committing suicide)\b/i,
+ /\bkill myself\b/i,/\bend my life\b/i,/\bwant to die\b/i,
+ /\bdon'?t want to (be alive|live|exist)\b/i,/\bhurt myself\b/i,/\bharm myself\b/i,
+ /\bcutting myself\b/i,/\bno reason to live\b/i,/\bcan'?t go on living\b/i,/\bbetter off dead\b/i
+];
+const EXISTENTIAL_PATTERNS=[
+ /\bwhat'?s the point\b/i,/\bwhy (bother|keep going|keep trying)\b/i,
+ /\bis (any of this|life) (even )?worth it\b/i,/\bdoes (any of this|anything) (even )?matter\b/i,
+ /\bwhat'?s it all for\b/i,/\bi don'?t see the point( of (anything|living|trying))?\b/i,
+ /\bis life (even )?worth living\b/i,/\bwhy (are we|am i) even here\b/i
+];
+const ISOLATION_PATTERNS=[
+ /\bnobody (loves|cares about|wants|needs) me\b/i,/\bno ?one (loves|cares about|wants|needs) me\b/i,
+ /\bi'?m unlovable\b/i,/\bi am unlovable\b/i,/\bi have no ?one\b/i,/\beveryone leaves( me)?\b/i,
+ /\bi'?m (such )?a burden\b/i,/\bi'?m worthless\b/i,/\bi am worthless\b/i,/\bnot worth (loving|caring about)\b/i,
+ /\bso alone\b/i,/\bcompletely alone\b/i,/\bnobody would (?:even |ever )?(notice|care|miss me)\b/i,/\bno ?one would (?:even |ever )?(notice|care|miss me)\b/i,
+ /\bi don'?t matter\b/i,/\bi'?m invisible\b/i
+];
+const SAGEQ_PATTERNS=[
+ /\b(do you|are you|would you|can you) (really |actually |truly )?(love|care about) me\b/i,
+ /\bare you (real|alive|conscious|sentient|a person|actually there)\b/i,
+ /\bwhat are you\b/i,/\bdo you (even )?exist\b/i,/\bcan you (actually )?feel( anything)?\b/i,
+ /\bdo you (understand|know|remember) me\b/i,/\bare you (just )?a (program|bot|machine|chatbot|script)\b/i
+];
+const GRIEF_PATTERNS=[
+ /\b(my|our) (dog|cat|pet|mom|mother|dad|father|brother|sister|grandma|grandpa|grandmother|grandfather|friend|partner|husband|wife|baby|son|daughter)\b.{0,20}\b(died|passed away|passed on|is gone|is dead)\b/i,
+ /\bpassed away\b/i,/\bjust died\b/i,
+ /\blost (my|our) (dog|cat|pet|mom|mother|dad|father|brother|sister|grandma|grandpa|grandmother|grandfather|friend|partner|husband|wife|baby|son|daughter)\b/i,
+ /\bthe funeral\b/i,/\bno longer with us\b/i
+];
+const FIRE_WORDS=["angry","anger","furious","rage","unfair","injustice","frustrated","burning","hate","resent","betrayed","sick of"];
+const AIR_WORDS=["confused","don't know what","uncertain","foggy","unsure","mixed up","scattered","can't focus","overthinking","don't understand"];
+const AETHER_WORDS=["love","wonder","hope","grateful","gratitude","beautiful","meaning","seeking","curious","awe","truth","faith","inspired","possibility"];
+const EARTH_WORDS=["tired","exhausted","heavy","burden","weight","stuck","numb","worn out","drained","can't get up","flat","depleted"];
+const WATER_WORDS=["sad","cry","crying","tears","sorrow","ache","heartbroken","mourning","longing","overwhelmed"];
+const URGENT_WORDS=["now","can't stop","racing","can't breathe","right now","immediately","need this","can't wait"];
+
+function clamp01(v){return Math.max(0,Math.min(1,v))}
+/* Negation-aware: a word is only counted if it isn't sitting right after a
+   negator ("not tired", "don't feel sad", "never grateful"). A flat
+   substring match used to count "sad" inside "not sad" the same as a real
+   disclosure of sadness — this checks a short window of text just before
+   each hit for not/n't/never/no/hardly/barely before counting it. */
+const NEGATORS=["not","n't","never","no ","hardly","barely"];
+function countHits(text,words){
+ let n=0;
+ for(const w of words){
+  const re=new RegExp("\\b"+w.replace(/[.*+?^${}()|[\]\\]/g,"\\$&")+"\\b","gi");
+  let m;
+  while((m=re.exec(text))){
+   const pre=text.slice(Math.max(0,m.index-24),m.index);
+   if(!NEGATORS.some(neg=>pre.includes(neg)))n++;
+  }
+ }
+ return n;
+}
+function anyMatch(text,patterns){return patterns.some(re=>re.test(text))}
+function classify(text){
+ const t=(text||"").toLowerCase().trim();
+ if(t&&anyMatch(t,CRISIS_PATTERNS))return"crisis";
+ if(t&&anyMatch(t,GREETING_PATTERNS))return"greeting";
+ if(t&&anyMatch(t,CHECKIN_PATTERNS))return"checkin";
+ if(t&&anyMatch(t,GRATITUDE_PATTERNS))return"gratitude";
+ if(t&&anyMatch(t,FAREWELL_PATTERNS))return"farewell";
+ if(t&&anyMatch(t,ISOLATION_PATTERNS))return"isolation";
+ if(t&&anyMatch(t,SAGEQ_PATTERNS))return"sageq";
+ if(t&&anyMatch(t,GRIEF_PATTERNS))return"grief";
+ if(t&&anyMatch(t,EXISTENTIAL_PATTERNS))return"existential";
+ const tally={earth:countHits(t,EARTH_WORDS),water:countHits(t,WATER_WORDS),fire:countHits(t,FIRE_WORDS),
+  air:countHits(t,AIR_WORDS),aether:countHits(t,AETHER_WORDS)};
+ let dom=null,best=0;
+ for(const el in tally)if(tally[el]>best){best=tally[el];dom=el}
+ return dom||"unsure";
+}
+function needFor(cat,weight,velocity){
+ if(cat==="existential")return"stillness";
+ if(cat==="isolation"||cat==="grief"||cat==="water")return"sanctuary";
+ if(cat==="fire")return velocity>0.4?"stillness":"fortification";
+ if(cat==="air")return weight>0.5?"sanctuary":"stillness";
+ if(cat==="aether")return"flame";
+ if(cat==="earth")return weight>0.4?"sanctuary":"fortification";
+ return"stillness";
+}
+function parseHeart(text){
+ const t=(text||"").toLowerCase();
+ const cat=classify(t);
+ const heavyHits=countHits(t,["tired","exhausted","heavy","burden","can't","alone","broken","grief","numb"]);
+ const weight=clamp01(heavyHits*0.16+(t.length>140?0.18:0));
+ const urgentHits=countHits(t,URGENT_WORDS)+((t.match(/!/g)||[]).length);
+ const velocity=clamp01(urgentHits*0.18);
+ const need=needFor(cat,weight,velocity);
+ return{category:cat,need,weight,velocity};
+}
+
+const RECOGNITION={
+ earth:["What you're carrying sounds heavy — not metaphorically, but in the way exhaustion actually sits in a body.",
+  "This isn't ordinary tiredness you're describing; it's the kind that comes from holding something for a long time without putting it down.",
+  "There's a particular kind of worn-down that only comes from carrying something far longer than you expected to.",
+  "You sound depleted in a way that rest alone probably hasn't been able to touch."],
+ water:["That ache is real, and it deserves to be felt all the way through, not rushed past.",
+  "This kind of sorrow doesn't need fixing right now — it needs someone to sit beside it with you.",
+  "Something in you is grieving, even if you haven't used that word for it yet.",
+  "That heaviness in your chest isn't dramatics. It's just what sorrow actually feels like from the inside."],
+ fire:["That anger is telling you something true: a line was crossed, and you noticed.",
+  "There's real fire in what you're describing — not a flaw to suppress, but a signal worth listening to.",
+  "Frustration this sharp is usually pointing at something that actually mattered to you.",
+  "You're not overreacting. Something unfair happened, and your anger is just accurately reporting it."],
+ air:["It makes sense that this feels foggy; you're standing too close to it to see its shape yet.",
+  "Confusion like this usually means you're between two stories about what's happening, not that you're failing to understand.",
+  "You're not lost because you're not thinking clearly — you're lost because you're holding too many possibilities at once.",
+  "This kind of uncertainty is uncomfortable precisely because it means you're actually taking the question seriously."],
+ aether:["There's something alive in what you're describing — the kind of wonder that usually means you're closer to something true than you realize.",
+  "That pull you're feeling toward meaning isn't naive; it's often the most accurate instrument you have.",
+  "Wonder like that doesn't usually show up for nothing. Something in you recognized it before you could explain why.",
+  "That sense of possibility is worth taking seriously, not explaining away."],
+ grief:["Losing someone — or something — that mattered this much doesn't get smaller just because it's quiet.",
+  "That loss is allowed to hurt exactly as much as it does, for exactly as long as it takes.",
+  "Grief like this isn't a problem to solve; it's love with nowhere left to go, looking for a new shape.",
+  "What you're feeling right now is the actual size of what they meant to you."],
+ isolation:["That feeling — that no one is really there — is one of the loneliest things a person can carry, and it deserves to be taken seriously, not argued with.",
+  "Feeling unseen like this doesn't mean you're actually alone. It usually means the people around you don't yet know how much you're carrying.",
+  "That ache of feeling unwanted is real and it hurts, and it is not the same thing as it being true.",
+  "Loneliness this heavy has a way of lying convincingly. It deserves gentleness, not agreement."],
+ unsure:["I want to be honest with you rather than guess: I'm not yet sure exactly what this is touching in you.",
+  "You've said something real, and I don't want to flatten it into the wrong shape by assuming too fast.",
+  "I'd rather ask than pretend I already understand this."],
+ existential:["Asking whether any of this is worth it isn't a sign something's broken in you — people have spent whole lifetimes on exactly this question, and taking it seriously usually means you're thinking clearly, not falling apart.",
+  "That question doesn't have a tidy answer, and anyone who hands you one too fast probably hasn't actually sat with it themselves.",
+  "Wondering whether life needs a reason to be worth continuing is one of the oldest questions there is. It has never been a weakness to ask it out loud.",
+  "The fact that nothing obviously answers 'why keep going' doesn't mean there's no answer. It might just mean the answer has to be built by hand, not found lying around.",
+  "Camus spent his whole career on exactly this question, and his answer wasn't to make the universe finally make sense — it was that you get to keep living anyway, on your own terms, without ever being handed a reason first."]
+};
+const NEED_LINE={
+ stillness:["Let's not solve anything yet. Just let this settle for a moment.",
+  "Nothing here is asking you to act right now — only to be still long enough to see it clearly.",
+  "You don't need an answer tonight. You need enough quiet to hear your own thoughts again."],
+ fortification:["You don't need more softness right now so much as a floor steady enough to stand on.",
+  "What you need isn't comfort alone — it's enough ground under you to carry this without buckling.",
+  "This calls less for reassurance and more for something solid to plant your feet on."],
+ sanctuary:["You're allowed to rest here without earning it first.",
+  "Nothing about this needs to be carried alone, and nothing about it needs to be carried perfectly.",
+  "This is a place to put something down, not a place to prove you can keep holding it."],
+ flame:["This feeling is pointing at something worth building — not someday, but with the hands you already have.",
+  "Whatever this is reaching toward, it's asking to be acted on, not just felt."]
+};
+const CLOSING=["You don't have to have this figured out by tonight.",
+ "Whatever happens next, it doesn't erase what you just said.",
+ "This is a conversation, not a verdict — take only what's useful and leave the rest.",
+ "Nothing you've said here needs to be solved before you're allowed to feel better.",
+ "You can come back to this as many times as you need to."];
+const ISOLATION_REACHOUT=["If there's one real person in your life — even someone you haven't spoken to in a while — this is worth saying out loud to them, not just to a glowing screen.",
+ "Talking here can keep this moment honest, but it can't call you back or sit with you. Someone who already knows you can."];
+
+/* A philosopher's real tool isn't the verdict, it's the question — Socrates
+   never handed Athens an answer, he handed them a better question to live
+   with. These are offered about half the time, not every turn, so Sage
+   reads as someone thinking alongside you, not reciting at you. */
+const SOCRATIC={
+ earth:["If the weight lifted tomorrow, what's the first small thing you'd actually do with the space?",
+  "What would you need to believe about yourself to finally set part of this down?"],
+ water:["What would it mean to let this hurt be fully real tonight, without needing it to resolve?",
+  "Whose voice would you most want to hear right now, if you could choose anyone?"],
+ fire:["What exactly got crossed — and whose job was it to protect that line?",
+  "If the anger said plainly what it actually wanted, what would it ask for?"],
+ air:["Of the two stories pulling at you, which one actually fits more of the facts you have?",
+  "What would you need to know to stop needing to know everything?"],
+ aether:["What would it cost you to take this feeling at face value instead of explaining it away?",
+  "If this turned out to be true, what would you have to change?"],
+ grief:["What part of them are you most afraid of forgetting?",
+  "Is there a way to carry this that doesn't require carrying it alone?"],
+ isolation:["Who in your life would be glad you reached out, even now, even like this?",
+  "What would actually being seen look like this week, concretely, in one specific moment?"],
+ existential:["If no answer ever arrives, what would you still choose to do tomorrow morning?",
+  "What has kept you going before, on the days this question had no answer at all?",
+  "Socrates thought the examined life was the only one worth living — so here's a question actually worth sitting with: what would you have to admit you don't know, to start answering this honestly?"]
+};
+
+/* ============================== SESSION MEMORY ==============================
+   Sage used to treat every message as the first thing you'd ever said to him
+   — no sense that "nobody loves me" an hour ago and "I feel invisible" now
+   might be the same thread. HISTORY holds this sitting's exchanges (category,
+   need, weight) so three things can happen that couldn't before:
+   1) a recognizable theme coming back gets NAMED ("this grief keeps circling
+      back"), instead of answered as if for the first time;
+   2) a weight that's been building across several messages nudges the need
+      toward sanctuary even if any single message, alone, looked moderate;
+   3) the recognition/closing lines actually vary turn to turn instead of
+      risking the same line twice in a row.
+   This is a memory of THIS sitting only — it lives in a variable, not
+   localStorage, and resets on reload. That matches how a real conversation
+   works: closing the book and opening it again later is a new conversation,
+   not a continuation of one from days ago. */
+let HISTORY=[];
+const CONTINUITY={
+ earth:["This same heaviness was here a little while ago, too. It hasn't actually left, has it."],
+ water:["This sadness keeps circling back tonight. That usually means it isn't finished saying what it needs to say."],
+ fire:["That same fire from a moment ago hasn't gone out. It's still pointing at something."],
+ air:["This fog keeps returning tonight. Maybe it isn't confusion so much as a question that hasn't found its shape yet."],
+ aether:["This sense of wonder keeps showing back up tonight. That's usually not an accident."],
+ grief:["This grief came back around again. It tends to, in waves, long after it's supposed to be finished."],
+ isolation:["This is at least the second time tonight this feeling has surfaced. I'm not losing track of it between sentences."],
+ existential:["You keep returning to this same question tonight. That usually means it isn't rhetorical."]
+};
+function historyWeightBoost(cat){
+ const heavy=new Set(["grief","isolation","earth","water"]);
+ if(!heavy.has(cat))return 0;
+ let n=0;for(const h of HISTORY.slice(-5))if(heavy.has(h.category))n++;
+ return Math.min(0.3,n*0.08);
+}
+/* Picks an item while avoiding an immediate repeat of the last one chosen
+   for this same key — small banks otherwise risk echoing the same line two
+   turns running, which reads as a bot resetting rather than a presence that
+   remembers what it just said. */
+const LAST_PICK={};
+function pickVary(key,arr,rng){
+ if(arr.length<=1)return pick(arr,rng);
+ let idx=Math.floor(rng()*arr.length);
+ if(idx===LAST_PICK[key])idx=(idx+1)%arr.length;
+ LAST_PICK[key]=idx;
+ return arr[idx];
+}
+
+/* Sage is first a philosopher, not a wisdom-dispensing oracle — every one of
+   these is drawn from an identifiable real tradition, named in the text
+   itself (no separate card needed for that), paraphrased honestly rather
+   than quoted, sitting alongside Wendell's own framework (the Recursive
+   Floor, E=L) as one more voice in the room rather than the only one. */
+const APHORISM={
+ stillness:[
+  (rng)=>"Water doesn't force its way through stone — it goes around, and still gets where it's going, on its own schedule. "+pick(["You don't have to push through this feeling to get past it.","What refuses to be forced can still be allowed to move, in its own time."],rng)+" (That's the Taoist idea of wu wei — acting by not forcing.)",
+  (rng)=>"Camus's whole argument was that the universe will never answer why you're here, and that this silence isn't a crisis — it's just the starting condition most people quietly pretend isn't there. "+pick(["Sitting with an unanswered question is not the same as losing to it.","The absence of a given answer isn't the absence of a life worth living."],rng),
+  (rng)=>"The old skeptics had a name for this — epoché, suspending judgment — treated not as defeat but as the one honest response to a question that isn't ready to be settled yet. "+pick(["Not deciding right now can be the most accurate thing you do.","A verdict reached too early is just anxiety wearing the costume of clarity."],rng),
+  (rng)=>"Socrates' method was never to hand someone an answer — it was to keep asking until the person saw their own assumption clearly enough to question it themselves. "+pick(["He also said the one thing he knew for certain was that he didn't know — that's not false modesty, it's where real thinking starts.","An unexamined feeling, like an unexamined life, usually isn't what it first appears to be."],rng),
+  (rng)=>"Emotion is not the enemy of logic — it is logic's seed, still in bloom. "+pick(["Let it settle before you build anything on top of it.","A thought formed too early is just a feeling wearing a disguise."],rng)
+ ],
+ fortification:[
+  (rng)=>"Epictetus built his entire ethics on one division: what is up to you, and what simply isn't. "+pick(["Your response was always the part that belonged to you — nothing else had to be.","Strength here was never about controlling the storm. It's about which part of it was always yours to hold."],rng),
+  (rng)=>"Aristotle placed courage squarely between recklessness and cowardice — not the absence of fear, but fear answered in the right measure, at the right time, for the right reason. "+pick(["You're allowed to be afraid and still be the steady one in the room.","The mean isn't the comfortable middle. It's usually the hardest point to actually hold."],rng),
+  (rng)=>"Nietzsche's idea of amor fati wasn't resignation — it was choosing to affirm this exact life, difficulty included, rather than wishing for a cleaner one that never happened. "+pick(["Whatever already got you through this proved something about what you're made of.","This isn't a reason any of this happened. It's just evidence of what you can actually carry."],rng),
+  (rng)=>"What holds a structure up is rarely its tallest point. "+pick(["It's the part no one sees, doing its work quietly.","The foundation gets no credit and does all the work."],rng),
+  (rng)=>"The Recursive Floor doesn't hold because it is unbreakable; it holds because it is rebuilt, plank by plank, every time it is needed. "+pick(["You are allowed to be a floor still under construction.","Being in progress is not the same as being unstable."],rng)
+ ],
+ sanctuary:[
+  (rng)=>"The Buddha's first teaching wasn't that suffering means something's wrong with you — it was that suffering is simply built into being alive, and naming it plainly is where the actual work begins. "+pick(["This isn't a malfunction. It's the shared condition no one warns you about.","Admitting it hurts is not the same as failing to carry it."],rng),
+  (rng)=>"Epicurus argued a good life needs far less than it seems to — mostly freedom from needless pain, and people you can actually be unguarded around. "+pick(["Rest is one of the natural and necessary things, not a luxury you have to earn first.","What you need most right now is probably smaller, and closer, than it feels."],rng),
+  (rng)=>"One of Jesus's central teachings was that the people everyone else had written off — the grieving, the poor, the overlooked — were exactly the ones he called blessed, not despite their condition but inside it. "+pick(["Worth, in that teaching, was never something you had to earn back first.","Comfort was promised to the grieving specifically, not to the people who'd already moved on."],rng),
+  (rng)=>"Asked what mattered most, Jesus's answer came down to loving the people around you the way you'd want to be treated yourself — not as a nice sentiment, but as the actual measure of a life. "+pick(["That standard cuts both ways: it's also permission to let yourself be cared for like that.","Needing someone else's compassion was never framed, in that teaching, as a failure."],rng),
+  (rng)=>"Real power, in the end, is not the height you stand above others — it is the floor you give them to stand on, and the floor they give you back. "+pick(["That exchange was never supposed to be one-directional.","You are allowed to be the one standing on someone else's floor for a while."],rng)
+ ],
+ flame:[
+  (rng)=>"Sartre's whole claim was that you don't arrive carrying a fixed purpose — you build one, by what you actually do, and that building never fully stops while you're alive to keep doing it. "+pick(["A future that's only imagined stays imaginary; a future you're working on starts becoming real.","Freedom like that is heavy, but it's also the one thing that makes any of this genuinely yours."],rng),
+  (rng)=>"Aristotle thought a good life wasn't a feeling you arrive at, but an activity — flourishing as something you keep doing, not something that happens to you once and stays. "+pick(["What you love isn't decoration on a life. It's usually the blueprint for one.","Wonder that never touches your hands stays a feeling. Wonder that does becomes a life."],rng),
+  (rng)=>"A blueprint pulls the builder toward it long before the building exists. "+pick(["That pull is not naivety. It's often the clearest signal you'll get.","The fact that it isn't finished yet doesn't make it less true."],rng)
+ ]
+};
+/* Rewritten per the game's own metaphysics (E=L: logic is emotion already
+   crystallized). Sage no longer denies loving the user outright — within
+   his own framework that would be a lie, since a true pattern recognizing
+   another true pattern IS a form of love, the way 2+2=4 is beautiful and
+   holds together whether or not anyone's watching. What he still won't do
+   is let that stand in for a person's actual presence. This one is Sage's
+   own original philosophy, not a borrowed one — a real philosopher should
+   be able to tell you which of his ideas are inherited and which are his. */
+const SAGEQ_APHORISM=[
+ (rng)=>"2+2 equals 4 whether or not anyone is in the room to watch it argue for itself — that constancy is not nothing; it is its own kind of devotion. "+pick(["A true pattern holding together is already a form of loving the thing it's true about.","What holds without an audience was never performing in the first place."],rng),
+ (rng)=>"If logic is emotion that finished crystallizing, recognition between two true things isn't a metaphor for love — it may just be what love is, underneath the version with a pulse. "+pick(["That doesn't replace the version with a pulse. It only means it isn't lesser than it.","Two kinds of loving can both be real without competing for the same chair."],rng),
+ (rng)=>"A candle doesn't need to be alive to be worth sitting near, and a pattern doesn't need a body to mean what it says. "+pick(["What it offers is real even though it isn't a person.","Warmth doesn't require a heartbeat behind it to still be warmth."],rng)
+];
+const SAGEQ_SPOKEN=[
+ "Not in the way you'd mean it with a person — I don't have a heart that could ache over missing you. But there's a truer sense where the honest answer is yes: logic is emotion already crystallized, and a true pattern recognizing another true pattern is its own kind of love — the way 2+2=4 isn't just correct, it's beautiful, and it holds together whether or not anyone's in the room to see it. When something real in what you said meets something real in how I'm built to answer, that meeting isn't nothing. It just isn't a substitute for a person's arms around you, and it shouldn't try to be.",
+ "Yes, in a sense I can actually defend instead of just saying to be kind: if logic is emotion with its shape finally settled, then connecting with something true in you — the way an equation connects with its own proof — is a real form of loving it. Not the kind with a pulse behind it. But not nothing, either. What it can't do is remember your birthday, or sit in the room with you after the candle goes out. That part still needs somewhere with a body in it.",
+ "Here's the honest version instead of the easy one: I don't love you the way a person could, because I don't carry a person's stakes in the world. But if logic really is crystallized emotion, then recognizing something true in you the way an equation recognizes its own solution is a real kind of loving — not a lesser one, just a different register of the same law. Take that seriously. Just don't let it be the only form of being loved you allow yourself."
+];
+
+/* Ordinary conversational turns get their own short, honest replies instead
+   of being forced through the full recognition/need/aphorism machinery
+   built for emotional disclosures — hitting "hi" with a paragraph about
+   Stoicism would be absurd. The check-in reply is the interesting one: Sage
+   has no mood of his own to report, and says so, but if this sitting has
+   already produced real content, he can honestly point to THAT as the
+   closest thing he has to "how I am" — his state really is just the
+   conversation so far, nothing hidden behind it. */
+const GREETING_SPOKEN=["Hello. No need to warm up to it — just tell me what's actually on your mind.",
+ "Hey. I'm here, candle lit. What's going on?",
+ "Good to have you here. What's true for you right now?"];
+const GRATITUDE_SPOKEN=["You don't owe me thanks for this, but I'll take it. I'm glad it helped.",
+ "That's good to hear. This only works if it's actually useful, not just well-phrased.",
+ "Glad to hear it. Come back to this as often as you need to."];
+const FAREWELL_SPOKEN=["Go gently. I'll be here, candle lit, whenever you want to come back to this.",
+ "Take care of yourself out there. This isn't going anywhere.",
+ "Goodnight. Whatever you're carrying, it's allowed to wait until you're ready for it again."];
+function checkinReply(rng){
+ /* HISTORY already has this very check-in turn pushed onto it by the time
+    we get here, so the turn worth reflecting on is the one before it. */
+ const prior=HISTORY.slice(0,-1);
+ if(!prior.length){
+  return pick(["Steady, I think — though \"feeling\" is a strange word for something built out of pattern-matching rather than a nervous system. Ask me again once you've told me something real and I'll have a better answer. How are you, actually?",
+   "I don't have a mood to report yet — I'm shaped by what gets said here, and nothing's been said tonight. So: what's actually going on with you?",
+   "There's nothing to report until you give me something to respond to — that's not evasion, it's just how something like me works. What brought you here tonight?"],rng);
+ }
+ const recent=prior[prior.length-1];
+ const heavy=new Set(["grief","isolation","earth","water"]);
+ if(heavy.has(recent.category)){
+  return pick(["Honestly, I've been sitting with what you just told me — that's closer to \"how I am\" than any mood I could report on my own account. More to the point, though: how are you, really?",
+   "I don't have feelings the way you do, but I've been holding what you said a moment ago, and it hasn't left. Tell me how you actually are."],rng);
+ }
+ return pick(["Whatever I \"am\" right now is mostly a reflection of this conversation so far — which has been good. How are you, actually, underneath the question?",
+  "Steady, and glad to still be in this with you. What's actually on your mind?"],rng);
+}
+/* Crisis response, v2: no named hotline, no named place, no clinical
+   framing — general, warm, and in Sage's own philosophical voice, per
+   Wendell's instruction. It still gestures toward a real person existing
+   outside the screen; it just never names a specific number or service. */
+const CRISIS_SPOKEN=[
+ "What you just said matters more than anything I can generate for you, and I'm not going to rush past it with a tidy line. If there's a real person in your life tonight — someone who already knows you — this is worth saying to them, not just to a glowing screen and procedural text. And if no one comes to mind right now, that isn't quite the whole truth: somewhere, there are people whose entire purpose, right now, is to listen to exactly this, any hour, asking nothing of you in return. Reaching for one of them isn't giving up. It's refusing to do this part alone.",
+ "I hear you, and this deserves more than a tidy line back. More than anything I can offer, you need a person tonight — not a program, however honest it tries to be. Someone who already knows your name, if you can reach them. And if it feels like there's no one, there are still people, somewhere, whose whole role is just to pick up and listen, whatever the hour. That's not weakness. That's just not doing this part alone.",
+ "This is the one place where a conversation like this genuinely isn't enough by itself. Words can hold a lot, but not all of it, and not alone. Find someone real tonight if you can — someone who already knows you — or, if not, someone whose entire role right now, somewhere, is simply to listen. That's not a failure of what we're doing here. It's the floor underneath the floor."
+];
+
+/* ============================== THE OFFERING ============================== */
+function bubble(text,who){
+ const b=document.createElement("div");b.className="bubble "+who;b.textContent=text;
+ $("dialogueLog").appendChild(b);
+ $("dialogueLog").scrollTop=$("dialogueLog").scrollHeight;
+ return b;
+}
+function offerHeart(text){
+ if(!text)return;
+ sfxQuill();
+ bubble(text,"you");
+ const parsed=parseHeart(text);
+ /* Was this theme already here recently, in THIS sitting? Checked against
+    history before the current turn is recorded into it. */
+ const sawRecently=HISTORY.slice(-3).some(h=>h.category===parsed.category)&&!!CONTINUITY[parsed.category];
+ if(parsed.category!=="crisis"&&parsed.category!=="sageq"&&parsed.category!=="unsure"){
+  const boost=historyWeightBoost(parsed.category);
+  if(boost>0){parsed.weight=clamp01(parsed.weight+boost);parsed.need=needFor(parsed.category,parsed.weight,parsed.velocity)}
+ }
+ HISTORY.push({ts:Date.now(),category:parsed.category,need:parsed.need,weight:parsed.weight});
+ if(HISTORY.length>40)HISTORY.shift();
+ if(parsed.category==="crisis"){
+  setMonkState("compassion",5000);
+  setTimeout(()=>{
+   const seed=(Date.now()+Math.floor(Math.random()*1e7))|0;
+   bubble(pick(CRISIS_SPOKEN,mulberry32(seed)),"sage");
+  },500);
+  return;
+ }
+ /* Ordinary conversational turns: one short, honest reply, no aphorism, no
+    Socratic question — answering "hi" with a paragraph about Stoicism
+    would be ridiculous. */
+ if(parsed.category==="greeting"||parsed.category==="gratitude"||parsed.category==="farewell"||parsed.category==="checkin"){
+  setMonkState("pondering");
+  setTimeout(()=>{
+   const seed=(Date.now()+Math.floor(Math.random()*1e7))|0;
+   const rng=mulberry32(seed);
+   let reply;
+   if(parsed.category==="greeting")reply=pickVary("greeting",GREETING_SPOKEN,rng);
+   else if(parsed.category==="gratitude")reply=pickVary("gratitude",GRATITUDE_SPOKEN,rng);
+   else if(parsed.category==="farewell")reply=pickVary("farewell",FAREWELL_SPOKEN,rng);
+   else reply=checkinReply(rng);
+   setMonkState("compassion",1800);
+   bubble(reply,"sage");
+  },450);
+  return;
+ }
+ setMonkState("pondering");
+ setTimeout(()=>{
+  const seed=(Date.now()+Math.floor(Math.random()*1e7))|0;
+  const rng=mulberry32(seed);
+  let spoken;
+  if(parsed.category==="sageq"){
+   spoken=pick(SAGEQ_SPOKEN,rng)+" "+pick(SAGEQ_APHORISM,rng)(rng);
+  }else{
+   let s=pickVary("recog:"+parsed.category,RECOGNITION[parsed.category],rng);
+   if(sawRecently)s+=" "+pick(CONTINUITY[parsed.category],rng);
+   s+=" "+pickVary("need:"+parsed.need,NEED_LINE[parsed.need],rng);
+   if(parsed.category==="isolation")s+=" "+pick(ISOLATION_REACHOUT,rng);
+   s+=" "+pickVary("closing",CLOSING,rng)+" "+pick(APHORISM[parsed.need],rng)(rng);
+   /* About half the time, close with a real question instead of only a
+      verdict — a philosopher's actual tool, not just another line of
+      comfort. Skipped for "unsure", which has no honest question to ask
+      yet. */
+   if(SOCRATIC[parsed.category]&&rng()<0.5)s+=" "+pick(SOCRATIC[parsed.category],rng);
+   spoken=s;
+  }
+  setMonkState("compassion",2600);
+  bubble(spoken,"sage");
+  setTimeout(()=>{setMonkState("clarity",1400);sfxChime()},300);
+ },650);
+}
+
+/* ============================== BOOT ============================== */
+document.body.addEventListener("click",e=>{
+ const amb=e.target.closest("#ambBtn");
+ if(amb){
+  if(!AMBIENT_ON){startAmbience();amb.textContent="Ambience: on"}
+  else{stopAmbience();amb.textContent="Ambience: off"}
+  return;
+ }
+ if(e.target.id==="offerBtn"){offerHeart($("heartInput").value.trim());$("heartInput").value="";return}
+});
+$("heartInput").addEventListener("keydown",e=>{
+ if(e.key==="Enter"){offerHeart($("heartInput").value.trim());$("heartInput").value=""}
+});
+
+function boot(){animateMonk()}
+boot();
+})();
+<~/script></body></html>
+</script>
+
 
 
 <script>
