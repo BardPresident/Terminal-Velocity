@@ -42,30 +42,33 @@
  Nth) cartridge pack and he's handed you only this file for reference: the
  OS now finds extra packs on its own. After loading this file (and any pack
  named below in cartridges-more, if one is listed), it also tries, in the
- same folder: cartridges-2.html, then cartridges-3.html, cartridges-4.html,
- and so on. It stops once TWO tries in a row come back missing — a 404, or
- a file that doesn't contain any cartsrc blocks (so a soft-404 page can't
- fool it) — so a single gap is tolerated but not two in a row. Up to 60
- numbers are tried. This means: for an ordinary new pack, you make ONE new
- file and Wendell uploads it next to this one. THIS file (cartridges.html)
- does not need to change, does not need a rebuild, and does not need a
- cartridges-more edit, to pick up a new numbered pack.
- 1. Name the new file cartridges-N.html, where N is the next number not
-    already in use (nothing yet → cartridges-2.html; that exists → the next
-    one is cartridges-3.html; etc. — ask Wendell which numbers already exist
-    if you're not sure). This exact "cartridges-" prefix is REQUIRED, not
-    just a convention: it's what gets the CORS header a saved/offline copy
-    of the OS needs to fetch the file, and what the auto-discovery above
-    looks for. Numbers are NEVER reused, even once a pack is retired. Don't
-    skip more than one number in a row — skipping two or more permanently
-    hides every pack after the gap, since discovery stops there for good.
+ same folder: cartridges-02.html, then cartridges-03.html, cartridges-04.html,
+ and so on, ALWAYS TWO DIGITS. It stops once TWO tries in a row come back
+ missing — a 404, or a file that doesn't contain any cartsrc blocks (so a
+ soft-404 page can't fool it) — so a single gap is tolerated but not two in
+ a row. Up to 99 numbers are tried. This means: for an ordinary new pack,
+ you make ONE new file and Wendell uploads it next to this one. THIS file
+ (cartridges.html) does not need to change, does not need a rebuild, and
+ does not need a cartridges-more edit, to pick up a new numbered pack.
+ 1. Name the new file cartridges-NN.html, with NN the next two-digit number
+    not already in use (nothing yet → cartridges-02.html; that exists → the
+    next one is cartridges-03.html; etc. — ask Wendell which numbers already
+    exist if you're not sure). ALWAYS two digits for a new pack — a one-digit
+    cartridges-N.html still works if one already exists from before this
+    rule, but never name a NEW pack that way. This exact "cartridges-"
+    prefix is REQUIRED, not just a convention: it's what gets the CORS
+    header a saved/offline copy of the OS needs to fetch the file, and
+    what the auto-discovery above looks for. Numbers are NEVER reused, even
+    once a pack is retired. Don't skip more than one number in a row —
+    skipping two or more permanently hides every pack after the gap, since
+    discovery stops there for good.
  2. Give the new file this exact same shape as this one: doctype/head, then
     one <script class="cartsrc"> block per game in its body, same format,
     same escaping rules, as described above. Its head needs:
       <meta name="cartridges-pack" content="SHORT-ID">
       <meta name="cartridges-pack-name" content="Display Name">
     The display name is what players see in the Store — it does NOT come
-    from the filename ("cartridges-2.html" can show as "Rising Sun"). Always
+    from the filename ("cartridges-02.html" can show as "Rising Sun"). Always
     ask Wendell what it should be; never invent one. SHORT-ID is a short
     lowercase slug unique to this pack, used only internally, never shown.
  3. Every game id in the new pack must be globally unique across every pack
@@ -104,7 +107,7 @@
  it; comma-separate for more than one). A pack listed by name here always
  wins over the same file found by number, and named packs show before
  numbered ones, in the order listed. This is the exception, not the rule —
- for almost every new pack, just upload cartridges-N.html and touch
+ for almost every new pack, just upload cartridges-NN.html and touch
  nothing in this file at all.
 
  Nothing about the OS itself (the Cartridges app, install/uninstall, Backup)
